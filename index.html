@@ -1,489 +1,160 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Cotización Odontológica - Dra. Leidi Silva</title>
+  <meta charset="UTF-8">
+  <title>Reconocimiento de Voz Odontología</title>
   <style>
-    :root{
-      --tooth-size: clamp(28px, 5.5vw, 40px);
-      --gap: 6px;
-      --brand: #2a5d84;
-      --ink: #1e4a66;
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
     }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #f9f9f9; }
-    h2 { text-align: center; color: var(--brand); font-size: 1.5em; margin-bottom: 1em; }
-    form { background: #fff; padding: 1em; max-width: 960px; margin: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-    label { font-weight: 700; margin-top: 1em; display: block; }
-    input[type="text"], input[type="number"], input[type="email"], select, textarea {
-      width: 100%; padding: .8em; margin-top: .4em; margin-bottom: .5em; border: 1px solid #d7dce0; border-radius: 8px; font-size: 1em;
-    }
-    .datetime { margin-bottom: 1em; color: #333; }
-    .checkbox-group { display: flex; gap: 1em; flex-wrap: wrap; margin-bottom: 1em; }
-    .checkbox-group label { font-weight: 500; }
-    canvas { border: 1px solid #ccc; border-radius: 8px; width: 100%; height: 120px; margin: 1em 0 1.5em; }
-    .totales { background: #f6f8fa; border: 1px solid #e6eaee; border-radius: 10px; padding: 12px; margin-top: 14px; }
-    .totales span { display: block; margin-bottom: 6px; }
-    button { padding: .8em; border: none; color: #fff; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
-    button[type="submit"] { background: #28a745; }
-    button[type="button"] { background: var(--brand); }
-    button:hover { opacity: .96; }
-    .link-btn { background: var(--brand); color:#fff; border:none; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
-    #cedula-hint { display:block; min-height:1.2em; font-size:.9em; color:#666; }
 
-    .odontograma-wrap {
-      margin-top: 16px; border:1px solid #e6eaee; border-radius: 12px; padding: 14px; background:#fcfdff;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    .estado {
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 5px;
+      margin-left: 10px;
     }
-    .row-title { text-align:center; font-weight:700; color: var(--brand); margin: 6px 0 6px; }
-    .side-labels { display:flex; justify-content:space-between; color: var(--ink); font-weight:700; margin:4px 0 6px; }
-    .teeth-row {
-      position: relative;
-      display: grid;
-      grid-template-columns:
-        repeat(8, var(--tooth-size)) 2px repeat(8, var(--tooth-size));
-      justify-content: center;
-      column-gap: var(--gap);
-      padding: 6px 0;
-      margin-bottom: 6px;
-      min-width: calc(16 * var(--tooth-size) + 15 * var(--gap) + 2px);
-    }
-    .teeth-row::after {
-      content:""; position:absolute; left:calc(50% - 1px); top:2px; bottom:2px; width:2px; background:#cfd6dc; border-radius:2px;
-    }
-    .tooth {
-      position: relative; width: var(--tooth-size); aspect-ratio: 1/1.12;
-      border-radius: 8px; border:1px solid var(--ink); background: var(--ink);
-      display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; user-select:none;
-      transition: transform .06s ease, box-shadow .1s ease;
-    }
-    .tooth:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
-    .tooth svg { width: calc(var(--tooth-size) * .44); height: calc(var(--tooth-size) * .44); opacity:.9; }
-    .tooth svg path { fill:#e6f2fa; stroke:#bdd7ea; }
-    .tooth-num { position: absolute; top:3px; left:4px; font-size: clamp(9px, 2.2vw, 11px); font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.35); }
-    .tooth-badge { position: absolute; right:4px; bottom:3px; font-size: clamp(8px, 2vw, 10px); background:#eef6ff; color: var(--ink); padding:1px 4px; border-radius:999px; display:none; }
-    .tooth.has-procs .tooth-badge{ display:inline-block; }
-    .odontograma-summary { margin-top: 8px; border-top: 1px dashed #e3e8ee; padding-top: 6px; }
-    .summary-list { margin:0; padding-left: 18px; }
-    .summary-list li { margin: 4px 0; }
 
-    .panel-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
-    .panel { width: 520px; max-width: 95vw; background:#fff; border-radius:12px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.2); }
-    .panel header { display:flex; align-items:center; justify-content:space-between; }
-    .panel h3 { margin:0; color: var(--brand); }
-    .panel .procs { display:grid; gap:8px; margin-top:12px; }
-    .proc-row { display:grid; grid-template-columns: 1fr 24px 110px; gap: 8px 10px; align-items:center; }
-    .panel .price { width:100%; border:1px solid #d7dce0; border-radius:6px; padding:6px 8px; }
-    .panel footer { display:flex; gap:8px; margin-top:14px; }
-    .btn-secondary { background:#eef2f6; color:#244; }
-    .btn-primary { background: var(--brand); }
+    .activo {
+      background-color: #4CAF50;
+      color: white;
+    }
 
-    @media (max-width: 480px){ .proc-row { grid-template-columns: 1fr 20px 90px; } }
+    .inactivo {
+      background-color: #f44336;
+      color: white;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      font-size: 16px;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+
+    .instrucciones {
+      background-color: #f0f8ff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .instrucciones h3 {
+      margin-top: 0;
+    }
   </style>
 </head>
 <body>
-  <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
+  <h2>Reconocimiento de Voz Odontología</h2>
 
-  <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
-    <div class="datetime">
-      <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
-      <input type="hidden" name="fecha" id="input-fecha" />
-    </div>
-
-    <label for="nombre">Nombre del paciente:</label>
-    <input type="text" id="nombre" name="nombre" required />
-
-    <label for="cedula">Número de cédula:</label>
-    <input type="number" id="cedula" name="cedula" required />
-    <small id="cedula-hint"></small>
-
-    <label for="celular">Número de celular:</label>
-    <input type="text" id="celular" name="celular" required />
-
-    <label for="correo">Correo electrónico:</label>
-    <input type="email" id="correo" name="correo" required />
-
-    <label for="procedimiento">Procedimiento principal:</label>
-    <select id="procedimiento" name="procedimiento_raw">
-      <option value="Profilaxis (Limpieza)|70000">Profilaxis (Limpieza) - $70,000</option>
-      <option value="Resina Dental|150000">Resina Dental - $150,000</option>
-      <option value="Blanqueamiento Dental|300000">Blanqueamiento Dental - $300,000</option>
-      <option value="Endodoncia|350000">Endodoncia (1 raíz) - $350,000</option>
-      <option value="Corona|800000">Corona Metal-Porcelana - $800,000</option>
-    </select>
-
-    <label>Procedimientos adicionales:</label>
-    <div class="checkbox-group">
-      <label style="display:flex; align-items:center; gap:6px;">
-        <input type="checkbox" name="adicionales_raw[]" value="Radiografía Panorámica|50000">
-        Radiografía Panorámica - $50,000
-        <button type="button" class="link-btn" title="Ver modelo 3D (doble clic)"
-          ondblclick="window.open('https://human.biodigital.com/widget/?be=2W7q&background.colors=255,255,255,1,51,64,77,1&initial.hand-hint=true&ui-info=true&ui-fullscreen=true&ui-center=false&ui-dissect=true&ui-zoom=true&ui-help=true&ui-tools-display=primary&uaid=3bH1u','_blank')">🔗</button>
-      </label>
-      <label><input type="checkbox" name="adicionales_raw[]" value="Exodoncia Simple|120000"> Exodoncia Simple - $120,000</label>
-      <label><input type="checkbox" name="adicionales_raw[]" value="Provisional Acrílico|100000"> Provisional Acrílico - $100,000</label>
-      <label><input type="checkbox" name="adicionales_raw[]" value="Mantenimiento Brackets|80000"> Mantenimiento Brackets - $80,000</label>
-    </div>
-
-    <!-- ============== ODONTOGRAMA ============== -->
-    <label>Odontograma (seleccione dientes y asigne procedimientos):</label>
-    <div class="odontograma-wrap">
-      <div class="row-title">Maxilar superior</div>
-      <div class="side-labels"><span>derecha</span><span>izquierda</span></div>
-      <div class="teeth-row" id="row-sup"></div>
-
-      <div class="row-title" style="margin-top:8px;">Maxilar inferior</div>
-      <div class="side-labels"><span>derecha</span><span>izquierda</span></div>
-      <div class="teeth-row" id="row-inf"></div>
-
-      <div class="odontograma-summary">
-        <strong>Resumen por diente:</strong>
-        <ul class="summary-list" id="summary-list"></ul>
-        <div><strong>Subtotal odontograma:</strong> $<span id="odonto-subtotal">0</span></div>
-      </div>
-
-      <!-- se enviará a n8n con saltos de línea -->
-      <input type="hidden" name="odontograma_json" id="odontograma-json">
-      <input type="hidden" name="odontograma_resumen" id="odontograma-resumen">
-    </div>
-
-    <input type="hidden" name="procedimiento">
-    <input type="hidden" name="adicionales[]">
-
-    <label for="descuento">Descuento:</label>
-    <select id="descuento" name="descuento">
-      <option value="0">Sin descuento</option>
-      <option value="5">5%</option>
-      <option value="10">10%</option>
-      <option value="20">20%</option>
-      <option value="30">30%</option>
-    </select>
-
-    <div class="totales">
-      <span><strong>Subtotal:</strong> $<span id="subtotal">0</span></span>
-      <span><strong>Descuento:</strong> $<span id="valor-descuento">0</span></span>
-      <span><strong>Total a pagar:</strong> $<span id="total">0</span></span>
-    </div>
-
-    <input type="hidden" id="input-subtotal" name="subtotal_real">
-    <input type="hidden" id="input-descuento" name="descuento_valor">
-    <input type="hidden" id="input-total" name="total_real">
-
-    <label for="observaciones">Observaciones:</label>
-    <textarea id="observaciones" name="observaciones" rows="4"></textarea>
-
-    <label for="firma">Firma del paciente:</label>
-    <canvas id="firma"></canvas>
-    <input type="hidden" name="firma" id="firmaInput" />
-    <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
-    <button type="submit">Enviar</button>
-  </form>
-
-  <!-- Modal odontograma -->
-  <div class="panel-backdrop" id="panel-backdrop" aria-hidden="true">
-    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
-      <header>
-        <h3 id="panel-title">Procedimientos diente <span id="panel-tooth"></span></h3>
-        <button type="button" class="btn-secondary" id="btn-close">Cerrar</button>
-      </header>
-      <div class="procs" id="procs-container"></div>
-      <footer>
-        <button type="button" class="btn-secondary" id="btn-clear">Limpiar</button>
-        <button type="button" class="btn-primary" id="btn-save">Guardar</button>
-      </footer>
-    </div>
+  <div class="instrucciones">
+    <h3>🗣️ Instrucciones de activación por voz:</h3>
+    <ul>
+      <li>✅ Para activar el dictado en <strong>Historia Clínica</strong>, di: <em><strong>“dictado historia clínica”</strong></em></li>
+      <li>🚫 Para detener el dictado en <strong>Historia Clínica</strong>, di: <em><strong>“terminar historia clínica”</strong></em></li>
+      <li>✅ Para activar el dictado en <strong>Plan de Tratamiento</strong>, di: <em><strong>“dictado plan de tratamiento”</strong></em></li>
+      <li>🚫 Para detener el dictado en <strong>Plan de Tratamiento</strong>, di: <em><strong>“terminar plan de tratamiento”</strong></em></li>
+    </ul>
   </div>
 
+  <button id="startButton">🎤 Iniciar Reconocimiento</button>
+
+  <h3>Historia Clínica
+    <span id="estadoHC" class="estado inactivo">Dictado inactivo</span>
+  </h3>
+  <textarea id="historiaClinica" placeholder="Dictado aquí..."></textarea>
+
+  <h3>Plan de Tratamiento
+    <span id="estadoPT" class="estado inactivo">Dictado inactivo</span>
+  </h3>
+  <textarea id="planTratamiento" placeholder="Dictado aquí..."></textarea>
+
   <script>
-    /* ===== Fecha/Hora ===== */
-    const now = new Date();
-    document.getElementById("fecha-hora").textContent = now.toLocaleDateString('es-CO') + " - " + now.toLocaleTimeString('es-CO');
-    document.getElementById("input-fecha").value = now.toLocaleDateString('es-CO') + " " + now.toLocaleTimeString('es-CO');
+    const startButton = document.getElementById('startButton');
+    const historiaClinica = document.getElementById('historiaClinica');
+    const planTratamiento = document.getElementById('planTratamiento');
+    const estadoHC = document.getElementById('estadoHC');
+    const estadoPT = document.getElementById('estadoPT');
 
-    const procedimiento = document.getElementById("procedimiento");
-    const adicionales = document.querySelectorAll(".checkbox-group input[type='checkbox']");
-    const descuentoSel = document.getElementById("descuento");
-    const parseMoney = v => parseInt(v,10) || 0;
+    let modo = null;
 
-    /* ========= ODONTOGRAMA ========= */
-    const PROC_CATALOGO = [
-      { key: "Resina",      label: "Resina",                 price: 150000 },
-      { key: "Endodoncia",  label: "Endodoncia",             price: 350000 },
-      { key: "Corona",      label: "Corona Metal-Porcelana", price: 800000 },
-      { key: "Exodoncia",   label: "Exodoncia",              price: 180000 },
-      { key: "Sellante",    label: "Sellante",               price: 80000  }
-    ];
-    const selectedTeeth = {}; // { "12":[{key,label,price}, ...] }
+    function beep() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
 
-    const summaryList = document.getElementById('summary-list');
-    const odontoSubtotalEl = document.getElementById('odonto-subtotal');
-    const odontoJson = document.getElementById('odontograma-json');
-    const odontoResumen = document.getElementById('odontograma-resumen');
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
 
-    function toothSVG(){
-      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2c3.5 0 6 2.6 6 6.1 0 3.4-1.5 4.9-2.5 10-.3 1.6-2 1.9-2.9.6l-1-1.5-1 1.5c-.9 1.3-2.6 1-2.9-.6-1-5.1-2.5-6.6-2.5-10C5.2 4.6 8.5 2 12 2z"/></svg>`;
-    }
-    function crearBoton(num){
-      const b = document.createElement('button');
-      b.type='button'; b.className='tooth'; b.dataset.tooth=String(num);
-      b.innerHTML = `<span class="tooth-num">${num}</span>${toothSVG()}<span class="tooth-badge">+ Proc.</span>`;
-      b.addEventListener('click', ()=>openPanel(num));
-      return b;
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.2);
     }
 
-    function renderOdontograma(){
-      const sup = document.getElementById('row-sup');
-      const inf = document.getElementById('row-inf');
-      sup.innerHTML = ''; inf.innerHTML = '';
-
-      const supIzq = [18,17,16,15,14,13,12,11];
-      const supDer = [21,22,23,24,25,26,27,28];
-      const infIzq = [48,47,46,45,44,43,42,41];
-      const infDer = [31,32,33,34,35,36,37,38];
-
-      supIzq.forEach(n=> sup.appendChild(crearBoton(n)));
-      const spacerSup = document.createElement('div'); spacerSup.style.width = '2px'; sup.appendChild(spacerSup);
-      supDer.forEach(n=> sup.appendChild(crearBoton(n)));
-
-      infIzq.forEach(n=> inf.appendChild(crearBoton(n)));
-      const spacerInf = document.createElement('div'); spacerInf.style.width = '2px'; inf.appendChild(spacerInf);
-      infDer.forEach(n=> inf.appendChild(crearBoton(n)));
-
-      refreshBadges();
-    }
-
-      function refreshBadges(){
-    document.querySelectorAll('.tooth').forEach(btn=>{
-      const n = btn.dataset.tooth;
-      btn.classList.toggle('has-procs', Array.isArray(selectedTeeth[n]) && selectedTeeth[n].length>0);
-    });
-
-    const items = Object.entries(selectedTeeth)
-      .filter(([_,arr])=>arr && arr.length)
-      .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
-
-    // HTML para la vista
-    summaryList.innerHTML = items.length
-      ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
-      : '<li>Sin procedimientos asignados.</li>';
-
-    // TEXTO para enviar a n8n / Sheets (sin subtotal, solo líneas por diente)
-    let lines = [];
-    if(items.length){
-      items.forEach(it=>{
-        const procsText = it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ');
-        lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
-      });
-    } else {
-      lines.push('• Sin procedimientos asignados.');
-    }
-    odontoResumen.value = lines.join('\n'); // <-- SIN subtotal
-
-    // Subtotal solo para la UI (no va al resumen)
-    const subt = items.reduce((s,it)=>s+it.total,0);
-    odontoSubtotalEl.textContent = subt.toLocaleString('es-CO');
-    odontoJson.value = JSON.stringify(selectedTeeth);
-
-    calcularTotal();
-  }
-
-    // ---------- Modal ----------
-    const backdrop = document.getElementById('panel-backdrop');
-    const procsContainer = document.getElementById('procs-container');
-    const lblTooth = document.getElementById('panel-tooth');
-    const btnSave = document.getElementById('btn-save');
-    const btnClear = document.getElementById('btn-clear');
-    const btnClose = document.getElementById('btn-close');
-    let currentTooth = null;
-
-    function openPanel(toothNumber){
-      currentTooth = String(toothNumber);
-      lblTooth.textContent = currentTooth;
-      procsContainer.innerHTML = '';
-
-      PROC_CATALOGO.forEach(proc=>{
-        const row = document.createElement('div');
-        row.className='proc-row'; row.dataset.key=proc.key; row.dataset.label=proc.label;
-
-        const name = document.createElement('label'); name.textContent = proc.label;
-        const check = document.createElement('input'); check.type='checkbox'; check.className='proc-check';
-        const price = document.createElement('input'); price.type='number'; price.className='price'; price.min='0'; price.step='1000'; price.value=proc.price;
-
-        const existing = (selectedTeeth[currentTooth]||[]).find(p=>p.key===proc.key);
-        if(existing){ check.checked = true; price.value = existing.price; }
-
-        row.appendChild(name); row.appendChild(check); row.appendChild(price);
-        procsContainer.appendChild(row);
-      });
-
-      backdrop.style.display='flex';
-    }
-    function closePanel(){ backdrop.style.display='none'; currentTooth=null; }
-    btnClose.addEventListener('click', closePanel);
-    backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closePanel(); });
-
-    btnSave.addEventListener('click', ()=>{
-      if(!currentTooth) return;
-      const rows = procsContainer.querySelectorAll('.proc-row');
-      const next = [];
-      rows.forEach(row=>{
-        const check = row.querySelector('.proc-check');
-        const price = row.querySelector('.price');
-        const val = parseMoney(price.value);
-        if(check.checked && val>0){ next.push({ key:row.dataset.key, label:row.dataset.label, price:val }); }
-      });
-      if(next.length) selectedTeeth[currentTooth]=next; else delete selectedTeeth[currentTooth];
-      refreshBadges(); closePanel();
-    });
-    btnClear.addEventListener('click', ()=>{ if(!currentTooth) return; delete selectedTeeth[currentTooth]; refreshBadges(); closePanel(); });
-
-    renderOdontograma();
-
-    function odontogramaSubtotal(){
-      return Object.values(selectedTeeth).reduce((acc, arr)=> acc + arr.reduce((s,p)=>s+(p.price||0),0), 0);
-    }
-
-    function calcularTotal(){
-      let subtotal = 0;
-
-      const [nProc, pProc] = procedimiento.value.split("|");
-      subtotal += parseMoney(pProc);
-      document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
-
-      const adics = [];
-      adicionales.forEach(cb=>{
-        if(cb.checked){
-          const [nA, pA] = cb.value.split("|");
-          adics.push(`${nA} - $${parseMoney(pA).toLocaleString('es-CO')}`);
-          subtotal += parseMoney(pA);
-        }
-      });
-      document.querySelector('input[name="adicionales[]"]').value = adics.join("<br>");
-
-      subtotal += odontogramaSubtotal();
-
-      const porc = parseInt(descuentoSel.value,10) || 0;
-      const vDesc = Math.round(subtotal * (porc/100));
-      const total = subtotal - vDesc;
-
-      document.getElementById('subtotal').textContent = subtotal.toLocaleString('es-CO');
-      document.getElementById('valor-descuento').textContent = vDesc.toLocaleString('es-CO');
-      document.getElementById('total').textContent = total.toLocaleString('es-CO');
-
-      document.getElementById('input-subtotal').value = subtotal;
-      document.getElementById('input-descuento').value = vDesc;
-      document.getElementById('input-total').value = total;
-    }
-
-    window.addEventListener('load', calcularTotal);
-    procedimiento.addEventListener('change', calcularTotal);
-    descuentoSel.addEventListener('change', calcularTotal);
-    adicionales.forEach(cb=> cb.addEventListener('change', calcularTotal));
-
-    /* ===== Firma ===== */
-    const canvas = document.getElementById('firma'); const ctx = canvas.getContext('2d'); let dibujando=false;
-    function getCoords(e){
-      if(e.touches && e.touches.length){ const r=canvas.getBoundingClientRect(); return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top}; }
-      return {x:e.offsetX, y:e.offsetY};
-    }
-    canvas.addEventListener('mousedown', e=>{ dibujando=true; const {x,y}=getCoords(e); ctx.beginPath(); ctx.moveTo(x,y); });
-    canvas.addEventListener('mousemove', e=>{ if(!dibujando) return; const {x,y}=getCoords(e); ctx.lineTo(x,y); ctx.stroke(); });
-    ['mouseup','mouseleave'].forEach(ev=> canvas.addEventListener(ev, ()=> dibujando=false ));
-    canvas.addEventListener('touchstart', e=>{ e.preventDefault(); dibujando=true; const {x,y}=getCoords(e); ctx.beginPath(); ctx.moveTo(x,y); });
-    canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!dibujando) return; const {x,y}=getCoords(e); ctx.lineTo(x,y); ctx.stroke(); });
-    canvas.addEventListener('touchend', ()=> dibujando=false );
-    function limpiarFirma(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
-    window.limpiarFirma = limpiarFirma;
-    document.getElementById('cotizacion-form').addEventListener('submit', ()=> {
-      document.getElementById('firmaInput').value = canvas.toDataURL();
-    });
-
-    /* ====== CARGA POR CÉDULA (n8n) ====== */
-    const cedulaInput = document.getElementById('cedula'); const hint = document.getElementById('cedula-hint');
-    function setHintHTML(html, color="#666"){ hint.innerHTML = html||""; hint.style.color = color; }
-    function escapeHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
-    function parseNicePair(str){
-      if(!str) return null;
-      const m = String(str).match(/^\s*(.*?)\s*-\s*\$\s*([\d\., ]+)\s*$/);
-      if(!m) return { name: String(str).trim(), price: null };
-      const name = m[1].trim();
-      const price = parseInt(m[2].replace(/[^\d]/g,''), 10) || 0;
-      return { name, price };
-    }
-    function markAdicional(nombre, precio){
-      let raw = null;
-      if(nombre && Number.isFinite(precio) && precio>0) raw = `${nombre}|${precio}`;
-      if(raw){
-        const m1 = Array.from(adicionales).find(cb => cb.value === raw);
-        if(m1){ m1.checked = true; return true; }
+    function actualizarEstado(campo, activo) {
+      const estado = campo === 'hc' ? estadoHC : estadoPT;
+      if (activo) {
+        estado.textContent = 'Dictado activo';
+        estado.classList.remove('inactivo');
+        estado.classList.add('activo');
+      } else {
+        estado.textContent = 'Dictado inactivo';
+        estado.classList.remove('activo');
+        estado.classList.add('inactivo');
       }
-      const m2 = Array.from(adicionales).find(cb => cb.value.split('|')[0].trim().toLowerCase() === String(nombre||'').trim().toLowerCase());
-      if(m2){ m2.checked = true; return true; }
-      return false;
     }
-    function selectProcedimiento(nombre, precio){
-      if(!nombre) return false;
-      const raw = (Number.isFinite(precio) && precio>0) ? `${nombre}|${precio}` : null;
-      if(raw){
-        const o1 = Array.from(procedimiento.options).find(o => o.value === raw);
-        if(o1){ procedimiento.value = o1.value; return true; }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      console.log("Escuchado:", transcript);
+
+      if (transcript.includes("dictado historia clínica")) {
+        modo = 'hc';
+        actualizarEstado('hc', true);
+        actualizarEstado('pt', false);
+        beep();
+      } else if (transcript.includes("terminar historia clínica")) {
+        modo = null;
+        actualizarEstado('hc', false);
+        beep();
+      } else if (transcript.includes("dictado plan de tratamiento")) {
+        modo = 'pt';
+        actualizarEstado('pt', true);
+        actualizarEstado('hc', false);
+        beep();
+      } else if (transcript.includes("terminar plan de tratamiento")) {
+        modo = null;
+        actualizarEstado('pt', false);
+        beep();
+      } else if (modo === 'hc') {
+        historiaClinica.value += transcript + '. ';
+      } else if (modo === 'pt') {
+        planTratamiento.value += transcript + '. ';
       }
-      const o2 = Array.from(procedimiento.options).find(o => o.value.split('|')[0].trim().toLowerCase() === nombre.trim().toLowerCase());
-      if(o2){ procedimiento.value = o2.value; return true; }
-      return false;
-    }
-    function loadFromWebhook(data){
-      if(!data || !data.encontrado){ setHintHTML("✔️ Paciente nuevo.", "#1e8449"); return; }
-      if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
-      if (data.correo)  document.getElementById('correo').value  = data.correo;
-      if (data.celular) document.getElementById('celular').value = data.celular;
-      if (typeof data.observaciones === "string") document.getElementById('observaciones').value = data.observaciones;
+    };
 
-      let pn=null, pp=null;
-      if (data.procedimientoRaw){ const [n,p] = String(data.procedimientoRaw).split('|'); pn=n; pp=parseInt(p,10)||null; }
-      else if(data.procedimiento){ const pr = parseNicePair(data.procedimiento); if(pr){ pn=pr.name; pp=pr.price; } }
-      if(pn) selectProcedimiento(pn, pp);
+    recognition.onerror = (event) => {
+      console.error("Error:", event.error);
+    };
 
-      adicionales.forEach(cb=> cb.checked=false);
-      if (Array.isArray(data.adicionalesRaw)){
-        data.adicionalesRaw.forEach(s=>{ const [n,p] = String(s).split('|'); markAdicional(n, parseInt(p,10)||null); });
-      } else if (typeof data.adicionales === 'string'){
-        data.adicionales.split(/\n|,/).map(s=>s.trim()).filter(Boolean).forEach(item=>{
-          const pr = parseNicePair(item); if(pr) markAdicional(pr.name, pr.price);
-        });
-      }
+    recognition.onend = () => {
+      recognition.start(); // reintenta automáticamente
+    };
 
-      if (typeof data.descuento === "number"){
-        const op = Array.from(descuentoSel.options).find(o => parseInt(o.value,10) === data.descuento);
-        if(op) descuentoSel.value = String(data.descuento);
-      }
-
-      const odoStr = data.odontogramaJSON || data.odontograma;
-      if (odoStr){
-        try{
-          const parsed = JSON.parse(odoStr);
-          Object.keys(selectedTeeth).forEach(k=> delete selectedTeeth[k]);
-          Object.assign(selectedTeeth, parsed);
-          refreshBadges();
-        }catch(e){ console.warn("odontograma inválido:", e); }
-      }
-
-      const fecha = data.fecha ? ` el ${escapeHtml(data.fecha)}` : "";
-      const nombre = data.nombre ? ` (${escapeHtml(data.nombre)})` : "";
-      setHintHTML(`⚠️ Paciente ya valorado${fecha}${nombre}.`, "#c0392b");
-
-      calcularTotal();
-    }
-    let lastQuery = "";
-    document.getElementById('cedula').addEventListener('blur', ()=>{
-      const ced = cedulaInput.value.trim();
-      if(!ced || ced===lastQuery) return; lastQuery=ced;
-      setHintHTML("Buscando historial del paciente...");
-      fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula="+encodeURIComponent(ced))
-        .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
-        .then(loadFromWebhook)
-        .catch(()=> setHintHTML("No fue posible verificar. Intenta de nuevo.", "#c0392b"));
+    startButton.addEventListener("click", () => {
+      recognition.start();
+      alert("🎧 Escuchando... Usa los comandos de voz para comenzar a dictar.");
     });
   </script>
 </body>
