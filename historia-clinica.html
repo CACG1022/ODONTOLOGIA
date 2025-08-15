@@ -2,33 +2,82 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Reconocimiento Odontología</title>
+  <title>Reconocimiento de Voz Odontología</title>
   <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+
     .estado {
       font-weight: bold;
-      padding: 4px 8px;
+      padding: 6px 12px;
       border-radius: 5px;
       margin-left: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
     }
+
     .activo {
       background-color: #4CAF50;
       color: white;
     }
+
     .inactivo {
       background-color: #f44336;
       color: white;
     }
+
     textarea {
       width: 100%;
       height: 120px;
       font-size: 16px;
       margin-bottom: 20px;
+      padding: 10px;
+    }
+
+    .instrucciones {
+      background-color: #f0f8ff;
+      border: 1px solid #ccc;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+
+    .instrucciones h3 {
+      margin-top: 0;
+    }
+
+    .botones {
+      margin-bottom: 20px;
+    }
+
+    .botones button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      font-size: 15px;
     }
   </style>
 </head>
 <body>
   <h2>Reconocimiento de Voz Odontología</h2>
-  <button id="startButton">🎤 Iniciar Reconocimiento</button>
+
+  <div class="instrucciones">
+    <h3>🗣️ Instrucciones de activación por voz:</h3>
+    <ul>
+      <li>✅ Di: <strong>“dictado historia clínica”</strong> para comenzar dictado en historia clínica</li>
+      <li>🚫 Di: <strong>“terminar historia clínica”</strong> para detenerlo</li>
+      <li>✅ Di: <strong>“dictado plan de tratamiento”</strong> para comenzar en plan de tratamiento</li>
+      <li>🚫 Di: <strong>“terminar plan de tratamiento”</strong> para detenerlo</li>
+      <li>🖐️ También puedes <strong>hacer clic en los botones de estado</strong> para activar/desactivar manualmente el dictado</li>
+    </ul>
+  </div>
+
+  <div class="botones">
+    <button id="startButton">🎤 Iniciar Reconocimiento</button>
+    <button id="stopButton">🛑 Detener Reconocimiento</button>
+  </div>
 
   <h3>Historia Clínica
     <span id="estadoHC" class="estado inactivo">Dictado inactivo</span>
@@ -42,14 +91,15 @@
 
   <script>
     const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
     const historiaClinica = document.getElementById('historiaClinica');
     const planTratamiento = document.getElementById('planTratamiento');
     const estadoHC = document.getElementById('estadoHC');
     const estadoPT = document.getElementById('estadoPT');
 
-    let modo = null; // puede ser 'hc', 'pt' o null
+    let modo = null;
+    let reconocimientoActivo = false;
 
-    // Beep generado con Web Audio API
     function beep() {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioCtx.createOscillator();
@@ -78,6 +128,25 @@
         estado.classList.add('inactivo');
       }
     }
+
+    function activarManual(campo) {
+      if (!reconocimientoActivo) return;
+
+      if (modo === campo) {
+        // Si ya estaba activo, lo desactiva
+        modo = null;
+        actualizarEstado(campo, false);
+      } else {
+        // Activa ese campo y desactiva el otro
+        modo = campo;
+        actualizarEstado('hc', campo === 'hc');
+        actualizarEstado('pt', campo === 'pt');
+        beep();
+      }
+    }
+
+    estadoHC.addEventListener('click', () => activarManual('hc'));
+    estadoPT.addEventListener('click', () => activarManual('pt'));
 
     const recognition = new webkitSpeechRecognition();
     recognition.lang = 'es-ES';
@@ -118,13 +187,23 @@
     };
 
     recognition.onend = () => {
-      recognition.start(); // reiniciar automáticamente
+      if (reconocimientoActivo) recognition.start();
     };
 
     startButton.addEventListener("click", () => {
+      reconocimientoActivo = true;
       recognition.start();
-      alert("🎧 Escuchando... Di 'dictado historia clínica' o 'dictado plan de tratamiento' para comenzar.");
+      alert("🎧 Escuchando... Usa voz o haz clic en los botones para activar el dictado.");
+    });
+
+    stopButton.addEventListener("click", () => {
+      reconocimientoActivo = false;
+      recognition.stop();
+      modo = null;
+      actualizarEstado('hc', false);
+      actualizarEstado('pt', false);
     });
   </script>
 </body>
 </html>
+
