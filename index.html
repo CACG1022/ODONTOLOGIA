@@ -45,6 +45,16 @@
     .instrucciones h3 {
       margin-top: 0;
     }
+
+    .botones {
+      margin-bottom: 20px;
+    }
+
+    .botones button {
+      margin-right: 10px;
+      padding: 10px 15px;
+      font-size: 15px;
+    }
   </style>
 </head>
 <body>
@@ -60,7 +70,10 @@
     </ul>
   </div>
 
-  <button id="startButton">🎤 Iniciar Reconocimiento</button>
+  <div class="botones">
+    <button id="startButton">🎤 Iniciar Reconocimiento</button>
+    <button id="stopButton">🛑 Detener Reconocimiento</button>
+  </div>
 
   <h3>Historia Clínica
     <span id="estadoHC" class="estado inactivo">Dictado inactivo</span>
@@ -74,12 +87,14 @@
 
   <script>
     const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
     const historiaClinica = document.getElementById('historiaClinica');
     const planTratamiento = document.getElementById('planTratamiento');
     const estadoHC = document.getElementById('estadoHC');
     const estadoPT = document.getElementById('estadoPT');
 
     let modo = null;
+    let reconocimientoActivo = false;
 
     function beep() {
       const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -149,16 +164,28 @@
     };
 
     recognition.onend = () => {
-      recognition.start(); // reintenta automáticamente
+      if (reconocimientoActivo) {
+        recognition.start(); // solo reinicia si sigue activo
+      }
     };
 
     startButton.addEventListener("click", () => {
+      reconocimientoActivo = true;
       recognition.start();
       alert("🎧 Escuchando... Usa los comandos de voz para comenzar a dictar.");
+    });
+
+    stopButton.addEventListener("click", () => {
+      reconocimientoActivo = false;
+      recognition.stop();
+      modo = null;
+      actualizarEstado('hc', false);
+      actualizarEstado('pt', false);
     });
   </script>
 </body>
 </html>
+
 
 
 
