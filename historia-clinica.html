@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Reconocimiento Odontología</title>
+  <style>
+    .estado {
+      font-weight: bold;
+      padding: 4px 8px;
+      border-radius: 5px;
+      margin-left: 10px;
+    }
+    .activo {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .inactivo {
+      background-color: #f44336;
+      color: white;
+    }
+    textarea {
+      width: 100%;
+      height: 120px;
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h2>Reconocimiento de Voz Odontología</h2>
+  <button id="startButton">🎤 Iniciar Reconocimiento</button>
+
+  <h3>Historia Clínica
+    <span id="estadoHC" class="estado inactivo">Dictado inactivo</span>
+  </h3>
+  <textarea id="historiaClinica" placeholder="Dictado aquí..."></textarea>
+
+  <h3>Plan de Tratamiento
+    <span id="estadoPT" class="estado inactivo">Dictado inactivo</span>
+  </h3>
+  <textarea id="planTratamiento" placeholder="Dictado aquí..."></textarea>
+
+  <script>
+    const startButton = document.getElementById('startButton');
+    const historiaClinica = document.getElementById('historiaClinica');
+    const planTratamiento = document.getElementById('planTratamiento');
+    const estadoHC = document.getElementById('estadoHC');
+    const estadoPT = document.getElementById('estadoPT');
+
+    let modo = null; // puede ser 'hc', 'pt' o null
+
+    // Beep generado con Web Audio API
+    function beep() {
+      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(800, audioCtx.currentTime);
+      gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      oscillator.start();
+      oscillator.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function actualizarEstado(campo, activo) {
+      const estado = campo === 'hc' ? estadoHC : estadoPT;
+      if (activo) {
+        estado.textContent = 'Dictado activo';
+        estado.classList.remove('inactivo');
+        estado.classList.add('activo');
+      } else {
+        estado.textContent = 'Dictado inactivo';
+        estado.classList.remove('activo');
+        estado.classList.add('inactivo');
+      }
+    }
+
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = 'es-ES';
+    recognition.continuous = true;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[event.results.length - 1][0].transcript.trim().toLowerCase();
+      console.log("Escuchado:", transcript);
+
+      if (transcript.includes("dictado historia clínica")) {
+        modo = 'hc';
+        actualizarEstado('hc', true);
+        actualizarEstado('pt', false);
+        beep();
+      } else if (transcript.includes("terminar historia clínica")) {
+        modo = null;
+        actualizarEstado('hc', false);
+        beep();
+      } else if (transcript.includes("dictado plan de tratamiento")) {
+        modo = 'pt';
+        actualizarEstado('pt', true);
+        actualizarEstado('hc', false);
+        beep();
+      } else if (transcript.includes("terminar plan de tratamiento")) {
+        modo = null;
+        actualizarEstado('pt', false);
+        beep();
+      } else if (modo === 'hc') {
+        historiaClinica.value += transcript + '. ';
+      } else if (modo === 'pt') {
+        planTratamiento.value += transcript + '. ';
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Error:", event.error);
+    };
+
+    recognition.onend = () => {
+      recognition.start(); // reiniciar automáticamente
+    };
+
+    startButton.addEventListener("click", () => {
+      recognition.start();
+      alert("🎧 Escuchando... Di 'dictado historia clínica' o 'dictado plan de tratamiento' para comenzar.");
+    });
+  </script>
+</body>
+</html>
