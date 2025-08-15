@@ -11,9 +11,12 @@
 
     .estado {
       font-weight: bold;
-      padding: 4px 8px;
+      padding: 6px 12px;
       border-radius: 5px;
       margin-left: 10px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      user-select: none;
     }
 
     .activo {
@@ -63,10 +66,11 @@
   <div class="instrucciones">
     <h3>🗣️ Instrucciones de activación por voz:</h3>
     <ul>
-      <li>✅ Para activar el dictado en <strong>Historia Clínica</strong>, di: <em><strong>“dictado historia clínica”</strong></em></li>
-      <li>🚫 Para detener el dictado en <strong>Historia Clínica</strong>, di: <em><strong>“terminar historia clínica”</strong></em></li>
-      <li>✅ Para activar el dictado en <strong>Plan de Tratamiento</strong>, di: <em><strong>“dictado plan de tratamiento”</strong></em></li>
-      <li>🚫 Para detener el dictado en <strong>Plan de Tratamiento</strong>, di: <em><strong>“terminar plan de tratamiento”</strong></em></li>
+      <li>✅ Di: <strong>“dictado historia clínica”</strong> para comenzar dictado en historia clínica</li>
+      <li>🚫 Di: <strong>“terminar historia clínica”</strong> para detenerlo</li>
+      <li>✅ Di: <strong>“dictado plan de tratamiento”</strong> para comenzar en plan de tratamiento</li>
+      <li>🚫 Di: <strong>“terminar plan de tratamiento”</strong> para detenerlo</li>
+      <li>🖐️ También puedes <strong>hacer clic en los botones de estado</strong> para activar/desactivar manualmente el dictado</li>
     </ul>
   </div>
 
@@ -125,6 +129,25 @@
       }
     }
 
+    function activarManual(campo) {
+      if (!reconocimientoActivo) return;
+
+      if (modo === campo) {
+        // Si ya estaba activo, lo desactiva
+        modo = null;
+        actualizarEstado(campo, false);
+      } else {
+        // Activa ese campo y desactiva el otro
+        modo = campo;
+        actualizarEstado('hc', campo === 'hc');
+        actualizarEstado('pt', campo === 'pt');
+        beep();
+      }
+    }
+
+    estadoHC.addEventListener('click', () => activarManual('hc'));
+    estadoPT.addEventListener('click', () => activarManual('pt'));
+
     const recognition = new webkitSpeechRecognition();
     recognition.lang = 'es-ES';
     recognition.continuous = true;
@@ -164,15 +187,13 @@
     };
 
     recognition.onend = () => {
-      if (reconocimientoActivo) {
-        recognition.start(); // solo reinicia si sigue activo
-      }
+      if (reconocimientoActivo) recognition.start();
     };
 
     startButton.addEventListener("click", () => {
       reconocimientoActivo = true;
       recognition.start();
-      alert("🎧 Escuchando... Usa los comandos de voz para comenzar a dictar.");
+      alert("🎧 Escuchando... Usa voz o haz clic en los botones para activar el dictado.");
     });
 
     stopButton.addEventListener("click", () => {
@@ -185,7 +206,5 @@
   </script>
 </body>
 </html>
-
-
 
 
