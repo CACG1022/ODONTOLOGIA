@@ -113,6 +113,7 @@
 
     <label for="procedimiento">Procedimiento principal:</label>
     <select id="procedimiento" name="procedimiento_raw">
+      <option value="No aplica|0">No aplica</option>
       <option value="Profilaxis (Limpieza)|70000">Profilaxis (Limpieza) - $70,000</option>
       <option value="Resina Dental|150000">Resina Dental - $150,000</option>
       <option value="Blanqueamiento Dental|300000">Blanqueamiento Dental - $300,000</option>
@@ -362,8 +363,13 @@
       let subtotal = 0;
 
       const [nProc, pProc] = procedimiento.value.split("|");
-      subtotal += parseMoney(pProc);
-      document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
+if (procedimiento.value !== "No aplica|0") {
+  subtotal += parseMoney(pProc);
+  document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
+} else {
+  document.querySelector('input[name="procedimiento"]').value = "No aplica";
+}
+
 
       const adics = [];
       adicionales.forEach(cb=>{
