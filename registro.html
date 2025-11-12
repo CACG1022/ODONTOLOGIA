@@ -57,7 +57,7 @@
 </head>
 <body>
   <div class="registro-box">
-    <h2>Registrarse</h2>
+    <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
     <input type="email" id="email" placeholder="Correo electrónico" />
     <input type="password" id="password" placeholder="Contraseña" />
     <button onclick="registrarse()">Crear cuenta</button>
@@ -68,9 +68,9 @@
   </div>
 
   <script>
-    const supabase = supabase.createClient(
+    const supabase = window.supabase.createClient(
       'https://dmcfrmmpqlkrqbpjhrfyo.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE' // ⚠️ Reemplázala con tu anon key
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
     );
 
     async function registrarse() {
@@ -79,22 +79,32 @@
       const mensaje = document.getElementById("mensaje");
 
       mensaje.textContent = "";
+      mensaje.className = "error";
 
       if (!email || !password) {
         mensaje.textContent = "Debes ingresar todos los campos.";
         return;
       }
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email: email,
+          password: password
+        });
 
-      if (error) {
-        mensaje.className = "error";
-        mensaje.textContent = "Error al registrarse: " + error.message;
-      } else {
-        mensaje.className = "success";
-        mensaje.textContent = "Registro exitoso. Verifica tu correo (si está habilitado) o inicia sesión.";
+        if (error) {
+          console.error(error);
+          mensaje.textContent = "Error: " + error.message;
+        } else {
+          mensaje.className = "success";
+          mensaje.textContent = "✅ Registro exitoso. Verifica tu correo o inicia sesión.";
+        }
+      } catch (e) {
+        console.error(e);
+        mensaje.textContent = "Error de red. Intenta nuevamente.";
       }
     }
   </script>
 </body>
 </html>
+
