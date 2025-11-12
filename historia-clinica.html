@@ -16,7 +16,7 @@
   supabase.auth.getSession().then(({ data: { session } }) => {
     if (!session) {
       // ⛔ Si no hay sesión, redirige al login
-      window.location.href = "login.html";  // Ajusta si tu login tiene otro nombre
+      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";  // Ajusta si tu login tiene otro nombre
     } else {
       console.log("✅ Usuario autenticado:", session.user.email);
     }
