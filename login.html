@@ -11,7 +11,7 @@
 
   <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
     <h2 class="text-center text-blue-700 font-bold text-sm">Software Dental</h2>
-    <h1 class="text-center text-gray-800 font-semibold text-xl mb-6">Clínica Dra. Leidi Silva 1</h1>
+    <h1 class="text-center text-gray-800 font-semibold text-xl mb-6">Clínica Dra. Leidi Silva</h1>
     
     <form id="login-form" class="space-y-4">
       <input type="email" id="email" placeholder="Correo electrónico" required
@@ -26,6 +26,8 @@
       </button>
     </form>
 
+    <p class="mt-4 text-sm text-center">¿No tienes cuenta? <a href="#" id="register" class="text-blue-500 underline">Regístrate</a></p>
+
     <div id="alert" class="mt-4 text-center text-red-600 font-medium hidden"></div>
   </div>
 
@@ -37,10 +39,10 @@
 
     const loginForm = document.getElementById("login-form");
     const alertBox = document.getElementById("alert");
+    const registerLink = document.getElementById("register");
 
     loginForm.addEventListener("submit", async (e) => {
       e.preventDefault();
-
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value;
 
@@ -58,11 +60,37 @@
         if (error) {
           showAlert("Credenciales incorrectas o usuario no existe.");
         } else {
-          // Ingreso exitoso
-          window.location.href = "historia-clinica.html"; // ajusta si tu archivo se llama distinto
+          window.location.href = "historia-clinica.html";
         }
       } catch (err) {
         showAlert("Error al intentar iniciar sesión.");
+        console.error(err);
+      }
+    });
+
+    registerLink.addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        showAlert("Ingresa email y contraseña para registrarte.");
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password
+        });
+
+        if (error) {
+          showAlert("Error al registrarte: " + error.message);
+        } else {
+          showAlert("Usuario registrado, revisa tu correo.");
+        }
+      } catch (err) {
+        showAlert("Error al registrar usuario.");
         console.error(err);
       }
     });
@@ -74,6 +102,7 @@
   </script>
 </body>
 </html>
+
 
 
 
