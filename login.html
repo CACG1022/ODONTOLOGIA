@@ -1,107 +1,78 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login - Clínica Dra. Leidi Silva</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #eef3ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-    .form-container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 300px;
-    }
-    h2 {
-      margin-bottom: 5px;
-    }
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-    }
-    button {
-      width: 100%;
-      padding: 10px;
-      background-color: #2c52ff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-    }
-    button:hover {
-      background-color: #1a38cc;
-    }
-    .mensaje-error {
-      margin-top: 10px;
-      color: red;
-    }
-    a {
-      color: #4b0082;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Login - Clínica Dental</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .login-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            width: 300px;
+            text-align: center;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #0046b8;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        a {
+            display: block;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+    </style>
 </head>
 <body>
-  <div class="form-container">
-    <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
-    <input type="email" id="email" placeholder="Correo electrónico" required />
-    <input type="password" id="password" placeholder="Contraseña" required />
-    <button id="boton-login">Iniciar sesión</button>
-    <p>¿No tienes cuenta? <a href="registro.html">Crear una cuenta</a></p>
-    <p id="error" class="mensaje-error"></p>
-  </div>
+    <div class="login-container">
+        <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
+        <input type="email" id="correo" placeholder="Correo electrónico" required>
+        <input type="password" id="clave" placeholder="Contraseña" required>
+        <button onclick="iniciarSesion()">Iniciar sesión</button>
+        <a href="registro.html">¿No tienes cuenta? Crear una cuenta</a>
+    </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    <script>
+        function iniciarSesion() {
+            const correo = document.getElementById("correo").value;
+            const clave = document.getElementById("clave").value;
 
-    const supabaseUrl = 'https://dmcfrmpqlkrqbpjhrfyo.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE';
+            const usuarios = JSON.parse(localStorage.getItem("usuarios") || "[]");
+            const usuario = usuarios.find(user => user.correo === correo && user.clave === clave);
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    document.getElementById("boton-login").addEventListener("click", async () => {
-      const email = document.getElementById("email").value.trim();
-      const password = document.getElementById("password").value.trim();
-      const errorDiv = document.getElementById("error");
-      errorDiv.textContent = "";
-
-      if (!email || !password) {
-        errorDiv.textContent = "Por favor completa todos los campos.";
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-        console.log("➡️ Login:", { data, error });
-
-        if (error) {
-          errorDiv.textContent = "Error: " + error.message;
-        } else {
-          alert("Inicio de sesión exitoso ✅");
-          // Redirigir a otra página si lo deseas
-          // window.location.href = "panel.html";
+            if (usuario) {
+                alert("Inicio de sesión exitoso ✅");
+                window.location.href = "historia-clinica.html";  // ← redirección correcta
+            } else {
+                alert("Correo o contraseña incorrectos ❌");
+            }
         }
-      } catch (err) {
-        console.error("❌ Error inesperado:", err);
-        errorDiv.textContent = "Error inesperado al conectar con Supabase.";
-      }
-    });
-  </script>
+    </script>
 </body>
 </html>
+
 
 
 
