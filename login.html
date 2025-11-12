@@ -4,15 +4,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login | Clínica Dra. Leidi Silva</title>
+
+  <!-- Supabase JS v2 -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tailwind CSS -->
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gradient-to-b from-gray-100 to-blue-100 flex items-center justify-center min-h-screen">
 
   <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <!-- Encabezado -->
     <h2 class="text-center text-blue-700 font-bold text-sm">Software Dental</h2>
     <h1 class="text-center text-gray-800 font-semibold text-xl mb-6">Clínica Dra. Leidi Silva</h1>
     
+    <!-- Formulario de Login -->
     <form id="login-form" class="space-y-4">
       <input type="email" id="email" placeholder="Correo electrónico" required
         class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -26,15 +32,16 @@
       </button>
     </form>
 
+    <!-- Alerta de error -->
     <div id="alert" class="mt-4 text-center text-red-600 font-medium hidden"></div>
   </div>
 
+  <!-- Script de autenticación -->
   <script>
-    // Reemplaza con tu URL y clave de Supabase
     const SUPABASE_URL = 'https://dmcfrmplkrqbpjhrfyo.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'; // Tu clave pública de proyecto (anon key)
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE';
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     const loginForm = document.getElementById("login-form");
     const alertBox = document.getElementById("alert");
@@ -50,15 +57,15 @@
         return;
       }
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await client.auth.signInWithPassword({
         email: email,
         password: password
       });
 
       if (error) {
-        showAlert("Credenciales incorrectas. Intenta nuevamente.");
+        showAlert("Credenciales incorrectas o usuario no existe.");
       } else {
-        // Redirige a tu página principal tras login exitoso
+        // Login exitoso - redirige a home
         window.location.href = "home.html";
       }
     });
@@ -70,4 +77,5 @@
   </script>
 </body>
 </html>
+
 
