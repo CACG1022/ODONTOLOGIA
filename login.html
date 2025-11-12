@@ -4,97 +4,68 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login | Clínica Dra. Leidi Silva</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to bottom right, #f8f9fa, #e3f2fd);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-      margin: 0;
-    }
-    .login-box {
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-      text-align: center;
-    }
-    h2 {
-      margin-bottom: 30px;
-      color: #2c3e50;
-    }
-    input {
-      width: 100%;
-      padding: 12px;
-      margin-bottom: 15px;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-      font-size: 16px;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      background-color: #007bff;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #0056b3;
-    }
-    .error {
-      color: red;
-      margin-top: 10px;
-      font-size: 14px;
-    }
-    .title {
-      font-size: 18px;
-      font-weight: bold;
-      color: #007bff;
-      margin-bottom: 10px;
-    }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-  <div class="login-box">
-    <div class="title">Software Dental</div>
-    <h2>Clínica Dra. Leidi Silva</h2>
-    <input type="email" id="email" placeholder="Correo electrónico" required />
-    <input type="password" id="password" placeholder="Contraseña" required />
-    <button onclick="login()">Iniciar Sesión</button>
-    <div id="error-msg" class="error"></div>
+<body class="bg-gradient-to-b from-gray-100 to-blue-100 flex items-center justify-center min-h-screen">
+
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <h2 class="text-center text-blue-700 font-bold text-sm">Software Dental</h2>
+    <h1 class="text-center text-gray-800 font-semibold text-xl mb-6">Clínica Dra. Leidi Silva</h1>
+    
+    <form id="login-form" class="space-y-4">
+      <input type="email" id="email" placeholder="Correo electrónico" required
+        class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+      
+      <input type="password" id="password" placeholder="Contraseña" required
+        class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+      
+      <button type="submit"
+        class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition duration-200">
+        Iniciar Sesión
+      </button>
+    </form>
+
+    <div id="alert" class="mt-4 text-center text-red-600 font-medium hidden"></div>
   </div>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    const SUPABASE_URL = 'https://dmcfrmpqlkrqbpjhrfyo.supabase.co';
-    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBrbGtycWJwamhyZnlvIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTcwMDk3NzAyOSwiZXhwIjoxNzMyNTEzMDI5fQ.SU69CzRgkEVWy9z3ODeR8k2Ezhv_zJ0K59iH0Z-DOuQ';
+    // Reemplaza con tu URL y clave de Supabase
+    const SUPABASE_URL = 'https://dmcfrmplkrqbpjhrfyo.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOi...'; // Tu clave pública de proyecto (anon key)
 
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    async function login() {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      const errorMsg = document.getElementById('error-msg');
+    const loginForm = document.getElementById("login-form");
+    const alertBox = document.getElementById("alert");
+
+    loginForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      if (!email || !password) {
+        showAlert("Por favor completa todos los campos.");
+        return;
+      }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
+        email: email,
+        password: password
       });
 
       if (error) {
-        errorMsg.textContent = '❌ ' + error.message;
+        showAlert("Credenciales incorrectas. Intenta nuevamente.");
       } else {
-        errorMsg.textContent = '';
-        window.location.href = "historia-clinica.html";
+        // Redirige a tu página principal tras login exitoso
+        window.location.href = "home.html";
       }
+    });
+
+    function showAlert(message) {
+      alertBox.innerText = message;
+      alertBox.classList.remove("hidden");
     }
   </script>
 </body>
