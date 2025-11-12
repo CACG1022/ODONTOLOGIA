@@ -1,77 +1,42 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Login - Clínica Dental</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-container {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            width: 300px;
-            text-align: center;
-        }
-        h2 {
-            margin-bottom: 20px;
-        }
-        input[type="email"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-        }
-        button {
-            width: 100%;
-            padding: 10px;
-            background-color: #0046b8;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-        a {
-            display: block;
-            margin-top: 15px;
-            font-size: 0.9em;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login</title>
 </head>
 <body>
-    <div class="login-container">
-        <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
-        <input type="email" id="correo" placeholder="Correo electrónico" required>
-        <input type="password" id="clave" placeholder="Contraseña" required>
-        <button onclick="iniciarSesion()">Iniciar sesión</button>
-        <a href="registro.html">¿No tienes cuenta? Crear una cuenta</a>
-    </div>
+  <h2>Iniciar sesión</h2>
+  <form id="loginForm">
+    <input type="email" id="correo" placeholder="Correo electrónico" required /><br/>
+    <input type="password" id="contrasena" placeholder="Contraseña" required /><br/>
+    <button type="submit">Iniciar sesión</button>
+  </form>
+  <p>¿No tienes cuenta? <a href="registro.html">Crear una cuenta</a></p>
 
-    <script>
-        function iniciarSesion() {
-            const correo = document.getElementById("correo").value;
-            const clave = document.getElementById("clave").value;
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+      const correo = document.getElementById('correo').value.trim().toLowerCase();
+      const contrasena = document.getElementById('contrasena').value;
 
-            const usuarios = JSON.parse(localStorage.getItem("usuarios") || "[]");
-            const usuario = usuarios.find(user => user.correo === correo && user.clave === clave);
+      const usuarios = JSON.parse(localStorage.getItem('usuarios')) || [];
+      const usuario = usuarios.find(u => u.correo === correo && u.contrasena === contrasena);
 
-            if (usuario) {
-                alert("Inicio de sesión exitoso ✅");
-                window.location.href = "historia-clinica.html";  // ← redirección correcta
-            } else {
-                alert("Correo o contraseña incorrectos ❌");
-            }
-        }
-    </script>
+      if (usuario) {
+        alert('Inicio de sesión exitoso ✅');
+        // Guardar al usuario logueado
+        localStorage.setItem('usuarioLogueado', JSON.stringify(usuario));
+        // Redirigir a historia clínica
+        window.location.href = 'historia_clinica.html';
+      } else {
+        alert('Correo o contraseña incorrectos ❌');
+      }
+    });
+  </script>
 </body>
 </html>
+
 
 
 
