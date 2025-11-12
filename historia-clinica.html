@@ -1,6 +1,29 @@
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  const supabase = createClient(
+    'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
+  );
+
+  // 🔐 Verificar si hay sesión activa al cargar la página
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
+      // ⛔ Si no hay sesión, redirige al login
+      window.location.href = "index.html";  // Ajusta si tu login tiene otro nombre
+    } else {
+      console.log("✅ Usuario autenticado:", session.user.email);
+    }
+  });
+</script>
+
+  
   <meta charset="UTF-8" />
   <title>Historia Clínica Odontológica + Dictado</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
