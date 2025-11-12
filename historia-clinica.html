@@ -12,16 +12,29 @@
     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
   );
 
-  // 🔐 Verificar si hay sesión activa al cargar la página
-  supabase.auth.getSession().then(({ data: { session } }) => {
+  // 🔒 Verificar sesión activa
+  async function verificarSesion() {
+    const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      // ⛔ Si no hay sesión, redirige al login
-      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";  // Ajusta si tu login tiene otro nombre
+      console.warn("🚫 No hay sesión activa, redirigiendo al login...");
+      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     } else {
       console.log("✅ Usuario autenticado:", session.user.email);
     }
+  }
+
+  // 🧠 Ejecutar al cargar la página
+  verificarSesion();
+
+  // 🔄 Escuchar cambios en la sesión (por si se cierra o expira)
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
+      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    }
   });
 </script>
+
 
   
   <meta charset="UTF-8" />
