@@ -55,10 +55,10 @@
 </head>
 <body>
   <div class="form-container">
-    <h2>Software Dental<br>Clínica Dra. Leidi Silva22</h2>
+    <h2>Software Dental<br>Clínica Dra. Leidi Silva3</h2>
     <input type="email" id="email" placeholder="Correo electrónico" required />
     <input type="password" id="password" placeholder="Contraseña" required />
-    <button onclick="registrarUsuario()">Crear cuenta</button>
+    <button id="boton-registrar">Crear cuenta</button>
     <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
     <p id="error" class="mensaje-error"></p>
   </div>
@@ -71,7 +71,7 @@
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    async function registrarUsuario() {
+    document.getElementById("boton-registrar").addEventListener("click", async () => {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
       const errorDiv = document.getElementById("error");
@@ -85,6 +85,9 @@
       try {
         const { data, error } = await supabase.auth.signUp({ email, password });
 
+        console.log("📤 Datos enviados:", { email, password });
+        console.log("📥 Respuesta:", { data, error });
+
         if (error) {
           errorDiv.textContent = "Error: " + error.message;
         } else {
@@ -92,11 +95,13 @@
           window.location.href = "login.html";
         }
       } catch (err) {
-        errorDiv.textContent = "Error: " + (err.message || "No se pudo conectar al servidor.");
+        console.error("❌ Error inesperado:", err);
+        errorDiv.textContent = "Error inesperado al conectar con Supabase.";
       }
-    }
+    });
   </script>
 </body>
 </html>
+
 
 
