@@ -963,20 +963,20 @@
   // Crear registro si no existe
   if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-  // ⭐ SI LA PREEXISTENCIA ES "Sano" → aplicar a todas las caras del diente
-  if (nombre === "Sano") {
+  // ⭐ SI ES SANO O AUSENTE → aplicar a todas las caras
+  if (nombre === "Sano" || nombre === "Ausente") {
 
-    // Colores a todas las caras del diente
+    // Colorear todas las caras del diente
     elemento.parentElement.querySelectorAll(".cara, .centro")
-      .forEach(c => c.style.background = preexistencias["Sano"]);
+      .forEach(c => c.style.background = preexistencias[nombre]);
 
-    // Registrar en reporte todas las caras
+    // Registrar todas las caras en el reporte
     ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
-      reporte[dienteNumero][c] = "Sano";
+      reporte[dienteNumero][c] = nombre;
     });
 
   } else {
-    // Caso normal → solo una cara
+    // Caso normal → solo la cara seleccionada
     elemento.style.background = color;
     reporte[dienteNumero][cara] = nombre;
   }
