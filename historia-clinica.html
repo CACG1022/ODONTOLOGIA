@@ -957,16 +957,33 @@
         `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
 
       item.onclick = () => {
-        elemento.style.background = color;
+  const dienteNumero = elemento.parentElement.dataset.numero;
+  const cara = elemento.dataset.region;
 
-        const dienteNumero = elemento.parentElement.dataset.numero;
-        const cara = elemento.dataset.region;
+  // Crear registro si no existe
+  if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
-        reporte[dienteNumero][cara] = nombre;
+  // ⭐ SI LA PREEXISTENCIA ES "Sano" → aplicar a todas las caras del diente
+  if (nombre === "Sano") {
 
-        menu.remove();
-      };
+    // Colores a todas las caras del diente
+    elemento.parentElement.querySelectorAll(".cara, .centro")
+      .forEach(c => c.style.background = preexistencias["Sano"]);
+
+    // Registrar en reporte todas las caras
+    ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
+      reporte[dienteNumero][c] = "Sano";
+    });
+
+  } else {
+    // Caso normal → solo una cara
+    elemento.style.background = color;
+    reporte[dienteNumero][cara] = nombre;
+  }
+
+  menu.remove();
+};
+
 
       menu.appendChild(item);
     });
