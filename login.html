@@ -91,6 +91,8 @@
           errorDiv.textContent = "Error: " + error.message;
         } else {
           alert("Inicio de sesión exitoso ✅");
+          localStorage.setItem("usuario_logueado", email);
+
           // ✅ Redirigir a la página de historia clínica:
           window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html";
         }
