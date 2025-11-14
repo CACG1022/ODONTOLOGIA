@@ -37,9 +37,13 @@
 
 
   
+  <!DOCTYPE html>
+<html lang="es">
+<head>
   <meta charset="UTF-8" />
-  <title>Historia Clínica Odontológica + Dictado</title>
+  <title>Historia Clínica Odontológica + Odontograma</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <style>
     :root{
       --ink:#19324d;
@@ -54,22 +58,22 @@
       --input:#cbd5e1;
     }
 
-    /* ===== Base ===== */
     *{box-sizing:border-box}
     body{
       margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg);
     }
     .container{ max-width:1100px; margin:0 auto; }
     h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
-    h2{ font-size:18px; margin:0 0 14px; letter-spacing:.3px; color:var(--brand); }
+    h2{ font-size:18px; margin:0 0 14px; color:var(--brand); }
+
     .card{
       background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
       padding:22px; box-shadow:var(--shadow); margin-bottom:22px;
     }
-    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); text-transform:uppercase; letter-spacing:.6px; }
+    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
 
-    /* ===== Form ===== */
     form#historia-form{ margin-bottom:28px; }
+
     .grid{ display:grid; gap:var(--gap); }
     .g-2{ grid-template-columns:1fr 1fr; }
     .g-3{ grid-template-columns:repeat(3,1fr); }
@@ -78,41 +82,49 @@
 
     .ctrl{ display:flex; flex-direction:column; gap:8px; }
     .ctrl label{ font-size:13px; color:var(--muted); }
+
     input[type="text"],input[type="email"],input[type="tel"],
     input[type="number"],input[type="date"], textarea{
-      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px 12px;
-      font-size:15px; background:#fff; outline:none;
+      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
+      font-size:15px; background:#fff;
     }
+
     textarea{ min-height:120px; resize:vertical; }
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .chip{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border:1px solid var(--line); border-radius:999px; background:#fff; }
-    .hint{ font-size:12px; color:var(--muted); }
+    .chip{
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border:1px solid var(--line); border-radius:999px; background:#fff;
+    }
 
-    /* Checkbox listado multicolumna */
     .checks{
       display:grid; gap:10px 18px;
       grid-template-columns:repeat(2,minmax(220px,1fr));
-      padding:10px 0 0;
+      padding-top:10px;
     }
-    .checks .check{ display:flex; align-items:center; gap:8px; padding:6px 10px; border:1px dashed var(--line); border-radius:10px; background:#fafcff; }
+    .check{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 10px; border:1px dashed var(--line); border-radius:10px; background:#fafcff;
+    }
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
-    /* ===== Dictado (tu módulo) ===== */
     .instrucciones{
-      background:#eef6ff; border:1px solid #dbeafe; padding:16px; border-radius:12px; margin-bottom:16px;
+      background:#eef6ff; border:1px solid #dbeafe; padding:16px;
+      border-radius:12px; margin-bottom:16px;
     }
+
     .botones{ display:flex; gap:10px; margin-bottom:10px; }
     .botones button{
-      padding:10px 16px; border-radius:10px; border:1px solid var(--line); background:#fff; cursor:pointer;
+      padding:10px 16px; border-radius:10px; border:1px solid var(--line);
+      background:#fff; cursor:pointer;
     }
+
     .estado{
-      font-weight:700; padding:6px 12px; border-radius:999px; margin-left:10px; cursor:pointer; user-select:none;
+      font-weight:700; padding:6px 12px; border-radius:999px;
       border:1px solid var(--line);
     }
     .activo{ background:#16a34a; color:#fff; border-color:#16a34a; }
     .inactivo{ background:#ef4444; color:#fff; border-color:#ef4444; }
 
-    /* ===== Responsive ===== */
     @media (max-width:980px){
       .g-4{ grid-template-columns:1fr 1fr; }
       .g-3{ grid-template-columns:1fr 1fr; }
@@ -121,461 +133,964 @@
       .g-2,.g-3,.g-4{ grid-template-columns:1fr; }
       .checks{ grid-template-columns:1fr; }
     }
+
+    /* =====================================================
+       ESTILOS DEL ODONTOGRAMA
+    ===================================================== */
+    #odontograma-wrapper * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #odontograma-wrapper {
+      background: #f9f9f9;
+      padding: 20px 0 40px;
+      margin-top: 30px;
+      border-radius: 14px;
+    }
+
+    #odontograma-wrapper h1 {
+      text-align: center;
+      color: #0D47A1;
+      margin-bottom: 10px;
+    }
+
+   .odontograma {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 40px;
+  position: relative;
+  z-index: 10;
+
+  /* 🔥 Ajustes para quitar scroll SIN que se bajen los dientes */
+  overflow-x: visible !important;
+  width: max-content;          /* El contenedor se expande todo lo que necesite */
+  margin-left: calc(50% - 620px);  /* 🔥 Desplaza solo un poco hacia la izquierda */
+}
+
+
+    .seccion { text-align: center; }
+    .etiqueta {
+      font-weight: bold;
+      color: #0D47A1;
+      margin-bottom: 10px;
+    }
+
+    .fila {
+      display: flex;
+      flex-wrap: nowrap;        /* 🔥 OBLIGA una sola fila */
+      justify-content: center;
+      gap: 16px;
+      min-width: max-content;   /* 🔥 Evita que se rompa en dos líneas */
+    }
+
+    .contenedor-diente {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .diente {
+      position: relative;
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      background: white;
+      overflow: hidden;
+    }
+
+    .cara {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+      z-index: 1;
+    }
+
+    .cara::before,
+    .cara::after {
+      content: "";
+      position: absolute;
+      width: 1px;
+      height: 100%;
+      background: gray;
+      left: 50%;
+      top: 0;
+      z-index: 0;
+    }
+
+    .cara::before { transform: rotate(45deg); }
+    .cara::after  { transform: rotate(-45deg); }
+
+    .superior { clip-path: polygon(50% 50%, 0% 0%, 100% 0%); }
+    .inferior { clip-path: polygon(50% 50%, 0% 100%, 100% 100%); }
+    .izquierda { clip-path: polygon(50% 50%, 0% 0%, 0% 100%); }
+    .derecha   { clip-path: polygon(50% 50%, 100% 0%, 100% 100%); }
+
+    .centro {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 1.5px solid gray;
+      background: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      cursor: pointer;
+    }
+
+    .numero {
+      font-size: 12px;
+      color: #555;
+      margin-top: 5px;
+    }
+
+    .popup {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      z-index: 100;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .popup div {
+      margin: 4px 0;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .color-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .leyenda {
+      max-width: 1000px;
+      margin: 60px auto 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .leyenda h2 {
+      text-align: center;
+      color: #0D47A1;
+      margin-bottom: 16px;
+    }
+
+    .leyenda-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px 16px;
+      font-size: 14px;
+    }
   </style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Historia Clínica Odontológica</h1>
+<div class="container">
+  <h1>Historia Clínica Odontológica</h1>
 
-    <!-- -------- DATOS BÁSICOS DEL PACIENTE -------- -->
-    <section class="card">
-      <div class="legend">Datos básicos del paciente</div>
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label for="paciente_nombre">Nombres y apellidos</label>
-          <input id="paciente_nombre" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_edad">Edad</label>
-          <input id="paciente_edad" type="number" min="0">
-        </div>
+  <!-- ==========================
+       DATOS BÁSICOS DEL PACIENTE
+  ============================== -->
+  <section class="card">
+    <div class="legend">Datos básicos del paciente</div>
+    <div class="grid g-2">
 
-        <div class="ctrl full">
-          <label>Identificación</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox" name="idtipo" value="CC"> C.C.</label>
-            <label class="chip"><input type="checkbox" name="idtipo" value="CE"> C.E.</label>
-            <label class="chip"><input type="checkbox" name="idtipo" value="TI"> T.I.</label>
-            <label class="chip"><input type="checkbox" name="idtipo" value="RC"> R.C.</label>
-            <label class="chip"><input type="checkbox" name="idtipo" value="Otro"> Otro</label>
-            <span class="hint">Complemente con No. y lugar</span>
-          </div>
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_numdoc">No.</label>
-          <input id="paciente_numdoc" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_lugardoc">de</label>
-          <input id="paciente_lugardoc" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_nacimiento">Fecha de nacimiento</label>
-          <input id="paciente_nacimiento" type="date">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_lugarnac">Lugar de nacimiento</label>
-          <input id="paciente_lugarnac" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_direccion">Dirección de residencia</label>
-          <input id="paciente_direccion" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="Ciudad de Residencia">Ciudad de Residencia</label>
-          <input id="Ciudad de Residencia" type="text">
-        </div>
-         <div class="ctrl">
-          <label for="EPS_Paciente">EPS</label>
-          <input id="EPS_Paciente" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_ocupacion">Ocupación</label>
-          <input id="paciente_ocupacion" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_tel">Teléfono</label>
-          <input id="paciente_tel" type="tel">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_ciudad">Ciudad</label>
-          <input id="paciente_ciudad" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_cel">Celular</label>
-          <input id="paciente_cel" type="tel">
-        </div>
-        <div class="ctrl">
-          <label for="paciente_email">Correo electrónico</label>
-          <input id="paciente_email" type="email">
-        </div>
-
-        <div class="ctrl">
-          <label for="paciente_estadocivil">Estado civil</label>
-          <input id="paciente_estadocivil" type="text">
-        </div>
-        <div class="ctrl">
-          <label>Hijos</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox" name="hijos" value="Si"> Sí</label>
-            <label class="chip"><input type="checkbox" name="hijos" value="No"> No</label>
-          </div>
-        </div>
+      <div class="ctrl">
+        <label for="paciente_nombre">Nombres y apellidos</label>
+        <input id="paciente_nombre" type="text">
       </div>
-    </section>
 
-    <!-- -------- DATOS DEL ACUDIENTE -------- -->
-    <section class="card">
-      <div class="legend">Datos del acudiente</div>
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label for="padre_nombre">Nombre del padre</label>
-          <input id="padre_nombre" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="madre_nombre">Nombre de la madre</label>
-          <input id="madre_nombre" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label for="padre_tel">Teléfono padre</label>
-          <input id="padre_tel" type="tel">
-        </div>
-        <div class="ctrl">
-          <label for="madre_tel">Teléfono madre</label>
-          <input id="madre_tel" type="tel">
-        </div>
-
-        <div class="ctrl">
-          <label for="padre_eps">E.P.S. padre</label>
-          <input id="padre_eps" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="madre_eps">E.P.S. madre</label>
-          <input id="madre_eps" type="text">
-        </div>
-
-        <div class="ctrl">
-          <label>Beneficiario / Cotizante (padre)</label>
-          <div class="grid g-2">
-            <input type="text" placeholder="Beneficiario">
-            <input type="text" placeholder="Cotizante">
-          </div>
-        </div>
-        <div class="ctrl">
-          <label>Beneficiario / Cotizante (madre)</label>
-          <div class="grid g-2">
-            <input type="text" placeholder="Beneficiario">
-            <input type="text" placeholder="Cotizante">
-          </div>
-        </div>
+      <div class="ctrl">
+        <label for="paciente_edad">Edad</label>
+        <input id="paciente_edad" type="number" min="0">
       </div>
-    </section>
 
-    <!-- -------- EMERGENCIA -------- -->
-    <section class="card">
-      <div class="legend">En caso de emergencia avisar a</div>
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label for="emergencia_nombre">Nombres y apellidos</label>
-          <input id="emergencia_nombre" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="emergencia_parentesco">Parentesco</label>
-          <input id="emergencia_parentesco" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="emergencia_tel">Teléfono</label>
-          <input id="emergencia_tel" type="tel">
-        </div>
-        <div class="ctrl">
-          <label for="emergencia_cel">Celular</label>
-          <input id="emergencia_cel" type="tel">
-        </div>
-      </div>
-    </section>
-
-    <!-- -------- HISTORIA MÉDICA -------- -->
-    <section class="card">
-      <div class="legend">Historia médica</div>
-
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label>¿Enfermedad grave actualmente o previa?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label for="grave_cual">¿Cuál?</label>
-          <input id="grave_cual" type="text">
+      <div class="ctrl full">
+        <label>Identificación</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="idtipo" value="CC"> C.C.</label>
+          <label class="chip"><input type="checkbox" name="idtipo" value="CE"> C.E.</label>
+          <label class="chip"><input type="checkbox" name="idtipo" value="TI"> T.I.</label>
+          <label class="chip"><input type="checkbox" name="idtipo" value="RC"> R.C.</label>
+          <label class="chip"><input type="checkbox" name="idtipo" value="Otro"> Otro</label>
+          <span class="hint">Complemente con No. y lugar</span>
         </div>
       </div>
 
       <div class="ctrl">
-        <label>Condiciones (marque las que apliquen)</label>
-        <div class="checks">
-          <label class="check"><input type="checkbox"> Alteraciones cardíacas</label>
-          <label class="check"><input type="checkbox"> Asma</label>
-          <label class="check"><input type="checkbox"> Cáncer</label>
-          <label class="check"><input type="checkbox"> Alteraciones vasculares o circulatorias</label>
-          <label class="check"><input type="checkbox"> Alteraciones psicológicas o psiquiátricas</label>
-          <label class="check"><input type="checkbox"> Enfisema</label>
-          <label class="check"><input type="checkbox"> Artritis</label>
-          <label class="check"><input type="checkbox"> Diabetes</label>
-          <label class="check"><input type="checkbox"> Hepatitis</label>
-          <label class="check"><input type="checkbox"> Desmayos o convulsiones</label>
-          <label class="check"><input type="checkbox"> Hospitalizaciones</label>
-          <label class="check"><input type="checkbox"> Hipotiroidismo</label>
-          <label class="check"><input type="checkbox"> Fiebre reumática</label>
-          <label class="check"><input type="checkbox"> Hipertiroidismos o hiperparatiroidismo</label>
-          <label class="check"><input type="checkbox"> Lupus</label>
-          <label class="check"><input type="checkbox"> Hipertensión</label>
-          <label class="check"><input type="checkbox"> Leucemia</label>
-          <label class="check"><input type="checkbox"> Sinusitis</label>
-          <label class="check"><input type="checkbox"> Irradiaciones</label>
-          <label class="check"><input type="checkbox"> Problemas renales</label>
-          <label class="check"><input type="checkbox"> VIH (Sida)</label>
-          <label class="check"><input type="checkbox"> Osteoporosis</label>
-          <label class="check"><input type="checkbox"> Trauma</label>
-          <div class="check" style="display:block">
-            <div class="grid g-2">
-              <label class="inline" style="gap:8px;"><input type="checkbox"> Otra</label>
-              <input id="otra_cual" type="text" placeholder="¿Cuál?">
-            </div>
-          </div>
-          <label class="check"><input type="checkbox"> Tuberculosis</label>
-          <label class="check"><input type="checkbox"> Alteraciones nutricionales</label>
-          <label class="check"><input type="checkbox"> Alteraciones del hígado</label>
-          <label class="check"><input type="checkbox"> Anemia</label>
+        <label for="paciente_numdoc">No.</label>
+        <input id="paciente_numdoc" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_lugardoc">de</label>
+        <input id="paciente_lugardoc" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_nacimiento">Fecha de nacimiento</label>
+        <input id="paciente_nacimiento" type="date">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_lugarnac">Lugar de nacimiento</label>
+        <input id="paciente_lugarnac" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_direccion">Dirección de residencia</label>
+        <input id="paciente_direccion" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="Ciudad de Residencia">Ciudad de Residencia</label>
+        <input id="Ciudad de Residencia" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="EPS_Paciente">EPS</label>
+        <input id="EPS_Paciente" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_ocupacion">Ocupación</label>
+        <input id="paciente_ocupacion" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_tel">Teléfono</label>
+        <input id="paciente_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_ciudad">Ciudad</label>
+        <input id="paciente_ciudad" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_cel">Celular</label>
+        <input id="paciente_cel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_email">Correo electrónico</label>
+        <input id="paciente_email" type="email">
+      </div>
+
+      <div class="ctrl">
+        <label for="paciente_estadocivil">Estado civil</label>
+        <input id="paciente_estadocivil" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>Hijos</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="hijos" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="hijos" value="No"> No</label>
         </div>
       </div>
 
-      <div class="rowline"></div>
+    </div>
+  </section>
 
-      <div class="grid g-3">
-        <div class="ctrl">
-          <label>¿Problemas de coagulación?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label>¿Toma anticoagulantes?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label>¿Toma medicamentos?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label for="medicamentos_cuales">¿Cuáles?</label>
-          <input id="medicamentos_cuales" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="med_dosis">Dosis y frecuencia</label>
-          <input id="med_dosis" type="text">
-        </div>
-        <div class="ctrl">
-          <label for="alergia_meds">Alergia a medicamentos</label>
-          <input id="alergia_meds" type="text">
-        </div>
+  <!-- ==========================
+       DATOS DEL ACUDIENTE
+  ============================== -->
+  <section class="card">
+    <div class="legend">Datos del acudiente</div>
+
+    <div class="grid g-2">
+
+      <div class="ctrl">
+        <label for="padre_nombre">Nombre del padre</label>
+        <input id="padre_nombre" type="text">
       </div>
 
-      <div class="rowline"></div>
+      <div class="ctrl">
+        <label for="madre_nombre">Nombre de la madre</label>
+        <input id="madre_nombre" type="text">
+      </div>
 
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label>¿Toma bebidas alcohólicas?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label>¿Fuma?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
+      <div class="ctrl">
+        <label for="padre_tel">Teléfono padre</label>
+        <input id="padre_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_tel">Teléfono madre</label>
+        <input id="madre_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="padre_eps">E.P.S. padre</label>
+        <input id="padre_eps" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_eps">E.P.S. madre</label>
+        <input id="madre_eps" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>Beneficiario / Cotizante (padre)</label>
+        <div class="grid g-2">
+          <input type="text" placeholder="Beneficiario">
+          <input type="text" placeholder="Cotizante">
         </div>
       </div>
 
       <div class="ctrl">
-        <label>¿Consume drogas psicoactivas (marihuana, cocaína, heroína, crac), estimulantes o sedantes?</label>
+        <label>Beneficiario / Cotizante (madre)</label>
+        <div class="grid g-2">
+          <input type="text" placeholder="Beneficiario">
+          <input type="text" placeholder="Cotizante">
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================
+       EMERGENCIA
+  ============================== -->
+  <section class="card">
+    <div class="legend">En caso de emergencia avisar a</div>
+
+    <div class="grid g-2">
+
+      <div class="ctrl">
+        <label for="emergencia_nombre">Nombres y apellidos</label>
+        <input id="emergencia_nombre" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_parentesco">Parentesco</label>
+        <input id="emergencia_parentesco" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_tel">Teléfono</label>
+        <input id="emergencia_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_cel">Celular</label>
+        <input id="emergencia_cel" type="tel">
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==========================
+       HISTORIA MÉDICA
+  ============================== -->
+  <section class="card">
+    <div class="legend">Historia médica</div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>¿Enfermedad grave actualmente o previa?</label>
         <div class="inline">
           <label class="chip"><input type="checkbox"> Sí</label>
           <label class="chip"><input type="checkbox"> No</label>
         </div>
       </div>
-    </section>
 
-    <!-- -------- SOLO MUJERES -------- -->
-    <section class="card">
-      <div class="legend">Sólo para mujeres</div>
-      <div class="grid g-3">
-        <div class="ctrl">
-          <label>¿Ha tenido embarazos y partos?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
+      <div class="ctrl">
+        <label for="grave_cual">¿Cuál?</label>
+        <input id="grave_cual" type="text">
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>Condiciones (marque las que apliquen)</label>
+
+      <div class="checks">
+        <label class="check"><input type="checkbox"> Alteraciones cardíacas</label>
+        <label class="check"><input type="checkbox"> Asma</label>
+        <label class="check"><input type="checkbox"> Cáncer</label>
+        <label class="check"><input type="checkbox"> Alteraciones vasculares o circulatorias</label>
+        <label class="check"><input type="checkbox"> Alteraciones psicológicas o psiquiátricas</label>
+        <label class="check"><input type="checkbox"> Enfisema</label>
+        <label class="check"><input type="checkbox"> Artritis</label>
+        <label class="check"><input type="checkbox"> Diabetes</label>
+        <label class="check"><input type="checkbox"> Hepatitis</label>
+        <label class="check"><input type="checkbox"> Desmayos o convulsiones</label>
+        <label class="check"><input type="checkbox"> Hospitalizaciones</label>
+        <label class="check"><input type="checkbox"> Hipotiroidismo</label>
+        <label class="check"><input type="checkbox"> Fiebre reumática</label>
+        <label class="check"><input type="checkbox"> Hipertiroidismos o hiperparatiroidismo</label>
+        <label class="check"><input type="checkbox"> Lupus</label>
+        <label class="check"><input type="checkbox"> Hipertensión</label>
+        <label class="check"><input type="checkbox"> Leucemia</label>
+        <label class="check"><input type="checkbox"> Sinusitis</label>
+        <label class="check"><input type="checkbox"> Irradiaciones</label>
+        <label class="check"><input type="checkbox"> Problemas renales</label>
+        <label class="check"><input type="checkbox"> VIH (Sida)</label>
+        <label class="check"><input type="checkbox"> Osteoporosis</label>
+        <label class="check"><input type="checkbox"> Trauma</label>
+
+        <div class="check" style="display:block">
+          <div class="grid g-2">
+            <label class="inline"><input type="checkbox"> Otra</label>
+            <input id="otra_cual" type="text" placeholder="¿Cuál?">
           </div>
         </div>
-        <div class="ctrl">
-          <label for="numero_hijos">No. de hijos</label>
-          <input id="numero_hijos" type="number" min="0">
-        </div>
-        <div class="ctrl">
-          <label>¿Actualmente está embarazada?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label for="tiempo_embarazo">Tiempo</label>
-          <input id="tiempo_embarazo" type="text">
-        </div>
-        <div class="ctrl">
-          <label>¿Toma anticonceptivos?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
-        </div>
-        <div class="ctrl">
-          <label>¿Histerectomía o menopausia?</label>
-          <div class="inline">
-            <label class="chip"><input type="checkbox"> Sí</label>
-            <label class="chip"><input type="checkbox"> No</label>
-          </div>
+
+        <label class="check"><input type="checkbox"> Tuberculosis</label>
+        <label class="check"><input type="checkbox"> Alteraciones nutricionales</label>
+        <label class="check"><input type="checkbox"> Alteraciones del hígado</label>
+        <label class="check"><input type="checkbox"> Anemia</label>
+      </div>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label>¿Problemas de coagulación?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
         </div>
       </div>
-    </section>
 
-    <!-- -------- HISTORIA ODONTOLÓGICA -------- -->
-    <section class="card">
-      <div class="legend">Historia odontológica</div>
-      <div class="grid g-2">
-        <div class="ctrl full">
-          <label for="motivo_consulta">Motivo de consulta odontológica</label>
-          <input id="motivo_consulta" type="text">
+      <div class="ctrl">
+        <label>¿Toma anticoagulantes?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
         </div>
-        <div class="ctrl">
-          <label>¿Presenta dolor en…?</label>
-          <div class="inline">
-            <label class="chip">boca <input type="checkbox"></label>
-            <label class="chip">cara <input type="checkbox"></label>
-            <label class="chip">cuello <input type="checkbox"></label>
-          </div>
-        </div>
-        <div class="ctrl full">
-          <label>Tratamientos recibidos</label>
-          <div class="checks">
-            <label class="check"><input type="checkbox"> Ortodoncia</label>
-            <label class="check"><input type="checkbox"> Periodoncia</label>
-            <label class="check"><input type="checkbox"> Endodoncia</label>
-            <label class="check"><input type="checkbox"> Cirugía maxilofacial</label>
-            <label class="check"><input type="checkbox"> Implantes dentales</label>
-            <label class="check"><input type="checkbox"> Restauración oral</label>
-          </div>
-        </div>
-        <p class="hint full">Abajo puedes usar el dictado por voz para llenar historia clínica y plan de tratamiento.</p>
-      </div>
-    </section>
-
-    <!-- ====== MÓDULO DE DICTADO (SIN CAMBIOS DE LÓGICA) ====== -->
-    <section class="card">
-      <h2>Reconocimiento de Voz Odontología</h2>
-
-      <div class="instrucciones">
-        <strong>Activación por voz:</strong>
-        <ul>
-          <li>“<b>dictado historia clínica</b>” / “<b>terminar historia clínica</b>”</li>
-          <li>“<b>dictado plan de tratamiento</b>” / “<b>terminar plan de tratamiento</b>”</li>
-          <li>También puedes hacer clic en los botones de estado.</li>
-        </ul>
       </div>
 
-      <div class="botones">
-        <button id="startButton">🎤 Iniciar reconocimiento</button>
-        <button id="stopButton">🛑 Detener reconocimiento</button>
+      <div class="ctrl">
+        <label>¿Toma medicamentos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
       </div>
 
-      <h2 class="inline" style="gap:8px;">Historia Clínica
-        <span id="estadoHC" class="estado inactivo">Dictado inactivo</span>
-      </h2>
-      <textarea id="historiaClinica" placeholder="Dictado aquí..."></textarea>
+      <div class="ctrl">
+        <label for="medicamentos_cuales">¿Cuáles?</label>
+        <input id="medicamentos_cuales" type="text">
+      </div>
 
-      <h2 class="inline" style="gap:8px;">Plan de Tratamiento
-        <span id="estadoPT" class="estado inactivo">Dictado inactivo</span>
-      </h2>
-      <textarea id="planTratamiento" placeholder="Dictado aquí..."></textarea>
-    </section>
-  </div>
+      <div class="ctrl">
+        <label for="med_dosis">Dosis y frecuencia</label>
+        <input id="med_dosis" type="text">
+      </div>
 
-  <script>
-    // === Tu lógica de dictado (sin cambios funcionales) ===
-    const startButton = document.getElementById('startButton');
-    const stopButton  = document.getElementById('stopButton');
-    const historiaClinica = document.getElementById('historiaClinica');
-    const planTratamiento = document.getElementById('planTratamiento');
-    const estadoHC = document.getElementById('estadoHC');
-    const estadoPT = document.getElementById('estadoPT');
+      <div class="ctrl">
+        <label for="alergia_meds">Alergia a medicamentos</label>
+        <input id="alergia_meds" type="text">
+      </div>
+    </div>
 
-    let modo = null;
-    let reconocimientoActivo = false;
+    <div class="rowline"></div>
 
-    function beep(){
-      const audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.type='sine'; osc.frequency.value=800; gain.gain.value=.2;
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.start(); osc.stop(audioCtx.currentTime+.2);
-    }
-    function actualizarEstado(campo,activo){
-      const estado = campo==='hc'?estadoHC:estadoPT;
-      if(activo){ estado.textContent='Dictado activo'; estado.classList.remove('inactivo'); estado.classList.add('activo'); }
-      else{ estado.textContent='Dictado inactivo'; estado.classList.remove('activo'); estado.classList.add('inactivo'); }
-    }
-    function activarManual(campo){
-      if(!reconocimientoActivo) return;
-      if(modo===campo){ modo=null; actualizarEstado(campo,false); }
-      else{ modo=campo; actualizarEstado('hc',campo==='hc'); actualizarEstado('pt',campo==='pt'); beep(); }
-    }
-    estadoHC.addEventListener('click',()=>activarManual('hc'));
-    estadoPT.addEventListener('click',()=>activarManual('pt'));
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>¿Toma bebidas alcohólicas?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
 
-    const recognition = new webkitSpeechRecognition();
-    recognition.lang='es-ES';
-    recognition.continuous=true;
-    recognition.interimResults=false;
+      <div class="ctrl">
+        <label>¿Fuma?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
+    </div>
 
-    recognition.onresult=(e)=>{
-      const t = e.results[e.results.length-1][0].transcript.trim().toLowerCase();
-      if(t.includes("dictado historia clínica")){ modo='hc'; actualizarEstado('hc',true); actualizarEstado('pt',false); beep(); }
-      else if(t.includes("terminar historia clínica")){ modo=null; actualizarEstado('hc',false); beep(); }
-      else if(t.includes("dictado plan de tratamiento")){ modo='pt'; actualizarEstado('pt',true); actualizarEstado('hc',false); beep(); }
-      else if(t.includes("terminar plan de tratamiento")){ modo=null; actualizarEstado('pt',false); beep(); }
-      else if(modo==='hc'){ historiaClinica.value += t + '. '; }
-      else if(modo==='pt'){ planTratamiento.value += t + '. '; }
+    <div class="ctrl">
+      <label>¿Consume drogas psicoactivas?</label>
+      <div class="inline">
+        <label class="chip"><input type="checkbox"> Sí</label>
+        <label class="chip"><input type="checkbox"> No</label>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ==========================
+       SOLO MUJERES
+  ============================== -->
+  <section class="card">
+    <div class="legend">Sólo para mujeres</div>
+
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label>¿Ha tenido embarazos y partos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="numero_hijos">No. de hijos</label>
+        <input id="numero_hijos" type="number" min="0">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Actualmente está embarazada?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="tiempo_embarazo">Tiempo</label>
+        <input id="tiempo_embarazo" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Toma anticonceptivos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Histerectomía o menopausia?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox"> Sí</label>
+          <label class="chip"><input type="checkbox"> No</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       HISTORIA ODONTOLÓGICA
+  ============================== -->
+  <section class="card">
+    <div class="legend">Historia odontológica</div>
+
+    <div class="grid g-2">
+
+      <div class="ctrl full">
+        <label for="motivo_consulta">Motivo de consulta odontológica</label>
+        <input id="motivo_consulta" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Presenta dolor en…?</label>
+        <div class="inline">
+          <label class="chip">boca <input type="checkbox"></label>
+          <label class="chip">cara <input type="checkbox"></label>
+          <label class="chip">cuello <input type="checkbox"></label>
+        </div>
+      </div>
+
+      <div class="ctrl full">
+        <label>Tratamientos recibidos</label>
+
+        <div class="checks">
+          <label class="check"><input type="checkbox"> Ortodoncia</label>
+          <label class="check"><input type="checkbox"> Periodoncia</label>
+          <label class="check"><input type="checkbox"> Endodoncia</label>
+          <label class="check"><input type="checkbox"> Cirugía maxilofacial</label>
+          <label class="check"><input type="checkbox"> Implantes dentales</label>
+          <label class="check"><input type="checkbox"> Restauración oral</label>
+        </div>
+      </div>
+
+      <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
+
+    </div>
+  </section>
+
+  <!-- ==========================
+       ODONTOGRAMA
+  ============================== -->
+  <div id="odontograma-wrapper">
+
+    <h1>Odontograma Internacional FDI</h1>
+
+    <!-- LÍNEAS Y TEXTOS (Distal, Vestibular, Palatino, Mesial, Lingual) -->
+    <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
+
+      <!-- LÍNEA HORIZONTAL -->
+      <div style="
+        position:absolute;
+        top:170px;
+        left:50%;
+        transform:translateX(-50%);
+        width:1300px;
+        height:1px;
+        background:#D0D0D0;
+        z-index:3;
+      "></div>
+
+      <!-- LÍNEA VERTICAL -->
+      <div style="
+        position:absolute;
+        top:119px;
+        left:51%;
+        width:1px;
+        height:100px;
+        transform:translateX(-50%);
+        background:#D0D0D0;
+        z-index:3;
+      "></div>
+
+      <!-- TEXTOS SUPERIORES -->
+      <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
+      <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
+      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Palatino1
+      </div>
+      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Palatino2
+      </div>
+
+      <!-- TEXTOS CENTRALES -->
+      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Lingual4
+      </div>
+      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Lingual3
+      </div>
+      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Vestibular3
+      </div>
+      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Vestibular2
+      </div>
+      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Vestibular1
+      </div>
+      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+        Vestibular4
+      </div>
+
+      <!-- TEXTOS INFERIORES -->
+      <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
+      <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
+
+      <!-- MESIAL (CENTRO) -->
+      <div style="
+        position:absolute;
+        top:60px;
+        left:51%;
+        transform:translateX(-50%) rotate(180deg);
+        color:#D0D0D0;
+        font-weight:bold;
+        writing-mode:vertical-rl;
+      ">
+        Mesial
+      </div>
+      <div style="
+        position:absolute;
+        top:220px;
+        left:51%;
+        transform:translateX(-50%) rotate(180deg);
+        color:#D0D0D0;
+        font-weight:bold;
+        writing-mode:vertical-rl;
+      ">
+        Mesial
+      </div>
+
+    </div>
+
+    <!-- ODONTOGRAMA -->
+    <div class="odontograma">
+
+      <div class="seccion">
+        <div class="etiqueta">Maxilar superior</div>
+        <div class="fila" id="fila-superior"></div>
+      </div>
+
+      <div class="seccion">
+        <div class="etiqueta" style="position:relative; top:150px;">Maxilar inferior</div>
+        <div class="fila" id="fila-inferior"></div>
+      </div>
+    </div>
+
+    <!-- LEYENDA -->
+    <div class="leyenda">
+      <h2>Leyenda de Preexistencias</h2>
+      <div class="leyenda-grid" id="grid-leyenda"></div>
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+      <button onclick="mostrarReporte()"
+              style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
+        Generar reporte de preexistencias
+      </button>
+    </div>
+
+  </div> <!-- fin odontograma-wrapper -->
+
+</div> <!-- fin .container -->
+
+<script>
+  const preexistencias = {
+    Caries: 'red',
+    Corona: 'blue',
+    Endodoncia: '#005E94',
+    Obturación: 'green',
+    Fractura: 'orange',
+    Ausente: 'gray',
+    Implante: '#7eff42',
+    "Extracción indicada": '#333',
+    Exodoncia: '#ff38ef',
+    Póntico: 'cyan',
+    "Movilidad dental": 'pink',
+    Retenido: 'purple',
+    "Prótesis fija": '#880E4F',
+    "Prótesis removible": '#42ffc6',
+    "Prótesis total": '#fff642',
+    Amalgama: '#42b7ff',
+    Resina: '#FBC02D',
+    Sano: '#8BC34A'
+  };
+
+  let reporte = {};
+
+  const contenedorLeyenda = document.getElementById('grid-leyenda');
+  Object.entries(preexistencias).forEach(([nombre, color]) => {
+    const item = document.createElement('div');
+    item.innerHTML =
+      `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+    contenedorLeyenda.appendChild(item);
+  });
+
+  const dientesSuperior =
+    [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+  const dientesInferior =
+    [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+
+  function crearDiente(numero, contenedor) {
+    const contenedorDiente = document.createElement('div');
+    contenedorDiente.className = 'contenedor-diente';
+
+    const diente = document.createElement('div');
+    diente.className = 'diente';
+    diente.dataset.numero = numero;
+
+    ['superior','inferior','izquierda','derecha'].forEach(region => {
+      const div = document.createElement('div');
+      div.className = `cara ${region}`;
+      div.dataset.region = region;
+      div.onclick = (event) => mostrarPopup(event, div);
+      diente.appendChild(div);
+    });
+
+    const centro = document.createElement('div');
+    centro.className = 'centro';
+    centro.dataset.region = 'centro';
+    centro.onclick = (event) => mostrarPopup(event, centro);
+    diente.appendChild(centro);
+
+    const label = document.createElement('div');
+    label.className = 'numero';
+    label.textContent = numero;
+
+    contenedorDiente.appendChild(diente);
+    contenedorDiente.appendChild(label);
+    contenedor.appendChild(contenedorDiente);
+  }
+
+  function mostrarPopup(event, elemento) {
+    event.stopPropagation();
+    document.querySelectorAll('.popup').forEach(p => p.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'popup';
+
+    // OPCIÓN LIMPIAR
+    const limpiar = document.createElement('div');
+    limpiar.innerHTML =
+      `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
+
+    limpiar.onclick = () => {
+      elemento.style.background = "white";
+
+      const dienteNumero = elemento.parentElement.dataset.numero;
+      const cara = elemento.dataset.region;
+
+      if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
+        delete reporte[dienteNumero][cara];
+      }
+
+      if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
+        delete reporte[dienteNumero];
+      }
+
+      menu.remove();
     };
-    recognition.onerror=(e)=>console.error("Error:",e.error);
-    recognition.onend=()=>{ if(reconocimientoActivo) recognition.start(); };
 
-    startButton.addEventListener('click',()=>{
-      reconocimientoActivo=true; recognition.start();
-      alert("🎧 Escuchando... Usa voz o haz clic en los chips de estado.");
+    menu.appendChild(limpiar);
+
+    Object.entries(preexistencias).forEach(([nombre, color]) => {
+      const item = document.createElement('div');
+      item.innerHTML =
+        `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+
+      item.onclick = () => {
+        elemento.style.background = color;
+
+        const dienteNumero = elemento.parentElement.dataset.numero;
+        const cara = elemento.dataset.region;
+
+        if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
+        reporte[dienteNumero][cara] = nombre;
+
+        menu.remove();
+      };
+
+      menu.appendChild(item);
     });
-    stopButton.addEventListener('click',()=>{
-      reconocimientoActivo=false; recognition.stop(); modo=null;
-      actualizarEstado('hc',false); actualizarEstado('pt',false);
+
+    document.body.appendChild(menu);
+    menu.style.left = `${event.pageX + 5}px`;
+    menu.style.top  = `${event.pageY + 5}px`;
+    menu.style.display = 'block';
+  }
+
+  const filaSuperior = document.getElementById('fila-superior');
+  dientesSuperior.forEach(num =>
+    crearDiente(num, filaSuperior)
+  );
+
+  const filaInferior = document.getElementById('fila-inferior');
+  dientesInferior.forEach(num =>
+    crearDiente(num, filaInferior)
+  );
+
+  document.body.addEventListener('click', () => {
+    document.querySelectorAll('.popup').forEach(p => p.remove());
+  });
+
+
+  function obtenerRegion(diente, cara) {
+    diente = parseInt(diente);
+
+    // OCLUSAL PARA TODOS
+    if (cara === "centro") return "Oclusal";
+
+    // VESTIBULAR superiores
+    if (diente >= 11 && diente <= 18 && cara === "superior")
+      return "Vestibular";
+
+    if (diente >= 21 && diente <= 28 && cara === "superior")
+      return "Vestibular";
+
+    // PALATINO superiores
+    if (diente >= 11 && diente <= 28 && cara === "inferior")
+      return "Palatino";
+
+    // LINGUAL / VESTIBULAR inferiores
+    if (diente >= 31 && diente <= 48 && cara === "superior")
+      return "Lingual";
+
+    if (diente >= 31 && diente <= 48 && cara === "inferior")
+      return "Vestibular";
+
+    // DISTAL
+    if ((diente >= 11 && diente <= 18) || (diente >= 41 && diente <= 48)) {
+      if (cara === "izquierda") return "Distal";
+    }
+
+    if ((diente >= 21 && diente <= 28) || (diente >= 31 && diente <= 38)) {
+      if (cara === "derecha") return "Distal";
+    }
+
+    // MESIAL
+    if ((diente >= 11 && diente <= 18) || (diente >= 41 && diente <= 48)) {
+      if (cara === "derecha") return "Mesial";
+    }
+
+    if ((diente >= 21 && diente <= 28) || (diente >= 31 && diente <= 38)) {
+      if (cara === "izquierda") return "Mesial";
+    }
+
+    return null;
+  }
+
+
+  function mostrarReporte() {
+
+    let html = `
+      <h2>Reporte de Preexistencias</h2>
+      <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
+        <tr style="background:#eee; font-weight:bold;">
+          <th>Diente</th>
+          <th>Mesial</th>
+          <th>Distal</th>
+          <th>Oclusal</th>
+          <th>Vestibular</th>
+          <th>Lingual</th>
+          <th>Palatino</th>
+        </tr>
+    `;
+
+    Object.entries(reporte).forEach(([diente, caras]) => {
+
+      let fila = {
+        Mesial: "",
+        Distal: "",
+        Oclusal: "",
+        Vestibular: "",
+        Lingual: "",
+        Palatino: ""
+      };
+
+      Object.entries(caras).forEach(([cara, preexistencia]) => {
+        let region = obtenerRegion(diente, cara);
+        if (region) fila[region] = preexistencia.toUpperCase();
+      });
+
+      html += `
+        <tr>
+          <td>${diente}</td>
+          <td>${fila.Mesial}</td>
+          <td>${fila.Distal}</td>
+          <td>${fila.Oclusal}</td>
+          <td>${fila.Vestibular}</td>
+          <td>${fila.Lingual}</td>
+          <td>${fila.Palatino}</td>
+        </tr>
+      `;
     });
-  </script>
+
+    html += "</table>";
+
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+  }
+</script>
+
 </body>
 </html>
 
