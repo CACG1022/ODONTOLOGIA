@@ -1132,9 +1132,28 @@ function obtenerDatosHistoriaClinica() {
 
   return data;
 }
-async function enviarAN8N() {
+<script>
+function obtenerDatosHistoriaClinica() {
+  const data = {};
+
+  document.querySelectorAll("input, textarea, select").forEach(campo => {
+    const nombre = campo.id || campo.name;
+    if (!nombre) return;
+
+    if (campo.type === "checkbox") {
+      if (!data[nombre]) data[nombre] = [];
+      if (campo.checked) data[nombre].push(campo.value || true);
+    } else {
+      data[nombre] = campo.value;
+    }
+  });
+
+  return data;
+}
+
+function enviarAN8N() {
   const datosHistoria = obtenerDatosHistoriaClinica();
-  const datosOdontograma = reporte; // ya contiene TODAS las caras
+  const datosOdontograma = reporte;
 
   const payload = {
     historia_clinica: datosHistoria,
@@ -1142,27 +1161,23 @@ async function enviarAN8N() {
     fecha_envio: new Date().toISOString()
   };
 
-  console.log("Datos enviados a N8N:", payload);
+  // Insertar JSON en <input hidden>
+  document.getElementById("dataN8N").value = JSON.stringify(payload);
 
-  try {
-    const res = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+  // Enviar formulario oculto
+  document.getElementById("formN8N").submit();
 
-    const respuesta = await res.text();
-    alert("Información enviada correctamente a N8n");
-    console.log(respuesta);
-
-  } catch(err) {
-    alert("Error enviando datos a N8n");
-    console.error(err);
-  }
+  alert("Información enviada correctamente a N8N");
 }
+</script>
+
 
 
 </script>
+<form id="formN8N" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8" 
+      method="POST" style="display:none;">
+  <input type="hidden" id="dataN8N" name="data">
+</form>
 
 </body>
 </html>
