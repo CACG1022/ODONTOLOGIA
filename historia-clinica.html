@@ -37,7 +37,7 @@
 
 
   
-  <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -846,6 +846,13 @@
               style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
         Generar reporte de preexistencias
       </button>
+     <div style="text-align:center; margin-top:20px;">
+  <button onclick="enviarAN8N()"
+    style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
+    Enviar historia clínica a N8N
+  </button>
+</div>
+
     </div>
 
   </div> <!-- fin odontograma-wrapper -->
@@ -1106,6 +1113,55 @@
     win.document.write(html);
     win.document.close();
   }
+
+function obtenerDatosHistoriaClinica() {
+  const data = {};
+
+  // Capturar todos los inputs del formulario
+  document.querySelectorAll("input, textarea, select").forEach(campo => {
+    const nombre = campo.id || campo.name;
+    if (!nombre) return;
+
+    if (campo.type === "checkbox") {
+      if (!data[nombre]) data[nombre] = [];
+      if (campo.checked) data[nombre].push(campo.value || true);
+    } else {
+      data[nombre] = campo.value;
+    }
+  });
+
+  return data;
+}
+async function enviarAN8N() {
+  const datosHistoria = obtenerDatosHistoriaClinica();
+  const datosOdontograma = reporte; // ya contiene TODAS las caras
+
+  const payload = {
+    historia_clinica: datosHistoria,
+    odontograma: datosOdontograma,
+    fecha_envio: new Date().toISOString()
+  };
+
+  console.log("Datos enviados a N8N:", payload);
+
+  try {
+    const res = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const respuesta = await res.text();
+    alert("Información enviada correctamente a N8n");
+    console.log(respuesta);
+
+  } catch(err) {
+    alert("Error enviando datos a N8n");
+    console.error(err);
+  }
+}
+
+
 </script>
 
 </body>
