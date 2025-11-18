@@ -1266,17 +1266,27 @@ function llenarOdontograma(odonto) {
   limpiarOdontograma();
   reporte = {};
 
+  // Recorrer cada diente
   Object.entries(odonto).forEach(([diente, zonas]) => {
+
+    // Recorrer cada región (Mesial, Distal, Lingual, Palatino, etc.)
     Object.entries(zonas).forEach(([region, estado]) => {
       if (!estado) return;
 
-      const color = preexistencias[ capitalize(estado) ];
-      if (!color) return;
+      // ESTO ERA EL ERROR: estado puede venir "SANO", "AUSENTE", etc.
+      const estadoKey = estado.toUpperCase();
+      
+      const color = preexistencias[estadoKey];
+      if (!color) {
+        console.warn("❗ Estado desconocido:", estadoKey);
+        return;
+      }
 
-      pintarRegion(diente, region, color, estado);
+      pintarRegion(diente, region, color, estadoKey);
     });
   });
 }
+
 
 function pintarRegion(dienteNumero, region, color, estadoNombre) {
   const dienteHTML = document.querySelector(`.diente[data-numero="${dienteNumero}"]`);
