@@ -1174,15 +1174,16 @@ document.getElementById("paciente_numdoc").addEventListener("change", async () =
   buscarPacientePorCedula(cedula);
 });
 
+
 async function buscarPacientePorCedula(cedula) {
 
   document.getElementById("estadoPaciente").innerHTML = "⏳ Buscando paciente...";
 
-  // 🔍 Buscar en la vista completa que creaste (historia + odontograma)
+  // 🔍 Buscar en la vista completa
   const { data, error } = await supabase
-  .from('historia_completa')
-  .select('*')
-  .eq('id', numero);
+    .from('historia_completa')
+    .select('*')
+    .eq('id', cedula);
 
   if (error) {
     console.error("❌ Error buscando paciente:", error);
@@ -1192,7 +1193,7 @@ async function buscarPacientePorCedula(cedula) {
   }
 
   // ❌ Paciente NO existe
-  if (!data) {
+  if (!data || data.length === 0) {
     document.getElementById("estadoPaciente").innerHTML =
       "<span style='color:red'>Paciente NO existe</span>";
 
@@ -1205,9 +1206,12 @@ async function buscarPacientePorCedula(cedula) {
   document.getElementById("estadoPaciente").innerHTML =
     "<span style='color:green'>Paciente encontrado</span>";
 
-  llenarHistoriaClinica(data.historia_clinica);
-  llenarOdontograma(data.odontograma);
+  const paciente = data[0];
+
+  llenarHistoriaClinica(paciente.historia_clinica);
+  llenarOdontograma(paciente.odontograma);
 }
+
 
 function limpiarFormulario() {
   document.querySelectorAll(".container input, .container textarea").forEach(c => {
