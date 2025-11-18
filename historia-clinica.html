@@ -1222,17 +1222,35 @@ function limpiarFormulario() {
 function llenarHistoriaClinica(info) {
   if (!info) return;
 
-  Object.entries(info).forEach(([campo, valor]) => {
-    const elemento = document.getElementById(campo);
+  // Si viene como texto, lo parseamos
+  if (typeof info === "string") {
+    try { info = JSON.parse(info); } catch (e) { console.error(e); return; }
+  }
+
+  // MAPEO: campo JSON → ID del input HTML
+  const mapa = {
+    "Nombre y apellido": "paciente_nombre",
+    "Edad": "paciente_edad",
+    "Tipo identificacion": "idtipo",
+    "Numero de Identificacion": "paciente_numdoc",
+    "Lugar exp": "paciente_lugardoc",
+    "Fecha de nacimiento": "paciente_nacimiento",
+    "Lugar de nacimiento": "paciente_lugarnac",
+  };
+
+  Object.entries(mapa).forEach(([campoJSON, idHTML]) => {
+    const valor = info[campoJSON];
+    if (valor === undefined || valor === null) return;
+
+    const elemento = document.getElementById(idHTML);
     if (!elemento) return;
 
-    if (elemento.type === "checkbox") {
-      elemento.checked = valor === true || valor === "true";
-    } else {
-      elemento.value = valor;
-    }
+    if (elemento.type === "checkbox") return;
+
+    elemento.value = valor;
   });
 }
+
 function limpiarOdontograma() {
   document.querySelectorAll(".cara, .centro").forEach(c => {
     c.style.background = "white";
