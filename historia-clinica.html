@@ -1180,11 +1180,9 @@ async function buscarPacientePorCedula(cedula) {
 
   // 🔍 Buscar en la vista completa que creaste (historia + odontograma)
   const { data, error } = await supabase
-  .from("historia_completa")
-  .select("*")
-  .eq("paciente_numdoc", cedula)
-  .maybeSingle();
-
+  .from('historia_completa')
+  .select('*')
+  .eq('id', numero);
 
   if (error) {
     console.error("❌ Error buscando paciente:", error);
