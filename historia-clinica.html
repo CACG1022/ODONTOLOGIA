@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <title>Historia Clínica Odontológica + Odontograma</title>
-  
+
+  <div class="card">
+    <div class="legend">Buscar historia clínica existente</div>
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label for="buscar_cedula">Ingrese número de identificación</label>
+        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
+      </div>
+
+      <div class="ctrl">
+        <label>&nbsp;</label>
+        <button onclick="buscarHistoria()" 
+          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer;">
+          Buscar
+        </button>
+      </div>
+    </div>
+  </div>
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -19,10 +36,7 @@
     async function verificarSesion() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.warn("🚫 No hay sesión activa, redirigiendo al login...");
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-      } else {
-        console.log("✅ Usuario autenticado:", session.user.email);
       }
     }
 
@@ -30,7 +44,6 @@
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
-        console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
       }
     });
@@ -59,8 +72,12 @@
     h2{ font-size:18px; margin:0 0 14px; color:var(--brand); }
 
     .card{
-      background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
-      padding:22px; box-shadow:var(--shadow); margin-bottom:22px;
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
     }
     .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
 
@@ -97,6 +114,7 @@
       display:flex; align-items:center; gap:8px;
       padding:6px 10px; border:1px dashed var(--line); border-radius:10px; background:#fafcff;
     }
+
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
     .instrucciones{
@@ -293,28 +311,8 @@
 </head>
 
 <body>
-
 <div class="container">
-  <div class="card">
-  <div class="legend">Buscar historia clínica existente</div>
-
-  <div class="grid g-2">
-    <div class="ctrl">
-      <label for="buscar_cedula">Ingrese número de identificación</label>
-      <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
-    </div>
-
-    <div class="ctrl">
-      <label>&nbsp;</label>
-      <button onclick="buscarHistoria()" 
-        style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer;">
-        Buscar
-      </button>
-    </div>
-  </div>
-</div>
   <h1>Historia Clínica Odontológica</h1>
-
   <!-- ==========================
        DATOS BÁSICOS DEL PACIENTE
   ============================== -->
@@ -518,8 +516,8 @@
       <div class="ctrl">
         <label>¿Enfermedad grave actualmente o previa?</label>
         <div class="inline">
-          <label class="chip"><input type="checkbox"> Sí</label>
-          <label class="chip"><input type="checkbox"> No</label>
+          <label class="chip"><input type="checkbox" name="grave"> Sí</label>
+          <label class="chip"><input type="checkbox" name="grave"> No</label>
         </div>
       </div>
 
@@ -711,9 +709,9 @@
       <div class="ctrl">
         <label>¿Presenta dolor en…?</label>
         <div class="inline">
-          <label class="chip">boca <input type="checkbox"></label>
-          <label class="chip">cara <input type="checkbox"></label>
-          <label class="chip">cuello <input type="checkbox"></label>
+          <label class="chip">boca <input type="checkbox" name="dolor"></label>
+          <label class="chip">cara <input type="checkbox" name="dolor"></label>
+          <label class="chip">cuello <input type="checkbox" name="dolor"></label>
         </div>
       </div>
 
@@ -721,12 +719,12 @@
         <label>Tratamientos recibidos</label>
 
         <div class="checks">
-          <label class="check"><input type="checkbox"> Ortodoncia</label>
-          <label class="check"><input type="checkbox"> Periodoncia</label>
-          <label class="check"><input type="checkbox"> Endodoncia</label>
-          <label class="check"><input type="checkbox"> Cirugía maxilofacial</label>
-          <label class="check"><input type="checkbox"> Implantes dentales</label>
-          <label class="check"><input type="checkbox"> Restauración oral</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Endodoncia"> Endodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Cirugía maxilofacial"> Cirugía maxilofacial</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Implantes dentales"> Implantes dentales</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Restauración oral"> Restauración oral</label>
         </div>
       </div>
 
@@ -736,16 +734,15 @@
   </section>
 
   <!-- ==========================
-       ODONTOGRAMA
+       ODONTOGRAMA COMPLETO
   ============================== -->
   <div id="odontograma-wrapper">
 
     <h1>Odontograma Internacional FDI</h1>
 
-    <!-- LÍNEAS Y TEXTOS -->
+    <!-- LÍNEAS Y TEXTOS DE REFERENCIA -->
     <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
 
-      <!-- LÍNEA HORIZONTAL -->
       <div style="
         position:absolute;
         top:170px;
@@ -757,7 +754,6 @@
         z-index:3;
       "></div>
 
-      <!-- LÍNEA VERTICAL -->
       <div style="
         position:absolute;
         top:119px;
@@ -769,9 +765,9 @@
         z-index:3;
       "></div>
 
-      <!-- TEXTOS SUPERIORES -->
       <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
       <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
+
       <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
         Palatino1
       </div>
@@ -779,13 +775,13 @@
         Palatino2
       </div>
 
-      <!-- TEXTOS CENTRALES -->
       <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
         Lingual4
       </div>
       <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
         Lingual3
       </div>
+
       <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
         Vestibular3
       </div>
@@ -799,11 +795,9 @@
         Vestibular4
       </div>
 
-      <!-- TEXTOS INFERIORES -->
       <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
       <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
 
-      <!-- MESIAL (CENTRO) -->
       <div style="
         position:absolute;
         top:60px;
@@ -829,7 +823,9 @@
 
     </div>
 
-    <!-- ODONTOGRAMA -->
+    <!-- ==========================
+         FILAS DEL ODONTOGRAMA
+    ============================== -->
     <div class="odontograma">
 
       <div class="seccion">
@@ -843,7 +839,9 @@
       </div>
     </div>
 
-    <!-- LEYENDA -->
+    <!-- ==========================
+         LEYENDA
+    ============================== -->
     <div class="leyenda">
       <h2>Leyenda de Preexistencias</h2>
       <div class="leyenda-grid" id="grid-leyenda"></div>
@@ -867,18 +865,17 @@
 
 </div> <!-- fin .container -->
 
+
 <!-- 📤 FORMULARIO OCULTO PARA N8N -->
 <form id="formN8N"
   action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8"
   method="POST"
   style="display:none;">
-  
+
   <input type="hidden" id="dataN8N" name="data">
   <input type="hidden" id="usuarioN8N" name="usuario_logueado">
 
 </form>
-
-
 <script>
   const preexistencias = {
     Caries: 'red',
@@ -988,7 +985,7 @@
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        // ⭐ SI ES SANO O AUSENTE → todas las caras del diente
+        // ⭐ SI ES SANO O AUSENTE → PINTA TODAS LAS CARAS
         if (nombre === "Sano" || nombre === "Ausente") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
@@ -1024,41 +1021,43 @@
     document.querySelectorAll('.popup').forEach(p => p.remove());
   });
 
+
+
+  /**********************************************
+   MAPEO FINAL CARA → REGIÓN CLÍNICA (CORREGIDO)
+  **********************************************/
   function obtenerRegion(diente, cara) {
     diente = parseInt(diente);
 
     if (cara === "centro") return "Oclusal";
 
-    // VESTIBULAR superiores
-    if (diente >= 11 && diente <= 18 && cara === "superior") return "Vestibular";
-    if (diente >= 21 && diente <= 28 && cara === "superior") return "Vestibular";
-
-    // PALATINO superiores
-    if (diente >= 11 && diente <= 28 && cara === "inferior") return "Palatino";
-
-    // LINGUAL / VESTIBULAR inferiores
-    if (diente >= 31 && diente <= 48 && cara === "superior") return "Lingual";
-    if (diente >= 31 && diente <= 48 && cara === "inferior") return "Vestibular";
-
-    // DISTAL
-    if ((diente >= 11 && diente <= 18) || (diente >= 41 && diente <= 48)) {
-      if (cara === "izquierda") return "Distal";
-    }
-    if ((diente >= 21 && diente <= 28) || (diente >= 31 && diente <= 38)) {
-      if (cara === "derecha") return "Distal";
+    // ----- SUPERIORES -----
+    if (diente >= 11 && diente <= 28) {
+      if (cara === "superior") return "Vestibular";
+      if (cara === "inferior") return "Palatino";
     }
 
-    // MESIAL
-    if ((diente >= 11 && diente <= 18) || (diente >= 41 && diente <= 48)) {
-      if (cara === "derecha") return "Mesial";
+    // ----- INFERIORES -----
+    if (diente >= 31 && diente <= 48) {
+      if (cara === "superior") return "Lingual";
+      if (cara === "inferior") return "Vestibular";
     }
-    if ((diente >= 21 && diente <= 28) || (diente >= 31 && diente <= 38)) {
-      if (cara === "izquierda") return "Mesial";
-    }
+
+    // MESIAL Y DISTAL
+    const derechaEsMesial = (
+      (diente >= 11 && diente <= 18) ||
+      (diente >= 41 && diente <= 48)
+    );
+
+    if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
+    if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
 
     return null;
   }
 
+  /**********************************************
+     GENERAR REPORTE VISUAL HTML
+  **********************************************/
   function mostrarReporte() {
     let html = `
       <h2>Reporte de Preexistencias</h2>
@@ -1109,7 +1108,9 @@
     win.document.close();
   }
 
-  // 🔹 Toma TODOS los campos de la página (excepto el form oculto)
+  /**********************************************
+   OBTENER TODOS LOS CAMPOS DEL FORMULARIO
+  **********************************************/
   function obtenerDatosHistoriaClinica() {
     const data = {};
 
@@ -1129,153 +1130,145 @@
     return data;
   }
 
- function enviarAN8N() {
 
-  // 1️⃣ Listado completo de dientes FDI
-  const todosLosDientes = [
-    18,17,16,15,14,13,12,11,
-    21,22,23,24,25,26,27,28,
-    48,47,46,45,44,43,42,41,
-    31,32,33,34,35,36,37,38
-  ];
+  /**********************************************
+     ENVIAR TODO A N8N
+  **********************************************/
+  function enviarAN8N() {
 
-  // 2️⃣ Preparar estructura vacía para cada diente
-  const odontogramaCompleto = {};
-  
-  todosLosDientes.forEach(num => {
-    odontogramaCompleto[num] = {
-      Mesial: "",
-      Distal: "",
-      Oclusal: "",
-      Vestibular: "",
-      Lingual: "",
-      Palatino: ""
-    };
-  });
+    const todosLosDientes = [
+      18,17,16,15,14,13,12,11,
+      21,22,23,24,25,26,27,28,
+      48,47,46,45,44,43,42,41,
+      31,32,33,34,35,36,37,38
+    ];
 
-  // 3️⃣ Convertir el reporte actual (superior/inferior/izquierda/derecha) a regiones clínicas
-  Object.entries(reporte).forEach(([diente, caras]) => {
-    Object.entries(caras).forEach(([cara, preexistencia]) => {
+    const odontogramaCompleto = {};
 
-      const region = obtenerRegion(diente, cara);
-      if (region) {
-        odontogramaCompleto[diente][region] = preexistencia.toUpperCase();
-      }
+    todosLosDientes.forEach(num => {
+      odontogramaCompleto[num] = {
+        Mesial: "",
+        Distal: "",
+        Oclusal: "",
+        Vestibular: "",
+        Lingual: "",
+        Palatino: ""
+      };
     });
-  });
 
-  // 4️⃣ Datos de la historia clínica
-  const datosHistoria = obtenerDatosHistoriaClinica();
+    Object.entries(reporte).forEach(([diente, caras]) => {
+      Object.entries(caras).forEach(([cara, preexistencia]) => {
+        const region = obtenerRegion(diente, cara);
+        if (region) odontogramaCompleto[diente][region] = preexistencia.toUpperCase();
+      });
+    });
 
-  // 5️⃣ Usuario logueado
-  const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-  document.getElementById("usuarioN8N").value = usuario;
+    const datosHistoria = obtenerDatosHistoriaClinica();
+    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-  // 6️⃣ Crear payload FINAL
-  const payload = {
-    historia_clinica: datosHistoria,
-    odontograma: odontogramaCompleto,
-    fecha_envio: new Date().toISOString(),
-    usuario_logueado: usuario
-  };
+    document.getElementById("usuarioN8N").value = usuario;
 
-  // 7️⃣ Insertar JSON en input oculto
-  document.getElementById("dataN8N").value = JSON.stringify(payload);
+    const payload = {
+      historia_clinica: datosHistoria,
+      odontograma: odontogramaCompleto,
+      fecha_envio: new Date().toISOString(),
+      usuario_logueado: usuario
+    };
 
-  // 8️⃣ Enviar formulario
-  document.getElementById("formN8N").submit();
+    document.getElementById("dataN8N").value = JSON.stringify(payload);
 
-  alert("Información enviada correctamente a N8N");
-}
+    document.getElementById("formN8N").submit();
 
-</script>
-<script>
-async function buscarHistoria() {
-  const cedula = document.getElementById("buscar_cedula").value.trim();
-
-  if (!cedula) {
-    alert("Ingrese una cédula");
-    return;
+    alert("Información enviada correctamente a N8N");
   }
 
-  const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
 
-  try {
-    const resp = await fetch(url);
-    const data = await resp.json();
+  /**********************************************
+     CONSULTAR PACIENTE EN N8N
+  **********************************************/
+  async function buscarHistoria() {
+    const cedula = document.getElementById("buscar_cedula").value.trim();
 
-    if (!data.existe) {
-      alert("No existe historia clínica para este paciente");
+    if (!cedula) {
+      alert("Ingrese una cédula");
       return;
     }
 
-    // =============================
-    // LLENAR LOS CAMPOS DEL FORM
-    // =============================
+    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
 
-    const h = data.historia; // historia clínica
-    const od = data.odontograma; // odontograma
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
 
-    document.getElementById("paciente_nombre").value      = h["Nombre y apellido"] ?? "";
-    document.getElementById("paciente_edad").value        = h["Edad"] ?? "";
-    document.getElementById("paciente_numdoc").value      = data.id ?? "";
-    document.getElementById("paciente_lugardoc").value    = h["Lugar exp"] ?? "";
-    document.getElementById("paciente_nacimiento").value  = h["Fecha de nacimiento"] ?? "";
-    document.getElementById("paciente_lugarnac").value    = h["Lugar de nacimiento"] ?? "";
+      if (!data.existe) {
+        alert("No existe historia clínica para este paciente");
+        return;
+      }
 
-    // TIPO DE DOCUMENTO: desmarca todos primero
-    document.querySelectorAll("input[name='idtipo']").forEach(c => {
-      c.checked = (c.value === h["Tipo identificación"]);
-    });
+      const h = data.historia;
+      const od = data.odontograma;
 
+      // ------ LLENAR CAMPOS BÁSICOS ------
+      document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
+      document.getElementById("paciente_edad").value = h["Edad"] ?? "";
+      document.getElementById("paciente_numdoc").value = data.id ?? "";
+      document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
+      document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
+      document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
 
-    // =============================
-    // LLENAR ODONTOGRAMA
-    // =============================
+      document.querySelectorAll("input[name='idtipo']").forEach(c => {
+        c.checked = (c.value === h["Tipo identificación"]);
+      });
 
-    // Limpia colores actuales
-    document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
+      // ----- LIMPIAR ODONTOGRAMA -----
+      document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
+      reporte = {};
 
-    reporte = {}; // limpia estructura interna
+      // ----- PINTAR ODONTOGRAMA DESDE N8N -----
+      Object.entries(od).forEach(([diente, regiones]) => {
+        Object.entries(regiones).forEach(([region, estado]) => {
 
-    Object.entries(od).forEach(([diente, regiones]) => {
-      Object.entries(regiones).forEach(([region, estado]) => {
-        if (estado && estado !== "") {
-          
-          if (!reporte[diente]) reporte[diente] = {};
+          if (!estado) return;
 
-          // Encuentra la cara correspondiente según región clínica
+          const estadoNormalizado =
+            estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
+
+          const color = preexistencias[estadoNormalizado];
+          if (!color) return;
+
           let cara = null;
 
           switch(region) {
-            case "Mesial":     cara = "izquierda"; break;
-            case "Distal":     cara = "derecha"; break;
+            case "Mesial":     cara = "derecha"; break;
+            case "Distal":     cara = "izquierda"; break;
             case "Oclusal":    cara = "centro"; break;
-            case "Vestibular": cara = "superior"; break;
+            case "Vestibular":
+              cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
+              break;
             case "Lingual":    cara = "superior"; break;
             case "Palatino":   cara = "inferior"; break;
           }
 
-          if (cara) {
-            const selector = `.diente[data-numero='${diente}'] .${cara}`;
-            const elem = document.querySelector(selector);
+          if (!cara) return;
 
-            if (elem) {
-              elem.style.background = preexistencias[estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase()] || "yellow";
-              reporte[diente][cara] = estado;
-            }
-          }
-        }
+          const selector = `.diente[data-numero='${diente}'] .${cara}`;
+          const elem = document.querySelector(selector);
+          if (!elem) return;
+
+          elem.style.background = color;
+
+          if (!reporte[diente]) reporte[diente] = {};
+          reporte[diente][cara] = estadoNormalizado;
+        });
       });
-    });
 
-    alert("Datos cargados correctamente desde N8N");
+      alert("Historia clínica cargada con éxito");
 
-  } catch (err) {
-    console.error(err);
-    alert("Error consultando N8N");
+    } catch (err) {
+      console.error(err);
+      alert("Error consultando N8N");
+    }
   }
-}
 </script>
 
 </body>
