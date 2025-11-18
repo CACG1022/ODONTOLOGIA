@@ -326,6 +326,7 @@
       <div class="ctrl">
         <label for="paciente_numdoc">No.</label>
         <input id="paciente_numdoc" type="text">
+        <div id="estadoPaciente" style="font-weight:bold; margin-top:5px;"></div>
       </div>
 
       <div class="ctrl">
@@ -1165,6 +1166,116 @@
   document.getElementById("formN8N").submit();
 
   alert("Información enviada correctamente a N8N");
+}
+// 🟦 Cuando se escribe la cédula
+document.getElementById("paciente_numdoc").addEventListener("change", async () => {
+  const cedula = document.getElementById("paciente_numdoc").value.trim();
+  if (!cedula) return;
+  buscarPacientePorCedula(cedula);
+});
+
+async function buscarPacientePorCedula(cedula) {
+
+  document.getElementById("estadoPaciente").innerHTML = "⏳ Buscando paciente...";
+
+  // 🔍 Buscar en la vista completa que creaste (historia + odontograma)
+  const { data, error } = await supabase
+    .from("historia_completa")
+    .select("*")
+    .eq("id", cedula)
+    .maybeSingle();
+
+  if (error) {
+    console.error("❌ Error buscando paciente:", error);
+    document.getElementById("estadoPaciente").innerHTML =
+      "<span style='color:red'>Error al buscar paciente</span>";
+    return;
+  }
+
+  // ❌ Paciente NO existe
+  if (!data) {
+    document.getElementById("estadoPaciente").innerHTML =
+      "<span style='color:red'>Paciente NO existe</span>";
+
+    limpiarFormulario();
+    limpiarOdontograma();
+    return;
+  }
+
+  // ✔ Paciente encontrado
+  document.getElementById("estadoPaciente").innerHTML =
+    "<span style='color:green'>Paciente encontrado</span>";
+
+  llenarHistoriaClinica(data.historia_clinica);
+  llenarOdontograma(data.odontograma);
+}
+
+function limpiarFormulario() {
+  document.querySelectorAll(".container input, .container textarea").forEach(c => {
+    if (c.type === "checkbox") c.checked = false;
+    else c.value = "";
+  });
+}
+function llenarHistoriaClinica(info) {
+  if (!info) return;
+
+  Object.entries(info).forEach(([campo, valor]) => {
+    const elemento = document.getElementById(campo);
+    if (!elemento) return;
+
+    if (elemento.type === "checkbox") {
+      elemento.checked = valor === true || valor === "true";
+    } else {
+      elemento.value = valor;
+    }
+  });
+}
+function limpiarOdontograma() {
+  document.querySelectorAll(".cara, .centro").forEach(c => {
+    c.style.background = "white";
+  });
+  reporte = {};
+}
+function llenarOdontograma(odonto) {
+  limpiarOdontograma();
+  reporte = {};
+
+  Object.entries(odonto).forEach(([diente, zonas]) => {
+    Object.entries(zonas).forEach(([region, estado]) => {
+      if (!estado) return;
+
+      const color = preexistencias[ capitalize(estado) ];
+      if (!color) return;
+
+      pintarRegion(diente, region, color, estado);
+    });
+  });
+}
+
+function pintarRegion(dienteNumero, region, color, estadoNombre) {
+  const dienteHTML = document.querySelector(`.diente[data-numero="${dienteNumero}"]`);
+  if (!dienteHTML) return;
+
+  let cara = null;
+
+  if (region === "Oclusal") cara = "centro";
+  if (region === "Vestibular") cara = "superior";
+  if (region === "Palatino") cara = "inferior";
+  if (region === "Lingual") cara = "superior"; // solo inferiores
+  if (region === "Mesial") cara = "derecha";
+  if (region === "Distal") cara = "izquierda";
+
+  if (!cara) return;
+
+  const elemento = dienteHTML.querySelector(`[data-region="${cara}"]`);
+  if (elemento) elemento.style.background = color;
+
+  if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
+  reporte[dienteNumero][cara] = estadoNombre;
+}
+
+function capitalize(t) {
+  return t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
 }
 
 </script>
