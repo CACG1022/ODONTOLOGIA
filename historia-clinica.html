@@ -1131,11 +1131,11 @@
   }
 
 
-  /**********************************************
-     ENVIAR TODO A N8N
-  **********************************************/
-  function enviarAN8N() {
-
+ /**********************************************
+   ENVIAR TODO A N8N (SIN SALIR DEL FORMULARIO)
+**********************************************/
+async function enviarAN8N() {
+  try {
     const todosLosDientes = [
       18,17,16,15,14,13,12,11,
       21,22,23,24,25,26,27,28,
@@ -1166,8 +1166,6 @@
     const datosHistoria = obtenerDatosHistoriaClinica();
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-    document.getElementById("usuarioN8N").value = usuario;
-
     const payload = {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
@@ -1175,12 +1173,34 @@
       usuario_logueado: usuario
     };
 
-    document.getElementById("dataN8N").value = JSON.stringify(payload);
+    // 📡 Enviar a N8N SIN recargar ni cambiar de página
+    const resp = await fetch(
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
 
-    document.getElementById("formN8N").submit();
+    if (!resp.ok) {
+      console.error("Error HTTP:", resp.status, await resp.text());
+      alert("Error enviando la información a N8N");
+      return;
+    }
 
-    alert("Información enviada correctamente a N8N");
+    // Opcional: leer respuesta del flujo
+    const data = await resp.json();
+    console.log("Respuesta N8N:", data);
+
+    alert("Información enviada correctamente a N8N ✅");
+
+  } catch (err) {
+    console.error(err);
+    alert("Error inesperado enviando la información a N8N");
   }
+}
+
 
 
   /**********************************************
