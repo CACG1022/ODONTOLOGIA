@@ -312,7 +312,7 @@
 
 <body>
 <div class="container">
-  <h1>Historia Clínica Odontológica2</h1>
+  <h1>Historia Clínica Odontológica3</h1>
   <!-- ==========================
        DATOS BÁSICOS DEL PACIENTE
   ============================== -->
@@ -1215,12 +1215,6 @@
       document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
-      
-
-      document.querySelectorAll("input[name='idtipo']").forEach(c => {
-        c.checked = (c.value === h["Tipo identificación"]);
-      });
-
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
       document.getElementById("Ciudad de Residencia").value = h["Ciudad de Residencia"] ?? "";
       document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
@@ -1230,6 +1224,12 @@
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+
+      document.querySelectorAll("input[name='idtipo']").forEach(c => {
+        c.checked = (c.value === h["Tipo identificación"]);
+      });
+
+      
 
 
 // ==============================
