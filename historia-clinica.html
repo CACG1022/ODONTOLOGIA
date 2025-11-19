@@ -1215,10 +1215,86 @@
       document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
+      
 
       document.querySelectorAll("input[name='idtipo']").forEach(c => {
         c.checked = (c.value === h["Tipo identificación"]);
       });
+
+      document.getElementById("paciente_direccion").value = h["Dirección residencia"] ?? "";
+document.getElementById("Ciudad de Residencia").value = h["Ciudad Residencia"] ?? "";
+document.getElementById("EPS_Paciente").value = h["EPS"] ?? "";
+document.getElementById("paciente_ocupacion").value = h["Ocupación"] ?? "";
+document.getElementById("paciente_tel").value = h["Teléfono"] ?? "";
+document.getElementById("paciente_ciudad").value = h["Ciudad"] ?? "";
+document.getElementById("paciente_cel").value = h["Celular"] ?? "";
+document.getElementById("paciente_email").value = h["Correo"] ?? "";
+document.getElementById("paciente_estadocivil").value = h["Estado civil"] ?? "";
+
+
+// ==============================
+// HIJOS (checkbox Sí/No)
+// ==============================
+document.querySelectorAll("input[name='hijos']").forEach(c => {
+  c.checked = (h["Hijos"] ?? []).includes(c.value);
+});
+
+
+// ==============================
+// DATOS ACUDIENTES
+// ==============================
+document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
+document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
+document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
+document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
+document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
+document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
+
+
+// ==============================
+// EMERGENCIA
+// ==============================
+document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
+document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
+document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
+document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
+
+
+// ==============================
+// HISTORIA MÉDICA
+// ==============================
+document.querySelectorAll("input[name='grave']").forEach(c => {
+  c.checked = (h["Enfermedad grave"] ?? []).includes(c.value);
+});
+document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
+document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
+
+document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
+document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
+document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
+
+
+// ==============================
+// SOLO MUJERES
+// ==============================
+document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
+document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
+
+
+// ==============================
+// HISTORIA ODONTOLÓGICA
+// ==============================
+document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
+
+// Dolor: checkbox múltiple
+document.querySelectorAll("input[name='dolor']").forEach(c => {
+  c.checked = (h["Dolor"] ?? []).includes(c.value);
+});
+
+// Tratamientos recibidos
+document.querySelectorAll("input[name='tratamientos']").forEach(c => {
+  c.checked = (h["Tratamientos"] ?? []).includes(c.value);
+});
 
       // ----- LIMPIAR ODONTOGRAMA -----
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
