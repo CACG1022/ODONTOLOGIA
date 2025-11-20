@@ -1244,9 +1244,20 @@
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
 
-      document.querySelectorAll("input[name='idtipo']").forEach(c => {
-        c.checked = (c.value === h["Tipo identificacion"]);
-      });
+// ==============================
+// TIPO DE IDENTIFICACIÓN
+// ==============================
+let tiposID = [];
+try {
+  tiposID = JSON.parse(h["Tipo identificación"] || "[]");
+} catch(e) {
+  tiposID = [];
+}
+
+document.querySelectorAll("input[name='idtipo']").forEach(c => {
+  c.checked = tiposID.includes(c.value);
+});
+
 
       
 
