@@ -1265,9 +1265,17 @@ document.querySelectorAll("input[name='idtipo']").forEach(c => {
 // ==============================
 // HIJOS (checkbox Sí/No)
 // ==============================
+let hijos = [];
+try {
+  hijos = JSON.parse(h["paciente_hijos"] || "[]");
+} catch(e) {
+  hijos = [];
+}
+
 document.querySelectorAll("input[name='hijos']").forEach(c => {
-  c.checked = (h["Hijos"] ?? []).includes(c.value);
+  c.checked = hijos.includes(c.value);
 });
+
 
 
 // ==============================
