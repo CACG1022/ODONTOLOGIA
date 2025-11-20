@@ -1437,6 +1437,20 @@ document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? ""
 document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
 document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
 
+// ==============================
+// CONDICIONES MÉDICAS
+// ==============================
+let condiciones = [];
+try {
+  condiciones = JSON.parse(h["Condiciones"] || "[]");
+} catch(e) {
+  condiciones = [];
+}
+
+document.querySelectorAll("input[name='condiciones']").forEach(c => {
+  c.checked = condiciones.includes(c.value);
+});
+      
 
 // ==============================
 // HISTORIA ODONTOLÓGICA
