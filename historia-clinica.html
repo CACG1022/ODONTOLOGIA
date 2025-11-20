@@ -97,6 +97,16 @@
       width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
       font-size:15px; background:#fff;
     }
+    select {
+     width:100%;
+     border:1px solid var(--input);
+     border-radius:10px;
+     padding:12px;
+     font-size:15px;
+     background:#fff;
+     cursor:pointer;
+  }
+
 
     textarea{ min-height:120px; resize:vertical; }
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -1230,6 +1240,9 @@
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
+      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
+
 
       document.querySelectorAll("input[name='idtipo']").forEach(c => {
         c.checked = (c.value === h["Tipo identificación"]);
