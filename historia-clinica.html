@@ -456,22 +456,26 @@
         <input id="madre_eps" type="text">
       </div>
 
-      <div class="ctrl">
-        <label>Beneficiario / Cotizante (padre)</label>
-        <div class="grid g-2">
-          <input id="padre_beneficiario" name="padre_beneficiario" type="text" placeholder="Beneficiario">
-         <input id="padre_cotizante" name="padre_cotizante" type="text" placeholder="Cotizante">
-      </div>
-     </div>
+<div class="ctrl">
+  <label for="padre_tipo">Beneficiario / Cotizante (padre)</label>
+  <select id="padre_tipo" name="padre_tipo">
+    <option value="">Seleccione</option>
+    <option value="Beneficiario">Beneficiario</option>
+    <option value="Cotizante">Cotizante</option>
+  </select>
+</div>
+
 
 
 <div class="ctrl">
-  <label>Beneficiario / Cotizante (madre)</label>
-  <div class="grid g-2">
-    <input id="madre_beneficiario" name="madre_beneficiario" type="text" placeholder="Beneficiario">
-    <input id="madre_cotizante" name="madre_cotizante" type="text" placeholder="Cotizante">
-  </div>
+  <label for="madre_tipo">Beneficiario / Cotizante (madre)</label>
+  <select id="madre_tipo" name="madre_tipo">
+    <option value="">Seleccione</option>
+    <option value="Beneficiario">Beneficiario</option>
+    <option value="Cotizante">Cotizante</option>
+  </select>
 </div>
+
 
 
     </div>
