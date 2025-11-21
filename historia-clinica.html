@@ -1614,7 +1614,7 @@ document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c =>
 // ==============================
 let dolor = [];
 try {
-  dolor = JSON.parse(h["dolor[]"] || "[]");
+  dolor = JSON.parse(h["dolor"] || "[]");
 } catch(e) {
   dolor = [];
 }
@@ -1622,6 +1622,7 @@ try {
 document.querySelectorAll("input[name='dolor[]']").forEach(c => {
   c.checked = dolor.includes(c.value);
 });
+
       
 // ==============================
 // HISTORIA ODONTOLÓGICA
