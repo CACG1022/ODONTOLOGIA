@@ -1545,6 +1545,7 @@ try {
 document.querySelectorAll("input[name='droga']").forEach(c => {
   c.checked = droga.includes(c.value);
 });
+      
 // ==============================
 // embarazos_partos
 // ==============================
@@ -1558,19 +1559,7 @@ try {
 document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
   c.checked = embarazos_partos.includes(c.value);
 });
-// ==============================
-// embarazos_partos
-// ==============================
-let embarazos_partos = [];
-try {
-  embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
-} catch(e) {
-  embarazos_partos= [];
-}
-
-document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
-  c.checked = embarazos_partos.includes(c.value);
-});
+    
 // ==============================
 // esta embarazada?
 // ==============================
