@@ -322,7 +322,7 @@
 
 <body>
 <div class="container">
-  <h1>Historia Clínica Odontológica5</h1>
+  <h1>Historia Clínica Odontológica6</h1>
   <!-- ==========================
        DATOS BÁSICOS DEL PACIENTE
   ============================== -->
@@ -1614,18 +1614,30 @@ document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c =>
   c.checked = histerectomia_menopausia.includes(c.value);
 }); 
 // ==============================
-// dolor
+// dolor (normalizar string con escapes)
 // ==============================
 let dolor = [];
+
 try {
-  dolor = JSON.parse(h["dolor"] || "[]");
+  let raw = h["dolor"];
+
+  if (Array.isArray(raw)) {
+    dolor = raw;                       // Caso 1: llega como array real
+  } 
+  else if (typeof raw === "string") {   // Caso 2: N8N lo manda como string "[\"boca\"]"
+    raw = raw.replace(/\\"/g, '"');     // limpiar escapes
+    dolor = JSON.parse(raw);            // convertir a array real
+  }
+
 } catch(e) {
   dolor = [];
 }
 
-document.querySelectorAll("input[name='dolor']").forEach(c => {
+// PINTAR CHECKBOXES
+document.querySelectorAll("input[name='dolor[]']").forEach(c => {
   c.checked = dolor.includes(c.value);
 });
+
 
 
 
