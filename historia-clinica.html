@@ -1545,6 +1545,73 @@ try {
 document.querySelectorAll("input[name='droga']").forEach(c => {
   c.checked = droga.includes(c.value);
 });
+// ==============================
+// embarazos_partos
+// ==============================
+let embarazos_partos = [];
+try {
+  embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
+} catch(e) {
+  embarazos_partos= [];
+}
+
+document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
+  c.checked = embarazos_partos.includes(c.value);
+});
+// ==============================
+// embarazos_partos
+// ==============================
+let embarazos_partos = [];
+try {
+  embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
+} catch(e) {
+  embarazos_partos= [];
+}
+
+document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
+  c.checked = embarazos_partos.includes(c.value);
+});
+// ==============================
+// esta embarazada?
+// ==============================
+let embarazada = [];
+try {
+  embarazada = JSON.parse(h["embarazada"] || "[]");
+} catch(e) {
+  embarazada= [];
+}
+
+document.querySelectorAll("input[name='embarazada']").forEach(c => {
+  c.checked = embarazada.includes(c.value);
+});
+
+// ==============================
+// anticonceptivos
+// ==============================
+let anticonceptivos = [];
+try {
+  anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]");
+} catch(e) {
+  anticonceptivos= [];
+}
+
+document.querySelectorAll("input[name='anticonceptivos']").forEach(c => {
+  c.checked = anticonceptivos.includes(c.value);
+});
+
+ // ==============================
+// histerectomia_menopausia
+// ==============================
+let histerectomia_menopausia = [];
+try {
+  histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]");
+} catch(e) {
+  histerectomia_menopausia= [];
+}
+
+document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => {
+  c.checked = histerectomia_menopausia.includes(c.value);
+});     
       
 // ==============================
 // HISTORIA ODONTOLÓGICA
