@@ -1531,6 +1531,20 @@ try {
 document.querySelectorAll("input[name='fuma']").forEach(c => {
   c.checked = fuma.includes(c.value);
 });
+
+// ==============================
+// droga
+// ==============================
+let droga = [];
+try {
+  droga = JSON.parse(h["droga"] || "[]");
+} catch(e) {
+  droga = [];
+}
+
+document.querySelectorAll("input[name='droga']").forEach(c => {
+  c.checked = droga.includes(c.value);
+});
       
 // ==============================
 // HISTORIA ODONTOLÓGICA
