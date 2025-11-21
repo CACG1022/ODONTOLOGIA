@@ -1614,7 +1614,7 @@ document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c =>
 // ==============================
 let dolor = [];
 try {
-  dolor = JSON.parse(h["dolor"] || "[]");
+  dolor = JSON.parse(h["dolor[]"] || "[]");
 } catch(e) {
   dolor = [];
 }
