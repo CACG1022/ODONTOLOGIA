@@ -852,13 +852,21 @@
         <input id="motivo_consulta" type="text">
       </div>
 
-      <div class="ctrl">
-        <label>¿Presenta dolor en…?</label>
-        <div class="inline">
-          <label class="chip">boca <input type="checkbox" name="dolor"></label>
-          <label class="chip">cara <input type="checkbox" name="dolor"></label>
-          <label class="chip">cuello <input type="checkbox" name="dolor"></label>
-        </div>
+<div class="ctrl">
+  <label>¿Presenta dolor en…?</label>
+  <div class="inline">
+    <label class="chip">
+      boca <input type="checkbox" name="dolor[]" value="boca">
+    </label>
+
+    <label class="chip">
+      cara <input type="checkbox" name="dolor[]" value="cara">
+    </label>
+
+    <label class="chip">
+      cuello <input type="checkbox" name="dolor[]" value="cuello">
+    </label>
+  </div>
       </div>
 
       <div class="ctrl full">
