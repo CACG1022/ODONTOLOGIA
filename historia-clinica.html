@@ -1501,7 +1501,32 @@ try {
 document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
   c.checked = toma_medicamentos.includes(c.value);
 });
+// ==============================
+// alcohol
+// ==============================
+let alcohols = [];
+try {
+  alcohol = JSON.parse(h["alcohol"] || "[]");
+} catch(e) {
+  alcohol = [];
+}
 
+document.querySelectorAll("input[name='alcohol']").forEach(c => {
+  c.checked = alcohol.includes(c.value);
+});
+// ==============================
+// alcohol
+// ==============================
+let alcohols = [];
+try {
+  alcohol = JSON.parse(h["alcohol"] || "[]");
+} catch(e) {
+  alcohol = [];
+}
+
+document.querySelectorAll("input[name='alcohol']").forEach(c => {
+  c.checked = alcohol.includes(c.value);
+});
 
       
 // ==============================
