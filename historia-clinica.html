@@ -1527,7 +1527,19 @@ try {
 document.querySelectorAll("input[name='alcohol']").forEach(c => {
   c.checked = alcohol.includes(c.value);
 });
+// ==============================
+// fuma
+// ==============================
+let fuma = [];
+try {
+  fuma = JSON.parse(h["fuma"] || "[]");
+} catch(e) {
+  fuma = [];
+}
 
+document.querySelectorAll("input[name='fuma']").forEach(c => {
+  c.checked = fuma.includes(c.value);
+});
       
 // ==============================
 // HISTORIA ODONTOLÓGICA
