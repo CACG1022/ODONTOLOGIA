@@ -1628,10 +1628,7 @@ document.querySelectorAll("input[name='dolor']").forEach(c => {
 // ==============================
 document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
 
-// Dolor: checkbox múltiple
-document.querySelectorAll("input[name='dolor']").forEach(c => {
-  c.checked = (h["Dolor"] ?? []).includes(c.value);
-});
+
 
 // Tratamientos recibidos
 document.querySelectorAll("input[name='tratamientos']").forEach(c => {
