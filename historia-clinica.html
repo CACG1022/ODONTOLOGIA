@@ -354,7 +354,14 @@
 
       <div class="ctrl">
         <label for="paciente_numdoc">No.</label>
-        <input id="paciente_numdoc" type="text">
+        <input 
+          id="paciente_numdoc" 
+          type="text" 
+          inputmode="numeric"
+          pattern="[0-9]+"
+          required
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+          placeholder="Solo números">
       </div>
 
       <div class="ctrl">
