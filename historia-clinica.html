@@ -1462,7 +1462,20 @@ document.querySelectorAll("input[name='condiciones']").forEach(c => {
   c.checked = condiciones.includes(c.value);
 });
       
+// ==============================
+// coagulacion
+// ==============================
+let coagulacion = [];
+try {
+  coagulacion = JSON.parse(h["coagulacion"] || "[]");
+} catch(e) {
+  coagulacion = [];
+}
 
+document.querySelectorAll("input[name='coagulacion']").forEach(c => {
+  c.checked = hijos.includes(c.value);
+});
+      
 // ==============================
 // HISTORIA ODONTOLÓGICA
 // ==============================
