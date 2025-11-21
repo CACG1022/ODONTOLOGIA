@@ -1488,6 +1488,7 @@ try {
 document.querySelectorAll("input[name='anticoagulantes']").forEach(c => {
   c.checked = anticoagulantes.includes(c.value);
 });
+      
 // ==============================
 // toma_medicamentos
 // ==============================
@@ -1501,10 +1502,11 @@ try {
 document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
   c.checked = toma_medicamentos.includes(c.value);
 });
+      
 // ==============================
 // alcohol
 // ==============================
-let alcohols = [];
+let alcohol = [];
 try {
   alcohol = JSON.parse(h["alcohol"] || "[]");
 } catch(e) {
@@ -1514,19 +1516,8 @@ try {
 document.querySelectorAll("input[name='alcohol']").forEach(c => {
   c.checked = alcohol.includes(c.value);
 });
-// ==============================
-// alcohol
-// ==============================
-let alcohols = [];
-try {
-  alcohol = JSON.parse(h["alcohol"] || "[]");
-} catch(e) {
-  alcohol = [];
-}
-
-document.querySelectorAll("input[name='alcohol']").forEach(c => {
-  c.checked = alcohol.includes(c.value);
-});
+      
+      
 // ==============================
 // fuma
 // ==============================
