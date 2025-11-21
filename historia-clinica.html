@@ -322,7 +322,7 @@
 
 <body>
 <div class="container">
-  <h1>Historia Clínica Odontológica2</h1>
+  <h1>Historia Clínica Odontológica3</h1>
   <!-- ==========================
        DATOS BÁSICOS DEL PACIENTE
   ============================== -->
@@ -1613,8 +1613,23 @@ document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c =>
 // dolor
 // ==============================
 let dolor = [];
+
 try {
-  dolor = JSON.parse(h["dolor"] || "[]");
+  let rawDolor = h["dolor"];
+
+  // Si viene como string → lo limpiamos
+  if (typeof rawDolor === "string") {
+    // Caso 1: viene como ["boca"]
+    // Caso 2: viene como "[\"boca\"]"
+    rawDolor = rawDolor.replace(/\\\"/g, '"'); // Limpia escapes
+    dolor = JSON.parse(rawDolor);
+  }
+
+  // Si ya es array
+  else if (Array.isArray(rawDolor)) {
+    dolor = rawDolor;
+  }
+
 } catch(e) {
   dolor = [];
 }
@@ -1622,6 +1637,7 @@ try {
 document.querySelectorAll("input[name='dolor[]']").forEach(c => {
   c.checked = dolor.includes(c.value);
 });
+
 
 
       
