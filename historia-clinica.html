@@ -1475,6 +1475,34 @@ try {
 document.querySelectorAll("input[name='coagulacion']").forEach(c => {
   c.checked = hijos.includes(c.value);
 });
+// ==============================
+// anticoagulantes
+// ==============================
+let anticoagulantes = [];
+try {
+  anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]");
+} catch(e) {
+  anticoagulantes = [];
+}
+
+document.querySelectorAll("input[name='anticoagulantes']").forEach(c => {
+  c.checked = anticoagulantes.includes(c.value);
+});
+// ==============================
+// toma_medicamentos
+// ==============================
+let toma_medicamentos = [];
+try {
+  toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]");
+} catch(e) {
+  toma_medicamentos = [];
+}
+
+document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
+  c.checked = toma_medicamentos.includes(c.value);
+});
+
+
       
 // ==============================
 // HISTORIA ODONTOLÓGICA
