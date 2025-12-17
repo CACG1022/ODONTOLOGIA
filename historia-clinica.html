@@ -1295,12 +1295,53 @@
     return data;
   }
 
+function validarCamposObligatorios() {
+  const errores = [];
+
+  // 1️⃣ Nombres
+  const nombre = document.getElementById("paciente_nombre").value.trim();
+  if (!nombre) errores.push("Nombres y apellidos");
+
+  // 2️⃣ Edad
+  const edad = document.getElementById("paciente_edad").value;
+  if (!edad) errores.push("Edad");
+
+  // 3️⃣ Tipo de identificación (checkbox)
+  const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
+  if (tipoID.length === 0) errores.push("Tipo de identificación");
+
+  // 4️⃣ Número de documento
+  const numDoc = document.getElementById("paciente_numdoc").value.trim();
+  if (!numDoc) errores.push("Número de identificación");
+
+  // 5️⃣ Fecha de nacimiento
+  const fechaNac = document.getElementById("paciente_nacimiento").value;
+  if (!fechaNac) errores.push("Fecha de nacimiento");
+
+  // 6️⃣ Odontograma (al menos un diente marcado)
+  if (!reporte || Object.keys(reporte).length === 0) {
+    errores.push("Odontograma (debe marcar al menos un diente)");
+  }
+
+  // 🚫 Si hay errores → bloquear envío
+  if (errores.length > 0) {
+    alert(
+      "⚠️ No se puede enviar la historia clínica.\n\n" +
+      "Faltan los siguientes campos obligatorios:\n\n" +
+      errores.map(e => "• " + e).join("\n")
+    );
+    return false;
+  }
+
+  return true;
+}
+  
 
   /**********************************************
      ENVIAR TODO A N8N
   **********************************************/
   function enviarAN8N() {
-
+   if (!validarCamposObligatorios()) return;
     const todosLosDientes = [
       18,17,16,15,14,13,12,11,
       21,22,23,24,25,26,27,28,
