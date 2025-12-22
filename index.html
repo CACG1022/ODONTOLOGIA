@@ -531,7 +531,7 @@ if (procedimiento.value !== "No aplica|0") {
       const ced = cedulaInput.value.trim();
       if(!ced || ced===lastQuery) return; lastQuery=ced;
       setHintHTML("Buscando historial del paciente...");
-      fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula="+encodeURIComponent(ced))
+      fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/db28876e-aa9c-4015-a0b0-8f6411989681?cedula="+encodeURIComponent(ced))
         .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
         .then(loadFromWebhook)
         .catch(()=> setHintHTML("No fue posible verificar. Intenta de nuevo.", "#c0392b"));
