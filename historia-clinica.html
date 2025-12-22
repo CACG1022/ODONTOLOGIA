@@ -2,33 +2,8 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Historia Clínica Odontológica + Odontograma</title>
-
-  <div class="card">
-    <div class="legend">Buscar historia clínica existente</div>
-    <div class="grid g-2 search-grid">
-      <div class="ctrl">
-        <label for="buscar_cedula">Ingrese número de identificación</label>
-        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
-      </div>
-
-<div class="ctrl">
-  <label>&nbsp;</label>
-
-  <button onclick="buscarHistoria()" 
-    style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer; width:100%;">
-    Buscar
-  </button>
-
-  <button onclick="irAgendamiento()"
-    style="margin-top:10px; padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer; width:100%;">
-    AGENDAMIENTO
-  </button>
-</div>
-
-
-
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Historia Clínica Odontológica + Odontograma</title>
 
   <!-- 🔐 LOGIN CON SUPABASE -->
   <script type="module">
@@ -111,8 +86,7 @@
      font-size:15px;
      background:#fff;
      cursor:pointer;
-  }
-
+    }
 
     textarea{ min-height:120px; resize:vertical; }
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -327,1443 +301,1170 @@
 </head>
 
 <body>
-<div class="container">
-  <h1>Historia Clínica Odontológica6</h1>
-  <!-- ==========================
-       DATOS BÁSICOS DEL PACIENTE
-  ============================== -->
-  <section class="card">
-    <div class="legend">Datos básicos del paciente</div>
-    <div class="grid g-2">
 
+  <!-- ✅ BUSCADOR (ANTES ESTABA EN EL HEAD, YA QUEDA BIEN UBICADO) -->
+  <section class="card container">
+    <div class="legend">Buscar historia clínica existente</div>
+    <div class="grid g-2 search-grid">
       <div class="ctrl">
-        <label for="paciente_nombre">*Nombres y apellidos</label>
-        <input id="paciente_nombre" type="text">
+        <label for="buscar_cedula">Ingrese número de identificación</label>
+        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
       </div>
 
       <div class="ctrl">
-        <label for="paciente_edad">*Edad</label>
-        <input id="paciente_edad" type="number" min="0">
-      </div>
-
-      <div class="ctrl full">
-        <label>*Identificación</label>
-        <div class="inline">
-          <label class="chip"><input type="checkbox" name="idtipo" value="CC"> C.C.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="CE"> C.E.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="TI"> T.I.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="RC"> R.C.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="Otro"> Otro</label>
-          <span class="hint">Complemente con No. y lugar</span>
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_numdoc">*No.</label>
-        <input 
-          id="paciente_numdoc" 
-          type="text" 
-          inputmode="numeric"
-          pattern="[0-9]+"
-          required
-          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-          placeholder="Solo números">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_lugardoc">de</label>
-        <input id="paciente_lugardoc" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_nacimiento">*Fecha de nacimiento</label>
-        <input id="paciente_nacimiento" type="date">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_lugarnac">Lugar de nacimiento</label>
-        <input id="paciente_lugarnac" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_direccion">Dirección de residencia</label>
-        <input id="paciente_direccion" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="Ciudad de Residencia">Ciudad de Residencia</label>
-        <input id="Ciudad de Residencia" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="EPS_Paciente">EPS</label>
-        <input id="EPS_Paciente" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_ocupacion">Ocupación</label>
-        <input id="paciente_ocupacion" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_tel">Teléfono</label>
-        <input id="paciente_tel" type="tel">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_ciudad">Ciudad</label>
-        <input id="paciente_ciudad" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_cel">Celular</label>
-        <input id="paciente_cel" type="tel">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_email">Correo electrónico</label>
-        <input id="paciente_email" type="email">
-      </div>
-
-      <div class="ctrl">
-        <label for="paciente_estadocivil">Estado civil</label>
-        <input id="paciente_estadocivil" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label>Hijos</label>
-        <div class="inline">
-          <label class="chip"><input type="checkbox" name="hijos" value="Si"> Sí</label>
-          <label class="chip"><input type="checkbox" name="hijos" value="No"> No</label>
-        </div>
-      </div>
-
-      
-
-    </div>
-  </section>
-
-  <!-- ==========================
-       DATOS DEL ACUDIENTE
-  ============================== -->
-  <section class="card">
-    <div class="legend">Datos del acudiente</div>
-
-    <div class="grid g-2">
-
-      <div class="ctrl">
-        <label for="padre_nombre">Nombre del padre</label>
-        <input id="padre_nombre" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="madre_nombre">Nombre de la madre</label>
-        <input id="madre_nombre" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="padre_tel">Teléfono padre</label>
-        <input id="padre_tel" type="tel">
-      </div>
-
-      <div class="ctrl">
-        <label for="madre_tel">Teléfono madre</label>
-        <input id="madre_tel" type="tel">
-      </div>
-
-      <div class="ctrl">
-        <label for="padre_eps">E.P.S. padre</label>
-        <input id="padre_eps" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="madre_eps">E.P.S. madre</label>
-        <input id="madre_eps" type="text">
-      </div>
-
-<div class="ctrl">
-  <label for="padre_tipo">Beneficiario / Cotizante (padre)</label>
-  <select id="padre_tipo" name="padre_tipo">
-    <option value="">Seleccione</option>
-    <option value="Beneficiario">Beneficiario</option>
-    <option value="Cotizante">Cotizante</option>
-  </select>
-</div>
-
-
-
-<div class="ctrl">
-  <label for="madre_tipo">Beneficiario / Cotizante (madre)</label>
-  <select id="madre_tipo" name="madre_tipo">
-    <option value="">Seleccione</option>
-    <option value="Beneficiario">Beneficiario</option>
-    <option value="Cotizante">Cotizante</option>
-  </select>
-</div>
-
-
-
-    </div>
-  </section>
-
-  <!-- ==========================
-       EMERGENCIA
-  ============================== -->
-  <section class="card">
-    <div class="legend">En caso de emergencia avisar a</div>
-
-    <div class="grid g-2">
-
-      <div class="ctrl">
-        <label for="emergencia_nombre">Nombres y apellidos</label>
-        <input id="emergencia_nombre" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="emergencia_parentesco">Parentesco</label>
-        <input id="emergencia_parentesco" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="emergencia_tel">Teléfono</label>
-        <input id="emergencia_tel" type="tel">
-      </div>
-
-      <div class="ctrl">
-        <label for="emergencia_cel">Celular</label>
-        <input id="emergencia_cel" type="tel">
-      </div>
-
-    </div>
-  </section>
-
-  <!-- ==========================
-       HISTORIA MÉDICA
-  ============================== -->
-  <section class="card">
-    <div class="legend">Historia médica</div>
-
-    <div class="grid g-2">
-      <div class="ctrl">
-        <label>¿Enfermedad grave actualmente o previa?</label>
-        <div class="inline">
-<label class="chip">
-  <input type="checkbox" name="grave" value="Si"> Sí
-</label>
-
-<label class="chip">
-  <input type="checkbox" name="grave" value="No"> No
-</label>
-
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <label for="grave_cual">¿Cuál?</label>
-        <input id="grave_cual" type="text">
-      </div>
-    </div>
-
-    <div class="ctrl">
-      <label>Condiciones (marque las que apliquen)</label>
-
-<div class="checks">
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Alteraciones cardíacas">
-    Alteraciones cardíacas
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Asma">
-    Asma
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Cáncer">
-    Cáncer
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias">
-    Alteraciones vasculares o circulatorias
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas">
-    Alteraciones psicológicas o psiquiátricas
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Enfisema">
-    Enfisema
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Artritis">
-    Artritis
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Diabetes">
-    Diabetes
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Hepatitis">
-    Hepatitis
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Desmayos o convulsiones">
-    Desmayos o convulsiones
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Hospitalizaciones">
-    Hospitalizaciones
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Hipotiroidismo">
-    Hipotiroidismo
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Fiebre reumática">
-    Fiebre reumática
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo">
-    Hipertiroidismos o hiperparatiroidismo
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Lupus">
-    Lupus
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Hipertensión">
-    Hipertensión
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Leucemia">
-    Leucemia
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Sinusitis">
-    Sinusitis
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Irradiaciones">
-    Irradiaciones
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Problemas renales">
-    Problemas renales
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="VIH (Sida)">
-    VIH (Sida)
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Osteoporosis">
-    Osteoporosis
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Trauma">
-    Trauma
-  </label>
-
-  <!-- OTRA -->
-  <div class="check" style="display:block;">
-    <div class="grid g-2">
-      <label class="inline">
-        <input type="checkbox" name="condiciones" value="Otra">
-        Otra
-      </label>
-      <input id="otra_cual" type="text" name="otra_cual" placeholder="¿Cuál?">
-    </div>
-  </div>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Tuberculosis">
-    Tuberculosis
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Alteraciones nutricionales">
-    Alteraciones nutricionales
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Alteraciones del hígado">
-    Alteraciones del hígado
-  </label>
-
-  <label class="check">
-    <input type="checkbox" name="condiciones" value="Anemia">
-    Anemia
-  </label>
-
-</div>
-
-    </div>
-
-    <div class="rowline"></div>
-
-    <div class="grid g-3">
-<div class="ctrl">
-  <label>¿Problemas de coagulación?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="coagulacion" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="coagulacion" value="No"> No</label>
-  </div>
-</div>
-
-
-<div class="ctrl">
-  <label>¿Toma anticoagulantes?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="anticoagulantes" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="anticoagulantes" value="No"> No</label>
-  </div>
-</div>
-
-
-<div class="ctrl">
-  <label>¿Toma medicamentos?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="toma_medicamentos" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="toma_medicamentos" value="No"> No</label>
-  </div>
-</div>
-
-
-      <div class="ctrl">
-        <label for="medicamentos_cuales">¿Cuáles?</label>
-        <input id="medicamentos_cuales" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="med_dosis">Dosis y frecuencia</label>
-        <input id="med_dosis" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label for="alergia_meds">Alergia a medicamentos</label>
-        <input id="alergia_meds" type="text">
-      </div>
-    </div>
-
-    <div class="rowline"></div>
-
-    <div class="grid g-2">
-<div class="ctrl">
-  <label>¿Toma bebidas alcohólicas?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="alcohol" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="alcohol" value="No"> No</label>
-  </div>
-</div>
-
-
-<div class="ctrl">
-  <label>¿Fuma?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="fuma" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="fuma" value="No"> No</label>
-  </div>
-</div>
-
-
-<div class="ctrl">
-  <label>¿Consume drogas psicoactivas?</label>
-  <div class="inline">
-    <label class="chip"><input type="checkbox" name="drogas" value="Si"> Sí</label>
-    <label class="chip"><input type="checkbox" name="drogas" value="No"> No</label>
-  </div>
-</div>
-
-
-  </section>
-
-  <!-- ==========================
-       SÓLO MUJERES
-  ============================== -->
-  <section class="card">
-    <div class="legend">Sólo para mujeres</div>
-
-    <div class="grid g-3">
-      <div class="ctrl">
-        <label>¿Ha tenido embarazos y partos?</label>
-        <div class="inline">
-<label class="chip"><input type="checkbox" name="embarazos_partos" value="Si"> Sí</label>
-<label class="chip"><input type="checkbox" name="embarazos_partos" value="No"> No</label>
-
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <label for="numero_hijos">No. de hijos</label>
-        <input id="numero_hijos" type="number" min="0">
-      </div>
-
-      <div class="ctrl">
-        <label>¿Actualmente está embarazada?</label>
-        <div class="inline">
-<label class="chip"><input type="checkbox" name="embarazada" value="Si"> Sí</label>
-<label class="chip"><input type="checkbox" name="embarazada" value="No"> No</label>
-
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <label for="tiempo_embarazo">Tiempo</label>
-        <input id="tiempo_embarazo" type="text">
-      </div>
-
-      <div class="ctrl">
-        <label>¿Toma anticonceptivos?</label>
-        <div class="inline">
-<label class="chip"><input type="checkbox" name="anticonceptivos" value="Si"> Sí</label>
-<label class="chip"><input type="checkbox" name="anticonceptivos" value="No"> No</label>
-
-        </div>
-      </div>
-
-      <div class="ctrl">
-        <label>¿Histerectomía o menopausia?</label>
-        <div class="inline">
-<label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="Si"> Sí</label>
-<label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="No"> No</label>
-
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==========================
-       HISTORIA ODONTOLÓGICA
-  ============================== -->
-  <section class="card">
-    <div class="legend">Historia odontológica</div>
-
-    <div class="grid g-2">
-
-      <div class="ctrl full">
-        <label for="motivo_consulta">Motivo de consulta odontológica</label>
-        <input id="motivo_consulta" type="text">
-      </div>
-
-
-<div class="ctrl">
-  <label>¿Presenta dolor en…?</label>
-  <div class="inline">
-<label class="chip">
-  boca <input type="checkbox" name="dolor[]" value="boca">
-</label>
-
-<label class="chip">
-  cara <input type="checkbox" name="dolor[]" value="cara">
-</label>
-
-<label class="chip">
-  cuello <input type="checkbox" name="dolor[]" value="cuello">
-</label>
-
-
-  </div>
-</div>
-
-      
-      <div class="ctrl full">
-        <label>Tratamientos recibidos</label>
-
-        <div class="checks">
-          <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
-          <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
-          <label class="check"><input type="checkbox" name="tratamientos" value="Endodoncia"> Endodoncia</label>
-          <label class="check"><input type="checkbox" name="tratamientos" value="Cirugía maxilofacial"> Cirugía maxilofacial</label>
-          <label class="check"><input type="checkbox" name="tratamientos" value="Implantes dentales"> Implantes dentales</label>
-          <label class="check"><input type="checkbox" name="tratamientos" value="Restauración oral"> Restauración oral</label>
-        </div>
-      </div>
-
-      <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
-
-    </div>
-  </section>
-
-  <!-- ==========================
-       ODONTOGRAMA COMPLETO
-  ============================== -->
-  <div id="odontograma-wrapper">
-
-    <h1>Odontograma Internacional FDI</h1>
-
-    <!-- LÍNEAS Y TEXTOS DE REFERENCIA -->
-    <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
-
-      <div style="
-        position:absolute;
-        top:170px;
-        left:50%;
-        transform:translateX(-50%);
-        width:1300px;
-        height:1px;
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
-
-      <div style="
-        position:absolute;
-        top:119px;
-        left:51%;
-        width:1px;
-        height:100px;
-        transform:translateX(-50%);
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
-
-      <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
-      <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
-
-      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino1
-      </div>
-      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino2
-      </div>
-
-      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual4
-      </div>
-      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual3
-      </div>
-
-      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular3
-      </div>
-      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular2
-      </div>
-      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular1
-      </div>
-      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular4
-      </div>
-
-      <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
-      <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
-
-      <div style="
-        position:absolute;
-        top:60px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-      <div style="
-        position:absolute;
-        top:220px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-
-    </div>
-
-    <!-- ==========================
-         FILAS DEL ODONTOGRAMA
-    ============================== -->
-    <div class="odontograma">
-
-      <div class="seccion">
-        <div class="etiqueta">Maxilar superior</div>
-        <div class="fila" id="fila-superior"></div>
-      </div>
-
-      <div class="seccion">
-        <div class="etiqueta" style="position:relative; top:150px;">Maxilar inferior</div>
-        <div class="fila" id="fila-inferior"></div>
-      </div>
-    </div>
-
-    <!-- ==========================
-         LEYENDA
-    ============================== -->
-    <div class="leyenda">
-      <h2>Leyenda de Preexistencias</h2>
-      <div class="leyenda-grid" id="grid-leyenda"></div>
-    </div>
-
-    <div style="text-align:center; margin-top:40px;">
-      <button onclick="mostrarReporte()"
-              style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
-        Generar reporte de preexistencias
-      </button>
-
-      <div style="text-align:center; margin-top:20px;">
-        <button onclick="enviarAN8N()"
-          style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
-          Guardar y enviar
+        <label>&nbsp;</label>
+
+        <button onclick="buscarHistoria()"
+          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer; width:100%;">
+          Buscar
+        </button>
+
+        <button onclick="irAgendamiento()"
+          style="margin-top:10px; padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer; width:100%;">
+          AGENDAMIENTO
         </button>
       </div>
     </div>
+  </section>
 
-  </div> <!-- fin odontograma-wrapper -->
+  <div class="container">
+    <h1>Historia Clínica Odontológica6</h1>
 
-</div> <!-- fin .container -->
+    <!-- ==========================
+         DATOS BÁSICOS DEL PACIENTE
+    ============================== -->
+    <section class="card">
+      <div class="legend">Datos básicos del paciente</div>
+      <div class="grid g-2">
 
+        <div class="ctrl">
+          <label for="paciente_nombre">*Nombres y apellidos</label>
+          <input id="paciente_nombre" type="text">
+        </div>
 
-<!-- 📤 FORMULARIO OCULTO PARA N8N -->
-<form id="formN8N"
-  action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8"
-  method="POST"
-  style="display:none;">
+        <div class="ctrl">
+          <label for="paciente_edad">*Edad</label>
+          <input id="paciente_edad" type="number" min="0">
+        </div>
 
-  <input type="hidden" id="dataN8N" name="data">
-  <input type="hidden" id="usuarioN8N" name="usuario_logueado">
+        <div class="ctrl full">
+          <label>*Identificación</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="idtipo" value="CC"> C.C.</label>
+            <label class="chip"><input type="checkbox" name="idtipo" value="CE"> C.E.</label>
+            <label class="chip"><input type="checkbox" name="idtipo" value="TI"> T.I.</label>
+            <label class="chip"><input type="checkbox" name="idtipo" value="RC"> R.C.</label>
+            <label class="chip"><input type="checkbox" name="idtipo" value="Otro"> Otro</label>
+            <span class="hint">Complemente con No. y lugar</span>
+          </div>
+        </div>
 
-</form>
-<script>
-   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
+        <div class="ctrl">
+          <label for="paciente_numdoc">*No.</label>
+          <input
+            id="paciente_numdoc"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]+"
+            required
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+            placeholder="Solo números">
+        </div>
 
-  function irAgendamiento() {
-    window.open(URL_AGENDAMIENTO, "_blank"); // nueva pestaña
-  }
-  
-  const preexistencias = {
-    Caries: 'red',
-    Corona: 'blue',
-    Endodoncia: '#005E94',
-    Obturación: 'green',
-    Fractura: 'orange',
-    Ausente: '#c3c5c7',
-    Implante: '#7eff42',
-    "Extracción indicada": '#333',
-    Exodoncia: '#ff38ef',
-    Póntico: 'cyan',
-    "Movilidad dental": 'pink',
-    Retenido: 'purple',
-    "Prótesis fija": '#880E4F',
-    "Prótesis removible": '#42ffc6',
-    "Prótesis total": '#fff642',
-    Amalgama: '#42b7ff',
-    Resina: '#FBC02D',
-    Sano: '#8BC34A'
-  };
+        <div class="ctrl">
+          <label for="paciente_lugardoc">de</label>
+          <input id="paciente_lugardoc" type="text">
+        </div>
 
-  let reporte = {};
+        <div class="ctrl">
+          <label for="paciente_nacimiento">*Fecha de nacimiento</label>
+          <input id="paciente_nacimiento" type="date">
+        </div>
 
-  const contenedorLeyenda = document.getElementById('grid-leyenda');
-  Object.entries(preexistencias).forEach(([nombre, color]) => {
-    const item = document.createElement('div');
-    item.innerHTML =
-      `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
-    contenedorLeyenda.appendChild(item);
-  });
+        <div class="ctrl">
+          <label for="paciente_lugarnac">Lugar de nacimiento</label>
+          <input id="paciente_lugarnac" type="text">
+        </div>
 
-  const dientesSuperior = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-  const dientesInferior = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+        <div class="ctrl">
+          <label for="paciente_direccion">Dirección de residencia</label>
+          <input id="paciente_direccion" type="text">
+        </div>
 
-  function crearDiente(numero, contenedor) {
-    const contenedorDiente = document.createElement('div');
-    contenedorDiente.className = 'contenedor-diente';
+        <div class="ctrl">
+          <label for="Ciudad de Residencia">Ciudad de Residencia</label>
+          <input id="Ciudad de Residencia" type="text">
+        </div>
 
-    const diente = document.createElement('div');
-    diente.className = 'diente';
-    diente.dataset.numero = numero;
+        <div class="ctrl">
+          <label for="EPS_Paciente">EPS</label>
+          <input id="EPS_Paciente" type="text">
+        </div>
 
-    ['superior','inferior','izquierda','derecha'].forEach(region => {
-      const div = document.createElement('div');
-      div.className = `cara ${region}`;
-      div.dataset.region = region;
-      div.onclick = (event) => mostrarPopup(event, div);
-      diente.appendChild(div);
-    });
+        <div class="ctrl">
+          <label for="paciente_ocupacion">Ocupación</label>
+          <input id="paciente_ocupacion" type="text">
+        </div>
 
-    const centro = document.createElement('div');
-    centro.className = 'centro';
-    centro.dataset.region = 'centro';
-    centro.onclick = (event) => mostrarPopup(event, centro);
-    diente.appendChild(centro);
+        <div class="ctrl">
+          <label for="paciente_tel">Teléfono</label>
+          <input id="paciente_tel" type="tel">
+        </div>
 
-    const label = document.createElement('div');
-    label.className = 'numero';
-    label.textContent = numero;
+        <div class="ctrl">
+          <label for="paciente_ciudad">Ciudad</label>
+          <input id="paciente_ciudad" type="text">
+        </div>
 
-    contenedorDiente.appendChild(diente);
-    contenedorDiente.appendChild(label);
-    contenedor.appendChild(contenedorDiente);
-  }
+        <div class="ctrl">
+          <label for="paciente_cel">Celular</label>
+          <input id="paciente_cel" type="tel">
+        </div>
 
-  function mostrarPopup(event, elemento) {
-    event.stopPropagation();
-    document.querySelectorAll('.popup').forEach(p => p.remove());
+        <div class="ctrl">
+          <label for="paciente_email">Correo electrónico</label>
+          <input id="paciente_email" type="email">
+        </div>
 
-    const menu = document.createElement('div');
-    menu.className = 'popup';
+        <div class="ctrl">
+          <label for="paciente_estadocivil">Estado civil</label>
+          <input id="paciente_estadocivil" type="text">
+        </div>
 
-    // OPCIÓN LIMPIAR SOLO ESA CARA
-    const limpiar = document.createElement('div');
-    limpiar.innerHTML =
-      `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
+        <div class="ctrl">
+          <label>Hijos</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="hijos" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="hijos" value="No"> No</label>
+          </div>
+        </div>
 
-    limpiar.onclick = () => {
-      elemento.style.background = "white";
+      </div>
+    </section>
 
-      const dienteNumero = elemento.parentElement.dataset.numero;
-      const cara = elemento.dataset.region;
+    <!-- ==========================
+         DATOS DEL ACUDIENTE
+    ============================== -->
+    <section class="card">
+      <div class="legend">Datos del acudiente</div>
 
-      if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
-        delete reporte[dienteNumero][cara];
-      }
+      <div class="grid g-2">
 
-      if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
-        delete reporte[dienteNumero];
-      }
+        <div class="ctrl">
+          <label for="padre_nombre">Nombre del padre</label>
+          <input id="padre_nombre" type="text">
+        </div>
 
-      menu.remove();
+        <div class="ctrl">
+          <label for="madre_nombre">Nombre de la madre</label>
+          <input id="madre_nombre" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="padre_tel">Teléfono padre</label>
+          <input id="padre_tel" type="tel">
+        </div>
+
+        <div class="ctrl">
+          <label for="madre_tel">Teléfono madre</label>
+          <input id="madre_tel" type="tel">
+        </div>
+
+        <div class="ctrl">
+          <label for="padre_eps">E.P.S. padre</label>
+          <input id="padre_eps" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="madre_eps">E.P.S. madre</label>
+          <input id="madre_eps" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="padre_tipo">Beneficiario / Cotizante (padre)</label>
+          <select id="padre_tipo" name="padre_tipo">
+            <option value="">Seleccione</option>
+            <option value="Beneficiario">Beneficiario</option>
+            <option value="Cotizante">Cotizante</option>
+          </select>
+        </div>
+
+        <div class="ctrl">
+          <label for="madre_tipo">Beneficiario / Cotizante (madre)</label>
+          <select id="madre_tipo" name="madre_tipo">
+            <option value="">Seleccione</option>
+            <option value="Beneficiario">Beneficiario</option>
+            <option value="Cotizante">Cotizante</option>
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================
+         EMERGENCIA
+    ============================== -->
+    <section class="card">
+      <div class="legend">En caso de emergencia avisar a</div>
+
+      <div class="grid g-2">
+
+        <div class="ctrl">
+          <label for="emergencia_nombre">Nombres y apellidos</label>
+          <input id="emergencia_nombre" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="emergencia_parentesco">Parentesco</label>
+          <input id="emergencia_parentesco" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="emergencia_tel">Teléfono</label>
+          <input id="emergencia_tel" type="tel">
+        </div>
+
+        <div class="ctrl">
+          <label for="emergencia_cel">Celular</label>
+          <input id="emergencia_cel" type="tel">
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==========================
+         HISTORIA MÉDICA
+    ============================== -->
+    <section class="card">
+      <div class="legend">Historia médica</div>
+
+      <div class="grid g-2">
+        <div class="ctrl">
+          <label>¿Enfermedad grave actualmente o previa?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="grave" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="grave" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label for="grave_cual">¿Cuál?</label>
+          <input id="grave_cual" type="text">
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>Condiciones (marque las que apliquen)</label>
+
+        <div class="checks">
+
+          <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones cardíacas"> Alteraciones cardíacas</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Asma"> Asma</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Cáncer"> Cáncer</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias"> Alteraciones vasculares o circulatorias</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas"> Alteraciones psicológicas o psiquiátricas</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Enfisema"> Enfisema</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Artritis"> Artritis</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Diabetes"> Diabetes</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Hepatitis"> Hepatitis</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Desmayos o convulsiones"> Desmayos o convulsiones</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Hospitalizaciones"> Hospitalizaciones</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Hipotiroidismo"> Hipotiroidismo</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Fiebre reumática"> Fiebre reumática</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo"> Hipertiroidismos o hiperparatiroidismo</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Lupus"> Lupus</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Hipertensión"> Hipertensión</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Leucemia"> Leucemia</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Sinusitis"> Sinusitis</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Irradiaciones"> Irradiaciones</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Problemas renales"> Problemas renales</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="VIH (Sida)"> VIH (Sida)</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Osteoporosis"> Osteoporosis</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Trauma"> Trauma</label>
+
+          <!-- OTRA -->
+          <div class="check" style="display:block;">
+            <div class="grid g-2">
+              <label class="inline">
+                <input type="checkbox" name="condiciones" value="Otra">
+                Otra
+              </label>
+              <input id="otra_cual" type="text" name="otra_cual" placeholder="¿Cuál?">
+            </div>
+          </div>
+
+          <label class="check"><input type="checkbox" name="condiciones" value="Tuberculosis"> Tuberculosis</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones nutricionales"> Alteraciones nutricionales</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones del hígado"> Alteraciones del hígado</label>
+          <label class="check"><input type="checkbox" name="condiciones" value="Anemia"> Anemia</label>
+
+        </div>
+      </div>
+
+      <div class="rowline"></div>
+
+      <div class="grid g-3">
+        <div class="ctrl">
+          <label>¿Problemas de coagulación?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="coagulacion" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="coagulacion" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>¿Toma anticoagulantes?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="anticoagulantes" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="anticoagulantes" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>¿Toma medicamentos?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="toma_medicamentos" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="toma_medicamentos" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label for="medicamentos_cuales">¿Cuáles?</label>
+          <input id="medicamentos_cuales" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="med_dosis">Dosis y frecuencia</label>
+          <input id="med_dosis" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label for="alergia_meds">Alergia a medicamentos</label>
+          <input id="alergia_meds" type="text">
+        </div>
+      </div>
+
+      <div class="rowline"></div>
+
+      <!-- ✅ AQUÍ FALTABA CIERRE DE DIV EN TU HTML: ya está arreglado -->
+      <div class="grid g-2">
+        <div class="ctrl">
+          <label>¿Toma bebidas alcohólicas?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="alcohol" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="alcohol" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>¿Fuma?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="fuma" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="fuma" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>¿Consume drogas psicoactivas?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="drogas" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="drogas" value="No"> No</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================
+         SÓLO MUJERES
+    ============================== -->
+    <section class="card">
+      <div class="legend">Sólo para mujeres</div>
+
+      <div class="grid g-3">
+        <div class="ctrl">
+          <label>¿Ha tenido embarazos y partos?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="embarazos_partos" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="embarazos_partos" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label for="numero_hijos">No. de hijos</label>
+          <input id="numero_hijos" type="number" min="0">
+        </div>
+
+        <div class="ctrl">
+          <label>¿Actualmente está embarazada?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="embarazada" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="embarazada" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label for="tiempo_embarazo">Tiempo</label>
+          <input id="tiempo_embarazo" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label>¿Toma anticonceptivos?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="anticonceptivos" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="anticonceptivos" value="No"> No</label>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>¿Histerectomía o menopausia?</label>
+          <div class="inline">
+            <label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="Si"> Sí</label>
+            <label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="No"> No</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================
+         HISTORIA ODONTOLÓGICA
+    ============================== -->
+    <section class="card">
+      <div class="legend">Historia odontológica</div>
+
+      <div class="grid g-2">
+
+        <div class="ctrl full">
+          <label for="motivo_consulta">Motivo de consulta odontológica</label>
+          <input id="motivo_consulta" type="text">
+        </div>
+
+        <div class="ctrl">
+          <label>¿Presenta dolor en…?</label>
+          <div class="inline">
+            <label class="chip">boca <input type="checkbox" name="dolor[]" value="boca"></label>
+            <label class="chip">cara <input type="checkbox" name="dolor[]" value="cara"></label>
+            <label class="chip">cuello <input type="checkbox" name="dolor[]" value="cuello"></label>
+          </div>
+        </div>
+
+        <div class="ctrl full">
+          <label>Tratamientos recibidos</label>
+
+          <div class="checks">
+            <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
+            <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
+            <label class="check"><input type="checkbox" name="tratamientos" value="Endodoncia"> Endodoncia</label>
+            <label class="check"><input type="checkbox" name="tratamientos" value="Cirugía maxilofacial"> Cirugía maxilofacial</label>
+            <label class="check"><input type="checkbox" name="tratamientos" value="Implantes dentales"> Implantes dentales</label>
+            <label class="check"><input type="checkbox" name="tratamientos" value="Restauración oral"> Restauración oral</label>
+          </div>
+        </div>
+
+        <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
+
+      </div>
+    </section>
+
+    <!-- ==========================
+         ODONTOGRAMA COMPLETO
+    ============================== -->
+    <div id="odontograma-wrapper">
+
+      <h1>Odontograma Internacional FDI</h1>
+
+      <!-- LÍNEAS Y TEXTOS DE REFERENCIA -->
+      <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
+
+        <div style="
+          position:absolute;
+          top:170px;
+          left:50%;
+          transform:translateX(-50%);
+          width:1300px;
+          height:1px;
+          background:#D0D0D0;
+          z-index:3;
+        "></div>
+
+        <div style="
+          position:absolute;
+          top:119px;
+          left:51%;
+          width:1px;
+          height:100px;
+          transform:translateX(-50%);
+          background:#D0D0D0;
+          z-index:3;
+        "></div>
+
+        <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
+        <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
+
+        <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Palatino1
+        </div>
+        <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Palatino2
+        </div>
+
+        <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Lingual4
+        </div>
+        <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Lingual3
+        </div>
+
+        <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Vestibular3
+        </div>
+        <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Vestibular2
+        </div>
+        <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Vestibular1
+        </div>
+        <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
+          Vestibular4
+        </div>
+
+        <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
+        <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
+
+        <div style="
+          position:absolute;
+          top:60px;
+          left:51%;
+          transform:translateX(-50%) rotate(180deg);
+          color:#D0D0D0;
+          font-weight:bold;
+          writing-mode:vertical-rl;
+        ">
+          Mesial
+        </div>
+        <div style="
+          position:absolute;
+          top:220px;
+          left:51%;
+          transform:translateX(-50%) rotate(180deg);
+          color:#D0D0D0;
+          font-weight:bold;
+          writing-mode:vertical-rl;
+        ">
+          Mesial
+        </div>
+
+      </div>
+
+      <!-- ==========================
+           FILAS DEL ODONTOGRAMA
+      ============================== -->
+      <div class="odontograma">
+
+        <div class="seccion">
+          <div class="etiqueta">Maxilar superior</div>
+          <div class="fila" id="fila-superior"></div>
+        </div>
+
+        <div class="seccion">
+          <div class="etiqueta" style="position:relative; top:150px;">Maxilar inferior</div>
+          <div class="fila" id="fila-inferior"></div>
+        </div>
+      </div>
+
+      <!-- ==========================
+           LEYENDA
+      ============================== -->
+      <div class="leyenda">
+        <h2>Leyenda de Preexistencias</h2>
+        <div class="leyenda-grid" id="grid-leyenda"></div>
+      </div>
+
+      <div style="text-align:center; margin-top:40px;">
+        <button onclick="mostrarReporte()"
+                style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
+          Generar reporte de preexistencias
+        </button>
+
+        <div style="text-align:center; margin-top:20px;">
+          <button onclick="enviarAN8N()"
+            style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
+            Guardar y enviar
+          </button>
+        </div>
+      </div>
+
+    </div> <!-- fin odontograma-wrapper -->
+
+  </div> <!-- fin .container -->
+
+  <!-- 📤 FORMULARIO OCULTO PARA N8N -->
+  <form id="formN8N"
+    action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8"
+    method="POST"
+    style="display:none;">
+    <input type="hidden" id="dataN8N" name="data">
+    <input type="hidden" id="usuarioN8N" name="usuario_logueado">
+  </form>
+
+  <script>
+    const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
+
+    function irAgendamiento() {
+      window.open(URL_AGENDAMIENTO, "_blank"); // nueva pestaña
+    }
+
+    const preexistencias = {
+      Caries: 'red',
+      Corona: 'blue',
+      Endodoncia: '#005E94',
+      Obturación: 'green',
+      Fractura: 'orange',
+      Ausente: '#c3c5c7',
+      Implante: '#7eff42',
+      "Extracción indicada": '#333',
+      Exodoncia: '#ff38ef',
+      Póntico: 'cyan',
+      "Movilidad dental": 'pink',
+      Retenido: 'purple',
+      "Prótesis fija": '#880E4F',
+      "Prótesis removible": '#42ffc6',
+      "Prótesis total": '#fff642',
+      Amalgama: '#42b7ff',
+      Resina: '#FBC02D',
+      Sano: '#8BC34A'
     };
 
-    menu.appendChild(limpiar);
+    let reporte = {};
 
-    // OPCIONES DE PREEXISTENCIAS
+    const contenedorLeyenda = document.getElementById('grid-leyenda');
     Object.entries(preexistencias).forEach(([nombre, color]) => {
       const item = document.createElement('div');
       item.innerHTML =
-        `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+        `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+      contenedorLeyenda.appendChild(item);
+    });
 
-      item.onclick = () => {
+    const dientesSuperior = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+    const dientesInferior = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+
+    function crearDiente(numero, contenedor) {
+      const contenedorDiente = document.createElement('div');
+      contenedorDiente.className = 'contenedor-diente';
+
+      const diente = document.createElement('div');
+      diente.className = 'diente';
+      diente.dataset.numero = numero;
+
+      ['superior','inferior','izquierda','derecha'].forEach(region => {
+        const div = document.createElement('div');
+        div.className = `cara ${region}`;
+        div.dataset.region = region;
+        div.onclick = (event) => mostrarPopup(event, div);
+        diente.appendChild(div);
+      });
+
+      const centro = document.createElement('div');
+      centro.className = 'centro';
+      centro.dataset.region = 'centro';
+      centro.onclick = (event) => mostrarPopup(event, centro);
+      diente.appendChild(centro);
+
+      const label = document.createElement('div');
+      label.className = 'numero';
+      label.textContent = numero;
+
+      contenedorDiente.appendChild(diente);
+      contenedorDiente.appendChild(label);
+      contenedor.appendChild(contenedorDiente);
+    }
+
+    function mostrarPopup(event, elemento) {
+      event.stopPropagation();
+      document.querySelectorAll('.popup').forEach(p => p.remove());
+
+      const menu = document.createElement('div');
+      menu.className = 'popup';
+
+      // OPCIÓN LIMPIAR SOLO ESA CARA
+      const limpiar = document.createElement('div');
+      limpiar.innerHTML =
+        `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
+
+      limpiar.onclick = () => {
+        elemento.style.background = "white";
+
         const dienteNumero = elemento.parentElement.dataset.numero;
         const cara = elemento.dataset.region;
 
-        if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
+        if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
+          delete reporte[dienteNumero][cara];
+        }
 
-        // ⭐ SI ES SANO O AUSENTE → PINTA TODAS LAS CARAS
-        if (nombre === "Sano" || nombre === "Ausente") {
-          elemento.parentElement.querySelectorAll(".cara, .centro")
-            .forEach(c => c.style.background = preexistencias[nombre]);
-
-          ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
-            reporte[dienteNumero][c] = nombre;
-          });
-        } else {
-          // Caso normal → solo cara seleccionada
-          elemento.style.background = color;
-          reporte[dienteNumero][cara] = nombre;
+        if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
+          delete reporte[dienteNumero];
         }
 
         menu.remove();
       };
 
-      menu.appendChild(item);
-    });
-
-    document.body.appendChild(menu);
-    menu.style.left = `${event.pageX + 5}px`;
-    menu.style.top  = `${event.pageY + 5}px`;
-    menu.style.display = 'block';
-  }
-
-  const filaSuperior = document.getElementById('fila-superior');
-  dientesSuperior.forEach(num => crearDiente(num, filaSuperior));
-
-  const filaInferior = document.getElementById('fila-inferior');
-  dientesInferior.forEach(num => crearDiente(num, filaInferior));
-
-  document.body.addEventListener('click', () => {
-    document.querySelectorAll('.popup').forEach(p => p.remove());
-  });
-
-
-
-  /**********************************************
-   MAPEO FINAL CARA → REGIÓN CLÍNICA (CORREGIDO)
-  **********************************************/
-  function obtenerRegion(diente, cara) {
-    diente = parseInt(diente);
-
-    if (cara === "centro") return "Oclusal";
-
-    // ----- SUPERIORES -----
-    if (diente >= 11 && diente <= 28) {
-      if (cara === "superior") return "Vestibular";
-      if (cara === "inferior") return "Palatino";
-    }
-
-    // ----- INFERIORES -----
-    if (diente >= 31 && diente <= 48) {
-      if (cara === "superior") return "Lingual";
-      if (cara === "inferior") return "Vestibular";
-    }
-
-    // MESIAL Y DISTAL
-    const derechaEsMesial = (
-      (diente >= 11 && diente <= 18) ||
-      (diente >= 41 && diente <= 48)
-    );
-
-    if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
-    if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
-
-    return null;
-  }
-
-  /**********************************************
-     GENERAR REPORTE VISUAL HTML
-  **********************************************/
-  function mostrarReporte() {
-    let html = `
-      <h2>Reporte de Preexistencias</h2>
-      <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
-        <tr style="background:#eee; font-weight:bold;">
-          <th>Diente</th>
-          <th>Mesial</th>
-          <th>Distal</th>
-          <th>Oclusal</th>
-          <th>Vestibular</th>
-          <th>Lingual</th>
-          <th>Palatino</th>
-        </tr>
-    `;
-
-    Object.entries(reporte).forEach(([diente, caras]) => {
-      let fila = {
-        Mesial: "",
-        Distal: "",
-        Oclusal: "",
-        Vestibular: "",
-        Lingual: "",
-        Palatino: ""
-      };
-
-      Object.entries(caras).forEach(([cara, preexistencia]) => {
-        let region = obtenerRegion(diente, cara);
-        if (region) fila[region] = preexistencia.toUpperCase();
-      });
-
-      html += `
-        <tr>
-          <td>${diente}</td>
-          <td>${fila.Mesial}</td>
-          <td>${fila.Distal}</td>
-          <td>${fila.Oclusal}</td>
-          <td>${fila.Vestibular}</td>
-          <td>${fila.Lingual}</td>
-          <td>${fila.Palatino}</td>
-        </tr>
-      `;
-    });
-
-    html += "</table>";
-
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-  }
-
-  /**********************************************
-   OBTENER TODOS LOS CAMPOS DEL FORMULARIO
-  **********************************************/
-  function obtenerDatosHistoriaClinica() {
-    const data = {};
-
-    document.querySelectorAll(".container input, .container textarea, .container select")
-      .forEach(campo => {
-        const nombre = campo.id || campo.name;
-        if (!nombre) return;
-
-        if (campo.type === "checkbox") {
-          if (!data[nombre]) data[nombre] = [];
-          if (campo.checked) data[nombre].push(campo.value || true);
-        } else {
-          data[nombre] = campo.value;
-        }
-      });
-
-    return data;
-  }
-
-function validarCamposObligatorios() {
-  const errores = [];
-
-  // 1️⃣ Nombres
-  const nombre = document.getElementById("paciente_nombre").value.trim();
-  if (!nombre) errores.push("Nombres y apellidos");
-
-  // 2️⃣ Edad
-  const edad = document.getElementById("paciente_edad").value;
-  if (!edad) errores.push("Edad");
-
-  // 3️⃣ Tipo de identificación (checkbox)
-  const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
-  if (tipoID.length === 0) errores.push("Tipo de identificación");
-
-  // 4️⃣ Número de documento
-  const numDoc = document.getElementById("paciente_numdoc").value.trim();
-  if (!numDoc) errores.push("Número de identificación");
-
-  // 5️⃣ Fecha de nacimiento
-  const fechaNac = document.getElementById("paciente_nacimiento").value;
-  if (!fechaNac) errores.push("Fecha de nacimiento");
-
-  // 6️⃣ Odontograma (al menos un diente marcado)
-  if (!reporte || Object.keys(reporte).length === 0) {
-    errores.push("Odontograma (debe marcar al menos un diente)");
-  }
-
-  // 🚫 Si hay errores → bloquear envío
-  if (errores.length > 0) {
-    alert(
-      "⚠️ No se puede enviar la historia clínica.\n\n" +
-      "Faltan los siguientes campos obligatorios:\n\n" +
-      errores.map(e => "• " + e).join("\n")
-    );
-    return false;
-  }
-
-  return true;
-}
-  
-
-  /**********************************************
-     ENVIAR TODO A N8N
-  **********************************************/
-  function enviarAN8N() {
-   if (!validarCamposObligatorios()) return;
-    const todosLosDientes = [
-      18,17,16,15,14,13,12,11,
-      21,22,23,24,25,26,27,28,
-      48,47,46,45,44,43,42,41,
-      31,32,33,34,35,36,37,38
-    ];
-
-    const odontogramaCompleto = {};
-
-    todosLosDientes.forEach(num => {
-      odontogramaCompleto[num] = {
-        Mesial: "",
-        Distal: "",
-        Oclusal: "",
-        Vestibular: "",
-        Lingual: "",
-        Palatino: ""
-      };
-    });
-
-    Object.entries(reporte).forEach(([diente, caras]) => {
-      Object.entries(caras).forEach(([cara, preexistencia]) => {
-        const region = obtenerRegion(diente, cara);
-        if (region) odontogramaCompleto[diente][region] = preexistencia.toUpperCase();
-      });
-    });
-
-    const datosHistoria = obtenerDatosHistoriaClinica();
-    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-
-    document.getElementById("usuarioN8N").value = usuario;
-
-    const payload = {
-      historia_clinica: datosHistoria,
-      odontograma: odontogramaCompleto,
-      fecha_envio: new Date().toISOString(),
-      usuario_logueado: usuario
-    };
-
-    document.getElementById("dataN8N").value = JSON.stringify(payload);
-
-    document.getElementById("formN8N").submit();
-
-    alert("Información enviada correctamente a N8N");
-  }
-
-
-  /**********************************************
-     CONSULTAR PACIENTE EN N8N
-  **********************************************/
-  async function buscarHistoria() {
-    const cedula = document.getElementById("buscar_cedula").value.trim();
-
-    if (!cedula) {
-      alert("Ingrese una cédula");
-      return;
-    }
-
-    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
-
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      if (!data.existe) {
-        alert("No existe historia clínica para este paciente");
-        return;
-      }
-
-      const h = data.historia;
-      const od = data.odontograma;
-
-      // ------ LLENAR CAMPOS BÁSICOS ------
-      document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
-      document.getElementById("paciente_edad").value = h["Edad"] ?? "";
-      document.getElementById("paciente_numdoc").value = data.id ?? "";
-      document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
-      document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
-      document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
-      document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
-      document.getElementById("Ciudad de Residencia").value = h["Ciudad_de_Residencia"] ?? "";
-      document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
-      document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
-      document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
-      document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
-      document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
-      document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
-      document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
-      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
-      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
-
-
-// ==============================
-// TIPO DE IDENTIFICACIÓN
-// ==============================
-let tiposID = [];
-try {
-  tiposID = JSON.parse(h["Tipo identificación"] || "[]");
-} catch(e) {
-  tiposID = [];
-}
-
-document.querySelectorAll("input[name='idtipo']").forEach(c => {
-  c.checked = tiposID.includes(c.value);
-});
-
-
-      
-
-
-// ==============================
-// HIJOS (checkbox Sí/No)
-// ==============================
-let hijos = [];
-try {
-  hijos = JSON.parse(h["paciente_hijos"] || "[]");
-} catch(e) {
-  hijos = [];
-}
-
-document.querySelectorAll("input[name='hijos']").forEach(c => {
-  c.checked = hijos.includes(c.value);
-});
-
-
-
-// ==============================
-// DATOS ACUDIENTES
-// ==============================
-document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
-document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
-document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
-document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
-document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
-document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
-
-
-// ==============================
-// EMERGENCIA
-// ==============================
-document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
-document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
-document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
-document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
-
-
-// ==============================
-// HISTORIA MÉDICA
-// ==============================
-document.querySelectorAll("input[name='grave']").forEach(c => {
-  c.checked = (h["Enfermedad grave"] ?? []).includes(c.value);
-});
-document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
-document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
-
-document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
-document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
-document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
-
-
-// ==============================
-// SOLO MUJERES
-// ==============================
-document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
-document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
-
-// ==============================
-// CONDICIONES MÉDICAS
-// ==============================
-let condiciones = [];
-try {
-  condiciones = JSON.parse(h["Condiciones"] || "[]");
-} catch(e) {
-  condiciones = [];
-}
-
-document.querySelectorAll("input[name='condiciones']").forEach(c => {
-  c.checked = condiciones.includes(c.value);
-});
-      
-// ==============================
-// coagulacion
-// ==============================
-let coagulacion = [];
-try {
-  coagulacion = JSON.parse(h["coagulacion"] || "[]");
-} catch(e) {
-  coagulacion = [];
-}
-
-document.querySelectorAll("input[name='coagulacion']").forEach(c => {
-  c.checked = coagulacion.includes(c.value);
-});
-// ==============================
-// anticoagulantes
-// ==============================
-let anticoagulantes = [];
-try {
-  anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]");
-} catch(e) {
-  anticoagulantes = [];
-}
-
-document.querySelectorAll("input[name='anticoagulantes']").forEach(c => {
-  c.checked = anticoagulantes.includes(c.value);
-});
-      
-// ==============================
-// toma_medicamentos
-// ==============================
-let toma_medicamentos = [];
-try {
-  toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]");
-} catch(e) {
-  toma_medicamentos = [];
-}
-
-document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
-  c.checked = toma_medicamentos.includes(c.value);
-});
-      
-// ==============================
-// alcohol
-// ==============================
-let alcohol = [];
-try {
-  alcohol = JSON.parse(h["alcohol"] || "[]");
-} catch(e) {
-  alcohol = [];
-}
-
-document.querySelectorAll("input[name='alcohol']").forEach(c => {
-  c.checked = alcohol.includes(c.value);
-});
-      
-      
-// ==============================
-// fuma
-// ==============================
-let fuma = [];
-try {
-  fuma = JSON.parse(h["fuma"] || "[]");
-} catch(e) {
-  fuma = [];
-}
-
-document.querySelectorAll("input[name='fuma']").forEach(c => {
-  c.checked = fuma.includes(c.value);
-});
-
-// ==============================
-// droga
-// ==============================
-let droga = [];
-try {
-  droga = JSON.parse(h["droga"] || "[]");
-} catch(e) {
-  droga = [];
-}
-
-document.querySelectorAll("input[name='droga']").forEach(c => {
-  c.checked = droga.includes(c.value);
-});
-      
-// ==============================
-// embarazos_partos
-// ==============================
-let embarazos_partos = [];
-try {
-  embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
-} catch(e) {
-  embarazos_partos= [];
-}
-
-document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
-  c.checked = embarazos_partos.includes(c.value);
-});
-    
-// ==============================
-// esta embarazada?
-// ==============================
-let embarazada = [];
-try {
-  embarazada = JSON.parse(h["embarazada"] || "[]");
-} catch(e) {
-  embarazada= [];
-}
-
-document.querySelectorAll("input[name='embarazada']").forEach(c => {
-  c.checked = embarazada.includes(c.value);
-});
-
-// ==============================
-// anticonceptivos
-// ==============================
-let anticonceptivos = [];
-try {
-  anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]");
-} catch(e) {
-  anticonceptivos= [];
-}
-
-document.querySelectorAll("input[name='anticonceptivos']").forEach(c => {
-  c.checked = anticonceptivos.includes(c.value);
-});
-
- // ==============================
-// histerectomia_menopausia
-// ==============================
-let histerectomia_menopausia = [];
-try {
-  histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]");
-} catch(e) {
-  histerectomia_menopausia= [];
-}
-
-document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => {
-  c.checked = histerectomia_menopausia.includes(c.value);
-}); 
-// ==============================
-// dolor (normalizar string con escapes)
-// ==============================
-let dolor = [];
-
-try {
-  let raw = h["dolor"];
-
-  if (Array.isArray(raw)) {
-    dolor = raw;                       // Caso 1: llega como array real
-  } 
-  else if (typeof raw === "string") {   // Caso 2: N8N lo manda como string "[\"boca\"]"
-    raw = raw.replace(/\\"/g, '"');     // limpiar escapes
-    dolor = JSON.parse(raw);            // convertir a array real
-  }
-
-} catch(e) {
-  dolor = [];
-}
-
-// PINTAR CHECKBOXES
-document.querySelectorAll("input[name='dolor[]']").forEach(c => {
-  c.checked = dolor.includes(c.value);
-});
-
-
-
-
-      
-// ==============================
-// HISTORIA ODONTOLÓGICA
-// ==============================
-document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-
-
-
-// Tratamientos recibidos
-document.querySelectorAll("input[name='tratamientos']").forEach(c => {
-  c.checked = (h["Tratamientos"] ?? []).includes(c.value);
-});
-
-      // ----- LIMPIAR ODONTOGRAMA -----
-      document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
-      reporte = {};
-
-      // ----- PINTAR ODONTOGRAMA DESDE N8N -----
-      Object.entries(od).forEach(([diente, regiones]) => {
-        Object.entries(regiones).forEach(([region, estado]) => {
-
-          if (!estado) return;
-
-          const estadoNormalizado =
-            estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-
-          const color = preexistencias[estadoNormalizado];
-          if (!color) return;
-
-          let cara = null;
-
-          switch(region) {
-            case "Mesial":     cara = "derecha"; break;
-            case "Distal":     cara = "izquierda"; break;
-            case "Oclusal":    cara = "centro"; break;
-            case "Vestibular":
-              cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
-              break;
-            case "Lingual":    cara = "superior"; break;
-            case "Palatino":   cara = "inferior"; break;
+      menu.appendChild(limpiar);
+
+      // OPCIONES DE PREEXISTENCIAS
+      Object.entries(preexistencias).forEach(([nombre, color]) => {
+        const item = document.createElement('div');
+        item.innerHTML =
+          `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+
+        item.onclick = () => {
+          const dienteNumero = elemento.parentElement.dataset.numero;
+          const cara = elemento.dataset.region;
+
+          if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
+
+          // ⭐ SI ES SANO O AUSENTE → PINTA TODAS LAS CARAS
+          if (nombre === "Sano" || nombre === "Ausente") {
+            elemento.parentElement.querySelectorAll(".cara, .centro")
+              .forEach(c => c.style.background = preexistencias[nombre]);
+
+            ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
+              reporte[dienteNumero][c] = nombre;
+            });
+          } else {
+            // Caso normal → solo cara seleccionada
+            elemento.style.background = color;
+            reporte[dienteNumero][cara] = nombre;
           }
 
-          if (!cara) return;
+          menu.remove();
+        };
 
-          const selector = `.diente[data-numero='${diente}'] .${cara}`;
-          const elem = document.querySelector(selector);
-          if (!elem) return;
+        menu.appendChild(item);
+      });
 
-          elem.style.background = color;
+      document.body.appendChild(menu);
+      menu.style.left = `${event.pageX + 5}px`;
+      menu.style.top  = `${event.pageY + 5}px`;
+      menu.style.display = 'block';
+    }
 
-          if (!reporte[diente]) reporte[diente] = {};
-          reporte[diente][cara] = estadoNormalizado;
+    const filaSuperior = document.getElementById('fila-superior');
+    dientesSuperior.forEach(num => crearDiente(num, filaSuperior));
+
+    const filaInferior = document.getElementById('fila-inferior');
+    dientesInferior.forEach(num => crearDiente(num, filaInferior));
+
+    document.body.addEventListener('click', () => {
+      document.querySelectorAll('.popup').forEach(p => p.remove());
+    });
+
+    /**********************************************
+     MAPEO FINAL CARA → REGIÓN CLÍNICA (CORREGIDO)
+    **********************************************/
+    function obtenerRegion(diente, cara) {
+      diente = parseInt(diente);
+
+      if (cara === "centro") return "Oclusal";
+
+      // ----- SUPERIORES -----
+      if (diente >= 11 && diente <= 28) {
+        if (cara === "superior") return "Vestibular";
+        if (cara === "inferior") return "Palatino";
+      }
+
+      // ----- INFERIORES -----
+      if (diente >= 31 && diente <= 48) {
+        if (cara === "superior") return "Lingual";
+        if (cara === "inferior") return "Vestibular";
+      }
+
+      // MESIAL Y DISTAL
+      const derechaEsMesial = (
+        (diente >= 11 && diente <= 18) ||
+        (diente >= 41 && diente <= 48)
+      );
+
+      if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
+      if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
+
+      return null;
+    }
+
+    /**********************************************
+       GENERAR REPORTE VISUAL HTML
+    **********************************************/
+    function mostrarReporte() {
+      let html = `
+        <h2>Reporte de Preexistencias</h2>
+        <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
+          <tr style="background:#eee; font-weight:bold;">
+            <th>Diente</th>
+            <th>Mesial</th>
+            <th>Distal</th>
+            <th>Oclusal</th>
+            <th>Vestibular</th>
+            <th>Lingual</th>
+            <th>Palatino</th>
+          </tr>
+      `;
+
+      Object.entries(reporte).forEach(([diente, caras]) => {
+        let fila = {
+          Mesial: "",
+          Distal: "",
+          Oclusal: "",
+          Vestibular: "",
+          Lingual: "",
+          Palatino: ""
+        };
+
+        Object.entries(caras).forEach(([cara, preexistencia]) => {
+          let region = obtenerRegion(diente, cara);
+          if (region) fila[region] = preexistencia.toUpperCase();
+        });
+
+        html += `
+          <tr>
+            <td>${diente}</td>
+            <td>${fila.Mesial}</td>
+            <td>${fila.Distal}</td>
+            <td>${fila.Oclusal}</td>
+            <td>${fila.Vestibular}</td>
+            <td>${fila.Lingual}</td>
+            <td>${fila.Palatino}</td>
+          </tr>
+        `;
+      });
+
+      html += "</table>";
+
+      const win = window.open("", "_blank");
+      win.document.write(html);
+      win.document.close();
+    }
+
+    /**********************************************
+     OBTENER TODOS LOS CAMPOS DEL FORMULARIO
+    **********************************************/
+    function obtenerDatosHistoriaClinica() {
+      const data = {};
+
+      document.querySelectorAll(".container input, .container textarea, .container select")
+        .forEach(campo => {
+          const nombre = campo.id || campo.name;
+          if (!nombre) return;
+
+          if (campo.type === "checkbox") {
+            if (!data[nombre]) data[nombre] = [];
+            if (campo.checked) data[nombre].push(campo.value || true);
+          } else {
+            data[nombre] = campo.value;
+          }
+        });
+
+      return data;
+    }
+
+    function validarCamposObligatorios() {
+      const errores = [];
+
+      const nombre = document.getElementById("paciente_nombre").value.trim();
+      if (!nombre) errores.push("Nombres y apellidos");
+
+      const edad = document.getElementById("paciente_edad").value;
+      if (!edad) errores.push("Edad");
+
+      const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
+      if (tipoID.length === 0) errores.push("Tipo de identificación");
+
+      const numDoc = document.getElementById("paciente_numdoc").value.trim();
+      if (!numDoc) errores.push("Número de identificación");
+
+      const fechaNac = document.getElementById("paciente_nacimiento").value;
+      if (!fechaNac) errores.push("Fecha de nacimiento");
+
+      if (!reporte || Object.keys(reporte).length === 0) {
+        errores.push("Odontograma (debe marcar al menos un diente)");
+      }
+
+      if (errores.length > 0) {
+        alert(
+          "⚠️ No se puede enviar la historia clínica.\n\n" +
+          "Faltan los siguientes campos obligatorios:\n\n" +
+          errores.map(e => "• " + e).join("\n")
+        );
+        return false;
+      }
+
+      return true;
+    }
+
+    /**********************************************
+       ENVIAR TODO A N8N
+    **********************************************/
+    function enviarAN8N() {
+      if (!validarCamposObligatorios()) return;
+
+      const todosLosDientes = [
+        18,17,16,15,14,13,12,11,
+        21,22,23,24,25,26,27,28,
+        48,47,46,45,44,43,42,41,
+        31,32,33,34,35,36,37,38
+      ];
+
+      const odontogramaCompleto = {};
+
+      todosLosDientes.forEach(num => {
+        odontogramaCompleto[num] = {
+          Mesial: "",
+          Distal: "",
+          Oclusal: "",
+          Vestibular: "",
+          Lingual: "",
+          Palatino: ""
+        };
+      });
+
+      Object.entries(reporte).forEach(([diente, caras]) => {
+        Object.entries(caras).forEach(([cara, preexistencia]) => {
+          const region = obtenerRegion(diente, cara);
+          if (region) odontogramaCompleto[diente][region] = preexistencia.toUpperCase();
         });
       });
 
-      alert("Historia clínica cargada con éxito");
+      const datosHistoria = obtenerDatosHistoriaClinica();
+      const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-    } catch (err) {
-      console.error(err);
-      alert("Error consultando N8N");
+      document.getElementById("usuarioN8N").value = usuario;
+
+      const payload = {
+        historia_clinica: datosHistoria,
+        odontograma: odontogramaCompleto,
+        fecha_envio: new Date().toISOString(),
+        usuario_logueado: usuario
+      };
+
+      document.getElementById("dataN8N").value = JSON.stringify(payload);
+      document.getElementById("formN8N").submit();
+
+      alert("Información enviada correctamente a N8N");
     }
-  }
-</script>
+
+    /**********************************************
+       CONSULTAR PACIENTE EN N8N
+    **********************************************/
+    async function buscarHistoria() {
+      const cedula = document.getElementById("buscar_cedula").value.trim();
+
+      if (!cedula) {
+        alert("Ingrese una cédula");
+        return;
+      }
+
+      const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
+
+      try {
+        const resp = await fetch(url);
+        const data = await resp.json();
+
+        if (!data.existe) {
+          alert("No existe historia clínica para este paciente");
+          return;
+        }
+
+        const h = data.historia;
+        const od = data.odontograma;
+
+        // ------ LLENAR CAMPOS BÁSICOS ------
+        document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
+        document.getElementById("paciente_edad").value = h["Edad"] ?? "";
+        document.getElementById("paciente_numdoc").value = data.id ?? "";
+        document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
+        document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
+        document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
+        document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
+        document.getElementById("Ciudad de Residencia").value = h["Ciudad_de_Residencia"] ?? "";
+        document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
+        document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
+        document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
+        document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
+        document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
+        document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
+        document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+        document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
+        document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
+
+        // ==============================
+        // TIPO DE IDENTIFICACIÓN
+        // ==============================
+        let tiposID = [];
+        try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+        document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+
+        // ==============================
+        // HIJOS
+        // ==============================
+        let hijos = [];
+        try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+        document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
+
+        // ==============================
+        // DATOS ACUDIENTES
+        // ==============================
+        document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
+        document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
+        document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
+        document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
+        document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
+        document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
+
+        // ==============================
+        // EMERGENCIA
+        // ==============================
+        document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
+        document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
+        document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
+        document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
+
+        // ==============================
+        // HISTORIA MÉDICA
+        // ==============================
+        document.querySelectorAll("input[name='grave']").forEach(c => {
+          c.checked = (h["Enfermedad grave"] ?? []).includes(c.value);
+        });
+        document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
+        document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
+        document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
+        document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
+        document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
+
+        // ==============================
+        // SOLO MUJERES
+        // ==============================
+        document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
+        document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
+
+        // ==============================
+        // CONDICIONES
+        // ==============================
+        let condiciones = [];
+        try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
+        document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
+
+        let coagulacion = [];
+        try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
+        document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
+
+        let anticoagulantes = [];
+        try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
+        document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
+
+        let toma_medicamentos = [];
+        try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
+        document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
+
+        let alcohol = [];
+        try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
+        document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
+
+        let fuma = [];
+        try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
+        document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
+
+        let droga = [];
+        try { droga = JSON.parse(h["droga"] || "[]"); } catch(e) { droga = []; }
+        document.querySelectorAll("input[name='droga']").forEach(c => { c.checked = droga.includes(c.value); });
+
+        let embarazos_partos = [];
+        try { embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]"); } catch(e) { embarazos_partos= []; }
+        document.querySelectorAll("input[name='embarazos_partos']").forEach(c => { c.checked = embarazos_partos.includes(c.value); });
+
+        let embarazada = [];
+        try { embarazada = JSON.parse(h["embarazada"] || "[]"); } catch(e) { embarazada= []; }
+        document.querySelectorAll("input[name='embarazada']").forEach(c => { c.checked = embarazada.includes(c.value); });
+
+        let anticonceptivos = [];
+        try { anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]"); } catch(e) { anticonceptivos= []; }
+        document.querySelectorAll("input[name='anticonceptivos']").forEach(c => { c.checked = anticonceptivos.includes(c.value); });
+
+        let histerectomia_menopausia = [];
+        try { histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]"); } catch(e) { histerectomia_menopausia= []; }
+        document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => { c.checked = histerectomia_menopausia.includes(c.value); });
+
+        // ==============================
+        // dolor (normalizar string con escapes)
+        // ==============================
+        let dolor = [];
+        try {
+          let raw = h["dolor"];
+          if (Array.isArray(raw)) dolor = raw;
+          else if (typeof raw === "string") {
+            raw = raw.replace(/\\"/g, '"');
+            dolor = JSON.parse(raw);
+          }
+        } catch(e) { dolor = []; }
+
+        document.querySelectorAll("input[name='dolor[]']").forEach(c => {
+          c.checked = dolor.includes(c.value);
+        });
+
+        // ==============================
+        // HISTORIA ODONTOLÓGICA
+        // ==============================
+        document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
+        document.querySelectorAll("input[name='tratamientos']").forEach(c => {
+          c.checked = (h["Tratamientos"] ?? []).includes(c.value);
+        });
+
+        // ----- LIMPIAR ODONTOGRAMA -----
+        document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
+        reporte = {};
+
+        // ----- PINTAR ODONTOGRAMA DESDE N8N -----
+        Object.entries(od).forEach(([diente, regiones]) => {
+          Object.entries(regiones).forEach(([region, estado]) => {
+
+            if (!estado) return;
+
+            const estadoNormalizado =
+              estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
+
+            const color = preexistencias[estadoNormalizado];
+            if (!color) return;
+
+            let cara = null;
+
+            switch(region) {
+              case "Mesial":     cara = "derecha"; break;
+              case "Distal":     cara = "izquierda"; break;
+              case "Oclusal":    cara = "centro"; break;
+              case "Vestibular":
+                cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
+                break;
+              case "Lingual":    cara = "superior"; break;
+              case "Palatino":   cara = "inferior"; break;
+            }
+
+            if (!cara) return;
+
+            const selector = `.diente[data-numero='${diente}'] .${cara}`;
+            const elem = document.querySelector(selector);
+            if (!elem) return;
+
+            elem.style.background = color;
+
+            if (!reporte[diente]) reporte[diente] = {};
+            reporte[diente][cara] = estadoNormalizado;
+          });
+        });
+
+        alert("Historia clínica cargada con éxito");
+
+      } catch (err) {
+        console.error(err);
+        alert("Error consultando N8N");
+      }
+    }
+  </script>
 
 </body>
 </html>
