@@ -154,7 +154,7 @@
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
     .btn-salir{ background:#f44336; }
-    .btn-agendar{ background:#2e7d32; } /* ✅ nuevo botón AGENDAR */
+    .btn-agendar{ background:#009688; } /* ✅ nuevo botón AGENDAR */
 
     /* =====================================================
        ESTILOS DEL ODONTOGRAMA
@@ -345,7 +345,7 @@
       </div>
 
       <div class="ctrl">
-        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">AGENDAMIENTO</button>
+        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">VER AGENDA</button>
       </div>
 
       <!-- ✅ NUEVO BOTÓN: AGENDAR (debajo de AGENDAMIENTO) -->
@@ -1095,7 +1095,9 @@
   // LINKS DE AGENDA
   // ==============================
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
-  const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36"; // ✅ nuevo link
+  const URL_AGENDAR = "
+    
+  "; // ✅ nuevo link
 
   function irAgendamiento() {
     window.open(URL_AGENDAMIENTO, "_blank");
