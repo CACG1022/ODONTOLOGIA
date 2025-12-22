@@ -144,7 +144,6 @@
     .btn-salir{ background:#009688; }
     .btn-agendar{ background:#009688; }
     .btn-guardar{ background:#009688; }
-    .btn-plan{ background:#009688; }
 
     /* =====================================================
        EVOLUCIONES (tabla)
@@ -175,7 +174,6 @@
       padding: 20px 0 40px;
       margin-top: 30px;
       border-radius: 14px;
-      overflow-x: auto; /* permite ver dientes en pantallas pequeñas */
     }
 
     #odontograma-wrapper h1 {
@@ -193,7 +191,7 @@
       z-index: 10;
       overflow-x: visible !important;
       width: max-content;
-      margin: 0 auto; /* centrado para evitar que se salga de pantalla */
+      margin-left: calc(50% - 620px);
     }
 
     .seccion { text-align: center; }
@@ -363,14 +361,6 @@
       </div>
       <div class="ctrl">
         <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
-      </div>
-
-      <!-- fila 4 (nuevo) -->
-      <div class="ctrl">
-        <label>&nbsp;</label>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="irPlanTratamiento()" class="btn btn-plan">PLAN DE TRATAMIENTO</button>
       </div>
     </div>
   </section>
@@ -985,31 +975,9 @@
   // ==============================
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
-  const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/";
 
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
-
-  // ✅ Plan de tratamiento: abre la página y envía la cédula del paciente
-  function irPlanTratamiento() {
-    const cedula = (
-      document.getElementById("paciente_numdoc")?.value ||
-      document.getElementById("buscar_cedula")?.value ||
-      ""
-    ).trim();
-
-    if (!cedula) {
-      alert("⚠️ Primero ingresa o busca la cédula del paciente para abrir el plan de tratamiento.");
-      return;
-    }
-
-    // Guarda la cédula para que el plan la pueda leer por localStorage (respaldo)
-    try { localStorage.setItem("cedula_paciente_plan", cedula); } catch(e) {}
-
-    // Envía también por querystring (?cedula=...)
-    const url = URL_PLAN_TRATAMIENTO + (URL_PLAN_TRATAMIENTO.includes("?") ? "&" : "?") + "cedula=" + encodeURIComponent(cedula);
-    window.open(url, "_blank");
-  }
 
   // ==============================
   // ✅ EVOLUCIONES
@@ -1058,7 +1026,7 @@
     const item = {
       fecha,
       hora,
-      profesional,
+      profesional,                 // ✅ NUEVO
       procedimiento: tipo,
       detalle,
       usuario: localStorage.getItem("usuario_logueado") || "desconocido",
@@ -1397,7 +1365,7 @@
     const payload = {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,
+      evoluciones: evoluciones,            // ✅ incluye profesional dentro de cada item
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -1575,6 +1543,14 @@
 
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
 
