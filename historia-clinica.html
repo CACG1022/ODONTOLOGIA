@@ -154,6 +154,7 @@
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
     .btn-salir{ background:#f44336; }
+    .btn-agendar{ background:#2e7d32; } /* ✅ nuevo botón AGENDAR */
 
     /* =====================================================
        ESTILOS DEL ODONTOGRAMA
@@ -344,12 +345,18 @@
       </div>
 
       <div class="ctrl">
-        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">AGENDA</button>
+        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">AGENDAMIENTO</button>
+      </div>
+
+      <!-- ✅ NUEVO BOTÓN: AGENDAR (debajo de AGENDAMIENTO) -->
+      <div class="ctrl" style="grid-column: 2 / 3;">
+        <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
       </div>
     </div>
   </section>
 
   <h1>Historia Clínica Odontológica6</h1>
+
   <!-- ==========================
        DATOS BÁSICOS DEL PACIENTE
   ============================== -->
@@ -1057,7 +1064,6 @@
 
   async function cerrarSesion(motivo = "") {
     try {
-      // Cierra sesión en Supabase si está disponible
       if (window.supabase?.auth?.signOut) {
         await window.supabase.auth.signOut();
       }
@@ -1065,7 +1071,6 @@
       console.warn("Error cerrando sesión:", e);
     }
 
-    // Limpieza local
     try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
 
     if (motivo) alert(motivo);
@@ -1080,18 +1085,25 @@
     }, INACTIVIDAD_MS);
   }
 
-  // Eventos que cuentan como actividad
   ["click","mousemove","keydown","scroll","touchstart"].forEach(evt => {
     window.addEventListener(evt, _reiniciarTimerInactividad, { passive: true });
   });
 
-  // Inicia el contador al cargar
   _reiniciarTimerInactividad();
 
-  const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/23?pli=1";
+  // ==============================
+  // LINKS DE AGENDA
+  // ==============================
+  const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
+  const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36"; // ✅ nuevo link
 
   function irAgendamiento() {
-    window.open(URL_AGENDAMIENTO, "_blank"); // nueva pestaña
+    window.open(URL_AGENDAMIENTO, "_blank");
+  }
+
+  // ✅ nueva función
+  function irAgendar() {
+    window.open(URL_AGENDAR, "_blank");
   }
 
   const preexistencias = {
@@ -1166,7 +1178,6 @@
     const menu = document.createElement('div');
     menu.className = 'popup';
 
-    // OPCIÓN LIMPIAR SOLO ESA CARA
     const limpiar = document.createElement('div');
     limpiar.innerHTML =
       `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
@@ -1190,7 +1201,6 @@
 
     menu.appendChild(limpiar);
 
-    // OPCIONES DE PREEXISTENCIAS
     Object.entries(preexistencias).forEach(([nombre, color]) => {
       const item = document.createElement('div');
       item.innerHTML =
@@ -1202,7 +1212,6 @@
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        // ⭐ SI ES SANO O AUSENTE → PINTA TODAS LAS CARAS
         if (nombre === "Sano" || nombre === "Ausente") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
@@ -1211,7 +1220,6 @@
             reporte[dienteNumero][c] = nombre;
           });
         } else {
-          // Caso normal → solo cara seleccionada
           elemento.style.background = color;
           reporte[dienteNumero][cara] = nombre;
         }
@@ -1238,27 +1246,21 @@
     document.querySelectorAll('.popup').forEach(p => p.remove());
   });
 
-  /**********************************************
-   MAPEO FINAL CARA → REGIÓN CLÍNICA (CORREGIDO)
-  **********************************************/
   function obtenerRegion(diente, cara) {
     diente = parseInt(diente);
 
     if (cara === "centro") return "Oclusal";
 
-    // ----- SUPERIORES -----
     if (diente >= 11 && diente <= 28) {
       if (cara === "superior") return "Vestibular";
       if (cara === "inferior") return "Palatino";
     }
 
-    // ----- INFERIORES -----
     if (diente >= 31 && diente <= 48) {
       if (cara === "superior") return "Lingual";
       if (cara === "inferior") return "Vestibular";
     }
 
-    // MESIAL Y DISTAL
     const derechaEsMesial = (
       (diente >= 11 && diente <= 18) ||
       (diente >= 41 && diente <= 48)
@@ -1270,9 +1272,6 @@
     return null;
   }
 
-  /**********************************************
-     GENERAR REPORTE VISUAL HTML
-  **********************************************/
   function mostrarReporte() {
     let html = `
       <h2>Reporte de Preexistencias</h2>
@@ -1323,9 +1322,6 @@
     win.document.close();
   }
 
-  /**********************************************
-   OBTENER TODOS LOS CAMPOS DEL FORMULARIO
-  **********************************************/
   function obtenerDatosHistoriaClinica() {
     const data = {};
 
@@ -1348,32 +1344,25 @@
   function validarCamposObligatorios() {
     const errores = [];
 
-    // 1️⃣ Nombres
     const nombre = document.getElementById("paciente_nombre").value.trim();
     if (!nombre) errores.push("Nombres y apellidos");
 
-    // 2️⃣ Edad
     const edad = document.getElementById("paciente_edad").value;
     if (!edad) errores.push("Edad");
 
-    // 3️⃣ Tipo de identificación (checkbox)
     const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
     if (tipoID.length === 0) errores.push("Tipo de identificación");
 
-    // 4️⃣ Número de documento
     const numDoc = document.getElementById("paciente_numdoc").value.trim();
     if (!numDoc) errores.push("Número de identificación");
 
-    // 5️⃣ Fecha de nacimiento
     const fechaNac = document.getElementById("paciente_nacimiento").value;
     if (!fechaNac) errores.push("Fecha de nacimiento");
 
-    // 6️⃣ Odontograma (al menos un diente marcado)
     if (!reporte || Object.keys(reporte).length === 0) {
       errores.push("Odontograma (debe marcar al menos un diente)");
     }
 
-    // 🚫 Si hay errores → bloquear envío
     if (errores.length > 0) {
       alert(
         "⚠️ No se puede enviar la historia clínica.\n\n" +
@@ -1386,9 +1375,6 @@
     return true;
   }
 
-  /**********************************************
-     ENVIAR TODO A N8N
-  **********************************************/
   function enviarAN8N() {
     if (!validarCamposObligatorios()) return;
 
@@ -1437,9 +1423,6 @@
     alert("Información enviada correctamente a N8N");
   }
 
-  /**********************************************
-     CONSULTAR PACIENTE EN N8N
-  **********************************************/
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
 
@@ -1462,7 +1445,6 @@
       const h = data.historia;
       const od = data.odontograma;
 
-      // ------ LLENAR CAMPOS BÁSICOS ------
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
       document.getElementById("paciente_numdoc").value = data.id ?? "";
@@ -1481,37 +1463,14 @@
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      // ==============================
-      // TIPO DE IDENTIFICACIÓN
-      // ==============================
       let tiposID = [];
-      try {
-        tiposID = JSON.parse(h["Tipo identificación"] || "[]");
-      } catch(e) {
-        tiposID = [];
-      }
+      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
 
-      document.querySelectorAll("input[name='idtipo']").forEach(c => {
-        c.checked = tiposID.includes(c.value);
-      });
-
-      // ==============================
-      // HIJOS (checkbox Sí/No)
-      // ==============================
       let hijos = [];
-      try {
-        hijos = JSON.parse(h["paciente_hijos"] || "[]");
-      } catch(e) {
-        hijos = [];
-      }
+      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
 
-      document.querySelectorAll("input[name='hijos']").forEach(c => {
-        c.checked = hijos.includes(c.value);
-      });
-
-      // ==============================
-      // DATOS ACUDIENTES
-      // ==============================
       document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
       document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
       document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
@@ -1519,225 +1478,87 @@
       document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
       document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
 
-      // ==============================
-      // EMERGENCIA
-      // ==============================
       document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
       document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
       document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
       document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
 
-      // ==============================
-      // HISTORIA MÉDICA
-      // ==============================
-      document.querySelectorAll("input[name='grave']").forEach(c => {
-        c.checked = (h["Enfermedad grave"] ?? []).includes(c.value);
-      });
+      document.querySelectorAll("input[name='grave']").forEach(c => { c.checked = (h["Enfermedad grave"] ?? []).includes(c.value); });
       document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
       document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
-
       document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
       document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
       document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
 
-      // ==============================
-      // SOLO MUJERES
-      // ==============================
       document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
       document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
 
-      // ==============================
-      // CONDICIONES MÉDICAS
-      // ==============================
       let condiciones = [];
-      try {
-        condiciones = JSON.parse(h["Condiciones"] || "[]");
-      } catch(e) {
-        condiciones = [];
-      }
+      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
+      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
 
-      document.querySelectorAll("input[name='condiciones']").forEach(c => {
-        c.checked = condiciones.includes(c.value);
-      });
-
-      // ==============================
-      // coagulacion
-      // ==============================
       let coagulacion = [];
-      try {
-        coagulacion = JSON.parse(h["coagulacion"] || "[]");
-      } catch(e) {
-        coagulacion = [];
-      }
+      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
+      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
 
-      document.querySelectorAll("input[name='coagulacion']").forEach(c => {
-        c.checked = coagulacion.includes(c.value);
-      });
-
-      // ==============================
-      // anticoagulantes
-      // ==============================
       let anticoagulantes = [];
-      try {
-        anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]");
-      } catch(e) {
-        anticoagulantes = [];
-      }
+      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
+      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
 
-      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => {
-        c.checked = anticoagulantes.includes(c.value);
-      });
-
-      // ==============================
-      // toma_medicamentos
-      // ==============================
       let toma_medicamentos = [];
-      try {
-        toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]");
-      } catch(e) {
-        toma_medicamentos = [];
-      }
+      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
+      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
 
-      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
-        c.checked = toma_medicamentos.includes(c.value);
-      });
-
-      // ==============================
-      // alcohol
-      // ==============================
       let alcohol = [];
-      try {
-        alcohol = JSON.parse(h["alcohol"] || "[]");
-      } catch(e) {
-        alcohol = [];
-      }
+      try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
+      document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
 
-      document.querySelectorAll("input[name='alcohol']").forEach(c => {
-        c.checked = alcohol.includes(c.value);
-      });
-
-      // ==============================
-      // fuma
-      // ==============================
       let fuma = [];
-      try {
-        fuma = JSON.parse(h["fuma"] || "[]");
-      } catch(e) {
-        fuma = [];
-      }
+      try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
+      document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
 
-      document.querySelectorAll("input[name='fuma']").forEach(c => {
-        c.checked = fuma.includes(c.value);
-      });
-
-      // ==============================
-      // droga
-      // ==============================
       let droga = [];
-      try {
-        droga = JSON.parse(h["droga"] || "[]");
-      } catch(e) {
-        droga = [];
-      }
+      try { droga = JSON.parse(h["droga"] || "[]"); } catch(e) { droga = []; }
+      document.querySelectorAll("input[name='droga']").forEach(c => { c.checked = droga.includes(c.value); });
 
-      document.querySelectorAll("input[name='droga']").forEach(c => {
-        c.checked = droga.includes(c.value);
-      });
-
-      // ==============================
-      // embarazos_partos
-      // ==============================
       let embarazos_partos = [];
-      try {
-        embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
-      } catch(e) {
-        embarazos_partos= [];
-      }
+      try { embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]"); } catch(e) { embarazos_partos= []; }
+      document.querySelectorAll("input[name='embarazos_partos']").forEach(c => { c.checked = embarazos_partos.includes(c.value); });
 
-      document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
-        c.checked = embarazos_partos.includes(c.value);
-      });
-
-      // ==============================
-      // esta embarazada?
-      // ==============================
       let embarazada = [];
-      try {
-        embarazada = JSON.parse(h["embarazada"] || "[]");
-      } catch(e) {
-        embarazada= [];
-      }
+      try { embarazada = JSON.parse(h["embarazada"] || "[]"); } catch(e) { embarazada= []; }
+      document.querySelectorAll("input[name='embarazada']").forEach(c => { c.checked = embarazada.includes(c.value); });
 
-      document.querySelectorAll("input[name='embarazada']").forEach(c => {
-        c.checked = embarazada.includes(c.value);
-      });
-
-      // ==============================
-      // anticonceptivos
-      // ==============================
       let anticonceptivos = [];
-      try {
-        anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]");
-      } catch(e) {
-        anticonceptivos= [];
-      }
+      try { anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]"); } catch(e) { anticonceptivos= []; }
+      document.querySelectorAll("input[name='anticonceptivos']").forEach(c => { c.checked = anticonceptivos.includes(c.value); });
 
-      document.querySelectorAll("input[name='anticonceptivos']").forEach(c => {
-        c.checked = anticonceptivos.includes(c.value);
-      });
-
-      // ==============================
-      // histerectomia_menopausia
-      // ==============================
       let histerectomia_menopausia = [];
-      try {
-        histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]");
-      } catch(e) {
-        histerectomia_menopausia= [];
-      }
+      try { histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]"); } catch(e) { histerectomia_menopausia= []; }
+      document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => { c.checked = histerectomia_menopausia.includes(c.value); });
 
-      document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => {
-        c.checked = histerectomia_menopausia.includes(c.value);
-      });
-
-      // ==============================
-      // dolor (normalizar string con escapes)
-      // ==============================
       let dolor = [];
-
       try {
         let raw = h["dolor"];
-
-        if (Array.isArray(raw)) {
-          dolor = raw;
-        }
+        if (Array.isArray(raw)) dolor = raw;
         else if (typeof raw === "string") {
           raw = raw.replace(/\\"/g, '"');
           dolor = JSON.parse(raw);
         }
-      } catch(e) {
-        dolor = [];
-      }
+      } catch(e) { dolor = []; }
 
       document.querySelectorAll("input[name='dolor[]']").forEach(c => {
         c.checked = dolor.includes(c.value);
       });
 
-      // ==============================
-      // HISTORIA ODONTOLÓGICA
-      // ==============================
       document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-
-      // Tratamientos recibidos
       document.querySelectorAll("input[name='tratamientos']").forEach(c => {
         c.checked = (h["Tratamientos"] ?? []).includes(c.value);
       });
 
-      // ----- LIMPIAR ODONTOGRAMA -----
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
       reporte = {};
 
-      // ----- PINTAR ODONTOGRAMA DESDE N8N -----
       Object.entries(od).forEach(([diente, regiones]) => {
         Object.entries(regiones).forEach(([region, estado]) => {
 
@@ -1786,6 +1607,7 @@
 
 </body>
 </html>
+
 
 
 
