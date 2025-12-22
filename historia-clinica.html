@@ -322,32 +322,38 @@
 
   <!-- ✅ BUSCADOR (AHORA BIEN UBICADO Y ORGANIZADO) -->
   <section class="card">
-    <div class="legend">Buscar historia clínica existente</div>
+  <div class="legend">Buscar historia clínica existente</div>
 
-    <div class="grid search-grid">
-      <div class="ctrl">
-        <label for="buscar_cedula">Ingrese número de identificación</label>
-        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
-      </div>
-
-      <div class="search-actions">
-        <button onclick="buscarHistoria()"
-          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer; width:100%;">
-          Buscar
-        </button>
-
-        <button onclick="irAgendamiento()"
-          style="padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer; width:100%;">
-          AGENDAMIENTO
-        </button>
-
-        <button onclick="cerrarSesion()"
-          style="padding:12px; border-radius:10px; background:#ef4444; color:white; border:none; cursor:pointer; width:100%;">
-          Cerrar sesión
-        </button>
-      </div>
+  <!-- FILA 1: Input izquierda + Buscar derecha -->
+  <div class="grid search-row-1">
+    <div class="ctrl">
+      <label for="buscar_cedula">Ingrese número de identificación</label>
+      <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
     </div>
-  </section>
+
+    <div class="ctrl">
+      <label>&nbsp;</label>
+      <button onclick="buscarHistoria()"
+        class="btn-buscar">
+        Buscar
+      </button>
+    </div>
+  </div>
+
+  <!-- FILA 2: Cerrar sesión izquierda + Agendamiento derecha -->
+  <div class="grid search-row-2">
+    <button onclick="cerrarSesion()"
+      class="btn-cerrar">
+      Cerrar sesión
+    </button>
+
+    <button onclick="irAgendamiento()"
+      class="btn-agendar">
+      AGENDAMIENTO
+    </button>
+  </div>
+</section>
+
 
   <h1>Historia Clínica Odontológica6</h1>
 
