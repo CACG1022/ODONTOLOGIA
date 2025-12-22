@@ -988,6 +988,21 @@
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
 
+  const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/";
+
+function irPlanTratamiento() {
+  // toma la cédula del paciente (campo No. / paciente_numdoc)
+  const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+
+  if (!cedula) {
+    alert("⚠️ Primero debes cargar o escribir el número de identificación del paciente (campo No.).");
+    return;
+  }
+
+  // abre el plan enviando la cédula por querystring
+  window.open(URL_PLAN_TRATAMIENTO + "?cedula=" + encodeURIComponent(cedula), "_blank");
+}
+
   // ✅ NUEVA FUNCIÓN (PLAN DE TRATAMIENTO)
   function irPlanTratamiento() { window.open(URL_PLAN_TRATAMIENTO, "_blank"); }
 
