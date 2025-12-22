@@ -362,6 +362,12 @@
       <div class="ctrl">
         <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
       </div>
+
+      <!-- ✅ fila 4 (NUEVO BOTÓN DEBAJO DE AGENDAR) -->
+      <div class="ctrl"></div>
+      <div class="ctrl">
+        <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
+      </div>
     </div>
   </section>
 
@@ -976,8 +982,14 @@
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
 
+  // ✅ NUEVO LINK (PLAN DE TRATAMIENTO)
+  const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/";
+
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
+
+  // ✅ NUEVA FUNCIÓN (PLAN DE TRATAMIENTO)
+  function irPlanTratamiento() { window.open(URL_PLAN_TRATAMIENTO, "_blank"); }
 
   // ==============================
   // ✅ EVOLUCIONES
