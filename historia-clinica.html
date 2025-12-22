@@ -377,6 +377,10 @@
   ============================== -->
   <section class="card">
     <div class="legend">Datos básicos del paciente</div>
+
+    <!-- ✅ NUEVO: ID único automático (se envía a N8N) -->
+    <input type="hidden" id="historia_id" name="historia_id" value="">
+
     <div class="grid g-2">
 
       <div class="ctrl">
@@ -941,6 +945,39 @@
 
 <script>
   // ==============================
+  // ✅ NUEVO: GENERAR ID ÚNICO PARA LA HISTORIA
+  // ==============================
+  function _uuidFallback() {
+    // Fallback por si crypto.randomUUID no existe
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  function generarHistoriaIdSiNoExiste() {
+    const input = document.getElementById("historia_id");
+    if (!input) return;
+
+    // Si ya tiene valor, no lo toca (por si lo cargas desde N8N en el futuro)
+    if (input.value && input.value.trim() !== "") return;
+
+    let id = "";
+    try {
+      id = (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback();
+    } catch (e) {
+      id = _uuidFallback();
+    }
+
+    input.value = id;
+
+    // (Opcional) guardar en localStorage para evitar que cambie si recargas
+    // Si quieres que siempre sea nuevo por recarga, comenta estas 3 líneas:
+    try { localStorage.setItem("historia_id_actual", id); } catch(e) {}
+  }
+
+  // ==============================
   // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
   // ==============================
   const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -1005,6 +1042,7 @@
     const url = URL_PLAN_TRATAMIENTO + (URL_PLAN_TRATAMIENTO.includes("?") ? "&" : "?") + "cedula=" + encodeURIComponent(cedula);
     window.open(url, "_blank");
   }
+
   // ==============================
   // ✅ EVOLUCIONES
   // ==============================
@@ -1094,6 +1132,17 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
+    // ✅ NUEVO: generar el id al cargar
+    // Si quieres que NO cambie cuando recargas, intenta reutilizar el localStorage:
+    try {
+      const guardado = localStorage.getItem("historia_id_actual");
+      if (guardado && document.getElementById("historia_id") && !document.getElementById("historia_id").value) {
+        document.getElementById("historia_id").value = guardado;
+      }
+    } catch(e) {}
+
+    generarHistoriaIdSiNoExiste();
+
     if (document.getElementById("evo_fecha")) {
       limpiarEvolucionForm();
       renderEvoluciones();
@@ -1389,9 +1438,9 @@
     document.getElementById("usuarioN8N").value = usuario;
 
     const payload = {
-      historia_clinica: datosHistoria,
+      historia_clinica: datosHistoria,      // ✅ incluye historia_id automáticamente
       odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,            // ✅ incluye profesional dentro de cada item
+      evoluciones: evoluciones,
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -1427,6 +1476,13 @@
       // ✅ cargar evoluciones si N8N las devuelve
       evoluciones = Array.isArray(data.evoluciones) ? data.evoluciones : [];
       renderEvoluciones();
+
+      // ✅ si en el futuro tu backend devuelve historia_id, se podría cargar aquí sin afectar lo actual
+      // (no lo obliga, solo si viene)
+      if (data.historia_id && document.getElementById("historia_id")) {
+        document.getElementById("historia_id").value = data.historia_id;
+        try { localStorage.setItem("historia_id_actual", data.historia_id); } catch(e) {}
+      }
 
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
