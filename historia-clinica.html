@@ -12,15 +12,22 @@
         <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
       </div>
 
-      <div class="ctrl">
-        <label>&nbsp;</label>
-        <button onclick="buscarHistoria()" 
-          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer;">
-          Buscar
-        </button>
-      </div>
-    </div>
+<div class="ctrl">
+  <label>&nbsp;</label>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <button onclick="buscarHistoria()"
+      style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer;">
+      Buscar
+    </button>
+
+    <button onclick="irAgendamiento()"
+      style="padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer;">
+      AGENDAMIENTO
+    </button>
   </div>
+</div>
+
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -353,7 +360,7 @@
       </div>
 
       <div class="ctrl">
-        <label for="paciente_numdoc">No.</label>
+        <label for="paciente_numdoc">*No.</label>
         <input 
           id="paciente_numdoc" 
           type="text" 
@@ -1042,6 +1049,12 @@
 
 </form>
 <script>
+   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
+
+  function irAgendamiento() {
+    window.open(URL_AGENDAMIENTO, "_blank"); // nueva pestaña
+  }
+  
   const preexistencias = {
     Caries: 'red',
     Corona: 'blue',
