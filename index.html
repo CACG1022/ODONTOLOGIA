@@ -536,6 +536,28 @@ if (procedimiento.value !== "No aplica|0") {
         .then(loadFromWebhook)
         .catch(()=> setHintHTML("No fue posible verificar. Intenta de nuevo.", "#c0392b"));
     });
+    function initCedulaFromQuery() {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cedula = (params.get("cedula") || "").trim();
+    if (!cedula) return;
+
+    const cedulaInput = document.getElementById("cedula");
+    if (!cedulaInput) return;
+
+    // coloca la cédula en el campo
+    cedulaInput.value = cedula;
+
+    // dispara la búsqueda automáticamente usando el mismo flujo existente (blur)
+    cedulaInput.dispatchEvent(new Event("blur", { bubbles: true }));
+  } catch (e) {
+    console.warn("No se pudo inicializar la cédula desde la URL:", e);
+  }
+}
+
+// Ejecutar cuando el DOM ya esté listo
+document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
+
   </script>
 </body>
 </html>
