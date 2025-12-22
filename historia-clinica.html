@@ -111,23 +111,11 @@
 
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
-    .instrucciones{
-      background:#eef6ff; border:1px solid #dbeafe; padding:16px;
-      border-radius:12px; margin-bottom:16px;
-    }
-
     .botones{ display:flex; gap:10px; margin-bottom:10px; }
     .botones button{
       padding:10px 16px; border-radius:10px; border:1px solid var(--line);
       background:#fff; cursor:pointer;
     }
-
-    .estado{
-      font-weight:700; padding:6px 12px; border-radius:999px;
-      border:1px solid var(--line);
-    }
-    .activo{ background:#16a34a; color:#fff; border-color:#16a34a; }
-    .inactivo{ background:#ef4444; color:#fff; border-color:#ef4444; }
 
     @media (max-width:980px){
       .g-4{ grid-template-columns:1fr 1fr; }
@@ -367,7 +355,7 @@
         <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">VER AGENDA</button>
       </div>
 
-      <!-- fila 3 (✅ como pediste: Guardar y enviar debajo de Cerrar sesión / Agendar debajo de Ver agenda) -->
+      <!-- fila 3 -->
       <div class="ctrl">
         <button type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
       </div>
@@ -611,123 +599,30 @@
       <label>Condiciones (marque las que apliquen)</label>
 
       <div class="checks">
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones cardíacas">Alteraciones cardíacas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Asma">Asma</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Cáncer">Cáncer</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias">Alteraciones vasculares o circulatorias</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas">Alteraciones psicológicas o psiquiátricas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Enfisema">Enfisema</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Artritis">Artritis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Diabetes">Diabetes</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hepatitis">Hepatitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Desmayos o convulsiones">Desmayos o convulsiones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hospitalizaciones">Hospitalizaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipotiroidismo">Hipotiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Fiebre reumática">Fiebre reumática</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo">Hipertiroidismos o hiperparatiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Lupus">Lupus</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertensión">Hipertensión</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Leucemia">Leucemia</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Sinusitis">Sinusitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Irradiaciones">Irradiaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Problemas renales">Problemas renales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="VIH (Sida)">VIH (Sida)</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Osteoporosis">Osteoporosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Trauma">Trauma</label>
 
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones cardíacas">
-          Alteraciones cardíacas
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Asma">
-          Asma
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Cáncer">
-          Cáncer
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias">
-          Alteraciones vasculares o circulatorias
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas">
-          Alteraciones psicológicas o psiquiátricas
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Enfisema">
-          Enfisema
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Artritis">
-          Artritis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Diabetes">
-          Diabetes
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hepatitis">
-          Hepatitis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Desmayos o convulsiones">
-          Desmayos o convulsiones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hospitalizaciones">
-          Hospitalizaciones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipotiroidismo">
-          Hipotiroidismo
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Fiebre reumática">
-          Fiebre reumática
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo">
-          Hipertiroidismos o hiperparatiroidismo
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Lupus">
-          Lupus
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipertensión">
-          Hipertensión
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Leucemia">
-          Leucemia
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Sinusitis">
-          Sinusitis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Irradiaciones">
-          Irradiaciones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Problemas renales">
-          Problemas renales
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="VIH (Sida)">
-          VIH (Sida)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Osteoporosis">
-          Osteoporosis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Trauma">
-          Trauma
-        </label>
-
-        <!-- OTRA -->
         <div class="check" style="display:block;">
           <div class="grid g-2">
             <label class="inline">
@@ -738,28 +633,11 @@
           </div>
         </div>
 
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Tuberculosis">
-          Tuberculosis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones nutricionales">
-          Alteraciones nutricionales
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones del hígado">
-          Alteraciones del hígado
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Anemia">
-          Anemia
-        </label>
-
+        <label class="check"><input type="checkbox" name="condiciones" value="Tuberculosis">Tuberculosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones nutricionales">Alteraciones nutricionales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones del hígado">Alteraciones del hígado</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Anemia">Anemia</label>
       </div>
-
     </div>
 
     <div class="rowline"></div>
@@ -892,7 +770,6 @@
     <div class="legend">Historia odontológica</div>
 
     <div class="grid g-2">
-
       <div class="ctrl full">
         <label for="motivo_consulta">Motivo de consulta odontológica</label>
         <input id="motivo_consulta" type="text">
@@ -901,23 +778,14 @@
       <div class="ctrl">
         <label>¿Presenta dolor en…?</label>
         <div class="inline">
-          <label class="chip">
-            boca <input type="checkbox" name="dolor[]" value="boca">
-          </label>
-
-          <label class="chip">
-            cara <input type="checkbox" name="dolor[]" value="cara">
-          </label>
-
-          <label class="chip">
-            cuello <input type="checkbox" name="dolor[]" value="cuello">
-          </label>
+          <label class="chip">boca <input type="checkbox" name="dolor[]" value="boca"></label>
+          <label class="chip">cara <input type="checkbox" name="dolor[]" value="cara"></label>
+          <label class="chip">cuello <input type="checkbox" name="dolor[]" value="cuello"></label>
         </div>
       </div>
 
       <div class="ctrl full">
         <label>Tratamientos recibidos</label>
-
         <div class="checks">
           <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
           <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
@@ -929,12 +797,11 @@
       </div>
 
       <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
-
     </div>
   </section>
 
   <!-- ==========================
-       ✅ NUEVA SECCIÓN: EVOLUCIONES
+       ✅ EVOLUCIONES (con Profesional)
   ============================== -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -948,6 +815,11 @@
       <div class="ctrl">
         <label for="evo_hora">Hora</label>
         <input id="evo_hora" type="time">
+      </div>
+
+      <div class="ctrl">
+        <label for="evo_profesional">Profesional</label>
+        <input id="evo_profesional" type="text" placeholder="Nombre del profesional">
       </div>
 
       <div class="ctrl">
@@ -979,6 +851,7 @@
           <tr>
             <th>Fecha</th>
             <th>Hora</th>
+            <th>Profesional</th>
             <th>Procedimiento</th>
             <th>Detalle</th>
             <th>Acciones</th>
@@ -993,97 +866,34 @@
        ODONTOGRAMA COMPLETO
   ============================== -->
   <div id="odontograma-wrapper">
-
     <h1>Odontograma Internacional FDI</h1>
 
-    <!-- LÍNEAS Y TEXTOS DE REFERENCIA -->
     <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
-
-      <div style="
-        position:absolute;
-        top:170px;
-        left:50%;
-        transform:translateX(-50%);
-        width:1300px;
-        height:1px;
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
-
-      <div style="
-        position:absolute;
-        top:119px;
-        left:51%;
-        width:1px;
-        height:100px;
-        transform:translateX(-50%);
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
+      <div style="position:absolute; top:170px; left:50%; transform:translateX(-50%); width:1300px; height:1px; background:#D0D0D0; z-index:3;"></div>
+      <div style="position:absolute; top:119px; left:51%; width:1px; height:100px; transform:translateX(-50%); background:#D0D0D0; z-index:3;"></div>
 
       <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
       <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
 
-      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino1
-      </div>
-      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino2
-      </div>
+      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino1</div>
+      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino2</div>
 
-      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual4
-      </div>
-      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual3
-      </div>
+      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual4</div>
+      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual3</div>
 
-      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular3
-      </div>
-      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular2
-      </div>
-      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular1
-      </div>
-      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular4
-      </div>
+      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular3</div>
+      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular2</div>
+      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular1</div>
+      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular4</div>
 
       <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
       <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
 
-      <div style="
-        position:absolute;
-        top:60px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-      <div style="
-        position:absolute;
-        top:220px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-
+      <div style="position:absolute; top:60px; left:51%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial</div>
+      <div style="position:absolute; top:220px; left:51%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial</div>
     </div>
 
-    <!-- ==========================
-         FILAS DEL ODONTOGRAMA
-    ============================== -->
     <div class="odontograma">
-
       <div class="seccion">
         <div class="etiqueta">Maxilar superior</div>
         <div class="fila" id="fila-superior"></div>
@@ -1095,32 +905,24 @@
       </div>
     </div>
 
-    <!-- ==========================
-         LEYENDA
-    ============================== -->
     <div class="leyenda">
       <h2>Leyenda de Preexistencias</h2>
       <div class="leyenda-grid" id="grid-leyenda"></div>
     </div>
 
     <div style="text-align:center; margin-top:40px;">
-      <button onclick="mostrarReporte()"
-              style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
+      <button onclick="mostrarReporte()" style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
         Generar reporte de preexistencias
       </button>
 
       <div style="text-align:center; margin-top:20px;">
-        <button onclick="enviarAN8N()"
-          style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
+        <button onclick="enviarAN8N()" style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
           Guardar y enviar
         </button>
       </div>
     </div>
-
-  </div> <!-- fin odontograma-wrapper -->
-
-</div> <!-- fin .container -->
-
+  </div>
+</div>
 
 <!-- 📤 FORMULARIO OCULTO PARA N8N -->
 <form id="formN8N"
@@ -1130,7 +932,6 @@
 
   <input type="hidden" id="dataN8N" name="data">
   <input type="hidden" id="usuarioN8N" name="usuario_logueado">
-
 </form>
 
 <script>
@@ -1175,16 +976,11 @@
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
 
-  function irAgendamiento() {
-    window.open(URL_AGENDAMIENTO, "_blank");
-  }
-
-  function irAgendar() {
-    window.open(URL_AGENDAR, "_blank");
-  }
+  function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
+  function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
 
   // ==============================
-  // ✅ EVOLUCIONES (NUEVO)
+  // ✅ EVOLUCIONES
   // ==============================
   let evoluciones = [];
 
@@ -1200,11 +996,13 @@
   function limpiarEvolucionForm() {
     const f = document.getElementById("evo_fecha");
     const h = document.getElementById("evo_hora");
+    const p = document.getElementById("evo_profesional");
     const t = document.getElementById("evo_tipo");
     const d = document.getElementById("evo_detalle");
 
     if (f) f.value = _hoyISO();
     if (h) h.value = _horaHHMM();
+    if (p) p.value = "";
     if (t) t.value = "";
     if (d) d.value = "";
   }
@@ -1212,9 +1010,14 @@
   function agregarEvolucion() {
     const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
     const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
+    const profesional = document.getElementById("evo_profesional").value.trim();
     const tipo = document.getElementById("evo_tipo").value.trim();
     const detalle = document.getElementById("evo_detalle").value.trim();
 
+    if (!profesional) {
+      alert("⚠️ Debes ingresar el nombre del profesional.");
+      return;
+    }
     if (!tipo) {
       alert("⚠️ Debes ingresar el procedimiento.");
       return;
@@ -1223,6 +1026,7 @@
     const item = {
       fecha,
       hora,
+      profesional,                 // ✅ NUEVO
       procedimiento: tipo,
       detalle,
       usuario: localStorage.getItem("usuario_logueado") || "desconocido",
@@ -1247,10 +1051,10 @@
 
     evoluciones.forEach((evo, idx) => {
       const tr = document.createElement("tr");
-
       tr.innerHTML = `
         <td>${evo.fecha || ""}</td>
         <td>${evo.hora || ""}</td>
+        <td>${(evo.profesional || "").toUpperCase()}</td>
         <td>${(evo.procedimiento || "").toUpperCase()}</td>
         <td style="white-space:pre-wrap;">${evo.detalle || ""}</td>
         <td>
@@ -1415,7 +1219,6 @@
 
   function obtenerRegion(diente, cara) {
     diente = parseInt(diente);
-
     if (cara === "centro") return "Oclusal";
 
     if (diente >= 11 && diente <= 28) {
@@ -1435,7 +1238,6 @@
 
     if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
     if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
-
     return null;
   }
 
@@ -1455,14 +1257,7 @@
     `;
 
     Object.entries(reporte).forEach(([diente, caras]) => {
-      let fila = {
-        Mesial: "",
-        Distal: "",
-        Oclusal: "",
-        Vestibular: "",
-        Lingual: "",
-        Palatino: ""
-      };
+      let fila = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
 
       Object.entries(caras).forEach(([cara, preexistencia]) => {
         let region = obtenerRegion(diente, cara);
@@ -1491,7 +1286,6 @@
 
   function obtenerDatosHistoriaClinica() {
     const data = {};
-
     document.querySelectorAll(".container input, .container textarea, .container select")
       .forEach(campo => {
         const nombre = campo.id || campo.name;
@@ -1504,7 +1298,6 @@
           data[nombre] = campo.value;
         }
       });
-
     return data;
   }
 
@@ -1553,16 +1346,8 @@
     ];
 
     const odontogramaCompleto = {};
-
     todosLosDientes.forEach(num => {
-      odontogramaCompleto[num] = {
-        Mesial: "",
-        Distal: "",
-        Oclusal: "",
-        Vestibular: "",
-        Lingual: "",
-        Palatino: ""
-      };
+      odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
     });
 
     Object.entries(reporte).forEach(([diente, caras]) => {
@@ -1580,7 +1365,7 @@
     const payload = {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,            // ✅ NUEVO: se envían las evoluciones
+      evoluciones: evoluciones,            // ✅ incluye profesional dentro de cada item
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -1613,7 +1398,7 @@
       const h = data.historia;
       const od = data.odontograma;
 
-      // ✅ NUEVO: cargar evoluciones si N8N las devuelve
+      // ✅ cargar evoluciones si N8N las devuelve
       evoluciones = Array.isArray(data.evoluciones) ? data.evoluciones : [];
       renderEvoluciones();
 
@@ -1689,26 +1474,6 @@
       try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
       document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
 
-      let droga = [];
-      try { droga = JSON.parse(h["droga"] || "[]"); } catch(e) { droga = []; }
-      document.querySelectorAll("input[name='droga']").forEach(c => { c.checked = droga.includes(c.value); });
-
-      let embarazos_partos = [];
-      try { embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]"); } catch(e) { embarazos_partos= []; }
-      document.querySelectorAll("input[name='embarazos_partos']").forEach(c => { c.checked = embarazos_partos.includes(c.value); });
-
-      let embarazada = [];
-      try { embarazada = JSON.parse(h["embarazada"] || "[]"); } catch(e) { embarazada= []; }
-      document.querySelectorAll("input[name='embarazada']").forEach(c => { c.checked = embarazada.includes(c.value); });
-
-      let anticonceptivos = [];
-      try { anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]"); } catch(e) { anticonceptivos= []; }
-      document.querySelectorAll("input[name='anticonceptivos']").forEach(c => { c.checked = anticonceptivos.includes(c.value); });
-
-      let histerectomia_menopausia = [];
-      try { histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]"); } catch(e) { histerectomia_menopausia= []; }
-      document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => { c.checked = histerectomia_menopausia.includes(c.value); });
-
       let dolor = [];
       try {
         let raw = h["dolor"];
@@ -1733,7 +1498,6 @@
 
       Object.entries(od).forEach(([diente, regiones]) => {
         Object.entries(regiones).forEach(([region, estado]) => {
-
           if (!estado) return;
 
           const estadoNormalizado =
