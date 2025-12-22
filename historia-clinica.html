@@ -980,10 +980,31 @@
   // ==============================
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
+  const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/";
 
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
+  
+  // ✅ Plan de tratamiento: abre la página y envía la cédula del paciente
+  function irPlanTratamiento() {
+    const cedula = (
+      document.getElementById("paciente_numdoc")?.value ||
+      document.getElementById("buscar_cedula")?.value ||
+      ""
+    ).trim();
 
+    if (!cedula) {
+      alert("⚠️ Primero ingresa o busca la cédula del paciente para abrir el plan de tratamiento.");
+      return;
+    }
+
+    // Guarda la cédula para que el plan la pueda leer por localStorage (respaldo)
+    try { localStorage.setItem("cedula_paciente_plan", cedula); } catch(e) {}
+
+    // Envía también por querystring (?cedula=...)
+    const url = URL_PLAN_TRATAMIENTO + (URL_PLAN_TRATAMIENTO.includes("?") ? "&" : "?") + "cedula=" + encodeURIComponent(cedula);
+    window.open(url, "_blank");
+  }
   // ==============================
   // ✅ EVOLUCIONES
   // ==============================
