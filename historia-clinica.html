@@ -78,7 +78,7 @@
     .ctrl label{ font-size:13px; color:var(--muted); }
 
     input[type="text"],input[type="email"],input[type="tel"],
-    input[type="number"],input[type="date"], textarea{
+    input[type="number"],input[type="date"],input[type="time"], textarea{
       width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
       font-size:15px; background:#fff;
     }
@@ -154,7 +154,24 @@
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
     .btn-salir{ background:#009688; }
-    .btn-agendar{ background:#009688; } /* ✅ nuevo botón AGENDAR */
+    .btn-agendar{ background:#009688; }
+    .btn-guardar{ background:#009688; }
+
+    /* =====================================================
+       EVOLUCIONES (tabla)
+    ===================================================== */
+    .tabla-evo{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .tabla-evo th,.tabla-evo td{
+      padding:10px;
+      border:1px solid var(--line);
+      vertical-align:top;
+    }
+    .tabla-evo thead tr{
+      background:#eef6ff;
+    }
 
     /* =====================================================
        ESTILOS DEL ODONTOGRAMA
@@ -328,54 +345,37 @@
        BUSCAR HISTORIA CLÍNICA EXISTENTE
   ============================== -->
   <section class="card">
-  <div class="legend">Buscar historia clínica existente</div>
+    <div class="legend">Buscar historia clínica existente</div>
 
-  <!-- FILA 1 -->
-  <div class="grid g-2 search-grid">
-    <div class="ctrl">
-      <label for="buscar_cedula">Ingrese número de identificación</label>
-      <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
+    <!-- ✅ TODO QUEDA DENTRO DEL MISMO GRID PARA QUE SE ORGANICE -->
+    <div class="grid g-2 search-grid">
+      <!-- fila 1 -->
+      <div class="ctrl">
+        <label for="buscar_cedula">Ingrese número de identificación</label>
+        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
+      </div>
+      <div class="ctrl">
+        <label>&nbsp;</label>
+        <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
+      </div>
+
+      <!-- fila 2 -->
+      <div class="ctrl">
+        <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
+      </div>
+      <div class="ctrl">
+        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">VER AGENDA</button>
+      </div>
+
+      <!-- fila 3 (✅ como pediste: Guardar y enviar debajo de Cerrar sesión / Agendar debajo de Ver agenda) -->
+      <div class="ctrl">
+        <button type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
+      </div>
+      <div class="ctrl">
+        <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
+      </div>
     </div>
-
-    <div class="ctrl">
-      <label>&nbsp;</label>
-      <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">
-        Buscar
-      </button>
-    </div>
-  </div>
-
-  <!-- FILA 2 -->
-  <div class="grid g-2" style="margin-top:14px;">
-    <div class="ctrl">
-      <button type="button" onclick="cerrarSesion()" class="btn btn-salir">
-        Cerrar sesión
-      </button>
-    </div>
-
-    <div class="ctrl">
-      <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">
-        VER AGENDA
-      </button>
-    </div>
-  </div>
-
-  <!-- FILA 3 -->
-  <div class="grid g-2" style="margin-top:14px;">
-    <div class="ctrl">
-      <button type="button" onclick="enviarAN8N()" class="btn btn-agenda">
-        GUARDAR Y ENVIAR
-      </button>
-    </div>
-
-    <div class="ctrl">
-      <button type="button" onclick="irAgendar()" class="btn btn-agendar">
-        AGENDAR
-      </button>
-    </div>
-  </div>
-</section>
-
+  </section>
 
   <h1>Historia Clínica Odontológica6</h1>
 
@@ -934,6 +934,62 @@
   </section>
 
   <!-- ==========================
+       ✅ NUEVA SECCIÓN: EVOLUCIONES
+  ============================== -->
+  <section class="card">
+    <div class="legend">Evoluciones (procedimientos realizados)</div>
+
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label for="evo_fecha">Fecha</label>
+        <input id="evo_fecha" type="date">
+      </div>
+
+      <div class="ctrl">
+        <label for="evo_hora">Hora</label>
+        <input id="evo_hora" type="time">
+      </div>
+
+      <div class="ctrl">
+        <label for="evo_tipo">Procedimiento</label>
+        <input id="evo_tipo" type="text" placeholder="Ej: Profilaxis, Resina, Endodoncia...">
+      </div>
+
+      <div class="ctrl full">
+        <label for="evo_detalle">Detalle / Observaciones</label>
+        <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
+      </div>
+    </div>
+
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">
+        Agregar evolución
+      </button>
+
+      <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">
+        Limpiar
+      </button>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div style="overflow:auto;">
+      <table class="tabla-evo">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Procedimiento</th>
+            <th>Detalle</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla_evoluciones"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==========================
        ODONTOGRAMA COMPLETO
   ============================== -->
   <div id="odontograma-wrapper">
@@ -1117,17 +1173,106 @@
   // LINKS DE AGENDA
   // ==============================
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
-  const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36"; // ✅ nuevo link
+  const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
 
   function irAgendamiento() {
     window.open(URL_AGENDAMIENTO, "_blank");
   }
 
-  // ✅ nueva función
   function irAgendar() {
     window.open(URL_AGENDAR, "_blank");
   }
 
+  // ==============================
+  // ✅ EVOLUCIONES (NUEVO)
+  // ==============================
+  let evoluciones = [];
+
+  function _hoyISO() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
+  function _horaHHMM() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+
+  function limpiarEvolucionForm() {
+    const f = document.getElementById("evo_fecha");
+    const h = document.getElementById("evo_hora");
+    const t = document.getElementById("evo_tipo");
+    const d = document.getElementById("evo_detalle");
+
+    if (f) f.value = _hoyISO();
+    if (h) h.value = _horaHHMM();
+    if (t) t.value = "";
+    if (d) d.value = "";
+  }
+
+  function agregarEvolucion() {
+    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
+    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
+    const tipo = document.getElementById("evo_tipo").value.trim();
+    const detalle = document.getElementById("evo_detalle").value.trim();
+
+    if (!tipo) {
+      alert("⚠️ Debes ingresar el procedimiento.");
+      return;
+    }
+
+    const item = {
+      fecha,
+      hora,
+      procedimiento: tipo,
+      detalle,
+      usuario: localStorage.getItem("usuario_logueado") || "desconocido",
+      ts: new Date().toISOString()
+    };
+
+    evoluciones.unshift(item);
+    renderEvoluciones();
+    limpiarEvolucionForm();
+  }
+
+  function eliminarEvolucion(idx) {
+    evoluciones.splice(idx, 1);
+    renderEvoluciones();
+  }
+
+  function renderEvoluciones() {
+    const tbody = document.getElementById("tabla_evoluciones");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    evoluciones.forEach((evo, idx) => {
+      const tr = document.createElement("tr");
+
+      tr.innerHTML = `
+        <td>${evo.fecha || ""}</td>
+        <td>${evo.hora || ""}</td>
+        <td>${(evo.procedimiento || "").toUpperCase()}</td>
+        <td style="white-space:pre-wrap;">${evo.detalle || ""}</td>
+        <td>
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
+            Eliminar
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    if (document.getElementById("evo_fecha")) {
+      limpiarEvolucionForm();
+      renderEvoluciones();
+    }
+  });
+
+  // ==============================
+  // ODONTOGRAMA
+  // ==============================
   const preexistencias = {
     Caries: 'red',
     Corona: 'blue',
@@ -1435,6 +1580,7 @@
     const payload = {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
+      evoluciones: evoluciones,            // ✅ NUEVO: se envían las evoluciones
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -1466,6 +1612,10 @@
 
       const h = data.historia;
       const od = data.odontograma;
+
+      // ✅ NUEVO: cargar evoluciones si N8N las devuelve
+      evoluciones = Array.isArray(data.evoluciones) ? data.evoluciones : [];
+      renderEvoluciones();
 
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
@@ -1629,6 +1779,7 @@
 
 </body>
 </html>
+
 
 
 
