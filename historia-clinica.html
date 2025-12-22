@@ -2,39 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Historia Clínica Odontológica + Odontograma</title>
 
-  <div class="card">
-    <div class="legend">Buscar historia clínica existente</div>
-    <div class="grid g-2 search-grid">
-      <div class="ctrl">
-        <label for="buscar_cedula">Ingrese número de identificación</label>
-        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
-      </div>
-
-      <div class="ctrl">
-        <label>&nbsp;</label>
-
-        <button onclick="buscarHistoria()"
-          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer; width:100%;">
-          Buscar
-        </button>
-
-        <button onclick="irAgendamiento()"
-          style="margin-top:10px; padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer; width:100%;">
-          AGENDAMIENTO
-        </button>
-
-        <!-- ✅ NUEVO: BOTÓN CERRAR SESIÓN -->
-        <button onclick="cerrarSesion()"
-          style="margin-top:10px; padding:12px; border-radius:10px; background:#ef4444; color:white; border:none; cursor:pointer; width:100%;">
-          Cerrar sesión
-        </button>
-      </div>
-
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- 🔐 LOGIN CON SUPABASE -->
+  <!-- 🔐 LOGIN CON SUPABASE (verifica sesión + expone cerrarSesion()) -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -57,6 +28,14 @@
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
       }
     });
+
+    // ✅ Exponer cierre de sesión global (para botón + auto-logout)
+    window.cerrarSesion = async function () {
+      try { await supabase.auth.signOut(); } catch (e) { console.error(e); }
+      try { localStorage.clear(); } catch(e) {}
+      try { sessionStorage.clear(); } catch(e) {}
+      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    };
   </script>
 
   <style>
@@ -108,15 +87,14 @@
       font-size:15px; background:#fff;
     }
     select {
-     width:100%;
-     border:1px solid var(--input);
-     border-radius:10px;
-     padding:12px;
-     font-size:15px;
-     background:#fff;
-     cursor:pointer;
-  }
-
+      width:100%;
+      border:1px solid var(--input);
+      border-radius:10px;
+      padding:12px;
+      font-size:15px;
+      background:#fff;
+      cursor:pointer;
+    }
 
     textarea{ min-height:120px; resize:vertical; }
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
@@ -162,6 +140,15 @@
     @media (max-width:680px){
       .g-2,.g-3,.g-4{ grid-template-columns:1fr; }
       .checks{ grid-template-columns:1fr; }
+    }
+
+    /* ✅ Ajuste del buscador: botones debajo del input */
+    .search-grid{ grid-template-columns:1fr; }
+    .search-actions{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:10px;
+      margin-top:10px;
     }
 
     /* =====================================================
@@ -332,6 +319,36 @@
 
 <body>
 <div class="container">
+
+  <!-- ✅ BUSCADOR (AHORA BIEN UBICADO Y ORGANIZADO) -->
+  <section class="card">
+    <div class="legend">Buscar historia clínica existente</div>
+
+    <div class="grid search-grid">
+      <div class="ctrl">
+        <label for="buscar_cedula">Ingrese número de identificación</label>
+        <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
+      </div>
+
+      <div class="search-actions">
+        <button onclick="buscarHistoria()"
+          style="padding:12px; border-radius:10px; background:#0D47A1; color:white; border:none; cursor:pointer; width:100%;">
+          Buscar
+        </button>
+
+        <button onclick="irAgendamiento()"
+          style="padding:12px; border-radius:10px; background:#009688; color:white; border:none; cursor:pointer; width:100%;">
+          AGENDAMIENTO
+        </button>
+
+        <button onclick="cerrarSesion()"
+          style="padding:12px; border-radius:10px; background:#ef4444; color:white; border:none; cursor:pointer; width:100%;">
+          Cerrar sesión
+        </button>
+      </div>
+    </div>
+  </section>
+
   <h1>Historia Clínica Odontológica6</h1>
 
   <!-- ==========================
@@ -549,7 +566,6 @@
           <label class="chip">
             <input type="checkbox" name="grave" value="Si"> Sí
           </label>
-
           <label class="chip">
             <input type="checkbox" name="grave" value="No"> No
           </label>
@@ -566,123 +582,30 @@
       <label>Condiciones (marque las que apliquen)</label>
 
       <div class="checks">
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones cardíacas"> Alteraciones cardíacas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Asma"> Asma</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Cáncer"> Cáncer</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias"> Alteraciones vasculares o circulatorias</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas"> Alteraciones psicológicas o psiquiátricas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Enfisema"> Enfisema</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Artritis"> Artritis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Diabetes"> Diabetes</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hepatitis"> Hepatitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Desmayos o convulsiones"> Desmayos o convulsiones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hospitalizaciones"> Hospitalizaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipotiroidismo"> Hipotiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Fiebre reumática"> Fiebre reumática</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo"> Hipertiroidismos o hiperparatiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Lupus"> Lupus</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertensión"> Hipertensión</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Leucemia"> Leucemia</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Sinusitis"> Sinusitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Irradiaciones"> Irradiaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Problemas renales"> Problemas renales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="VIH (Sida)"> VIH (Sida)</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Osteoporosis"> Osteoporosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Trauma"> Trauma</label>
 
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones cardíacas">
-          Alteraciones cardíacas
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Asma">
-          Asma
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Cáncer">
-          Cáncer
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias">
-          Alteraciones vasculares o circulatorias
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas">
-          Alteraciones psicológicas o psiquiátricas
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Enfisema">
-          Enfisema
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Artritis">
-          Artritis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Diabetes">
-          Diabetes
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hepatitis">
-          Hepatitis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Desmayos o convulsiones">
-          Desmayos o convulsiones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hospitalizaciones">
-          Hospitalizaciones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipotiroidismo">
-          Hipotiroidismo
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Fiebre reumática">
-          Fiebre reumática
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo">
-          Hipertiroidismos o hiperparatiroidismo
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Lupus">
-          Lupus
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Hipertensión">
-          Hipertensión
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Leucemia">
-          Leucemia
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Sinusitis">
-          Sinusitis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Irradiaciones">
-          Irradiaciones
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Problemas renales">
-          Problemas renales
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="VIH (Sida)">
-          VIH (Sida)
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Osteoporosis">
-          Osteoporosis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Trauma">
-          Trauma
-        </label>
-
-        <!-- OTRA -->
         <div class="check" style="display:block;">
           <div class="grid g-2">
             <label class="inline">
@@ -693,28 +616,11 @@
           </div>
         </div>
 
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Tuberculosis">
-          Tuberculosis
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones nutricionales">
-          Alteraciones nutricionales
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Alteraciones del hígado">
-          Alteraciones del hígado
-        </label>
-
-        <label class="check">
-          <input type="checkbox" name="condiciones" value="Anemia">
-          Anemia
-        </label>
-
+        <label class="check"><input type="checkbox" name="condiciones" value="Tuberculosis"> Tuberculosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones nutricionales"> Alteraciones nutricionales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones del hígado"> Alteraciones del hígado</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Anemia"> Anemia</label>
       </div>
-
     </div>
 
     <div class="rowline"></div>
@@ -786,7 +692,7 @@
           <label class="chip"><input type="checkbox" name="drogas" value="No"> No</label>
         </div>
       </div>
-
+    </div>
   </section>
 
   <!-- ==========================
@@ -847,7 +753,6 @@
     <div class="legend">Historia odontológica</div>
 
     <div class="grid g-2">
-
       <div class="ctrl full">
         <label for="motivo_consulta">Motivo de consulta odontológica</label>
         <input id="motivo_consulta" type="text">
@@ -856,23 +761,14 @@
       <div class="ctrl">
         <label>¿Presenta dolor en…?</label>
         <div class="inline">
-          <label class="chip">
-            boca <input type="checkbox" name="dolor[]" value="boca">
-          </label>
-
-          <label class="chip">
-            cara <input type="checkbox" name="dolor[]" value="cara">
-          </label>
-
-          <label class="chip">
-            cuello <input type="checkbox" name="dolor[]" value="cuello">
-          </label>
+          <label class="chip">boca <input type="checkbox" name="dolor[]" value="boca"></label>
+          <label class="chip">cara <input type="checkbox" name="dolor[]" value="cara"></label>
+          <label class="chip">cuello <input type="checkbox" name="dolor[]" value="cuello"></label>
         </div>
       </div>
 
       <div class="ctrl full">
         <label>Tratamientos recibidos</label>
-
         <div class="checks">
           <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
           <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
@@ -884,7 +780,6 @@
       </div>
 
       <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
-
     </div>
   </section>
 
@@ -897,92 +792,32 @@
 
     <!-- LÍNEAS Y TEXTOS DE REFERENCIA -->
     <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
-
-      <div style="
-        position:absolute;
-        top:170px;
-        left:50%;
-        transform:translateX(-50%);
-        width:1300px;
-        height:1px;
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
-
-      <div style="
-        position:absolute;
-        top:119px;
-        left:51%;
-        width:1px;
-        height:100px;
-        transform:translateX(-50%);
-        background:#D0D0D0;
-        z-index:3;
-      "></div>
+      <div style="position:absolute; top:170px; left:50%; transform:translateX(-50%); width:1300px; height:1px; background:#D0D0D0; z-index:3;"></div>
+      <div style="position:absolute; top:119px; left:51%; width:1px; height:100px; transform:translateX(-50%); background:#D0D0D0; z-index:3;"></div>
 
       <div style="position:absolute; top:70px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal1</div>
       <div style="position:absolute; top:70px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal2</div>
 
-      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino1
-      </div>
-      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Palatino2
-      </div>
+      <div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino1</div>
+      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino2</div>
 
-      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual4
-      </div>
-      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Lingual3
-      </div>
+      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual4</div>
+      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual3</div>
 
-      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular3
-      </div>
-      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular2
-      </div>
-      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular1
-      </div>
-      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">
-        Vestibular4
-      </div>
+      <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular3</div>
+      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular2</div>
+      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular1</div>
+      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular4</div>
 
       <div style="position:absolute; top:230px; left:-270px; color:#D0D0D0; font-weight:bold;">Distal4</div>
       <div style="position:absolute; top:230px; right:-270px; color:#D0D0D0; font-weight:bold;">Distal3</div>
 
-      <div style="
-        position:absolute;
-        top:60px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-      <div style="
-        position:absolute;
-        top:220px;
-        left:51%;
-        transform:translateX(-50%) rotate(180deg);
-        color:#D0D0D0;
-        font-weight:bold;
-        writing-mode:vertical-rl;
-      ">
-        Mesial
-      </div>
-
+      <div style="position:absolute; top:60px; left:51%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial</div>
+      <div style="position:absolute; top:220px; left:51%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial</div>
     </div>
 
-    <!-- ==========================
-         FILAS DEL ODONTOGRAMA
-    ============================== -->
+    <!-- FILAS -->
     <div class="odontograma">
-
       <div class="seccion">
         <div class="etiqueta">Maxilar superior</div>
         <div class="fila" id="fila-superior"></div>
@@ -994,9 +829,7 @@
       </div>
     </div>
 
-    <!-- ==========================
-         LEYENDA
-    ============================== -->
+    <!-- LEYENDA -->
     <div class="leyenda">
       <h2>Leyenda de Preexistencias</h2>
       <div class="leyenda-grid" id="grid-leyenda"></div>
@@ -1020,23 +853,19 @@
 
 </div> <!-- fin .container -->
 
-
 <!-- 📤 FORMULARIO OCULTO PARA N8N -->
 <form id="formN8N"
   action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8"
   method="POST"
   style="display:none;">
-
   <input type="hidden" id="dataN8N" name="data">
   <input type="hidden" id="usuarioN8N" name="usuario_logueado">
-
 </form>
 
 <script>
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0/r/week/2025/12/18?pli=1";
-
   function irAgendamiento() {
-    window.open(URL_AGENDAMIENTO, "_blank"); // nueva pestaña
+    window.open(URL_AGENDAMIENTO, "_blank");
   }
 
   const preexistencias = {
@@ -1065,8 +894,7 @@
   const contenedorLeyenda = document.getElementById('grid-leyenda');
   Object.entries(preexistencias).forEach(([nombre, color]) => {
     const item = document.createElement('div');
-    item.innerHTML =
-      `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+    item.innerHTML = `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
     contenedorLeyenda.appendChild(item);
   });
 
@@ -1111,10 +939,8 @@
     const menu = document.createElement('div');
     menu.className = 'popup';
 
-    // OPCIÓN LIMPIAR SOLO ESA CARA
     const limpiar = document.createElement('div');
-    limpiar.innerHTML =
-      `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
+    limpiar.innerHTML = `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
 
     limpiar.onclick = () => {
       elemento.style.background = "white";
@@ -1125,7 +951,6 @@
       if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
         delete reporte[dienteNumero][cara];
       }
-
       if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
         delete reporte[dienteNumero];
       }
@@ -1135,11 +960,9 @@
 
     menu.appendChild(limpiar);
 
-    // OPCIONES DE PREEXISTENCIAS
     Object.entries(preexistencias).forEach(([nombre, color]) => {
       const item = document.createElement('div');
-      item.innerHTML =
-        `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+      item.innerHTML = `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
 
       item.onclick = () => {
         const dienteNumero = elemento.parentElement.dataset.numero;
@@ -1147,7 +970,6 @@
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        // ⭐ SI ES SANO O AUSENTE → PINTA TODAS LAS CARAS
         if (nombre === "Sano" || nombre === "Ausente") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
@@ -1156,7 +978,6 @@
             reporte[dienteNumero][c] = nombre;
           });
         } else {
-          // Caso normal → solo cara seleccionada
           elemento.style.background = color;
           reporte[dienteNumero][cara] = nombre;
         }
@@ -1183,27 +1004,21 @@
     document.querySelectorAll('.popup').forEach(p => p.remove());
   });
 
-  /**********************************************
-   MAPEO FINAL CARA → REGIÓN CLÍNICA (CORREGIDO)
-  **********************************************/
   function obtenerRegion(diente, cara) {
     diente = parseInt(diente);
 
     if (cara === "centro") return "Oclusal";
 
-    // ----- SUPERIORES -----
     if (diente >= 11 && diente <= 28) {
       if (cara === "superior") return "Vestibular";
       if (cara === "inferior") return "Palatino";
     }
 
-    // ----- INFERIORES -----
     if (diente >= 31 && diente <= 48) {
       if (cara === "superior") return "Lingual";
       if (cara === "inferior") return "Vestibular";
     }
 
-    // MESIAL Y DISTAL
     const derechaEsMesial = (
       (diente >= 11 && diente <= 18) ||
       (diente >= 41 && diente <= 48)
@@ -1215,9 +1030,6 @@
     return null;
   }
 
-  /**********************************************
-     GENERAR REPORTE VISUAL HTML
-  **********************************************/
   function mostrarReporte() {
     let html = `
       <h2>Reporte de Preexistencias</h2>
@@ -1234,14 +1046,7 @@
     `;
 
     Object.entries(reporte).forEach(([diente, caras]) => {
-      let fila = {
-        Mesial: "",
-        Distal: "",
-        Oclusal: "",
-        Vestibular: "",
-        Lingual: "",
-        Palatino: ""
-      };
+      let fila = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
 
       Object.entries(caras).forEach(([cara, preexistencia]) => {
         let region = obtenerRegion(diente, cara);
@@ -1268,9 +1073,6 @@
     win.document.close();
   }
 
-  /**********************************************
-   OBTENER TODOS LOS CAMPOS DEL FORMULARIO
-  **********************************************/
   function obtenerDatosHistoriaClinica() {
     const data = {};
 
@@ -1293,32 +1095,25 @@
   function validarCamposObligatorios() {
     const errores = [];
 
-    // 1️⃣ Nombres
     const nombre = document.getElementById("paciente_nombre").value.trim();
     if (!nombre) errores.push("Nombres y apellidos");
 
-    // 2️⃣ Edad
     const edad = document.getElementById("paciente_edad").value;
     if (!edad) errores.push("Edad");
 
-    // 3️⃣ Tipo de identificación (checkbox)
     const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
     if (tipoID.length === 0) errores.push("Tipo de identificación");
 
-    // 4️⃣ Número de documento
     const numDoc = document.getElementById("paciente_numdoc").value.trim();
     if (!numDoc) errores.push("Número de identificación");
 
-    // 5️⃣ Fecha de nacimiento
     const fechaNac = document.getElementById("paciente_nacimiento").value;
     if (!fechaNac) errores.push("Fecha de nacimiento");
 
-    // 6️⃣ Odontograma (al menos un diente marcado)
     if (!reporte || Object.keys(reporte).length === 0) {
       errores.push("Odontograma (debe marcar al menos un diente)");
     }
 
-    // 🚫 Si hay errores → bloquear envío
     if (errores.length > 0) {
       alert(
         "⚠️ No se puede enviar la historia clínica.\n\n" +
@@ -1331,9 +1126,6 @@
     return true;
   }
 
-  /**********************************************
-     ENVIAR TODO A N8N
-  **********************************************/
   function enviarAN8N() {
     if (!validarCamposObligatorios()) return;
 
@@ -1377,15 +1169,11 @@
     };
 
     document.getElementById("dataN8N").value = JSON.stringify(payload);
-
     document.getElementById("formN8N").submit();
 
     alert("Información enviada correctamente a N8N");
   }
 
-  /**********************************************
-     CONSULTAR PACIENTE EN N8N
-  **********************************************/
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
 
@@ -1408,7 +1196,6 @@
       const h = data.historia;
       const od = data.odontograma;
 
-      // ------ LLENAR CAMPOS BÁSICOS ------
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
       document.getElementById("paciente_numdoc").value = data.id ?? "";
@@ -1427,37 +1214,14 @@
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      // ==============================
-      // TIPO DE IDENTIFICACIÓN
-      // ==============================
       let tiposID = [];
-      try {
-        tiposID = JSON.parse(h["Tipo identificación"] || "[]");
-      } catch(e) {
-        tiposID = [];
-      }
+      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
 
-      document.querySelectorAll("input[name='idtipo']").forEach(c => {
-        c.checked = tiposID.includes(c.value);
-      });
-
-      // ==============================
-      // HIJOS (checkbox Sí/No)
-      // ==============================
       let hijos = [];
-      try {
-        hijos = JSON.parse(h["paciente_hijos"] || "[]");
-      } catch(e) {
-        hijos = [];
-      }
+      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
 
-      document.querySelectorAll("input[name='hijos']").forEach(c => {
-        c.checked = hijos.includes(c.value);
-      });
-
-      // ==============================
-      // DATOS ACUDIENTES
-      // ==============================
       document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
       document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
       document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
@@ -1465,17 +1229,11 @@
       document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
       document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
 
-      // ==============================
-      // EMERGENCIA
-      // ==============================
       document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
       document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
       document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
       document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
 
-      // ==============================
-      // HISTORIA MÉDICA
-      // ==============================
       document.querySelectorAll("input[name='grave']").forEach(c => {
         c.checked = (h["Enfermedad grave"] ?? []).includes(c.value);
       });
@@ -1486,219 +1244,84 @@
       document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
       document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
 
-      // ==============================
-      // SOLO MUJERES
-      // ==============================
       document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
       document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
 
-      // ==============================
-      // CONDICIONES MÉDICAS
-      // ==============================
       let condiciones = [];
-      try {
-        condiciones = JSON.parse(h["Condiciones"] || "[]");
-      } catch(e) {
-        condiciones = [];
-      }
+      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
+      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
 
-      document.querySelectorAll("input[name='condiciones']").forEach(c => {
-        c.checked = condiciones.includes(c.value);
-      });
-
-      // ==============================
-      // coagulacion
-      // ==============================
       let coagulacion = [];
-      try {
-        coagulacion = JSON.parse(h["coagulacion"] || "[]");
-      } catch(e) {
-        coagulacion = [];
-      }
+      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
+      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
 
-      document.querySelectorAll("input[name='coagulacion']").forEach(c => {
-        c.checked = coagulacion.includes(c.value);
-      });
-
-      // ==============================
-      // anticoagulantes
-      // ==============================
       let anticoagulantes = [];
-      try {
-        anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]");
-      } catch(e) {
-        anticoagulantes = [];
-      }
+      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
+      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
 
-      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => {
-        c.checked = anticoagulantes.includes(c.value);
-      });
-
-      // ==============================
-      // toma_medicamentos
-      // ==============================
       let toma_medicamentos = [];
-      try {
-        toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]");
-      } catch(e) {
-        toma_medicamentos = [];
-      }
+      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
+      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
 
-      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => {
-        c.checked = toma_medicamentos.includes(c.value);
-      });
-
-      // ==============================
-      // alcohol
-      // ==============================
       let alcohol = [];
-      try {
-        alcohol = JSON.parse(h["alcohol"] || "[]");
-      } catch(e) {
-        alcohol = [];
-      }
+      try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
+      document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
 
-      document.querySelectorAll("input[name='alcohol']").forEach(c => {
-        c.checked = alcohol.includes(c.value);
-      });
-
-      // ==============================
-      // fuma
-      // ==============================
       let fuma = [];
-      try {
-        fuma = JSON.parse(h["fuma"] || "[]");
-      } catch(e) {
-        fuma = [];
-      }
+      try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
+      document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
 
-      document.querySelectorAll("input[name='fuma']").forEach(c => {
-        c.checked = fuma.includes(c.value);
-      });
-
-      // ==============================
-      // droga
-      // ==============================
       let droga = [];
-      try {
-        droga = JSON.parse(h["droga"] || "[]");
-      } catch(e) {
-        droga = [];
-      }
+      try { droga = JSON.parse(h["droga"] || "[]"); } catch(e) { droga = []; }
+      document.querySelectorAll("input[name='droga']").forEach(c => { c.checked = droga.includes(c.value); });
 
-      document.querySelectorAll("input[name='droga']").forEach(c => {
-        c.checked = droga.includes(c.value);
-      });
-
-      // ==============================
-      // embarazos_partos
-      // ==============================
       let embarazos_partos = [];
-      try {
-        embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]");
-      } catch(e) {
-        embarazos_partos= [];
-      }
+      try { embarazos_partos = JSON.parse(h["embarazos_partos"] || "[]"); } catch(e) { embarazos_partos= []; }
+      document.querySelectorAll("input[name='embarazos_partos']").forEach(c => { c.checked = embarazos_partos.includes(c.value); });
 
-      document.querySelectorAll("input[name='embarazos_partos']").forEach(c => {
-        c.checked = embarazos_partos.includes(c.value);
-      });
-
-      // ==============================
-      // esta embarazada?
-      // ==============================
       let embarazada = [];
-      try {
-        embarazada = JSON.parse(h["embarazada"] || "[]");
-      } catch(e) {
-        embarazada= [];
-      }
+      try { embarazada = JSON.parse(h["embarazada"] || "[]"); } catch(e) { embarazada= []; }
+      document.querySelectorAll("input[name='embarazada']").forEach(c => { c.checked = embarazada.includes(c.value); });
 
-      document.querySelectorAll("input[name='embarazada']").forEach(c => {
-        c.checked = embarazada.includes(c.value);
-      });
-
-      // ==============================
-      // anticonceptivos
-      // ==============================
       let anticonceptivos = [];
-      try {
-        anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]");
-      } catch(e) {
-        anticonceptivos= [];
-      }
+      try { anticonceptivos = JSON.parse(h["anticonceptivos"] || "[]"); } catch(e) { anticonceptivos= []; }
+      document.querySelectorAll("input[name='anticonceptivos']").forEach(c => { c.checked = anticonceptivos.includes(c.value); });
 
-      document.querySelectorAll("input[name='anticonceptivos']").forEach(c => {
-        c.checked = anticonceptivos.includes(c.value);
-      });
-
-      // ==============================
-      // histerectomia_menopausia
-      // ==============================
       let histerectomia_menopausia = [];
-      try {
-        histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]");
-      } catch(e) {
-        histerectomia_menopausia= [];
-      }
+      try { histerectomia_menopausia = JSON.parse(h["histerectomia_menopausia"] || "[]"); } catch(e) { histerectomia_menopausia= []; }
+      document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => { c.checked = histerectomia_menopausia.includes(c.value); });
 
-      document.querySelectorAll("input[name='histerectomia_menopausia']").forEach(c => {
-        c.checked = histerectomia_menopausia.includes(c.value);
-      });
-
-      // ==============================
-      // dolor (normalizar string con escapes)
-      // ==============================
       let dolor = [];
-
       try {
         let raw = h["dolor"];
-
-        if (Array.isArray(raw)) {
-          dolor = raw;
-        }
+        if (Array.isArray(raw)) dolor = raw;
         else if (typeof raw === "string") {
           raw = raw.replace(/\\"/g, '"');
           dolor = JSON.parse(raw);
         }
+      } catch(e) { dolor = []; }
 
-      } catch(e) {
-        dolor = [];
-      }
-
-      // PINTAR CHECKBOXES
       document.querySelectorAll("input[name='dolor[]']").forEach(c => {
         c.checked = dolor.includes(c.value);
       });
 
-      // ==============================
-      // HISTORIA ODONTOLÓGICA
-      // ==============================
       document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-
-      // Tratamientos recibidos
       document.querySelectorAll("input[name='tratamientos']").forEach(c => {
         c.checked = (h["Tratamientos"] ?? []).includes(c.value);
       });
 
-      // ----- LIMPIAR ODONTOGRAMA -----
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
       reporte = {};
 
-      // ----- PINTAR ODONTOGRAMA DESDE N8N -----
       Object.entries(od).forEach(([diente, regiones]) => {
         Object.entries(regiones).forEach(([region, estado]) => {
-
           if (!estado) return;
 
-          const estadoNormalizado =
-            estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-
+          const estadoNormalizado = estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
           const color = preexistencias[estadoNormalizado];
           if (!color) return;
 
           let cara = null;
-
           switch(region) {
             case "Mesial":     cara = "derecha"; break;
             case "Distal":     cara = "izquierda"; break;
@@ -1709,7 +1332,6 @@
             case "Lingual":    cara = "superior"; break;
             case "Palatino":   cara = "inferior"; break;
           }
-
           if (!cara) return;
 
           const selector = `.diente[data-numero='${diente}'] .${cara}`;
@@ -1724,7 +1346,6 @@
       });
 
       alert("Historia clínica cargada con éxito");
-
     } catch (err) {
       console.error(err);
       alert("Error consultando N8N");
@@ -1732,19 +1353,16 @@
   }
 </script>
 
-<!-- ✅ NUEVO: CIERRE AUTOMÁTICO POR INACTIVIDAD (5 MIN) -->
+<!-- ✅ CIERRE AUTOMÁTICO POR INACTIVIDAD (5 MIN) -->
 <script>
   const TIEMPO_INACTIVIDAD = 5 * 60 * 1000; // 5 minutos
   let temporizadorInactividad;
 
   function reiniciarTemporizador() {
     clearTimeout(temporizadorInactividad);
-
     temporizadorInactividad = setTimeout(() => {
       alert("Sesión cerrada por inactividad.");
-      if (window.cerrarSesion) {
-        window.cerrarSesion();
-      }
+      if (typeof window.cerrarSesion === "function") window.cerrarSesion();
     }, TIEMPO_INACTIVIDAD);
   }
 
@@ -1753,29 +1371,6 @@
   });
 
   reiniciarTemporizador();
-</script>
-
-<!-- ✅ NUEVO: FUNCIÓN CERRAR SESIÓN (SUPABASE) -->
-<script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-  const supabase = createClient(
-    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-  );
-
-  window.cerrarSesion = async function () {
-    try {
-      await supabase.auth.signOut();
-    } catch(e) {
-      console.error("Error cerrando sesión:", e);
-    }
-
-    try { localStorage.clear(); } catch(e) {}
-    try { sessionStorage.clear(); } catch(e) {}
-
-    window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-  };
 </script>
 
 </body>
