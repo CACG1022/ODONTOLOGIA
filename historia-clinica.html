@@ -823,10 +823,36 @@
         <input id="evo_profesional" type="text" placeholder="Nombre del profesional">
       </div>
 
-      <div class="ctrl">
-        <label for="evo_tipo">Procedimiento</label>
-        <input id="evo_tipo" type="text" placeholder="Ej: Profilaxis, Resina, Endodoncia...">
-      </div>
+<div class="ctrl">
+  <label for="evo_tipo">Procedimiento</label>
+
+  <div class="inline" style="gap:10px;">
+    <!-- ✅ Input con búsqueda (datalist) -->
+    <input
+      id="evo_tipo"
+      type="text"
+      list="procedimientos_list"
+      placeholder="Buscar o escribir procedimiento..."
+      autocomplete="off"
+      style="flex:1;"
+    />
+
+    <!-- ✅ Botón para agregar si no existe -->
+    <button
+      type="button"
+      onclick="agregarProcedimientoDesdeCampo()"
+      class="btn btn-agenda"
+      style="width:auto; padding:10px 14px;"
+      title="Agregar el texto actual al listado"
+    >
+      + Agregar
+    </button>
+  </div>
+
+  <!-- ✅ Datalist (desplegable con búsqueda) -->
+  <datalist id="procedimientos_list"></datalist>
+</div>
+
 
       <div class="ctrl full">
         <label for="evo_detalle">Detalle / Observaciones</label>
@@ -1632,6 +1658,259 @@
       alert("Error consultando N8N");
     }
   }
+// ==============================
+// ✅ PROCEDIMIENTOS (desplegable con búsqueda + agregar)
+// ==============================
+
+// Lista base (únicos). Puedes agregar más si luego te faltan.
+const PROCEDIMIENTOS_BASE = [
+  "ACLARACION",
+  "ACLARAMIENTO DENTAL ACTIVADO CON LUZ",
+  "ACLARAMIENTO DENTAL CON CUBETAS",
+  "ACLARAMIENTO INTERNO",
+  "ALARGAMIENTO CORONAL",
+  "ALARGAMIENTO CORONAL POR DIENTE",
+  "ALISADO RADICULAR",
+  "AMPLIACION",
+  "CAJA DE RETENEDORES Ó PLACA",
+  "CAMBIO DE TORNILLOS PASANTES DE 44 Y 46",
+  "CANCELA CITA",
+  "CAUCHOS DE RETENCION",
+  "CEMENTACIÓN",
+  "CEMENTACION CARILLAS",
+  "CEMENTACIÓN CORONA METAL-CERAMICA",
+  "CEMENTACIÓN CORONA ZIRCONIO",
+  "CEMENTACIÓN DE INCRUSTACIÓN",
+  "CEMENTACIÓN DE NUCLEO COLADO",
+  "CEMENTACIÓN INCRUSTACIÓN",
+  "CEMENTACIÓN POSTE FIBRA DE VIDRIO",
+  "CIRUGÍA DE IMPLANTE",
+  "CIRUGIA ENDODONTICA",
+  "CIRUGÍA EXPLORATORIA",
+  "CITA INCUMPLIDA",
+  "CITA MAL AGENDADA",
+  "CITA MODIFICADA POR PACIENTE",
+  "COLOCACION DE IMPLANTE",
+  "COLOCACIÓN DE MINI IMPLANTE",
+  "COLOCACION DE MINI IMPLANTE ORTODONTICO",
+  "CONSULTA PERIODONCIA",
+  "CONTRAREMISION",
+  "CONTROL",
+  "CONTROL CORONA SOBRE IMPLANTE",
+  "CONTROL DE ORTOPEDIA N° 3",
+  "CONTROL DE REHABILITACIÓN",
+  "CONTROL DE RESINA",
+  "CONTROL DE RETENEDORES",
+  "CONTROL DE RETENEDOR",
+  "CONTROL ORTODONCIA",
+  "CONTROL PERIODONTAL",
+  "CORONA 16",
+  "CORONA IMPLANTOSOPORTADA PRUEBA",
+  "CORRECCIÓN",
+  "CUÑA DISTAL",
+  "DEBRIDAMIENTO",
+  "DEBRIDAMIENTO QUIRURGICO",
+  "DESOBTURACION ENDODONTICA",
+  "DETARTRAJE DE 4 CUADRANTES Y PROFILAXIS",
+  "ELASTICOS",
+  "ELEVACION SENO MAXILAR",
+  "ENDODONCIA",
+  "ENDODONCIA MULTIRRADICULAR",
+  "ENTREGA APARATO ORTOPEDIA",
+  "ENTREGA APARATOS ORTOPEDIA",
+  "ENTREGA CARILLAS DISILICATO DE LITIO",
+  "ENTREGA CORONA IMPLANTOSOPORTADA",
+  "ENTREGA CORONA METAL PORCELANA",
+  "ENTREGA CORONA ZIRCONIO",
+  "ENTREGA DE APARATOLOGIA",
+  "ENTREGA DE CORONA IMPLANTOSOPORTADA 26",
+  "ENTREGA DE CORONA METAL-CERÁMICA DEL 26",
+  "ENTREGA DE KIT DE HIGIENE",
+  "ENTREGA DE PACIENTES",
+  "ENTREGA DE PLACA NMR",
+  "ENTREGA DE PROVISIONALES",
+  "ENTREGA DE RETENEDOR",
+  "ENTREGA DE TEMPORL",
+  "ENTREGA KIT DE ORTODONCIA",
+  "ENTREGA MUCOSOPORTADA",
+  "ENTREGA PPF METAL CERÁMICA",
+  "ENTREGA PROTESIS INMEDIATA",
+  "ENTREGA PROTESIS TOTAL",
+  "ENTREGA REHABILITACION ORAL",
+  "ERROR DE EVOLUCION",
+  "EXODONCIA",
+  "EXODONCIA METODO ABIERTO DE 37 Y 47",
+  "EXODONCIA METODO CERRADO ALTA Y MEDIO",
+  "EXODONCIA SIMPLE",
+  "EXPLANTE (RETIRO DE IMPLANTE)",
+  "FASE HIGIENICA",
+  "FASE HIGIENICA PERIODONTAL",
+  "FASE HIGIENICA POR HIGIENISTA ORAL",
+  "FASE HIGIENICA Y RESINA",
+  "FERULIZACION",
+  "FINAL",
+  "FRENILLECTOMIA",
+  "GARANTIA DE BRACKET",
+  "GINGIVECTOMIA POR DIENTE",
+  "GINGIVECTOMIA POR SEXTANTE",
+  "HUESO MISS 0.5",
+  "IMPRESIÓN DEFINITIVA",
+  "IMPRESION PARA ORTOPEDIA",
+  "IMPRESIÓN PRELIMINAR",
+  "INJERTO DE TEJIDO CONECTIVO",
+  "LIMPIEZA DENTAL",
+  "LLEGA TARDE 15 MIN SE REPROGRAMA CITA",
+  "MANTENIMIENTO PERIODONTAL IMPLANTE",
+  "MONTAJE INFERIOR",
+  "MONTAJE SUPERIOR",
+  "MONTAJE SUPERIOR E INFERIOR",
+  "NO ASISTENCIA",
+  "NO ASISTENCIA A CONTROL DE ORTODONCIA",
+  "NO ASISTIÓ",
+  "OBTURACION",
+  "OBTURACION EN RESINA",
+  "ORIENTACIÓN DE RODETE",
+  "ORIENTACIÓN DE RODETES Y TOMA DE COLOR",
+  "ORTODONCIA INVISIBLE",
+  "PACIENTE AGENDADO POR ERROR",
+  "PACIENTE CON CONVENIO- COMPENSAR",
+  "PACIENTE LLEGA TARDE A CITA PROGRAMADA",
+  "PACIENTE NO ASISTE A CONSULTA",
+  "PACIENTE NO ASISTE A LA CITA",
+  "PACK FASE HIGIENICA",
+  "PANORAMICA DE CONTROL ESPECIALISTA",
+  "PANORAMICA PRIMERA VEZ",
+  "PANORAMICA REEVALUACION",
+  "PAQUETE DE FINALIZACION ORTODONCIA",
+  "PAQUETE INCIAL DE ORTODONCIA",
+  "PATRON DE NUCLEO",
+  "PEDIDO REHABILITACIÓN",
+  "POSTE EN FIBRA DE VIDRIO",
+  "PROFILAXIS",
+  "PROTESIS",
+  "PRÓTESIS FLEXIDENT SUPERIOR",
+  "PROVISIONAL",
+  "PROVISIONAL EN CONSULTORIO",
+  "PRUEBA COFIAS EN METAL",
+  "PRUEBA DE CERAMICA SOBRE IMPLANTE",
+  "PRUEBA DE COFIA EN PATTERN RESIN",
+  "PRUEBA DE COFIA EN ZIRCONIO",
+  "PRUEBA DE ENFILADO",
+  "PRUEBA DE ESTRUCTURA",
+  "PRUEBA DE REHABILITACIÓN",
+  "PRUEBA DE RODETE",
+  "PRUEBA METALICA SOBRE IMPLANTE",
+  "PULPECTOMIA",
+  "SEGUNDA FASE IMPLANTE",
+  "SEGUNDA FASE QUIRÚRGICA",
+  "SELLANTES",
+  "TERAPIA DE MANTENIMIENTO PERIODONTAL",
+  "TERAPIA ENDODONTICA",
+  "TOMA DE IMPRESION",
+  "TOMA DE IMPRESIONES",
+  "URGENCIA",
+  "URGENCIA ORTODONCIA",
+  "VALORACION",
+  "VALORACION ASEGURADORA",
+  "VALORACION CLINICA Y RADIOGRAFICA",
+  "VALORACION ENDODONCIA",
+  "VALORACION MAS RADIOGRAFIA",
+  "VALORACION ORTODONCIA",
+  "VALORACION PERIODONTAL",
+  "VALORACIÓN REHABILITACIÓN ORAL",
+  "VENTANA QUIRÚRGICA"
+];
+
+// Key para guardar nuevos procedimientos
+const LS_PROC_KEY = "procedimientos_custom";
+
+// Normaliza para comparar (quita dobles espacios, mayúsculas)
+function _normProc(s) {
+  return String(s || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function _cargarProcedimientosCustom() {
+  try {
+    const raw = localStorage.getItem(LS_PROC_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function _guardarProcedimientosCustom(arr) {
+  try { localStorage.setItem(LS_PROC_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+function _getProcedimientosUnicos() {
+  const base = PROCEDIMIENTOS_BASE.map(_normProc);
+  const custom = _cargarProcedimientosCustom().map(_normProc);
+
+  const set = new Set([...base, ...custom].filter(Boolean));
+  return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
+}
+
+function _poblarDatalistProcedimientos() {
+  const dl = document.getElementById("procedimientos_list");
+  if (!dl) return;
+
+  const items = _getProcedimientosUnicos();
+
+  dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
+}
+
+// Botón + Agregar
+function agregarProcedimientoDesdeCampo() {
+  const input = document.getElementById("evo_tipo");
+  if (!input) return;
+
+  const val = _normProc(input.value);
+  if (!val) { alert("⚠️ Escribe un procedimiento para agregar."); return; }
+
+  const actuales = _getProcedimientosUnicos();
+  if (actuales.includes(val)) {
+    alert("✅ Ese procedimiento ya existe en la lista.");
+    return;
+  }
+
+  // Guardar en custom
+  const custom = _cargarProcedimientosCustom().map(_normProc);
+  custom.push(val);
+  _guardarProcedimientosCustom(Array.from(new Set(custom)));
+
+  _poblarDatalistProcedimientos();
+  alert("✅ Procedimiento agregado al listado.");
+}
+
+// Inicializa al cargar
+document.addEventListener("DOMContentLoaded", () => {
+  _poblarDatalistProcedimientos();
+
+  // Si presionas Enter en el campo y NO existe, pregunta si lo agrega
+  const input = document.getElementById("evo_tipo");
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        // evita que el Enter dispare cosas raras
+        e.preventDefault();
+
+        const val = _normProc(input.value);
+        if (!val) return;
+
+        const actuales = _getProcedimientosUnicos();
+        if (!actuales.includes(val)) {
+          const ok = confirm("Este procedimiento no está en la lista.\n\n¿Deseas agregarlo?");
+          if (ok) agregarProcedimientoDesdeCampo();
+        }
+      }
+    });
+  }
+});
+
 </script>
 
 
