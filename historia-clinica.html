@@ -818,10 +818,33 @@
         <input id="evo_hora" type="time" readonly>
       </div>
 
-      <div class="ctrl">
-        <label for="evo_profesional">Profesional</label>
-        <input id="evo_profesional" type="text" placeholder="Nombre del profesional">
-      </div>
+<div class="ctrl">
+  <label for="evo_profesional">Profesional</label>
+
+  <div class="inline" style="gap:10px;">
+    <input
+      id="evo_profesional"
+      type="text"
+      list="profesionales_list"
+      placeholder="Buscar o escribir profesional..."
+      autocomplete="off"
+      style="flex:1;"
+    />
+
+    <button
+      type="button"
+      onclick="agregarProfesionalDesdeCampo()"
+      class="btn btn-agenda"
+      style="width:auto; padding:10px 14px;"
+      title="Agregar el texto actual al listado"
+    >
+      + Agregar
+    </button>
+  </div>
+
+  <datalist id="profesionales_list"></datalist>
+</div>
+
 
 <div class="ctrl">
   <label for="evo_tipo">Procedimiento</label>
@@ -1911,6 +1934,96 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+ // ==============================
+// ✅ PROFESIONALES (desplegable con búsqueda + agregar)
+// ==============================
+
+const PROFESIONALES_BASE = [
+  "LEIDI FERNANDA SILVA OROPEZA"
+];
+
+const LS_PROF_KEY = "profesionales_custom";
+
+function _normProf(s) {
+  return String(s || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+function _cargarProfesionalesCustom() {
+  try {
+    const raw = localStorage.getItem(LS_PROF_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function _guardarProfesionalesCustom(arr) {
+  try { localStorage.setItem(LS_PROF_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+function _getProfesionalesUnicos() {
+  const base = PROFESIONALES_BASE.map(_normProf);
+  const custom = _cargarProfesionalesCustom().map(_normProf);
+
+  const set = new Set([...base, ...custom].filter(Boolean));
+  return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
+}
+
+function _poblarDatalistProfesionales() {
+  const dl = document.getElementById("profesionales_list");
+  if (!dl) return;
+
+  const items = _getProfesionalesUnicos();
+  dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
+}
+
+function agregarProfesionalDesdeCampo() {
+  const input = document.getElementById("evo_profesional");
+  if (!input) return;
+
+  const val = _normProf(input.value);
+  if (!val) { alert("⚠️ Escribe el nombre del profesional para agregar."); return; }
+
+  const actuales = _getProfesionalesUnicos();
+  if (actuales.includes(val)) {
+    alert("✅ Ese profesional ya existe en la lista.");
+    return;
+  }
+
+  const custom = _cargarProfesionalesCustom().map(_normProf);
+  custom.push(val);
+  _guardarProfesionalesCustom(Array.from(new Set(custom)));
+
+  _poblarDatalistProfesionales();
+  alert("✅ Profesional agregado al listado.");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  _poblarDatalistProfesionales();
+
+  const input = document.getElementById("evo_profesional");
+  if (input) {
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        const val = _normProf(input.value);
+        if (!val) return;
+
+        const actuales = _getProfesionalesUnicos();
+        if (!actuales.includes(val)) {
+          const ok = confirm("Este profesional no está en la lista.\n\n¿Deseas agregarlo?");
+          if (ok) agregarProfesionalDesdeCampo();
+        }
+      }
+    });
+  }
+});
+ 
 </script>
 
 
