@@ -382,6 +382,42 @@
   font-size: 12px;
   color: var(--muted);
 }
+/* ==========================
+   🖥️🔎 ODONTOGRAMA FULLSCREEN
+========================== */
+#odontograma-wrapper.fullscreen{
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  background: #f9f9f9;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  padding: 10px 10px 25px;
+  overflow: auto;
+}
+
+/* Cuando esté en fullscreen, centramos mejor y dejamos scroll horizontal/vertical */
+#odontograma-wrapper.fullscreen .odontograma{
+  margin-left: 0 !important;
+  padding: 10px;
+}
+
+/* Botón flotante para salir (se crea por JS) */
+#btnExitOdonFS{
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 100000;
+  border: none;
+  border-radius: 12px;
+  padding: 10px 14px;
+  cursor: pointer;
+  background: #0D47A1;
+  color: #fff;
+  font-weight: 700;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+}
+
     
   </style>
 </head>
@@ -2303,6 +2339,84 @@ document.addEventListener("DOMContentLoaded", () => {
   window.vozModo  = () => alert("El dictado ahora es por campo 🎤.");
 
 })();
+  /* ======================================================
+   🔎 ODONTOGRAMA: DOBLE CLICK / DOBLE TAP => PANTALLA COMPLETA
+   ====================================================== */
+(function(){
+  const wrapper = document.getElementById("odontograma-wrapper");
+  if (!wrapper) return;
+
+  let isFS = false;
+  let exitBtn = null;
+
+  function crearBotonSalir(){
+    if (exitBtn) return;
+    exitBtn = document.createElement("button");
+    exitBtn.id = "btnExitOdonFS";
+    exitBtn.type = "button";
+    exitBtn.textContent = "Salir ✕";
+    exitBtn.addEventListener("click", salirFullscreen);
+    document.body.appendChild(exitBtn);
+  }
+
+  function quitarBotonSalir(){
+    if (exitBtn) exitBtn.remove();
+    exitBtn = null;
+  }
+
+  function entrarFullscreen(){
+    if (isFS) return;
+    isFS = true;
+    wrapper.classList.add("fullscreen");
+    crearBotonSalir();
+
+    // Evita que el body se desplace por detrás
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
+
+    // Lleva al odontograma arriba
+    wrapper.scrollTop = 0;
+    wrapper.scrollLeft = 0;
+  }
+
+  function salirFullscreen(){
+    if (!isFS) return;
+    isFS = false;
+    wrapper.classList.remove("fullscreen");
+    quitarBotonSalir();
+
+    document.documentElement.style.overflow = "";
+    document.body.style.overflow = "";
+  }
+
+  function toggleFullscreen(){
+    if (isFS) salirFullscreen();
+    else entrarFullscreen();
+  }
+
+  // 🖱️ Doble click (desktop)
+  wrapper.addEventListener("dblclick", (e) => {
+    e.preventDefault();
+    toggleFullscreen();
+  });
+
+  // 📱 Doble tap (móvil)
+  let lastTap = 0;
+  wrapper.addEventListener("touchend", (e) => {
+    const now = Date.now();
+    if (now - lastTap < 300) { // doble toque
+      e.preventDefault();
+      toggleFullscreen();
+    }
+    lastTap = now;
+  }, { passive: false });
+
+  // ⌨️ ESC para salir
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") salirFullscreen();
+  });
+})();
+
 </script>
 
 
