@@ -1165,31 +1165,76 @@
     if (d) d.value = "";
   }
 
-  function agregarEvolucion() {
-    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
-    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
-    const profesional = document.getElementById("evo_profesional").value.trim();
-    const tipo = document.getElementById("evo_tipo").value.trim();
-    const detalle = document.getElementById("evo_detalle").value.trim();
+async function agregarEvolucion() {
+  const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
+  const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
+  const profesional = document.getElementById("evo_profesional").value.trim();
+  const tipo = document.getElementById("evo_tipo").value.trim();
+  const detalle = document.getElementById("evo_detalle").value.trim();
 
-    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
-    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
+  if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
+  if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
 
-    const item = {
-      id: generarEvolucionId(),
-      fecha,
-      hora,
-      profesional,
-      procedimiento: tipo,
-      detalle,
-      usuario: localStorage.getItem("usuario_logueado") || "desconocido",
-      ts: new Date().toISOString()
+  const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+  const cedula = (
+    document.getElementById("paciente_numdoc")?.value ||
+    document.getElementById("buscar_cedula")?.value ||
+    ""
+  ).trim();
+
+  if (!cedula) {
+    alert("⚠️ Primero debes tener la cédula del paciente (buscar o diligenciar identificación).");
+    return;
+  }
+
+  const item = {
+    id: generarEvolucionId(),
+    fecha,
+    hora,
+    profesional,
+    procedimiento: tipo,
+    detalle,
+    cedula_paciente: cedula,
+    usuario,
+    ts: new Date().toISOString()
+  };
+
+  // ✅ 1) Guarda local (no se pierde)
+  evoluciones.unshift(item);
+  renderEvoluciones();
+  limpiarEvolucionForm();
+
+  // ✅ 2) Enviar a n8n (SIN recargar, SIN abrir otra pestaña)
+  try {
+    const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+
+    const payload = {
+      evento: "agregar_evolucion",
+      cedula: cedula,
+      evolucion: item,
+      fecha_envio: new Date().toISOString(),
+      usuario_logueado: usuario
     };
 
-    evoluciones.unshift(item);
-    renderEvoluciones();
-    limpiarEvolucionForm();
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    // opcional: si n8n responde json
+    // const data = await resp.json();
+
+    console.log("✅ Evolución enviada a n8n");
+    // alert("✅ Evolución guardada y enviada a n8n");
+  } catch (err) {
+    console.warn("⚠️ Evolución guardada pero NO se pudo enviar a n8n:", err);
+    alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n. Verifica conexión o webhook.");
   }
+}
+
 
   function eliminarEvolucion(idx) {
     evoluciones.splice(idx, 1);
