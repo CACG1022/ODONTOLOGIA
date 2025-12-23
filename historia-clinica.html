@@ -333,6 +333,20 @@
        BUSCAR HISTORIA CLÍNICA EXISTENTE
   ============================== -->
   <section class="card">
+   <div class="ctrl full">
+  <label>🎙️ Diligenciamiento por voz</label>
+  <div class="inline" style="gap:10px;">
+    <button type="button" class="btn btn-agenda" onclick="vozStart()">Iniciar voz</button>
+    <button type="button" class="btn btn-buscar" onclick="vozStop()">Detener</button>
+    <button type="button" class="btn btn-agenda" onclick="vozModo('focus')">Modo: Dictado por foco</button>
+    <button type="button" class="btn btn-agenda" onclick="vozModo('cmd')">Modo: Comandos</button>
+  </div>
+  <small id="voz_estado" style="color:#6b7a90;">Estado: apagado</small>
+  <div id="voz_ultima" style="margin-top:6px; font-size:13px; color:#19324d;"></div>
+</div>
+
+
+    
     <div class="legend">Buscar historia clínica existente</div>
 
     <div class="grid g-2 search-grid">
@@ -2023,7 +2037,497 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
- 
+(function () {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null;
+  let escuchando = false;
+  let modo = "focus"; // "focus" o "cmd"
+  let lastActive = null;
+  let lastTranscript = ""; // último texto dictado (para escribirlo en el campo)
+
+  // ---- UI helpers
+  function setEstado(txt) {
+    const el = document.getElementById("voz_estado");
+    if (el) el.textContent = "Estado: " + txt;
+  }
+  function setUltima(txt) {
+    const el = document.getElementById("voz_ultima");
+    if (el) el.innerHTML = `<b>Último:</b> ${escapeHtml(txt)}`;
+  }
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  }
+
+  // ---- Capturar el último campo enfocado
+  document.addEventListener("focusin", (e) => {
+    const t = e.target;
+    if (!t) return;
+    if (t.matches("input, textarea, select")) lastActive = t;
+  });
+
+  // ---- Helpers generales
+  function norm(s) {
+    return String(s || "")
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+  function dispatchInput(el) {
+    if (!el) return;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  function esSi(s) {
+    s = norm(s);
+    return ["si", "sí", "afirmativo", "claro", "correcto"].includes(s) || s.startsWith("si ");
+  }
+  function esNo(s) {
+    s = norm(s);
+    return ["no", "negativo"].includes(s) || s.startsWith("no ");
+  }
+
+  // ---- Lista de campos navegables (inputs, textareas, selects visibles/enabled)
+  function getNavFields() {
+    const all = Array.from(document.querySelectorAll(".container input, .container textarea, .container select"));
+    return all.filter(el => {
+      if (!el) return false;
+      if (el.type === "hidden") return false;
+      if (el.disabled) return false;
+      // no navegar por checkboxes/radios en modo dictado por foco
+      if (el.type === "checkbox" || el.type === "radio") return false;
+      // si está oculto por estilos
+      const st = window.getComputedStyle(el);
+      if (st.display === "none" || st.visibility === "hidden") return false;
+      // si está dentro de algo display:none
+      if (el.offsetParent === null && st.position !== "fixed") return false;
+      return true;
+    });
+  }
+
+  function focusNext() {
+    const fields = getNavFields();
+    if (!fields.length) return;
+    const i = fields.indexOf(lastActive);
+    const next = fields[Math.min(i + 1, fields.length - 1)] || fields[0];
+    next.focus();
+    next.scrollIntoView({ behavior: "smooth", block: "center" });
+    lastActive = next;
+  }
+
+  function focusPrev() {
+    const fields = getNavFields();
+    if (!fields.length) return;
+    const i = fields.indexOf(lastActive);
+    const prev = fields[Math.max(i - 1, 0)] || fields[0];
+    prev.focus();
+    prev.scrollIntoView({ behavior: "smooth", block: "center" });
+    lastActive = prev;
+  }
+
+  function clearActive() {
+    if (!lastActive) return;
+    lastActive.value = "";
+    dispatchInput(lastActive);
+  }
+
+  // ---- Parse fecha hablada simple
+  function parseFecha(s) {
+    s = norm(s);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (m) {
+      const dd = String(m[1]).padStart(2, "0");
+      const mm = String(m[2]).padStart(2, "0");
+      const yy = m[3];
+      return `${yy}-${mm}-${dd}`;
+    }
+    return null;
+  }
+
+  // ---- Mapear campos por alias (modo comandos)
+  const FIELD_ALIASES = [
+    { key: "paciente_nombre", aliases: ["nombre", "nombres", "nombres y apellidos", "nombre y apellidos", "paciente nombre"] },
+    { key: "paciente_edad", aliases: ["edad", "paciente edad"] },
+    { key: "paciente_numdoc", aliases: ["cedula", "cédula", "documento", "numero de identificacion", "número de identificación", "identificacion", "identificación", "no documento"] },
+    { key: "paciente_lugardoc", aliases: ["lugar expedicion", "lugar de expedicion", "lugar exp", "expedicion"] },
+    { key: "paciente_nacimiento", aliases: ["fecha de nacimiento", "nacimiento"] },
+    { key: "paciente_lugarnac", aliases: ["lugar de nacimiento"] },
+    { key: "paciente_direccion", aliases: ["direccion", "dirección", "direccion de residencia"] },
+    { key: "Ciudad de Residencia", aliases: ["ciudad de residencia"] },
+    { key: "EPS_Paciente", aliases: ["eps"] },
+    { key: "paciente_ocupacion", aliases: ["ocupacion", "ocupación"] },
+    { key: "paciente_tel", aliases: ["telefono", "teléfono", "telefono fijo"] },
+    { key: "paciente_cel", aliases: ["celular", "movil", "móvil"] },
+    { key: "paciente_email", aliases: ["correo", "email", "correo electronico", "correo electrónico"] },
+    { key: "paciente_estadocivil", aliases: ["estado civil"] },
+
+    { key: "padre_nombre", aliases: ["nombre del padre", "padre nombre"] },
+    { key: "madre_nombre", aliases: ["nombre de la madre", "madre nombre"] },
+
+    { key: "emergencia_nombre", aliases: ["emergencia nombre", "contacto emergencia"] },
+
+    { key: "grave_cual", aliases: ["enfermedad grave cual", "grave cual", "grave cuál"] },
+    { key: "otra_cual", aliases: ["otra condicion cual", "otra condición cuál"] },
+    { key: "medicamentos_cuales", aliases: ["medicamentos cuales", "medicamentos cuáles"] },
+    { key: "med_dosis", aliases: ["dosis", "dosis y frecuencia", "frecuencia"] },
+    { key: "alergia_meds", aliases: ["alergia a medicamentos", "alergias medicamentos"] },
+
+    { key: "numero_hijos", aliases: ["numero de hijos", "número de hijos"] },
+    { key: "tiempo_embarazo", aliases: ["tiempo embarazo"] },
+
+    { key: "motivo_consulta", aliases: ["motivo", "motivo de consulta", "motivo consulta"] },
+
+    { key: "evo_profesional", aliases: ["evolucion profesional", "evolución profesional", "profesional evolucion", "profesional evolución"] },
+    { key: "evo_tipo", aliases: ["evolucion procedimiento", "evolución procedimiento", "procedimiento evolucion", "procedimiento evolución"] },
+    { key: "evo_detalle", aliases: ["evolucion detalle", "evolución detalle", "detalle evolucion", "detalle evolución", "observaciones"] },
+  ];
+
+  function findFieldByAlias(aliasSpoken) {
+    const a = norm(aliasSpoken);
+    for (const item of FIELD_ALIASES) {
+      for (const al of item.aliases) {
+        if (a === norm(al)) return document.getElementById(item.key);
+      }
+    }
+    return document.getElementById(aliasSpoken) || null;
+  }
+
+  // ---- Checkboxes si/no
+  function setCheckboxGroup(name, valueSiNo) {
+    const targets = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`));
+    if (!targets.length) return false;
+    const wantSi = esSi(valueSiNo);
+    const wantNo = esNo(valueSiNo);
+    if (!wantSi && !wantNo) return false;
+
+    targets.forEach(ch => {
+      if (wantSi) ch.checked = norm(ch.value) === "si";
+      if (wantNo) ch.checked = norm(ch.value) === "no";
+      ch.dispatchEvent(new Event("change", { bubbles:true }));
+    });
+    return true;
+  }
+
+  function toggleCheckboxValue(name, valueLabel, onOff) {
+    const val = norm(valueLabel);
+    const nodes = Array.from(document.querySelectorAll(`input[type="checkbox"][name="${CSS.escape(name)}"]`));
+    if (!nodes.length) return false;
+
+    let hit = false;
+    nodes.forEach(ch => {
+      if (norm(ch.value) === val) {
+        ch.checked = (onOff === undefined) ? true : !!onOff;
+        ch.dispatchEvent(new Event("change", { bubbles:true }));
+        hit = true;
+      }
+    });
+    return hit;
+  }
+
+  // ---- Odontograma por voz (usa tus variables globales: preexistencias, reporte)
+  const REGION_MAP = {
+    "oclusal": "centro",
+    "centro": "centro",
+    "mesial": "derecha",
+    "distal": "izquierda",
+    "vestibular": "superior",
+    "lingual": "superior",
+    "palatino": "inferior"
+  };
+
+  function setOdonto(dienteNum, regionSpoken, estadoSpoken) {
+    const d = parseInt(dienteNum, 10);
+    if (!d) return false;
+
+    const estKey = Object.keys(preexistencias || {}).find(k => norm(k) === norm(estadoSpoken));
+    if (!estKey) return false;
+
+    const dienteEl = document.querySelector(`.diente[data-numero="${d}"]`);
+    if (!dienteEl) return false;
+
+    const estado = estKey;
+    const color = preexistencias[estado];
+
+    if (estado === "Sano" || estado === "Ausente") {
+      dienteEl.querySelectorAll(".cara, .centro").forEach(c => c.style.background = color);
+      if (!window.reporte) window.reporte = {};
+      if (!reporte[d]) reporte[d] = {};
+      ["superior","inferior","izquierda","derecha","centro"].forEach(c => reporte[d][c] = estado);
+      return true;
+    }
+
+    let cara = REGION_MAP[norm(regionSpoken)];
+    if (!cara) return false;
+
+    if (norm(regionSpoken) === "vestibular") {
+      cara = (d >= 11 && d <= 28) ? "superior" : "inferior";
+    }
+
+    const target = dienteEl.querySelector(`.${cara}`);
+    if (!target) return false;
+
+    target.style.background = color;
+    if (!window.reporte) window.reporte = {};
+    if (!reporte[d]) reporte[d] = {};
+    reporte[d][cara] = estado;
+    return true;
+  }
+
+  // ---- Comandos de navegación (modo focus)
+  const CMD_NEXT = ["siguiente", "continuar", "listo", "ok", "okay", "siga"];
+  const CMD_PREV = ["atras", "atrás", "anterior", "regresar", "retroceder"];
+  const CMD_CLEAR = ["limpiar", "borrar", "borre", "borra"];
+  const CMD_STOP = ["detener", "parar", "stop", "apagar"];
+
+  function isOneOf(txt, arr) {
+    const t = norm(txt);
+    return arr.some(x => t === norm(x));
+  }
+
+  // ---- Escribir dictado en el campo activo (modo focus)
+  function writeToActive(raw) {
+    if (!lastActive) return;
+
+    const el = lastActive;
+
+    // Date
+    if (el.type === "date") {
+      const f = parseFecha(raw);
+      el.value = f || raw;
+      dispatchInput(el);
+      return;
+    }
+
+    // Number
+    if (el.type === "number") {
+      const only = raw.replace(/[^\d]/g, "");
+      el.value = only || raw;
+      dispatchInput(el);
+      return;
+    }
+
+    // Tel
+    if (el.type === "tel") {
+      el.value = raw.replace(/[^\d+]/g, "");
+      dispatchInput(el);
+      return;
+    }
+
+    // Select: match opción
+    if (el.tagName === "SELECT") {
+      const opts = Array.from(el.options);
+      const hit = opts.find(o => norm(o.textContent) === norm(raw) || norm(o.value) === norm(raw));
+      if (hit) el.value = hit.value;
+      dispatchInput(el);
+      return;
+    }
+
+    // Texto normal
+    el.value = raw;
+    dispatchInput(el);
+  }
+
+  // ---- Procesamiento principal
+  function handleText(raw) {
+    if (!raw) return;
+    lastTranscript = raw;
+    setUltima(raw);
+
+    const txt = norm(raw);
+
+    // =========================
+    // MODO FOCUS: control por voz
+    // =========================
+    if (modo === "focus") {
+      if (isOneOf(txt, CMD_STOP)) {
+        vozStop();
+        return;
+      }
+      if (isOneOf(txt, CMD_CLEAR)) {
+        clearActive();
+        return;
+      }
+      if (isOneOf(txt, CMD_PREV)) {
+        focusPrev();
+        return;
+      }
+      if (isOneOf(txt, CMD_NEXT)) {
+        // si el usuario dijo "siguiente" después de dictar algo antes,
+        // simplemente pasa al siguiente (no sobrescribe).
+        focusNext();
+        return;
+      }
+
+      // Si no es comando, escribe al campo actual
+      writeToActive(raw);
+      return;
+    }
+
+    // =========================
+    // MODO COMANDOS
+    // =========================
+
+    // Navegación también disponible aquí si quieres:
+    if (isOneOf(txt, CMD_NEXT)) { focusNext(); return; }
+    if (isOneOf(txt, CMD_PREV)) { focusPrev(); return; }
+    if (isOneOf(txt, CMD_CLEAR)) { clearActive(); return; }
+    if (isOneOf(txt, CMD_STOP)) { vozStop(); return; }
+
+    // 1) Odontograma: "diente 11 oclusal caries"
+    let m = txt.match(/^diente\s+(\d{2})\s+(oclusal|centro|mesial|distal|vestibular|lingual|palatino)\s+(.+)$/);
+    if (m) {
+      const ok = setOdonto(m[1], m[2], m[3]);
+      if (!ok) alert("⚠️ No pude aplicar odontograma. Revisa diente/región/estado.");
+      return;
+    }
+
+    // 2) Odontograma rápido: "diente 16 sano" / "diente 26 ausente"
+    m = txt.match(/^diente\s+(\d{2})\s+(sano|ausente)$/);
+    if (m) {
+      const ok = setOdonto(m[1], "centro", m[2]);
+      if (!ok) alert("⚠️ No pude marcar ese diente como sano/ausente.");
+      return;
+    }
+
+    // 3) Campo: "campo nombre y apellidos Juan Perez"
+    m = txt.match(/^campo\s+(.+?)\s+(.+)$/);
+    if (m) {
+      const alias = m[1];
+      const valor = m[2];
+
+      const el = findFieldByAlias(alias);
+      if (!el) { alert("⚠️ No encontré el campo: " + alias); return; }
+
+      // Auto parse según tipo
+      if (el.type === "date") {
+        const f = parseFecha(valor);
+        el.value = f || valor;
+        dispatchInput(el);
+        return;
+      }
+
+      if (el.type === "number") {
+        const only = valor.replace(/[^\d]/g, "");
+        el.value = only || valor;
+        dispatchInput(el);
+        return;
+      }
+
+      if (el.type === "tel") {
+        el.value = valor.replace(/[^\d+]/g, "");
+        dispatchInput(el);
+        return;
+      }
+
+      if (el.tagName === "SELECT") {
+        const opts = Array.from(el.options);
+        const hit = opts.find(o => norm(o.textContent) === norm(valor) || norm(o.value) === norm(valor));
+        if (hit) el.value = hit.value;
+        dispatchInput(el);
+        return;
+      }
+
+      el.value = valor;
+      dispatchInput(el);
+      return;
+    }
+
+    // 4) Checkbox Si/No: "checkbox fuma sí"
+    m = txt.match(/^checkbox\s+([a-z0-9_\-\[\]]+)\s+(si|sí|no)$/);
+    if (m) {
+      const ok = setCheckboxGroup(m[1], m[2]);
+      if (!ok) alert("⚠️ No encontré el grupo checkbox: " + m[1]);
+      return;
+    }
+
+    // 5) Condiciones: "condicion diabetes"
+    m = txt.match(/^condicion\s+(.+)$/);
+    if (m) {
+      const ok = toggleCheckboxValue("condiciones", m[1], true);
+      if (!ok) alert("⚠️ No encontré esa condición en la lista.");
+      return;
+    }
+
+    // 6) Tratamientos: "tratamiento endodoncia"
+    m = txt.match(/^tratamiento\s+(.+)$/);
+    if (m) {
+      const ok = toggleCheckboxValue("tratamientos", m[1], true);
+      if (!ok) alert("⚠️ No encontré ese tratamiento.");
+      return;
+    }
+
+    // 7) Dolor: "dolor boca"
+    m = txt.match(/^dolor\s+(boca|cara|cuello)$/);
+    if (m) {
+      const ok = toggleCheckboxValue("dolor[]", m[1], true);
+      if (!ok) alert("⚠️ No encontré el checkbox de dolor.");
+      return;
+    }
+
+    // 8) Evolución: "agregar evolucion"
+    if (txt === "agregar evolucion" || txt === "agregar evolución") {
+      if (typeof agregarEvolucion === "function") agregarEvolucion();
+      return;
+    }
+
+    // 9) fallback: escribe al campo activo si existe
+    if (lastActive) writeToActive(raw);
+  }
+
+  // ---- Inicializar reconocimiento
+  function initRec() {
+    if (!SpeechRecognition) {
+      alert("⚠️ Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
+      return null;
+    }
+    const r = new SpeechRecognition();
+    r.lang = "es-CO";
+    r.interimResults = false;
+    r.continuous = true;
+
+    r.onstart = () => {
+      escuchando = true;
+      setEstado("escuchando (" + (modo === "focus" ? "dictado por foco" : "comandos") + ")");
+    };
+
+    r.onend = () => {
+      escuchando = false;
+      setEstado("apagado");
+    };
+
+    r.onerror = (e) => {
+      console.warn("Voz error:", e);
+      setEstado("error: " + (e.error || "desconocido"));
+    };
+
+    r.onresult = (ev) => {
+      const res = ev.results?.[ev.results.length - 1];
+      const text = res?.[0]?.transcript || "";
+      if (text) handleText(text);
+    };
+
+    return r;
+  }
+
+  // ---- API global
+  window.vozModo = function (m) {
+    modo = (m === "cmd") ? "cmd" : "focus";
+    setEstado(escuchando ? "escuchando (" + (modo === "focus" ? "dictado por foco" : "comandos") + ")" : "apagado");
+  };
+
+  window.vozStart = function () {
+    if (!rec) rec = initRec();
+    if (!rec) return;
+    try { rec.start(); } catch(e) { /* ya iniciado */ }
+  };
+
+  window.vozStop = function () {
+    if (!rec) return;
+    try { rec.stop(); } catch(e) {}
+  };
+
+})();
 </script>
 
 
