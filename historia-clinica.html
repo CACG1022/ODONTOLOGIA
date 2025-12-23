@@ -2097,292 +2097,165 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 /**
- * =========================================
- * ✅ VOZ POR CAMPO (Micrófono por cada input)
- * - Inyecta automáticamente botón 🎤 al lado
- * - Click: inicia/detiene
- * - Mantener presionado: dicta mientras presionas
- * - Llena SOLO el campo asociado
- * =========================================
- */
- (function () {
+ /* ======================================================
+   🎤 VOZ POR CAMPO – MODO TOGGLE (CLICK ON / CLICK OFF)
+   ====================================================== */
+(function () {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    alert("⚠️ Tu navegador no soporta reconocimiento de voz (usa Chrome o Edge).");
+    return;
+  }
 
-  // ----- Estado global
   let rec = null;
   let escuchando = false;
-  let activeEl = null;       // campo al que se le dicta
-  let activeBtn = null;      // botón asociado
-  let lastText = "";
+  let campoActivo = null;
+  let botonActivo = null;
 
-  // ----- Ajustes
   const LANG = "es-CO";
 
-  // ===== Helpers
   function norm(s) {
     return String(s || "")
       .toLowerCase()
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, " ")
       .trim();
   }
+
   function dispatchInput(el) {
-    if (!el) return;
     el.dispatchEvent(new Event("input", { bubbles: true }));
     el.dispatchEvent(new Event("change", { bubbles: true }));
   }
-  function parseFecha(s) {
-    s = norm(s);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+
+  function parseFecha(txt) {
+    txt = norm(txt);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+    const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
     if (m) {
-      const dd = String(m[1]).padStart(2, "0");
-      const mm = String(m[2]).padStart(2, "0");
-      const yy = m[3];
-      return `${yy}-${mm}-${dd}`;
+      return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
     }
     return null;
   }
 
-  function setEstadoUI(texto) {
-    const el = document.getElementById("voz_estado");
-    if (el) el.textContent = "Estado: " + texto;
-  }
-  function setUltimoUI(texto) {
-    const el = document.getElementById("voz_ultima");
-    if (el) el.innerHTML = `<b>Último:</b> ${String(texto || "")}`;
-  }
+  function escribir(el, texto) {
+    if (!el || el.disabled || el.readOnly) return;
 
-  function setBtnOn(btn, on) {
-    if (!btn) return;
-    btn.classList.toggle("on", !!on);
-  }
-
-  // ===== Llenar valor según tipo
-  function writeToField(el, raw) {
-    if (!el) return;
-
-    // date
     if (el.type === "date") {
-      const f = parseFecha(raw);
-      el.value = f || raw;
-      dispatchInput(el);
-      return;
+      el.value = parseFecha(texto) || texto;
+    } else if (el.type === "number") {
+      el.value = texto.replace(/[^\d]/g, "");
+    } else if (el.type === "tel") {
+      el.value = texto.replace(/[^\d+]/g, "");
+    } else if (el.tagName === "SELECT") {
+      const opt = [...el.options].find(o =>
+        norm(o.textContent) === norm(texto) ||
+        norm(o.value) === norm(texto)
+      );
+      if (opt) el.value = opt.value;
+    } else {
+      el.value = texto;
     }
 
-    // number
-    if (el.type === "number") {
-      const only = String(raw).replace(/[^\d]/g, "");
-      el.value = only || raw;
-      dispatchInput(el);
-      return;
-    }
-
-    // tel
-    if (el.type === "tel") {
-      el.value = String(raw).replace(/[^\d+]/g, "");
-      dispatchInput(el);
-      return;
-    }
-
-    // select: intenta match con opción
-    if (el.tagName === "SELECT") {
-      const opts = Array.from(el.options);
-      const hit = opts.find(o => norm(o.textContent) === norm(raw) || norm(o.value) === norm(raw));
-      if (hit) el.value = hit.value;
-      dispatchInput(el);
-      return;
-    }
-
-    // input/text/textarea normal
-    el.value = raw;
     dispatchInput(el);
   }
 
-  // ===== Init SpeechRecognition (1 sola instancia)
+  function setEstado(txt) {
+    const e = document.getElementById("voz_estado");
+    if (e) e.textContent = "Estado: " + txt;
+  }
+
+  function setBoton(b, on) {
+    if (!b) return;
+    b.classList.toggle("on", on);
+  }
+
   function initRec() {
-    if (!SpeechRecognition) {
-      alert("⚠️ Tu navegador no soporta reconocimiento de voz. Usa Chrome o Edge.");
-      return null;
-    }
     const r = new SpeechRecognition();
     r.lang = LANG;
-    r.interimResults = false;
     r.continuous = true;
+    r.interimResults = false;
 
     r.onstart = () => {
       escuchando = true;
-      setEstadoUI("escuchando (campo seleccionado)");
-      setBtnOn(activeBtn, true);
+      setEstado("escuchando");
+      setBoton(botonActivo, true);
     };
 
     r.onend = () => {
       escuchando = false;
-      setEstadoUI("apagado");
-      setBtnOn(activeBtn, false);
-      activeEl = null;
-      activeBtn = null;
+      setEstado("apagado");
+      setBoton(botonActivo, false);
+      campoActivo = null;
+      botonActivo = null;
     };
 
     r.onerror = (e) => {
       console.warn("Voz error:", e);
-      setEstadoUI("error: " + (e.error || "desconocido"));
-      setBtnOn(activeBtn, false);
+      setEstado("error");
+      setBoton(botonActivo, false);
     };
 
     r.onresult = (ev) => {
-      const res = ev.results?.[ev.results.length - 1];
-      const text = res?.[0]?.transcript || "";
-      if (!text) return;
-
-      lastText = text;
-      setUltimoUI(text);
-
-      // escribe SOLO al campo activo
-      if (activeEl) writeToField(activeEl, text);
+      const res = ev.results[ev.results.length - 1];
+      const texto = res[0].transcript.trim();
+      if (campoActivo) escribir(campoActivo, texto);
     };
 
     return r;
   }
 
-  // ===== Control
-  function startFor(el, btn) {
+  function toggleDictado(campo, boton) {
     if (!rec) rec = initRec();
-    if (!rec) return;
 
-    // si ya estaba escuchando, primero detén
-    if (escuchando) {
-      stopAll();
-      // y vuelve a iniciar para el nuevo campo
-      setTimeout(() => startFor(el, btn), 150);
+    // 🔁 Si ya está grabando ESTE campo → apagar
+    if (escuchando && campoActivo === campo) {
+      rec.stop();
       return;
     }
 
-    activeEl = el;
-    activeBtn = btn;
+    // 🔁 Si estaba grabando otro campo → cambiar
+    if (escuchando) rec.stop();
 
-    try {
-      // enfoca el campo para que el usuario vea dónde se escribe
-      el.focus();
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
-    } catch(e) {}
+    campoActivo = campo;
+    botonActivo = boton;
 
-    try { rec.start(); } catch(e) { /* ya iniciado */ }
+    campo.focus();
+    campo.scrollIntoView({ behavior: "smooth", block: "center" });
+
+    try { rec.start(); } catch(e) {}
   }
 
-  function stopAll() {
-    if (!rec) return;
-    try { rec.stop(); } catch(e) {}
+  function wrapCampos() {
+    const campos = document.querySelectorAll(".container input, .container textarea, .container select");
+
+    campos.forEach(el => {
+      if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+      if (el.closest(".vwrap")) return;
+
+      const wrap = document.createElement("div");
+      wrap.className = "vwrap";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "vbtn";
+      btn.textContent = "🎤";
+      btn.title = "Dictar por voz (click para iniciar / detener)";
+
+      btn.addEventListener("click", () => toggleDictado(el, btn));
+
+      el.parentNode.insertBefore(wrap, el);
+      wrap.appendChild(el);
+      wrap.appendChild(btn);
+    });
+
+    setEstado("apagado");
   }
 
-  // ===== Inyectar botón 🎤 a todos los campos
-  function shouldSkip(el) {
-    if (!el) return true;
-    if (el.type === "hidden") return true;
-    if (el.disabled) return true;
-    if (el.readOnly && el.tagName !== "TEXTAREA") return false; // allow readonly if you want (like evo_hora) - can change
-    if (el.type === "checkbox" || el.type === "radio") return true;
-    // evitamos inputs dentro del odontograma si no quieres (opcional)
-    return false;
-  }
+  document.addEventListener("DOMContentLoaded", wrapCampos);
 
-  function wrapField(el) {
-    // Evitar doble wrap
-    if (el.closest(".vwrap")) return;
-
-    const parent = el.parentNode;
-    if (!parent) return;
-
-    // Crear wrapper
-    const wrap = document.createElement("div");
-    wrap.className = "vwrap";
-
-    // Marca el campo
-    el.classList.add("vfield");
-
-    // Botón
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "vbtn";
-    btn.title = "Dictar por voz (click para iniciar/detener, o mantén presionado)";
-
-    // Icono simple (puedes cambiar)
-    btn.textContent = "🎤";
-
-    // Hint pequeño (opcional)
-    // const hint = document.createElement("div");
-    // hint.className = "vhint";
-    // hint.textContent = "Click o mantener presionado para dictar";
-
-    // Insertar wrapper en DOM reemplazando el input
-    parent.insertBefore(wrap, el);
-    wrap.appendChild(el);
-    wrap.appendChild(btn);
-    // parent.insertBefore(hint, wrap.nextSibling);
-
-    // ---- Eventos: click toggle
-    btn.addEventListener("click", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      // Si está escuchando para este mismo campo -> detener
-      if (escuchando && activeEl === el) {
-        stopAll();
-        return;
-      }
-      startFor(el, btn);
-    });
-
-    // ---- Press & Hold (mouse/touch/pointer)
-    btn.addEventListener("pointerdown", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      btn.setPointerCapture?.(e.pointerId);
-      startFor(el, btn);
-    });
-
-    btn.addEventListener("pointerup", (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      // Suelta y detén
-      if (escuchando && activeEl === el) stopAll();
-    });
-
-    btn.addEventListener("pointercancel", (e) => {
-      if (escuchando && activeEl === el) stopAll();
-    });
-  }
-
-  function initVoiceButtons() {
-    // Selecciona SOLO campos dentro del contenedor principal (como ya haces)
-    const fields = Array.from(document.querySelectorAll(".container input, .container textarea, .container select"));
-
-    fields.forEach(el => {
-      if (shouldSkip(el)) return;
-
-      // opcional: saltar campos específicos si quieres
-      // if (el.id === "buscar_cedula") return;
-
-      wrapField(el);
-    });
-
-    setEstadoUI("apagado");
-  }
-
-  // ===== Integración con tus botones globales (si los sigues usando arriba)
-  window.vozStart = function () {
-    // start sin campo no hace nada; mejor avisar:
-    alert("🎤 Ahora cada campo tiene su micrófono al lado. Presiona el 🎤 del campo que quieres dictar.");
-  };
-  window.vozStop = function () {
-    stopAll();
-  };
-  window.vozModo = function () {
-    alert("✅ Ya no necesitas modos. Cada campo tiene su micrófono 🎤.");
-  };
-
-  // Init
-  document.addEventListener("DOMContentLoaded", initVoiceButtons);
+  // Compatibilidad con botones viejos
+  window.vozStart = () => alert("Usa el 🎤 del campo que quieras dictar.");
+  window.vozStop = () => rec && rec.stop();
+  window.vozModo  = () => alert("El dictado ahora es por campo 🎤.");
 
 })();
 </script>
