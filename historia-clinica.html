@@ -335,9 +335,7 @@
   <section class="card">
     <div class="legend">Buscar historia clínica existente</div>
 
-    <!-- ✅ TODO QUEDA DENTRO DEL MISMO GRID PARA QUE SE ORGANICE -->
     <div class="grid g-2 search-grid">
-      <!-- fila 1 -->
       <div class="ctrl">
         <label for="buscar_cedula">Ingrese número de identificación</label>
         <input id="buscar_cedula" type="text" placeholder="Ej: 1022956631">
@@ -347,7 +345,6 @@
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
       </div>
 
-      <!-- fila 2 -->
       <div class="ctrl">
         <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
       </div>
@@ -355,14 +352,13 @@
         <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">VER AGENDA</button>
       </div>
 
-      <!-- fila 3 -->
       <div class="ctrl">
         <button type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
       </div>
       <div class="ctrl">
         <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
       </div>
-      <!-- ✅ fila 4 (NUEVO BOTÓN DEBAJO DE AGENDAR) -->
+
       <div class="ctrl"></div>
       <div class="ctrl">
         <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
@@ -806,7 +802,7 @@
   </section>
 
   <!-- ==========================
-       ✅ EVOLUCIONES (con Profesional)
+       ✅ EVOLUCIONES
   ============================== -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -854,7 +850,7 @@
       <table class="tabla-evo">
         <thead>
           <tr>
-            <th>ID Evolución</th> <!-- ✅ NUEVO -->
+            <th>ID Evolución</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Profesional</th>
@@ -873,7 +869,6 @@
   ============================== -->
   <div id="odontograma-wrapper">
     <h1>Odontograma Internacional FDI</h1>
-
     <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
       <div style="position:absolute; top:170px; left:50%; transform:translateX(-50%); width:1300px; height:1px; background:#D0D0D0; z-index:3;"></div>
       <div style="position:absolute; top:119px; left:51%; width:1px; height:100px; transform:translateX(-50%); background:#D0D0D0; z-index:3;"></div>
@@ -986,7 +981,6 @@
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
 
-  // ✅ Plan de tratamiento: abre la página y envía la cédula del paciente
   function irPlanTratamiento() {
     const cedula = (
       document.getElementById("paciente_numdoc")?.value ||
@@ -999,10 +993,8 @@
       return;
     }
 
-    // Guarda la cédula para que el plan la pueda leer por localStorage (respaldo)
     try { localStorage.setItem("cedula_paciente_plan", cedula); } catch(e) {}
 
-    // Envía también por querystring (?cedula=...)
     const url = URL_PLAN_TRATAMIENTO + (URL_PLAN_TRATAMIENTO.includes("?") ? "&" : "?") + "cedula=" + encodeURIComponent(cedula);
     window.open(url, "_blank");
   }
@@ -1012,7 +1004,6 @@
   // ==============================
   let evoluciones = [];
 
-  // ✅ GENERADOR DE ID ÚNICO POR EVOLUCIÓN (NUEVO - SIN AFECTAR LO DEMÁS)
   function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
@@ -1068,10 +1059,11 @@
     }
 
     const item = {
-      id: generarEvolucionId(),     // ✅ ID ÚNICO POR EVOLUCIÓN
+      // Este id es local (antes de guardar). Al cargar desde Supabase se mostrará el id int8 real.
+      id: generarEvolucionId(),
       fecha,
       hora,
-      profesional,                 // ✅ NUEVO
+      profesional,
       procedimiento: tipo,
       detalle,
       usuario: localStorage.getItem("usuario_logueado") || "desconocido",
@@ -1098,7 +1090,7 @@
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${evo.id || ""}
+          ${evo.id ?? ""}
         </td>
         <td>${evo.fecha || ""}</td>
         <td>${evo.hora || ""}</td>
@@ -1121,6 +1113,50 @@
       renderEvoluciones();
     }
   });
+
+  // ==============================
+  // ✅ NUEVO: CARGAR EVOLUCIONES DESDE SUPABASE POR CÉDULA (columnas reales)
+  // ==============================
+  async function cargarEvolucionesDesdeSupabase(cedulaTexto) {
+    const cedula = parseInt((cedulaTexto || "").trim(), 10);
+    if (!Number.isFinite(cedula)) {
+      evoluciones = [];
+      renderEvoluciones();
+      return;
+    }
+
+    try {
+      if (!window.supabase) throw new Error("Supabase no inicializado");
+
+      const { data, error } = await window.supabase
+        .from("EVOLUCIONES")
+        .select("id, created_at, paciente_numdoc, evo_fecha, evo_hora, evo_profesional, evo_tipo, evo_detalle")
+        .eq("paciente_numdoc", cedula)
+        .order("evo_fecha", { ascending: false })
+        .order("evo_hora", { ascending: false })
+        .order("id", { ascending: false });
+
+      if (error) throw error;
+
+      evoluciones = (data || []).map(r => ({
+        // ✅ ID real de Supabase (int8)
+        id: r.id ?? "",
+        fecha: r.evo_fecha ? String(r.evo_fecha).slice(0,10) : "",
+        hora: r.evo_hora || "",
+        profesional: r.evo_profesional || "",
+        procedimiento: r.evo_tipo || "",
+        detalle: r.evo_detalle || "",
+        ts: r.created_at || ""
+      }));
+
+      renderEvoluciones();
+    } catch (e) {
+      console.error("Error cargando evoluciones desde Supabase:", e);
+      evoluciones = [];
+      renderEvoluciones();
+      alert("⚠️ No se pudieron cargar las evoluciones desde Supabase.");
+    }
+  }
 
   // ==============================
   // ODONTOGRAMA
@@ -1413,7 +1449,7 @@
     const payload = {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,            // ✅ cada item ya incluye id único
+      evoluciones: evoluciones,
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -1424,6 +1460,9 @@
     alert("Información enviada correctamente a N8N");
   }
 
+  // ==============================
+  // ✅ BUSCAR HISTORIA + CARGAR EVOLUCIONES DESDE SUPABASE
+  // ==============================
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
 
@@ -1432,6 +1471,10 @@
       return;
     }
 
+    // ✅ 1) Primero trae las evoluciones desde Supabase por paciente_numdoc
+    await cargarEvolucionesDesdeSupabase(cedula);
+
+    // ✅ 2) Luego trae historia + odontograma desde N8N (tu flujo actual)
     const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
 
     try {
@@ -1446,13 +1489,9 @@
       const h = data.historia;
       const od = data.odontograma;
 
-      // ✅ cargar evoluciones si N8N las devuelve
-      evoluciones = Array.isArray(data.evoluciones) ? data.evoluciones : [];
-      renderEvoluciones();
-
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
-      document.getElementById("paciente_numdoc").value = data.id ?? "";
+      document.getElementById("paciente_numdoc").value = data.id ?? cedula;
       document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
@@ -1591,11 +1630,6 @@
 
 </body>
 </html>
-
-
-
-
-
 
 
 
