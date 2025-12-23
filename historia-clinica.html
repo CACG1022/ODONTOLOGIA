@@ -191,7 +191,8 @@
       z-index: 10;
       overflow-x: visible !important;
       width: max-content;
-      margin-left: calc(50% - 620px);
+      margin: 0 auto;
+
     }
 
     .seccion { text-align: center; }
@@ -427,13 +428,12 @@
   width: max-content;
   min-width: max-content;
 }
-
-/* Evita que las líneas guía se desplacen raro */
-#odontograma-wrapper.fullscreen > div{
-  left: 50% !important;
-  transform: translateX(-50%);
+/* ✅ En fullscreen: solo centramos la caja de guías */
+#odontograma-wrapper.fullscreen #odontograma-guias{
+  max-width: none !important;
+  width: 1300px !important; /* igual al ancho de la línea */
+  margin: 5px auto 0 !important;
 }
-
     
   </style>
 </head>
@@ -1043,7 +1043,7 @@
   ============================== -->
   <div id="odontograma-wrapper">
     <h1>Odontograma Internacional FDI</h1>
-    <div style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
+    <div id="odontograma-guias" style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
       <div style="position:absolute; top:170px; left:50%; transform:translateX(-50%); width:1300px; height:1px; background:#D0D0D0; z-index:3;"></div>
       <div style="position:absolute; top:119px; left:51%; width:1px; height:100px; transform:translateX(-50%); background:#D0D0D0; z-index:3;"></div>
 
