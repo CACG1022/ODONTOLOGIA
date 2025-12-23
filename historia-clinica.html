@@ -275,16 +275,17 @@
     }
 
     .popup {
-      position: absolute;
-      display: none;
-      background: #fff;
-      border: 1px solid #ccc;
-      padding: 10px;
-      z-index: 100;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-      max-height: 250px;
-      overflow-y: auto;
-    }
+  position: absolute;
+  display: none;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 10px;
+  z-index: 1000002; /* ✅ más alto que fullscreen */
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  max-height: 250px;
+  overflow-y: auto;
+}
+
 
     .popup div {
       margin: 4px 0;
