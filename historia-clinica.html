@@ -418,6 +418,21 @@
   font-weight: 700;
   box-shadow: 0 8px 18px rgba(0,0,0,.18);
 }
+/* ==========================
+   🎯 CENTRAR ODONTOGRAMA EN FULLSCREEN
+========================== */
+#odontograma-wrapper.fullscreen .odontograma{
+  margin-left: auto !important;
+  margin-right: auto !important;
+  width: max-content;
+  min-width: max-content;
+}
+
+/* Evita que las líneas guía se desplacen raro */
+#odontograma-wrapper.fullscreen > div{
+  left: 50% !important;
+  transform: translateX(-50%);
+}
 
     
   </style>
