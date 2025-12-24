@@ -473,7 +473,19 @@
   height: 105px;   /* 🔧 MISMA ALTURA */
 }
 
-    
+ /* ✅ Línea horizontal en el punto de cruce (al final de la línea superior) */
+.linea-media.linea-cruce::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:0;                  /* 👈 justo donde termina la línea vertical */
+  transform:translateX(-50%);
+  width:140px;               /* 🔧 ajusta el largo (ej: 80px, 120px, 200px) */
+  height:3px;
+  background:#0D47A1;
+  border-radius:2px;
+}
+   
   </style>
 </head>
 
@@ -1113,7 +1125,7 @@
   <div class="seccion">
     <div class="etiqueta etiqueta-eje">
       Vestibular---------------------Maxilar superior--------------------Vestibular
-      <span class="linea-media"></span>
+      <span class="linea-media linea-cruce"></span>
     </div>
     <div class="fila" id="fila-superior"></div>
   </div>
