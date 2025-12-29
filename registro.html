@@ -44,6 +44,7 @@
     }
     button:hover{ background-color:#1a38cc; }
     .mensaje-error{ margin-top:10px; color:red; white-space:pre-line; }
+    .mensaje-ok{ margin-top:10px; color:green; white-space:pre-line; }
     .mensaje-info{ margin-top:10px; color:#6b7280; font-size:12px; }
     a{ color:#4b0082; }
   </style>
@@ -56,7 +57,6 @@
     <input type="email" id="email" placeholder="Correo electrónico" required />
     <input type="password" id="password" placeholder="Contraseña" required />
 
-    <!-- En UI puedes mostrar con mayúscula, pero guardaremos en minúscula -->
     <select id="role" required>
       <option value="user">Usuario</option>
       <option value="doctor">Doctor</option>
@@ -69,23 +69,35 @@
     <p style="margin-top:12px;">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
 
     <p class="mensaje-info">⚠️ Esta página solo está habilitada para el administrador.</p>
-    <p id="error" class="mensaje-error"></p>
+    <p id="msg" class="mensaje-error"></p>
   </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseAnonKey = "TU_ANON_KEY_AQUI"; // <-- usa tu misma anon key
 
-    const ADMIN_EMAIL = "camilo-1000@hotmail.com";
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
+    const ADMIN_EMAIL = "camilo-1000@hotmail.com".toLowerCase();
 
-    function setMsg(txt){
-      const errorDiv = document.getElementById("error");
-      errorDiv.textContent = txt || "";
+    // Cliente principal (mantiene la sesión del admin)
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // Cliente secundario (NO persiste sesión, para que signUp NO cambie tu sesión admin)
+    const supabaseNoSession = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false
+      }
+    });
+
+    const msgEl = document.getElementById("msg");
+    function setMsg(text, ok=false){
+      msgEl.className = ok ? "mensaje-ok" : "mensaje-error";
+      msgEl.textContent = text || "";
     }
 
     async function protegerRegistro(){
@@ -96,7 +108,6 @@
         window.location.href = LOGIN_URL;
         return;
       }
-
       if (!session) {
         alert("Debes iniciar sesión.");
         window.location.href = LOGIN_URL;
@@ -104,7 +115,7 @@
       }
 
       const email = (session.user?.email || "").toLowerCase();
-      if (email !== ADMIN_EMAIL.toLowerCase()) {
+      if (email !== ADMIN_EMAIL) {
         alert("No autorizado.");
         window.location.href = INDEX_URL;
         return;
@@ -126,8 +137,8 @@
       }
 
       try {
-        // 1) Crear usuario en Auth (esto envía correo de confirmación si lo tienes activo)
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        // 1) Crear usuario en Auth SIN cambiar la sesión del admin
+        const { data, error } = await supabaseNoSession.auth.signUp({ email, password });
 
         if (error) {
           setMsg("Error creando usuario: " + error.message);
@@ -140,25 +151,28 @@
           return;
         }
 
-        // 2) Asignar rol en profiles (UPDATE, porque normalmente el profile ya existe por trigger con role='user')
-        const { error: uerr } = await supabase
+        // 2) Guardar/actualizar perfil con rol (UPSERT por si no existe)
+        const { error: perr } = await supabase
           .from("profiles")
-          .update({ role, email })
-          .eq("id", newUserId);
+          .upsert(
+            [{ id: newUserId, email, role }],
+            { onConflict: "id" }
+          );
 
-        if (uerr) {
+        if (perr) {
           setMsg(
             "✅ Usuario creado.\n" +
-            "⚠️ Pero no se pudo asignar el rol (profiles).\n\n" +
-            "Causa probable: RLS.\n" +
-            "Solución: crea la policy de admin para UPDATE en profiles.\n\n" +
-            "Detalle: " + uerr.message
+            "⚠️ Pero no se pudo guardar el rol en profiles.\n\n" +
+            "Revisa:\n" +
+            "- Policies RLS (insert/update admin)\n" +
+            "- RLS habilitado\n\n" +
+            "Detalle: " + perr.message
           );
           return;
         }
 
-        alert("✅ Cuenta creada y rol asignado.\n(Revisa el correo para confirmar si aplica).");
-        window.location.href = INDEX_URL;
+        setMsg("✅ Cuenta creada y rol asignado.\n(Revisa el correo si confirmación está activa).", true);
+        // window.location.href = INDEX_URL;
 
       } catch (err) {
         console.error(err);
@@ -168,5 +182,6 @@
   </script>
 </body>
 </html>
+
 
 
