@@ -6,92 +6,149 @@
   <title>Inicio - Clínica Dra. Leidi Silva</title>
 
   <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-    "REEMPLAZA_AQUI_TU_SB_PUBLISHABLE_KEY"
-  );
+    // ✅ Supabase
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
 
-  const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-  const ADMIN_EMAIL = "camilo-1000@hotmail.com";
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-  async function cargarRolDesdeProfiles(userId) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle(); // <- evita crash si no existe fila
+    // ✅ LINKS
+    const URLS = {
+      agendamiento: "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20",
+      agendar: "https://calendar.app.google/kbWJdv1f1TZd9bS36",
+      plan: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html",
+      historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
+      hoy: "#",
+      rips: "#",
+      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html"
+    };
 
-    if (error) {
-      console.error("❌ Error leyendo profiles:", error);
-      return { role: null, error };
+    // ✅ Admin por email (como lo venías manejando)
+    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+
+    function setDisabled(el, disabled, reason = "No autorizado") {
+      if (!el) return;
+
+      if (disabled) {
+        el.classList.add("disabled");
+        el.setAttribute("aria-disabled", "true");
+        el.dataset.disabledReason = reason;
+
+        el.addEventListener("click", (e) => {
+          e.preventDefault();
+          alert("🚫 Acceso restringido: " + reason);
+        }, { once: true });
+      } else {
+        el.classList.remove("disabled");
+        el.removeAttribute("aria-disabled");
+        delete el.dataset.disabledReason;
+      }
     }
 
-    return { role: data?.role ?? null, error: null };
-  }
+    function wireNav(id, url, mode="open") {
+      const el = document.getElementById(id);
+      if (!el) return;
 
-  function setDisabled(el, disabled, reason="No autorizado") {
-    if (!el) return;
-    if (disabled) {
-      el.classList.add("disabled");
-      el.setAttribute("aria-disabled", "true");
       el.addEventListener("click", (e) => {
         e.preventDefault();
-        alert("🚫 Acceso restringido: " + reason);
-      }, { once: true });
-    } else {
-      el.classList.remove("disabled");
-      el.removeAttribute("aria-disabled");
-    }
-  }
 
-  async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      window.location.href = LOGIN_URL;
-      return;
+        // si está disabled, no hacemos nada (ya tiene listener de alerta)
+        if (el.classList.contains("disabled")) return;
+
+        if (!url || url === "#") {
+          alert("⚠️ Esta opción aún no tiene URL asignada.");
+          return;
+        }
+        if (mode === "href") window.location.href = url;
+        else window.open(url, "_blank");
+      });
     }
 
-    // Email en pantalla
-    const email = (session.user?.email || "");
-    const u = document.getElementById("user-email");
-    if (u) u.textContent = email;
+    // ✅ Lee rol desde profiles
+    async function cargarRolDesdeProfiles(userId) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
 
-    // Rol
-    const { role, error } = await cargarRolDesdeProfiles(session.user.id);
+        if (error) {
+          console.warn("No se pudo leer profiles.role:", error.message);
+          return null;
+        }
+        return data?.role || null;
+      } catch (e) {
+        console.warn("Error leyendo role:", e);
+        return null;
+      }
+    }
 
-    const roleEl = document.getElementById("user-role");
-    if (roleEl) {
+    async function verificarSesionYPermisos() {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      const email = (session.user?.email || "").toLowerCase();
+
+      // ✅ Mostrar email
+      const u = document.getElementById("user-email");
+      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+
+      // ✅ Cargar rol y mostrarlo
+      const role = await cargarRolDesdeProfiles(session.user.id);
+      const roleEl = document.getElementById("user-role");
       roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+
+      // ✅ Permisos admin:
+      // - por email (como pediste)
+      // - (extra) si role === "admin" también cuenta como admin
+      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+
+      // ✅ Activar/Desactivar botones restringidos
+      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
+
+      // ✅ Navegación
+      wireNav("go-agendar", URLS.agendar, "open");
+      wireNav("go-agendamiento", URLS.agendamiento, "open");
+      wireNav("go-historia", URLS.historia, "href");
+      wireNav("go-plan", URLS.plan, "href");
+      wireNav("go-hoy", URLS.hoy, "href");
+
+      // RIPS y Registro solo navegan si no están disabled
+      wireNav("go-rips", URLS.rips, "href");
+      wireNav("go-registro", URLS.registro, "href");
+
+      // Fecha
+      const t = document.getElementById("today");
+      if (t) t.textContent =
+        new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
+
+      document.getElementById("year").textContent = new Date().getFullYear();
     }
 
-    // Admin si email == admin o role == admin
-    const isAdmin = email.toLowerCase() === ADMIN_EMAIL.toLowerCase()
-      || String(role || "").toLowerCase() === "admin";
+    verificarSesionYPermisos();
 
-    setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
-    setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
-    setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
+    // Si se expira/cierra, vuelve al login
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
 
-    // Si hay error, lo dejamos visible en consola (para que lo veas en F12)
-    if (error) {
-      console.warn("⚠️ No se pudo obtener el rol (RLS o fila no existe). Mira consola F12.");
-    }
-  }
-
-  init();
-
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session) window.location.href = LOGIN_URL;
-  });
-
-  window.cerrarSesion = async () => {
-    try { await supabase.auth.signOut(); } catch(e) {}
-    window.location.href = LOGIN_URL;
-  };
-</script>
-
+    // Logout
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch(e) {}
+      try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    };
+  </script>
 
   <style>
     :root{
@@ -459,23 +516,6 @@
           </div>
           <div class="arrow">→</div>
         </a>
-
-        <!-- ✅ NUEVO BOTÓN: Usuarios registrados (solo rol admin) -->
-        <a class="tile" href="#" id="go-usuarios">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M6 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M2 20v-1c0-2.2 2.2-4 5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M10 20v-1c0-2.8 3.1-5 6-5s6 2.2 6 5v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
       </div>
 
       <div class="footer">
@@ -486,6 +526,10 @@
   </div>
 </body>
 </html>
+
+
+
+
 
 
 
