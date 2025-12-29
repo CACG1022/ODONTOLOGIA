@@ -541,7 +541,11 @@
         <label>&nbsp;</label>
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
       </div>
-
+      <div class="ctrl">
+        <button type="button" onclick="irInicio()" class="btn btn-inicio">
+         IR A INICIO
+         </button>
+       </div>
       <div class="ctrl">
         <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
       </div>
@@ -560,10 +564,6 @@
       <div class="ctrl">
         <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
       </div>
-
-      <div class="ctrl">
-      <button type="button" onclick="irInicio()" class="btn btn-inicio">IR A INICIO</button>
-     </div>
 
     </div>
   </section>
@@ -1240,6 +1240,12 @@
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
   const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento";
+  const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+  function irInicio() {
+  window.location.href = URL_INICIO;
+  }
+
 
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
