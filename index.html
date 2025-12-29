@@ -8,7 +8,7 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ✅ Supabase (igual que tu login)
+    // ✅ Supabase
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
@@ -16,18 +16,18 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-    // ✅ LINKS que me pasaste
+    // ✅ LINKS
     const URLS = {
       agendamiento: "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20",
       agendar: "https://calendar.app.google/kbWJdv1f1TZd9bS36",
       plan: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html",
       historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
-      hoy: "#",  // si luego tienes URL la conectamos
-      rips: "#", // solo admin (se habilita con tu email)
-      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html" // Registrar Usuarios (admin)
+      hoy: "#",
+      rips: "#",
+      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html"
     };
 
-    // ✅ Solo este correo puede entrar a RIPS y Registrar Usuarios
+    // ✅ Admin por email (como lo venías manejando)
     const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
 
     function setDisabled(el, disabled, reason = "No autorizado") {
@@ -38,7 +38,6 @@
         el.setAttribute("aria-disabled", "true");
         el.dataset.disabledReason = reason;
 
-        // bloquear click
         el.addEventListener("click", (e) => {
           e.preventDefault();
           alert("🚫 Acceso restringido: " + reason);
@@ -56,6 +55,10 @@
 
       el.addEventListener("click", (e) => {
         e.preventDefault();
+
+        // si está disabled, no hacemos nada (ya tiene listener de alerta)
+        if (el.classList.contains("disabled")) return;
+
         if (!url || url === "#") {
           alert("⚠️ Esta opción aún no tiene URL asignada.");
           return;
@@ -63,6 +66,26 @@
         if (mode === "href") window.location.href = url;
         else window.open(url, "_blank");
       });
+    }
+
+    // ✅ Lee rol desde profiles
+    async function cargarRolDesdeProfiles(userId) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) {
+          console.warn("No se pudo leer profiles.role:", error.message);
+          return null;
+        }
+        return data?.role || null;
+      } catch (e) {
+        console.warn("Error leyendo role:", e);
+        return null;
+      }
     }
 
     async function verificarSesionYPermisos() {
@@ -74,32 +97,41 @@
       }
 
       const email = (session.user?.email || "").toLowerCase();
-      const isAdmin = email === ADMIN_EMAIL;
 
-      // Mostrar email
+      // ✅ Mostrar email
       const u = document.getElementById("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
 
-      // ✅ Activar/Desactivar botones restringidos
-      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo Camilo-1000@hotmail.com");
-      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo Camilo-1000@hotmail.com");
+      // ✅ Cargar rol y mostrarlo
+      const role = await cargarRolDesdeProfiles(session.user.id);
+      const roleEl = document.getElementById("user-role");
+      roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
-      // ✅ Navegación (internas con href, externas open)
+      // ✅ Permisos admin:
+      // - por email (como pediste)
+      // - (extra) si role === "admin" también cuenta como admin
+      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+
+      // ✅ Activar/Desactivar botones restringidos
+      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
+
+      // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
       wireNav("go-agendamiento", URLS.agendamiento, "open");
       wireNav("go-historia", URLS.historia, "href");
-      wireNav("go-plan", URLS.plan, "href"); // si esta ruta te abre bien, perfecto
+      wireNav("go-plan", URLS.plan, "href");
       wireNav("go-hoy", URLS.hoy, "href");
+
       // RIPS y Registro solo navegan si no están disabled
-      if (isAdmin) {
-        wireNav("go-rips", URLS.rips, "href");
-        wireNav("go-registro", URLS.registro, "href");
-      }
+      wireNav("go-rips", URLS.rips, "href");
+      wireNav("go-registro", URLS.registro, "href");
 
       // Fecha
       const t = document.getElementById("today");
       if (t) t.textContent =
         new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
+
       document.getElementById("year").textContent = new Date().getFullYear();
     }
 
@@ -281,7 +313,6 @@
       border-color: rgba(126,203,255,.35);
     }
 
-    /* ✅ estilo deshabilitado (visible pero no usable) */
     .tile.disabled{
       opacity: .45;
       cursor: not-allowed;
@@ -350,6 +381,15 @@
       box-shadow: 0 10px 18px rgba(0,0,0,.18);
     }
     button.logout:hover{ background: var(--btn-hover); }
+
+    /* ✅ estilo del rol */
+    #user-role{
+      display:inline-block;
+      margin-top:6px;
+      color: rgba(255,255,255,.80);
+      font-weight: 600;
+      font-size: 12.5px;
+    }
   </style>
 </head>
 
@@ -367,7 +407,8 @@
         <p class="title">
           Software Dental<br/>
           Clínica Dra. Leidi Silva<br/>
-          <span id="user-email" style="display:inline-block;margin-top:6px;color:rgba(255,255,255,.86);font-weight:700;"></span>
+          <span id="user-email" style="display:inline-block;margin-top:6px;color:rgba(255,255,255,.86);font-weight:700;"></span><br/>
+          <span id="user-role">Rol: ...</span>
         </p>
 
         <div class="meta">
@@ -462,7 +503,6 @@
           <div class="arrow">→</div>
         </a>
 
-        <!-- ✅ NUEVO: Registrar Usuarios (solo admin) -->
         <a class="tile" href="#" id="go-registro">
           <div class="left">
             <div class="icon">
@@ -486,5 +526,6 @@
   </div>
 </body>
 </html>
+
 
 
