@@ -4,14 +4,14 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
+    window.supabase = createClient(
       'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
     );
 
     // 🔒 Verificar sesión activa
     async function verificarSesion() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await window.supabase.auth.getSession();
       if (!session) {
         console.warn("🚫 No hay sesión activa, redirigiendo al login...");
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -20,11 +20,9 @@
       }
     }
 
-    // 🧠 Ejecutar al cargar la página
     verificarSesion();
 
-    // 🔄 Escuchar cambios en la sesión (por si se cierra o expira)
-    supabase.auth.onAuthStateChange((_event, session) => {
+    window.supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) {
         console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -35,6 +33,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cotización Odontológica - Dra. Leidi Silva</title>
+
   <style>
     :root{
       --tooth-size: clamp(28px, 5.5vw, 40px);
@@ -100,16 +99,26 @@
     .summary-list li { margin: 4px 0; }
 
     .panel-backdrop { position:fixed; inset:0; background:rgba(0,0,0,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
-    .panel { width: 520px; max-width: 95vw; background:#fff; border-radius:12px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.2); }
-    .panel header { display:flex; align-items:center; justify-content:space-between; }
+    .panel { width: 560px; max-width: 95vw; background:#fff; border-radius:12px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.2); }
+    .panel header { display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .panel h3 { margin:0; color: var(--brand); }
-    .panel .procs { display:grid; gap:8px; margin-top:12px; }
-    .proc-row { display:grid; grid-template-columns: 1fr 24px 110px; gap: 8px 10px; align-items:center; }
+    .panel .procs { display:grid; gap:8px; margin-top:12px; max-height: 52vh; overflow:auto; padding-right: 6px; }
+
+    .proc-toolbar{ margin-top:10px; display:flex; gap:10px; align-items:center; }
+    .proc-search{ flex:1; margin:0; }
+    .proc-toolbar small{ color:#667; }
+
+    .proc-row { display:grid; grid-template-columns: 1fr 24px 120px; gap: 8px 10px; align-items:center; padding: 6px 8px; border:1px solid #eef2f6; border-radius:10px; }
+    .proc-row:hover{ background:#fbfdff; }
     .panel .price { width:100%; border:1px solid #d7dce0; border-radius:6px; padding:6px 8px; }
     .panel footer { display:flex; gap:8px; margin-top:14px; }
     .btn-secondary { background:#eef2f6; color:#244; }
     .btn-primary { background: var(--brand); }
-    @media (max-width: 480px){ .proc-row { grid-template-columns: 1fr 20px 90px; } }
+
+    @media (max-width: 480px){
+      .proc-row { grid-template-columns: 1fr 20px 105px; }
+      .panel { width: 95vw; }
+    }
   </style>
 </head>
 
@@ -124,7 +133,6 @@
     </a>
   </div>
 
-  <!-- ✅ Enviar sigue igual -->
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
@@ -219,7 +227,6 @@
 
     <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
 
-    <!-- ✅ GUARDAR silencioso -->
     <button type="button" id="btn-guardar" style="background:#2a5d84;">Guardar</button>
 
     <button type="submit">Enviar a paciente</button>
@@ -232,7 +239,15 @@
         <h3 id="panel-title">Procedimientos diente <span id="panel-tooth"></span></h3>
         <button type="button" class="btn-secondary" id="btn-close">Cerrar</button>
       </header>
+
+      <!-- ✅ BUSCADOR -->
+      <div class="proc-toolbar">
+        <input id="proc-search" class="proc-search" type="text" placeholder="Buscar procedimiento..." />
+        <small id="proc-count"></small>
+      </div>
+
       <div class="procs" id="procs-container"></div>
+
       <footer>
         <button type="button" class="btn-secondary" id="btn-clear">Limpiar</button>
         <button type="button" class="btn-primary" id="btn-save">Guardar</button>
@@ -241,7 +256,9 @@
   </div>
 
   <script>
-    /* ===== Fecha/Hora ===== */
+    /* ==========================
+       Fecha/Hora
+       ========================== */
     const now = new Date();
     document.getElementById("fecha-hora").textContent = now.toLocaleDateString('es-CO') + " - " + now.toLocaleTimeString('es-CO');
     document.getElementById("input-fecha").value = now.toLocaleDateString('es-CO') + " " + now.toLocaleTimeString('es-CO');
@@ -249,23 +266,41 @@
     const procedimiento = document.getElementById("procedimiento");
     const adicionales = document.querySelectorAll(".checkbox-group input[type='checkbox']");
     const descuentoSel = document.getElementById("descuento");
-    const parseMoney = v => parseInt(v,10) || 0;
+    const parseMoney = v => parseInt(String(v ?? '').replace(/[^\d]/g,''), 10) || 0;
+
+    /* ==========================
+       ✅ Catálogo desde Supabase
+       ========================== */
+    // Estructura esperada en Supabase:
+    // procedimientos_precios: { id, procedimiento, valor, activo }
+    let PROC_CATALOGO = []; // [{key,label,price}]
+    let PROC_READY = false;
+
+    async function cargarCatalogoDesdeSupabase() {
+      try {
+        const { data, error } = await window.supabase
+          .from("procedimientos_precios")
+          .select("id, procedimiento, valor, activo")
+          .eq("activo", true)
+          .order("procedimiento", { ascending: true });
+
+        if (error) throw error;
+
+        PROC_CATALOGO = (data || []).map(row => ({
+          key: String(row.id),                 // ✅ key estable (id)
+          label: String(row.procedimiento),    // ✅ nombre
+          price: row.valor == null ? null : Number(row.valor) // ✅ puede ser null
+        }));
+
+        PROC_READY = true;
+      } catch (e) {
+        console.warn("No se pudo cargar procedimientos desde Supabase:", e?.message || e);
+        PROC_CATALOGO = [];
+        PROC_READY = false;
+      }
+    }
 
     /* ========= ODONTOGRAMA ========= */
-    const PROC_CATALOGO = [
-      { key: "EndoUni", label: "Endodoncia unirradicular", price: 390000 },
-      { key: "EndoMulti", label: "Endodoncia multirradicular", price: 490000 },
-      { key: "Retratamiento", label: "Retratamientos Endodoncia", price: 380000 },
-      { key: "Desobt", label: "Desobturación de conducto", price: 84000 },
-      { key: "RetiroNucleo", label: "Retiro núcleo", price: 90000 },
-      { key: "RetiroProtesis", label: "Retiro prótesis fija", price: 250000 },
-      { key: "Temporales", label: "Temporales", price: 40000 },
-      { key: "NucleosColados", label: "Núcleos colados", price: 250000 },
-      { key: "CoronaMP", label: "Coronas metal porcelana", price: 900000 },
-      { key: "AumentoCorona", label: "Aumentos corona clínica", price: 150000 },
-      { key: "ProtesisFlex", label: "Prótesis flexible inferior", price: 990000 },
-      { key: "ResinasInf", label: "Resinas inferiores", price: 60000 }
-    ];
     const selectedTeeth = {}; // { "12":[{key,label,price}, ...] }
 
     const summaryList = document.getElementById('summary-list');
@@ -316,13 +351,13 @@
         .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
 
       summaryList.innerHTML = items.length
-        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
+        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${(p.price||0).toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
         : '<li>Sin procedimientos asignados.</li>';
 
       let lines = [];
       if(items.length){
         items.forEach(it=>{
-          const procsText = it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ');
+          const procsText = it.arr.map(p=>`${p.label} ($${(p.price||0).toLocaleString('es-CO')})`).join(', ');
           lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
         });
       } else {
@@ -337,57 +372,160 @@
       calcularTotal();
     }
 
-    // ---------- Modal ----------
+    /* ==========================
+       Modal + buscador
+       ========================== */
     const backdrop = document.getElementById('panel-backdrop');
     const procsContainer = document.getElementById('procs-container');
     const lblTooth = document.getElementById('panel-tooth');
     const btnSave = document.getElementById('btn-save');
     const btnClear = document.getElementById('btn-clear');
     const btnClose = document.getElementById('btn-close');
+    const procSearch = document.getElementById('proc-search');
+    const procCount = document.getElementById('proc-count');
+
     let currentTooth = null;
 
-    function openPanel(toothNumber){
-      currentTooth = String(toothNumber);
-      lblTooth.textContent = currentTooth;
-      procsContainer.innerHTML = '';
+    function renderProcRows(filterText = ""){
+      const q = String(filterText || "").trim().toLowerCase();
+      const base = PROC_CATALOGO || [];
 
-      PROC_CATALOGO.forEach(proc=>{
+      const list = q
+        ? base.filter(p => String(p.label).toLowerCase().includes(q))
+        : base;
+
+      procCount.textContent = `${list.length} items`;
+
+      procsContainer.innerHTML = "";
+
+      if(!PROC_READY){
+        const msg = document.createElement("div");
+        msg.style.padding = "10px";
+        msg.style.color = "#a33";
+        msg.innerHTML = "⚠️ No se pudo cargar el catálogo desde Supabase. Revisa RLS/Policies o conexión.";
+        procsContainer.appendChild(msg);
+        return;
+      }
+
+      if(!list.length){
+        const empty = document.createElement("div");
+        empty.style.padding = "10px";
+        empty.style.color = "#667";
+        empty.textContent = "No hay resultados para la búsqueda.";
+        procsContainer.appendChild(empty);
+        return;
+      }
+
+      list.forEach(proc=>{
         const row = document.createElement('div');
-        row.className='proc-row'; row.dataset.key=proc.key; row.dataset.label=proc.label;
+        row.className='proc-row';
+        row.dataset.key = proc.key;
+        row.dataset.label = proc.label;
 
-        const name = document.createElement('label'); name.textContent = proc.label;
-        const check = document.createElement('input'); check.type='checkbox'; check.className='proc-check';
-        const price = document.createElement('input'); price.type='number'; price.className='price'; price.min='0'; price.step='1000'; price.value=proc.price;
+        const name = document.createElement('label');
+        name.textContent = proc.label;
 
-        const existing = (selectedTeeth[currentTooth]||[]).find(p=>p.key===proc.key);
-        if(existing){ check.checked = true; price.value = existing.price; }
+        const check = document.createElement('input');
+        check.type='checkbox';
+        check.className='proc-check';
 
-        row.appendChild(name); row.appendChild(check); row.appendChild(price);
+        const price = document.createElement('input');
+        price.type='number';
+        price.className='price';
+        price.min='0';
+        price.step='1000';
+        price.placeholder = proc.price == null ? "Sin precio" : "";
+        price.value = proc.price == null ? "" : String(proc.price);
+
+        // si ya estaba seleccionado, lo marcamos
+        const existing = (selectedTeeth[currentTooth]||[]).find(p=>String(p.key)===String(proc.key));
+        if(existing){
+          check.checked = true;
+          price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
+        }
+
+        // UX: si marca checkbox y no hay precio, foco al input
+        check.addEventListener("change", ()=>{
+          if(check.checked && !parseMoney(price.value)){
+            price.focus();
+          }
+        });
+
+        row.appendChild(name);
+        row.appendChild(check);
+        row.appendChild(price);
         procsContainer.appendChild(row);
       });
+    }
+
+    async function openPanel(toothNumber){
+      currentTooth = String(toothNumber);
+      lblTooth.textContent = currentTooth;
+
+      // Asegura catálogo cargado
+      if(!PROC_READY){
+        await cargarCatalogoDesdeSupabase();
+      }
+
+      procSearch.value = "";
+      renderProcRows("");
 
       backdrop.style.display='flex';
+      procSearch.focus();
     }
-    function closePanel(){ backdrop.style.display='none'; currentTooth=null; }
+
+    function closePanel(){
+      backdrop.style.display='none';
+      currentTooth=null;
+    }
+
     btnClose.addEventListener('click', closePanel);
     backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closePanel(); });
 
+    procSearch.addEventListener("input", (e)=>{
+      renderProcRows(e.target.value);
+    });
+
     btnSave.addEventListener('click', ()=>{
       if(!currentTooth) return;
+
       const rows = procsContainer.querySelectorAll('.proc-row');
       const next = [];
+
       rows.forEach(row=>{
         const check = row.querySelector('.proc-check');
-        const price = row.querySelector('.price');
-        const val = parseMoney(price.value);
-        if(check.checked && val>0){ next.push({ key:row.dataset.key, label:row.dataset.label, price:val }); }
-      });
-      if(next.length) selectedTeeth[currentTooth]=next; else delete selectedTeeth[currentTooth];
-      refreshBadges(); closePanel();
-    });
-    btnClear.addEventListener('click', ()=>{ if(!currentTooth) return; delete selectedTeeth[currentTooth]; refreshBadges(); closePanel(); });
+        const priceEl = row.querySelector('.price');
+        if(!check.checked) return;
 
-    renderOdontograma();
+        const price = parseMoney(priceEl.value);
+
+        // si el usuario selecciona sin precio, lo ignoramos (o puedes forzar 0)
+        if(price <= 0){
+          // opcional: avisar rápido
+          // alert("Hay procedimientos seleccionados sin precio. Completa el valor.");
+          return;
+        }
+
+        next.push({
+          key: row.dataset.key,
+          label: row.dataset.label,
+          price
+        });
+      });
+
+      if(next.length) selectedTeeth[currentTooth]=next;
+      else delete selectedTeeth[currentTooth];
+
+      refreshBadges();
+      closePanel();
+    });
+
+    btnClear.addEventListener('click', ()=>{
+      if(!currentTooth) return;
+      delete selectedTeeth[currentTooth];
+      refreshBadges();
+      closePanel();
+    });
 
     function odontogramaSubtotal(){
       return Object.values(selectedTeeth).reduce((acc, arr)=> acc + arr.reduce((s,p)=>s+(p.price||0),0), 0);
@@ -429,7 +567,13 @@
       document.getElementById('input-total').value = total;
     }
 
-    window.addEventListener('load', calcularTotal);
+    window.addEventListener('load', async ()=>{
+      // Carga el catálogo una vez al inicio
+      await cargarCatalogoDesdeSupabase();
+      renderOdontograma();
+      calcularTotal();
+    });
+
     procedimiento.addEventListener('change', calcularTotal);
     descuentoSel.addEventListener('change', calcularTotal);
     adicionales.forEach(cb=> cb.addEventListener('change', calcularTotal));
@@ -457,13 +601,12 @@
     function limpiarFirma(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
     window.limpiarFirma = limpiarFirma;
 
-    // Enviar normal (se manda la firma)
     document.getElementById('cotizacion-form').addEventListener('submit', ()=> {
       document.getElementById('firmaInput').value = canvas.toDataURL();
     });
 
     /* ==========================
-       ✅ GUARDAR SILENCIOSO (fetch)
+       Guardar silencioso
        ========================== */
     const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
     const btnGuardar = document.getElementById("btn-guardar");
@@ -471,14 +614,11 @@
 
     btnGuardar.addEventListener("click", async () => {
       try {
-        // 1) aseguramos cálculos y firma
         calcularTotal();
         document.getElementById('firmaInput').value = canvas.toDataURL();
 
-        // 2) armamos el payload igual que un submit (FormData)
         const fd = new FormData(form);
 
-        // 3) envío silencioso
         const resp = await fetch(WEBHOOK_GUARDAR, {
           method: "POST",
           body: fd
@@ -529,8 +669,10 @@
       if(o2){ procedimiento.value = o2.value; return true; }
       return false;
     }
+
     function loadFromWebhook(data){
       if(!data || !data.encontrado){ setHintHTML("✔️ Paciente nuevo.", "#1e8449"); return; }
+
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
       if (data.correo)  document.getElementById('correo').value  = data.correo;
       if (data.celular) document.getElementById('celular').value = data.celular;
