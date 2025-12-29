@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Odontología | Panel Principal</title>
+  <style>
+    :root{
+      --bg1:#0b1220;
+      --bg2:#0f1a33;
+      --card: rgba(255,255,255,.06);
+      --card2: rgba(255,255,255,.10);
+      --border: rgba(255,255,255,.12);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.68);
+      --accent:#66e3ff;
+      --accent2:#7c5cff;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+      color:var(--text);
+      min-height:100vh;
+      background:
+        radial-gradient(900px 500px at 15% 10%, rgba(102,227,255,.25), transparent 55%),
+        radial-gradient(700px 450px at 85% 20%, rgba(124,92,255,.22), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 28px 18px;
+    }
+
+    .shell{
+      width: min(1100px, 100%);
+      display:grid;
+      gap: 18px;
+      grid-template-columns: 1.2fr .8fr;
+    }
+
+    @media (max-width: 920px){
+      .shell{ grid-template-columns: 1fr; }
+    }
+
+    .panel{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    header{
+      padding: 22px 22px 14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 14px;
+    }
+
+    .brand{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+    }
+
+    .logo{
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(102,227,255,.9), rgba(124,92,255,.85));
+      box-shadow: 0 10px 30px rgba(102,227,255,.12);
+      display:grid;
+      place-items:center;
+      font-weight: 800;
+      letter-spacing:.5px;
+      color:#081022;
+      user-select:none;
+    }
+
+    h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+
+    .subtitle{
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.35;
+    }
+
+    .top-actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .chip{
+      padding: 9px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      color: var(--muted);
+      font-size: 12px;
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      white-space:nowrap;
+    }
+
+    .dot{
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(102,227,255,.14);
+    }
+
+    main{
+      padding: 18px 22px 22px;
+    }
+
+    .grid{
+      display:grid;
+      gap: 14px;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+    }
+
+    @media (max-width: 620px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .tile{
+      position:relative;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 14px;
+      padding: 16px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+      text-decoration:none;
+      color: var(--text);
+      transition: transform .12s ease, border-color .12s ease, background .12s ease;
+      overflow:hidden;
+      min-height: 76px;
+    }
+
+    .tile:hover{
+      transform: translateY(-1px);
+      border-color: rgba(102,227,255,.40);
+      background: linear-gradient(180deg, rgba(102,227,255,.09), rgba(255,255,255,.03));
+    }
+
+    .tile:active{
+      transform: translateY(0px) scale(.99);
+    }
+
+    .tile::before{
+      content:"";
+      position:absolute;
+      inset:-60px -40px auto auto;
+      width: 160px; height: 160px;
+      background: radial-gradient(circle, rgba(124,92,255,.35), transparent 60%);
+      filter: blur(0px);
+      opacity:.6;
+      pointer-events:none;
+      transform: rotate(12deg);
+    }
+
+    .left{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      min-width: 0;
+    }
+
+    .icon{
+      width: 42px; height: 42px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.12);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+    }
+
+    .icon svg{ width: 20px; height: 20px; opacity:.95; }
+
+    .meta{
+      min-width:0;
+    }
+
+    .title{
+      margin:0;
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing:.2px;
+    }
+
+    .desc{
+      margin: 6px 0 0;
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.3;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      display:-webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+
+    .arrow{
+      width: 34px; height: 34px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      display:grid;
+      place-items:center;
+      flex: 0 0 auto;
+      opacity:.9;
+    }
+
+    .aside{
+      padding: 22px;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .card{
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .card h2{
+      margin: 0 0 10px;
+      font-size: 14px;
+      letter-spacing:.2px;
+    }
+
+    .hint{
+      margin:0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .mini{
+      margin-top: 12px;
+      display:grid;
+      gap: 10px;
+    }
+
+    .mini a{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      text-decoration:none;
+      color: var(--text);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.04);
+      font-size: 13px;
+      transition: border-color .12s ease, transform .12s ease;
+    }
+
+    .mini a:hover{
+      border-color: rgba(124,92,255,.40);
+      transform: translateY(-1px);
+    }
+
+    footer{
+      padding: 14px 22px 20px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.55);
+      font-size: 12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+    }
+
+    code{
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,255,255,.10);
+      padding: 2px 6px;
+      border-radius: 8px;
+      color: rgba(255,255,255,.85);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11.5px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+    <!-- Panel principal -->
+    <section class="panel">
+      <header>
+        <div class="brand">
+          <div class="logo">OD</div>
+          <div>
+            <h1>Panel Principal — Odontología</h1>
+            <p class="subtitle">Accesos rápidos a módulos clínicos y administrativos.</p>
+          </div>
+        </div>
+
+        <div class="top-actions">
+          <div class="chip"><span class="dot"></span> Sistema activo</div>
+          <div class="chip">Fecha: <span id="today"></span></div>
+        </div>
+      </header>
+
+      <main>
+        <div class="grid">
+          <!-- 1 -->
+          <a class="tile" href="#" id="btn-agendar">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- calendar-plus -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 13v6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">Agendar</p>
+                <p class="desc">Crear una nueva cita rápidamente.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+
+          <!-- 2 -->
+          <a class="tile" href="#" id="btn-agendamiento">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- calendar -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M7.5 12.5h4M7.5 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">Agendamiento</p>
+                <p class="desc">Ver y administrar el calendario de citas.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+
+          <!-- 3 -->
+          <a class="tile" href="#" id="btn-historia">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- file-text -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/>
+                  <path d="M8 13h8M8 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">Historia Clínica</p>
+                <p class="desc">Consultar y registrar información del paciente.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+
+          <!-- 4 -->
+          <a class="tile" href="#" id="btn-plan">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- clipboard -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M9 4h6l1 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1-2Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M9 4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2" stroke="currentColor" stroke-width="2"/>
+                  <path d="M8 13h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">Plan de Tratamiento</p>
+                <p class="desc">Crear/editar planes y procedimientos.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+
+          <!-- 5 -->
+          <a class="tile" href="#" id="btn-hoy">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- clock -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" stroke="currentColor" stroke-width="2"/>
+                  <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">Pacientes Agendados Hoy</p>
+                <p class="desc">Listado rápido de citas del día.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+
+          <!-- 6 -->
+          <a class="tile" href="#" id="btn-rips">
+            <div class="left">
+              <div class="icon" aria-hidden="true">
+                <!-- bar-chart -->
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M10 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M16 20v-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                  <path d="M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+              </div>
+              <div class="meta">
+                <p class="title">RIPS</p>
+                <p class="desc">Reportes y registros administrativos.</p>
+              </div>
+            </div>
+            <div class="arrow" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </a>
+        </div>
+      </main>
+
+      <footer>
+        <span>© <span id="year"></span> Panel Odontología</span>
+        <span>Tip: reemplaza los enlaces <code>href="#"</code> por tus URLs.</span>
+      </footer>
+    </section>
+
+    <!-- Panel lateral -->
+    <aside class="panel">
+      <div class="aside">
+        <div class="card">
+          <h2>Cómo conectar tus URLs</h2>
+          <p class="hint">
+            Cuando me pases las URLs, reemplazamos cada <code>href</code> (o ponemos rutas tipo
+            <code>agendar.html</code> si son páginas internas).
+          </p>
+
+          <div class="mini">
+            <a href="#" onclick="alert('Luego aquí va tu enlace real 🙂'); return false;">
+              Guía rápida de uso
+              <span>→</span>
+            </a>
+            <a href="#" onclick="alert('Aquí puedes poner un enlace de soporte o contacto'); return false;">
+              Soporte / Contacto
+              <span>→</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Notas</h2>
+          <p class="hint">
+            Si quieres, puedo agregar: buscador, usuario (recepción/doctor), accesos por roles,
+            o un “Resumen del día” con contadores.
+          </p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    // Fecha bonita
+    const d = new Date();
+    const opts = { year: 'numeric', month: 'long', day: 'numeric' };
+    document.getElementById('today').textContent = d.toLocaleDateString('es-CO', opts);
+    document.getElementById('year').textContent = d.getFullYear();
+
+    // Ejemplo: aquí luego puedes poner tus URLs directamente con JS si quieres
+    // document.getElementById('btn-agendar').href = "https://tusitio.com/agendar";
+  </script>
+</body>
+</html>
