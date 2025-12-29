@@ -5,6 +5,87 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inicio - Clínica Dra. Leidi Silva</title>
 
+  <!-- 🔐 Guard: si no hay sesión => login -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+
+    async function verificarSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("🚫 No hay sesión activa, redirigiendo al login...");
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      // opcional: mostrar email arriba
+      const email = session.user?.email || localStorage.getItem("usuario_logueado") || "";
+      const u = document.getElementById("user-email");
+      if (u) u.textContent = email ? email : "Usuario autenticado";
+    }
+
+    verificarSesion();
+
+    // Si se expira/cierra, vuelve al login
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    // Logout
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch (e) {}
+      try { localStorage.removeItem("usuario_logueado"); } catch (e) {}
+      window.location.href = LOGIN_URL;
+    };
+
+    // ✅ URLs (cámbialas luego cuando me las pases)
+    const URLS = {
+      agendar:        "#", // ej: "https://calendar.app.google/xxxx"
+      agendamiento:   "#", // ej: "https://calendar.google.com/calendar/u/0?cid=xxxx"
+      historia:       "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
+      plan:           "#", // ej: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html"
+      hoy:            "#", // ej: "https://...."
+      rips:           "#", // ej: "https://...."
+    };
+
+    // Navegación
+    window.addEventListener("DOMContentLoaded", () => {
+      const go = (id, url, mode="open") => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (!url || url === "#") {
+            alert("⚠️ Esta opción aún no tiene URL asignada. Luego me la pasas y la conectamos.");
+            return;
+          }
+          if (mode === "href") window.location.href = url;
+          else window.open(url, "_blank");
+        });
+      };
+
+      // si son páginas internas del repo, usa mode="href"
+      go("go-historia", URLS.historia, "href");
+
+      // externos normalmente: open en nueva pestaña
+      go("go-agendar", URLS.agendar, "open");
+      go("go-agendamiento", URLS.agendamiento, "open");
+      go("go-plan", URLS.plan, "open");
+      go("go-hoy", URLS.hoy, "open");
+      go("go-rips", URLS.rips, "open");
+
+      // fecha
+      const t = document.getElementById("today");
+      if (t) t.textContent = new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
+    });
+  </script>
+
   <style>
     :root{
       --bg1:#071a2b;
@@ -17,14 +98,12 @@
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.70);
 
-      --field-bg: rgba(0,0,0,.18);
       --field-stroke: rgba(255,255,255,.14);
 
       --btn: rgba(0,0,0,.22);
       --btn-hover: rgba(0,0,0,.30);
 
       --accent: #7ecbff;
-      --accent2:#5a8cff;
     }
 
     *{ box-sizing:border-box; }
@@ -38,7 +117,6 @@
       font-family: Arial, sans-serif;
       color:var(--text);
 
-      /* MISMO fondo que tu login */
       background:
         radial-gradient(1200px 700px at 30% 25%, rgba(120,200,255,.25), transparent 55%),
         radial-gradient(900px 600px at 75% 70%, rgba(90,140,255,.18), transparent 60%),
@@ -52,12 +130,6 @@
       flex-direction:column;
       align-items:center;
       gap: 18px;
-    }
-
-    .logo-top{
-      display:flex;
-      justify-content:center;
-      align-items:center;
     }
 
     .logo-top img{
@@ -82,7 +154,6 @@
       overflow:hidden;
     }
 
-    /* Brillos laterales como el login */
     .main-card::before,
     .main-card::after{
       content:"";
@@ -135,7 +206,6 @@
       font-size: 12px;
       white-space:nowrap;
     }
-
     .dot{
       width: 8px; height: 8px;
       border-radius: 999px;
@@ -148,10 +218,7 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
-
-    @media (max-width: 860px){
-      .grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
+    @media (max-width: 860px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 520px){
       .grid{ grid-template-columns: 1fr; }
       .logo-top img{ width: 220px; }
@@ -162,11 +229,10 @@
       align-items:center;
       justify-content:space-between;
       gap: 12px;
-      padding: 14px 14px;
+      padding: 14px;
       border-radius: 14px;
       text-decoration:none;
       color: var(--text);
-
       border: 1px solid var(--field-stroke);
       background: rgba(0,0,0,.16);
       box-shadow: 0 10px 18px rgba(0,0,0,.18);
@@ -174,8 +240,8 @@
       position: relative;
       overflow:hidden;
       min-height: 66px;
+      cursor:pointer;
     }
-
     .tile::before{
       content:"";
       position:absolute;
@@ -185,20 +251,13 @@
       opacity:.85;
       pointer-events:none;
     }
-
     .tile:hover{
       transform: translateY(-1px);
       background: rgba(0,0,0,.22);
       border-color: rgba(126,203,255,.35);
     }
 
-    .left{
-      display:flex;
-      align-items:center;
-      gap: 12px;
-      min-width:0;
-    }
-
+    .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
     .icon{
       width: 40px; height: 40px;
       border-radius: 12px;
@@ -208,18 +267,9 @@
       place-items:center;
       flex: 0 0 auto;
     }
-
-    .icon svg{
-      width: 20px; height: 20px;
-      opacity: .95;
-    }
-
+    .icon svg{ width: 20px; height: 20px; opacity: .95; }
     .ttext{ min-width:0; }
-    .ttext h3{
-      margin:0;
-      font-size: 13.5px;
-      letter-spacing:.2px;
-    }
+    .ttext h3{ margin:0; font-size: 13.5px; letter-spacing:.2px; }
     .ttext p{
       margin: 5px 0 0;
       color: var(--muted);
@@ -231,7 +281,6 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
-
     .arrow{
       width: 34px; height: 34px;
       border-radius: 12px;
@@ -272,7 +321,7 @@
 
 <body>
   <div class="wrapper">
-    <!-- Logo arriba -->
+
     <div class="logo-top">
       <img
         src="https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png"
@@ -280,12 +329,12 @@
       />
     </div>
 
-    <!-- Card principal -->
     <section class="main-card">
       <div class="header">
         <p class="title">
           Software Dental<br/>
-          Clínica Dra. Leidi Silva
+          Clínica Dra. Leidi Silva<br/>
+          <span id="user-email" style="display:inline-block;margin-top:6px;color:rgba(255,255,255,.86);font-weight:700;"></span>
         </p>
 
         <div class="meta">
@@ -295,10 +344,9 @@
       </div>
 
       <div class="grid">
-        <!-- Agendar -->
         <a class="tile" href="#" id="go-agendar">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -311,17 +359,16 @@
               <p>Crear una nueva cita rápidamente.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </a>
 
-        <!-- Agendamiento -->
         <a class="tile" href="#" id="go-agendamiento">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -334,17 +381,16 @@
               <p>Ver y administrar el calendario de citas.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </a>
 
-        <!-- Historia Clínica -->
         <a class="tile" href="#" id="go-historia">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6Z" stroke="currentColor" stroke-width="2"/>
                 <path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/>
@@ -356,20 +402,18 @@
               <p>Consultar y registrar información del paciente.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </a>
 
-        <!-- Plan de Tratamiento -->
         <a class="tile" href="#" id="go-plan">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M9 4h6l1 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1-2Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M9 4a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2" stroke="currentColor" stroke-width="2"/>
                 <path d="M8 13h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
@@ -378,17 +422,16 @@
               <p>Crear/editar planes y procedimientos.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </a>
 
-        <!-- Pacientes hoy -->
         <a class="tile" href="#" id="go-hoy">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" stroke="currentColor" stroke-width="2"/>
                 <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -399,17 +442,16 @@
               <p>Listado rápido de citas del día.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
         </a>
 
-        <!-- RIPS -->
         <a class="tile" href="#" id="go-rips">
           <div class="left">
-            <div class="icon" aria-hidden="true">
+            <div class="icon">
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <path d="M10 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -422,7 +464,7 @@
               <p>Reportes y registros administrativos.</p>
             </div>
           </div>
-          <div class="arrow" aria-hidden="true">
+          <div class="arrow">
             <svg viewBox="0 0 24 24" fill="none">
               <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -431,26 +473,11 @@
       </div>
 
       <div class="footer">
-        <span>© <span id="year"></span> Clínica Dra. Leidi Silva</span>
-        <button class="logout" id="logoutBtn">Cerrar sesión</button>
+        <span>© Clínica Dra. Leidi Silva</span>
+        <button class="logout" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </section>
   </div>
-
-  <script>
-    // Fecha y año
-    const d = new Date();
-    document.getElementById("today").textContent =
-      d.toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"numeric" });
-    document.getElementById("year").textContent = d.getFullYear();
-
-    // (Opcional) ejemplo cerrar sesión: borra tu localStorage de usuario y vuelve al login
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      localStorage.removeItem("usuario_logueado");
-      // Cambia la ruta si tu login se llama diferente
-      window.location.href = "login.html";
-    });
-  </script>
 </body>
 </html>
 
