@@ -24,7 +24,10 @@
       historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
       hoy: "#",
       rips: "#",
-      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html"
+      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
+
+      // ✅ NUEVO: página para administrar usuarios/roles
+      usuarios: "https://cacg1022.github.io/ODONTOLOGIA/usuarios.html"
     };
 
     // ✅ Admin por email (como lo venías manejando)
@@ -116,6 +119,9 @@
       setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
 
+      // ✅ NUEVO: Usuarios registrados solo admin
+      setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
+
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
       wireNav("go-agendamiento", URLS.agendamiento, "open");
@@ -126,6 +132,9 @@
       // RIPS y Registro solo navegan si no están disabled
       wireNav("go-rips", URLS.rips, "href");
       wireNav("go-registro", URLS.registro, "href");
+
+      // ✅ NUEVO: Usuarios registrados
+      wireNav("go-usuarios", URLS.usuarios, "href");
 
       // Fecha
       const t = document.getElementById("today");
@@ -424,6 +433,7 @@
               <svg viewBox="0 0 24 24" fill="none">
                 <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
                 <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d=" " stroke="currentColor" stroke-width="2"/>
                 <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
                 <path d="M12 13v6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
@@ -516,6 +526,22 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <!-- ✅ NUEVO: Usuarios registrados (solo admin) -->
+        <a class="tile" href="#" id="go-usuarios">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M8 13c-2.76 0-5 1.79-5 4v2h10v-2c0-2.21-2.24-4-5-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M16 13c-1 0-1.92.24-2.7.66 1.04.88 1.7 2.04 1.7 3.34v2h6v-2c0-2.21-2.24-4-5-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
       </div>
 
       <div class="footer">
@@ -526,6 +552,7 @@
   </div>
 </body>
 </html>
+
 
 
 
