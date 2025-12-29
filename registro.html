@@ -4,75 +4,59 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registro - Clínica Dra. Leidi Silva</title>
-
   <style>
-    body {
+    body{
       font-family: Arial, sans-serif;
-      background-color: #eef3ff;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
+      background-color:#eef3ff;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+      margin:0;
     }
-    .form-container {
-      background: white;
-      padding: 30px;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-      text-align: center;
-      width: 320px;
+    .form-container{
+      background:white;
+      padding:30px;
+      border-radius:10px;
+      box-shadow:0 4px 12px rgba(0,0,0,0.1);
+      text-align:center;
+      width:340px;
     }
-    h2 {
-      margin: 0 0 10px;
-      line-height: 1.2;
+    h2{ margin:0 0 14px; }
+    input, select{
+      width:100%;
+      padding:10px;
+      margin:8px 0;
+      border:1px solid #ccc;
+      border-radius:5px;
+      box-sizing:border-box;
     }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      margin: 8px 0;
-      border: 1px solid #ccc;
-      border-radius: 5px;
-      font-size: 14px;
+    button{
+      width:100%;
+      padding:10px;
+      background-color:#2c52ff;
+      color:white;
+      border:none;
+      border-radius:5px;
+      cursor:pointer;
+      font-weight:bold;
+      margin-top:6px;
     }
-    button {
-      width: 100%;
-      padding: 10px;
-      background-color: #2c52ff;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      font-weight: bold;
-      margin-top: 8px;
-    }
-    button:hover { background-color: #1a38cc; }
-    button:disabled {
-      opacity: .55;
-      cursor: not-allowed;
-    }
-    .mensaje-error {
-      margin-top: 10px;
-      color: red;
-      min-height: 18px;
-      font-size: 13px;
-    }
-    a { color: #4b0082; }
-    .hint {
-      font-size: 12px;
-      color: #666;
-      margin-top: 6px;
-    }
+    button:hover{ background-color:#1a38cc; }
+    .mensaje-error{ margin-top:10px; color:red; white-space:pre-line; }
+    .mensaje-info{ margin-top:10px; color:#6b7280; font-size:12px; }
+    a{ color:#4b0082; }
   </style>
 </head>
 
 <body>
   <div class="form-container">
-    <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
+    <h2>Software Dental<br/>Clínica Dra. Leidi Silva</h2>
 
-    <input type="email" id="email" placeholder="Correo electrónico" autocomplete="email" required />
-    <input type="password" id="password" placeholder="Contraseña" autocomplete="new-password" required />
+    <input type="email" id="email" placeholder="Correo electrónico" required />
+    <input type="password" id="password" placeholder="Contraseña" required />
 
+    <!-- En UI puedes mostrar con mayúscula, pero guardaremos en minúscula -->
     <select id="role" required>
       <option value="user">Usuario</option>
       <option value="doctor">Doctor</option>
@@ -80,10 +64,11 @@
       <option value="admin">Administrador</option>
     </select>
 
-    <button id="boton-registrar" disabled>Crear cuenta</button>
+    <button id="boton-registrar">Crear cuenta</button>
 
-    <p style="margin:10px 0 0;">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
-    <p class="hint">⚠️ Esta página solo está habilitada para el administrador.</p>
+    <p style="margin-top:12px;">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+
+    <p class="mensaje-info">⚠️ Esta página solo está habilitada para el administrador.</p>
     <p id="error" class="mensaje-error"></p>
   </div>
 
@@ -98,95 +83,89 @@
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
-    const btn = document.getElementById("boton-registrar");
-    const errorDiv = document.getElementById("error");
-
-    function setError(msg) {
-      errorDiv.textContent = msg || "";
+    function setMsg(txt){
+      const errorDiv = document.getElementById("error");
+      errorDiv.textContent = txt || "";
     }
 
-    // ✅ Bloquear esta página si no es admin
-    async function protegerRegistro() {
-      setError("");
-
+    async function protegerRegistro(){
       const { data: { session }, error } = await supabase.auth.getSession();
+
       if (error) {
-        setError("Error obteniendo sesión: " + error.message);
-        return false;
+        alert("Error validando sesión: " + error.message);
+        window.location.href = LOGIN_URL;
+        return;
       }
 
       if (!session) {
         alert("Debes iniciar sesión.");
         window.location.href = LOGIN_URL;
-        return false;
+        return;
       }
 
-      const email = (session.user.email || "").toLowerCase();
+      const email = (session.user?.email || "").toLowerCase();
       if (email !== ADMIN_EMAIL.toLowerCase()) {
         alert("No autorizado.");
         window.location.href = INDEX_URL;
-        return false;
+        return;
       }
-
-      // ✅ Admin OK
-      btn.disabled = false;
-      return true;
     }
 
     await protegerRegistro();
 
-    btn.addEventListener("click", async () => {
+    document.getElementById("boton-registrar").addEventListener("click", async () => {
+      setMsg("");
+
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
-      const role = document.getElementById("role").value;
-
-      setError("");
+      const role = (document.getElementById("role").value || "").toLowerCase();
 
       if (!email || !password || !role) {
-        setError("Por favor completa todos los campos.");
+        setMsg("Por favor completa todos los campos.");
         return;
       }
 
-      btn.disabled = true;
-      btn.textContent = "Creando...";
-
       try {
-        // 1) Crear usuario en Auth
+        // 1) Crear usuario en Auth (esto envía correo de confirmación si lo tienes activo)
         const { data, error } = await supabase.auth.signUp({ email, password });
 
         if (error) {
-          setError("Error: " + error.message);
+          setMsg("Error creando usuario: " + error.message);
           return;
         }
 
         const newUserId = data.user?.id;
         if (!newUserId) {
-          setError("No se pudo obtener el ID del usuario creado.");
+          setMsg("Usuario creado, pero no se pudo obtener el ID.");
           return;
         }
 
-        // 2) Guardar rol en profiles (UP SERT para evitar duplicados si existe trigger)
-        const { error: perr } = await supabase
+        // 2) Asignar rol en profiles (UPDATE, porque normalmente el profile ya existe por trigger con role='user')
+        const { error: uerr } = await supabase
           .from("profiles")
-          .upsert([{ id: newUserId, email, role }], { onConflict: "id" });
+          .update({ role, email })
+          .eq("id", newUserId);
 
-        if (perr) {
-          console.warn("Error guardando perfil:", perr.message);
-          setError("Usuario creado, pero no se pudo asignar el rol (profiles).");
+        if (uerr) {
+          setMsg(
+            "✅ Usuario creado.\n" +
+            "⚠️ Pero no se pudo asignar el rol (profiles).\n\n" +
+            "Causa probable: RLS.\n" +
+            "Solución: crea la policy de admin para UPDATE en profiles.\n\n" +
+            "Detalle: " + uerr.message
+          );
           return;
         }
 
-        alert("✅ Cuenta creada y rol asignado. Revisa el correo para confirmar.");
+        alert("✅ Cuenta creada y rol asignado.\n(Revisa el correo para confirmar si aplica).");
         window.location.href = INDEX_URL;
 
       } catch (err) {
-        console.error("❌ Error inesperado:", err);
-        setError("Error inesperado al conectar con Supabase.");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Crear cuenta";
+        console.error(err);
+        setMsg("Error inesperado al conectar con Supabase.");
       }
     });
   </script>
 </body>
 </html>
+
