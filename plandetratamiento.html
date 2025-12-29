@@ -35,7 +35,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cotización Odontológica - Dra. Leidi Silva</title>
-
   <style>
     :root{
       --tooth-size: clamp(28px, 5.5vw, 40px);
@@ -110,7 +109,6 @@
     .panel footer { display:flex; gap:8px; margin-top:14px; }
     .btn-secondary { background:#eef2f6; color:#244; }
     .btn-primary { background: var(--brand); }
-
     @media (max-width: 480px){ .proc-row { grid-template-columns: 1fr 20px 90px; } }
   </style>
 </head>
@@ -118,7 +116,6 @@
 <body>
   <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
 
-  <!-- 🔵 BOTÓN DE ACCESO A HISTORIA CLÍNICA -->
   <div style="text-align: right; margin-bottom: 1em;">
     <a href="historia-clinica.html">
       <button type="button" style="background-color: #2a5d84; color: white; padding: 0.6em 1.2em; border: none; border-radius: 6px; cursor: pointer;">
@@ -127,6 +124,7 @@
     </a>
   </div>
 
+  <!-- ✅ Enviar sigue igual -->
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
@@ -170,7 +168,6 @@
       <label><input type="checkbox" name="adicionales_raw[]" value="Mantenimiento Brackets|80000"> Mantenimiento Brackets - $80,000</label>
     </div>
 
-    <!-- ============== ODONTOGRAMA ============== -->
     <label>Odontograma (seleccione dientes y asigne procedimientos):</label>
     <div class="odontograma-wrap">
       <div class="row-title">Maxilar superior</div>
@@ -187,7 +184,6 @@
         <div><strong>Subtotal odontograma:</strong> $<span id="odonto-subtotal">0</span></div>
       </div>
 
-      <!-- se enviará a n8n con saltos de línea -->
       <input type="hidden" name="odontograma_json" id="odontograma-json">
       <input type="hidden" name="odontograma_resumen" id="odontograma-resumen">
     </div>
@@ -223,10 +219,9 @@
 
     <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
 
-    <!-- ✅ NUEVO: Guardar (envía a otro webhook) -->
+    <!-- ✅ GUARDAR silencioso -->
     <button type="button" id="btn-guardar" style="background:#2a5d84;">Guardar</button>
 
-    <!-- Enviar original -->
     <button type="submit">Enviar</button>
   </form>
 
@@ -333,7 +328,7 @@
       } else {
         lines.push('• Sin procedimientos asignados.');
       }
-      odontoResumen.value = lines.join('\n'); // <-- SIN subtotal
+      odontoResumen.value = lines.join('\n');
 
       const subt = items.reduce((s,it)=>s+it.total,0);
       odontoSubtotalEl.textContent = subt.toLocaleString('es-CO');
@@ -440,51 +435,68 @@
     adicionales.forEach(cb=> cb.addEventListener('change', calcularTotal));
 
     /* ===== Firma ===== */
-    const canvas = document.getElementById('firma'); const ctx = canvas.getContext('2d'); let dibujando=false;
+    const canvas = document.getElementById('firma');
+    const ctx = canvas.getContext('2d');
+    let dibujando=false;
+
     function getCoords(e){
-      if(e.touches && e.touches.length){ const r=canvas.getBoundingClientRect(); return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top}; }
+      if(e.touches && e.touches.length){
+        const r=canvas.getBoundingClientRect();
+        return {x:e.touches[0].clientX-r.left, y:e.touches[0].clientY-r.top};
+      }
       return {x:e.offsetX, y:e.offsetY};
     }
+
     canvas.addEventListener('mousedown', e=>{ dibujando=true; const {x,y}=getCoords(e); ctx.beginPath(); ctx.moveTo(x,y); });
     canvas.addEventListener('mousemove', e=>{ if(!dibujando) return; const {x,y}=getCoords(e); ctx.lineTo(x,y); ctx.stroke(); });
     ['mouseup','mouseleave'].forEach(ev=> canvas.addEventListener(ev, ()=> dibujando=false ));
     canvas.addEventListener('touchstart', e=>{ e.preventDefault(); dibujando=true; const {x,y}=getCoords(e); ctx.beginPath(); ctx.moveTo(x,y); });
     canvas.addEventListener('touchmove', e=>{ e.preventDefault(); if(!dibujando) return; const {x,y}=getCoords(e); ctx.lineTo(x,y); ctx.stroke(); });
     canvas.addEventListener('touchend', ()=> dibujando=false );
+
     function limpiarFirma(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
     window.limpiarFirma = limpiarFirma;
 
-    // ✅ al enviar (por cualquiera de los dos botones) aseguramos firma lista
+    // Enviar normal (se manda la firma)
     document.getElementById('cotizacion-form').addEventListener('submit', ()=> {
       document.getElementById('firmaInput').value = canvas.toDataURL();
     });
 
-    /* =============================
-       ✅ NUEVO BOTÓN GUARDAR (n8n)
-       ============================= */
-    const WEBHOOK_ENVIAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2";
+    /* ==========================
+       ✅ GUARDAR SILENCIOSO (fetch)
+       ========================== */
     const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
-
-    const form = document.getElementById("cotizacion-form");
     const btnGuardar = document.getElementById("btn-guardar");
+    const form = document.getElementById("cotizacion-form");
 
-    btnGuardar.addEventListener("click", () => {
-      // recalcula por si algo cambió antes de guardar
-      calcularTotal();
+    btnGuardar.addEventListener("click", async () => {
+      try {
+        // 1) aseguramos cálculos y firma
+        calcularTotal();
+        document.getElementById('firmaInput').value = canvas.toDataURL();
 
-      // cambia action temporalmente
-      const originalAction = form.getAttribute("action") || WEBHOOK_ENVIAR;
-      form.setAttribute("action", WEBHOOK_GUARDAR);
+        // 2) armamos el payload igual que un submit (FormData)
+        const fd = new FormData(form);
 
-      // dispara submit normal (para que corra firmaInput y todo lo demás)
-      form.requestSubmit();
+        // 3) envío silencioso
+        const resp = await fetch(WEBHOOK_GUARDAR, {
+          method: "POST",
+          body: fd
+        });
 
-      // restaura el action
-      form.setAttribute("action", originalAction);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        alert("Guardado ✅");
+      } catch (e) {
+        console.error(e);
+        alert("No se pudo guardar. Intenta de nuevo.");
+      }
     });
 
     /* ====== CARGA POR CÉDULA (n8n) ====== */
-    const cedulaInput = document.getElementById('cedula'); const hint = document.getElementById('cedula-hint');
+    const cedulaInput = document.getElementById('cedula');
+    const hint = document.getElementById('cedula-hint');
+
     function setHintHTML(html, color="#666"){ hint.innerHTML = html||""; hint.style.color = color; }
     function escapeHtml(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
     function parseNicePair(str){
@@ -559,6 +571,7 @@
 
       calcularTotal();
     }
+
     let lastQuery = "";
     document.getElementById('cedula').addEventListener('blur', ()=>{
       const ced = cedulaInput.value.trim();
