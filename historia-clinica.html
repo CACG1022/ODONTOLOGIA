@@ -367,13 +367,20 @@
   height: 44px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: #d1d5db;      /* gris */
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 18px;
+  color: transparent;        /* por si quedara algo */
 }
+.vbtn.on{
+  background: #9ca3af;      /* gris más oscuro cuando graba */
+  border-color: #9ca3af;
+  color: transparent;
+}
+
 .vbtn.on{
   background: #0D47A1;
   color: #fff;
@@ -2396,7 +2403,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = "vbtn";
-      btn.textContent = "🎤";
+      btn.textContent = "";
       btn.title = "Dictar por voz (click para iniciar / detener)";
 
       btn.addEventListener("click", () => toggleDictado(el, btn));
