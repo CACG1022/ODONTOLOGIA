@@ -5,10 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Inicio - Clínica Dra. Leidi Silva</title>
 
-  <!-- 🔐 Guard: si no hay sesión => login -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+    // ✅ Supabase (igual que tu login)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
@@ -16,21 +16,94 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-    async function verificarSesion() {
+    // ✅ LINKS que me pasaste
+    const URLS = {
+      agendamiento: "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20",
+      agendar: "https://calendar.app.google/kbWJdv1f1TZd9bS36",
+      plan: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento",
+      historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
+      hoy: "#",  // si luego tienes URL la conectamos
+      rips: "#", // solo admin (se habilita con tu email)
+      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html" // Registrar Usuarios (admin)
+    };
+
+    // ✅ Solo este correo puede entrar a RIPS y Registrar Usuarios
+    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+
+    function setDisabled(el, disabled, reason = "No autorizado") {
+      if (!el) return;
+
+      if (disabled) {
+        el.classList.add("disabled");
+        el.setAttribute("aria-disabled", "true");
+        el.dataset.disabledReason = reason;
+
+        // bloquear click
+        el.addEventListener("click", (e) => {
+          e.preventDefault();
+          alert("🚫 Acceso restringido: " + reason);
+        }, { once: true });
+      } else {
+        el.classList.remove("disabled");
+        el.removeAttribute("aria-disabled");
+        delete el.dataset.disabledReason;
+      }
+    }
+
+    function wireNav(id, url, mode="open") {
+      const el = document.getElementById(id);
+      if (!el) return;
+
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        if (!url || url === "#") {
+          alert("⚠️ Esta opción aún no tiene URL asignada.");
+          return;
+        }
+        if (mode === "href") window.location.href = url;
+        else window.open(url, "_blank");
+      });
+    }
+
+    async function verificarSesionYPermisos() {
       const { data: { session } } = await supabase.auth.getSession();
+
       if (!session) {
-        console.warn("🚫 No hay sesión activa, redirigiendo al login...");
         window.location.href = LOGIN_URL;
         return;
       }
 
-      // opcional: mostrar email arriba
-      const email = session.user?.email || localStorage.getItem("usuario_logueado") || "";
+      const email = (session.user?.email || "").toLowerCase();
+      const isAdmin = email === ADMIN_EMAIL;
+
+      // Mostrar email
       const u = document.getElementById("user-email");
-      if (u) u.textContent = email ? email : "Usuario autenticado";
+      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+
+      // ✅ Activar/Desactivar botones restringidos
+      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo Camilo-1000@hotmail.com");
+      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo Camilo-1000@hotmail.com");
+
+      // ✅ Navegación (internas con href, externas open)
+      wireNav("go-agendar", URLS.agendar, "open");
+      wireNav("go-agendamiento", URLS.agendamiento, "open");
+      wireNav("go-historia", URLS.historia, "href");
+      wireNav("go-plan", URLS.plan, "href"); // si esta ruta te abre bien, perfecto
+      wireNav("go-hoy", URLS.hoy, "href");
+      // RIPS y Registro solo navegan si no están disabled
+      if (isAdmin) {
+        wireNav("go-rips", URLS.rips, "href");
+        wireNav("go-registro", URLS.registro, "href");
+      }
+
+      // Fecha
+      const t = document.getElementById("today");
+      if (t) t.textContent =
+        new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
+      document.getElementById("year").textContent = new Date().getFullYear();
     }
 
-    verificarSesion();
+    verificarSesionYPermisos();
 
     // Si se expira/cierra, vuelve al login
     supabase.auth.onAuthStateChange((_event, session) => {
@@ -39,70 +112,24 @@
 
     // Logout
     window.cerrarSesion = async () => {
-      try { await supabase.auth.signOut(); } catch (e) {}
-      try { localStorage.removeItem("usuario_logueado"); } catch (e) {}
+      try { await supabase.auth.signOut(); } catch(e) {}
+      try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
       window.location.href = LOGIN_URL;
     };
-
-    // ✅ URLs (cámbialas luego cuando me las pases)
-    const URLS = {
-      agendar:        "#", // ej: "https://calendar.app.google/xxxx"
-      agendamiento:   "#", // ej: "https://calendar.google.com/calendar/u/0?cid=xxxx"
-      historia:       "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
-      plan:           "#", // ej: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html"
-      hoy:            "#", // ej: "https://...."
-      rips:           "#", // ej: "https://...."
-    };
-
-    // Navegación
-    window.addEventListener("DOMContentLoaded", () => {
-      const go = (id, url, mode="open") => {
-        const el = document.getElementById(id);
-        if (!el) return;
-        el.addEventListener("click", (e) => {
-          e.preventDefault();
-          if (!url || url === "#") {
-            alert("⚠️ Esta opción aún no tiene URL asignada. Luego me la pasas y la conectamos.");
-            return;
-          }
-          if (mode === "href") window.location.href = url;
-          else window.open(url, "_blank");
-        });
-      };
-
-      // si son páginas internas del repo, usa mode="href"
-      go("go-historia", URLS.historia, "href");
-
-      // externos normalmente: open en nueva pestaña
-      go("go-agendar", URLS.agendar, "open");
-      go("go-agendamiento", URLS.agendamiento, "open");
-      go("go-plan", URLS.plan, "open");
-      go("go-hoy", URLS.hoy, "open");
-      go("go-rips", URLS.rips, "open");
-
-      // fecha
-      const t = document.getElementById("today");
-      if (t) t.textContent = new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
-    });
   </script>
 
   <style>
     :root{
       --bg1:#071a2b;
       --bg2:#0b2f52;
-
       --glass: rgba(255,255,255,.10);
       --glass2: rgba(255,255,255,.06);
       --stroke: rgba(255,255,255,.18);
-
       --text: rgba(255,255,255,.92);
       --muted: rgba(255,255,255,.70);
-
       --field-stroke: rgba(255,255,255,.14);
-
       --btn: rgba(0,0,0,.22);
       --btn-hover: rgba(0,0,0,.30);
-
       --accent: #7ecbff;
     }
 
@@ -116,7 +143,6 @@
       align-items:center;
       font-family: Arial, sans-serif;
       color:var(--text);
-
       background:
         radial-gradient(1200px 700px at 30% 25%, rgba(120,200,255,.25), transparent 55%),
         radial-gradient(900px 600px at 75% 70%, rgba(90,140,255,.18), transparent 60%),
@@ -145,9 +171,7 @@
       border-radius: 18px;
       background: linear-gradient(180deg, var(--glass), var(--glass2));
       border: 1px solid var(--stroke);
-      box-shadow:
-        0 18px 40px rgba(0,0,0,.35),
-        inset 0 0 0 1px rgba(255,255,255,.06);
+      box-shadow: 0 18px 40px rgba(0,0,0,.35), inset 0 0 0 1px rgba(255,255,255,.06);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
       position: relative;
@@ -236,7 +260,7 @@
       border: 1px solid var(--field-stroke);
       background: rgba(0,0,0,.16);
       box-shadow: 0 10px 18px rgba(0,0,0,.18);
-      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
       position: relative;
       overflow:hidden;
       min-height: 66px;
@@ -256,6 +280,16 @@
       background: rgba(0,0,0,.22);
       border-color: rgba(126,203,255,.35);
     }
+
+    /* ✅ estilo deshabilitado (visible pero no usable) */
+    .tile.disabled{
+      opacity: .45;
+      cursor: not-allowed;
+      transform: none !important;
+      border-color: rgba(255,255,255,.10) !important;
+      background: rgba(0,0,0,.12) !important;
+    }
+    .tile.disabled:hover{ transform:none; }
 
     .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
     .icon{
@@ -321,7 +355,6 @@
 
 <body>
   <div class="wrapper">
-
     <div class="logo-top">
       <img
         src="https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png"
@@ -354,16 +387,9 @@
                 <path d="M12 13v6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>Agendar</h3>
-              <p>Crear una nueva cita rápidamente.</p>
-            </div>
+            <div class="ttext"><h3>Agendar</h3><p>Ir al enlace de citas.</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-agendamiento">
@@ -376,16 +402,9 @@
                 <path d="M7.5 12.5h4M7.5 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>Agendamiento</h3>
-              <p>Ver y administrar el calendario de citas.</p>
-            </div>
+            <div class="ttext"><h3>Agendamiento</h3><p>Calendario de citas.</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-historia">
@@ -397,16 +416,9 @@
                 <path d="M8 13h8M8 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>Historia Clínica</h3>
-              <p>Consultar y registrar información del paciente.</p>
-            </div>
+            <div class="ttext"><h3>Historia Clínica</h3><p>Gestión del paciente.</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-plan">
@@ -417,16 +429,9 @@
                 <path d="M8 13h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>Plan de Tratamiento</h3>
-              <p>Crear/editar planes y procedimientos.</p>
-            </div>
+            <div class="ttext"><h3>Plan de Tratamiento</h3><p>Registrar procedimientos.</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-hoy">
@@ -437,16 +442,9 @@
                 <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>Pacientes agendados hoy</h3>
-              <p>Listado rápido de citas del día.</p>
-            </div>
+            <div class="ttext"><h3>Pacientes agendados hoy</h3><p>(Pendiente URL)</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-rips">
@@ -459,25 +457,34 @@
                 <path d="M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext">
-              <h3>RIPS</h3>
-              <p>Reportes y registros administrativos.</p>
+            <div class="ttext"><h3>RIPS</h3><p>Solo administrador.</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+
+        <!-- ✅ NUEVO: Registrar Usuarios (solo admin) -->
+        <a class="tile" href="#" id="go-registro">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M19 8v4M17 10h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
             </div>
+            <div class="ttext"><h3>Registrar Usuarios</h3><p>Solo administrador.</p></div>
           </div>
-          <div class="arrow">
-            <svg viewBox="0 0 24 24" fill="none">
-              <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
+          <div class="arrow">→</div>
         </a>
       </div>
 
       <div class="footer">
-        <span>© Clínica Dra. Leidi Silva</span>
+        <span>© <span id="year"></span> Clínica Dra. Leidi Silva</span>
         <button class="logout" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </section>
   </div>
 </body>
 </html>
+
 
