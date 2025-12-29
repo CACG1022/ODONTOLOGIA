@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Registro - Clínica Dra. Leidi Silva</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,6 +13,7 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
+      margin: 0;
     }
     .form-container {
       background: white;
@@ -19,17 +21,19 @@
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.1);
       text-align: center;
-      width: 300px;
+      width: 320px;
     }
     h2 {
-      margin-bottom: 5px;
+      margin: 0 0 10px;
+      line-height: 1.2;
     }
-    input {
+    input, select {
       width: 100%;
       padding: 10px;
       margin: 8px 0;
       border: 1px solid #ccc;
       border-radius: 5px;
+      font-size: 14px;
     }
     button {
       width: 100%;
@@ -40,68 +44,149 @@
       border-radius: 5px;
       cursor: pointer;
       font-weight: bold;
+      margin-top: 8px;
     }
-    button:hover {
-      background-color: #1a38cc;
+    button:hover { background-color: #1a38cc; }
+    button:disabled {
+      opacity: .55;
+      cursor: not-allowed;
     }
     .mensaje-error {
       margin-top: 10px;
       color: red;
+      min-height: 18px;
+      font-size: 13px;
     }
-    a {
-      color: #4b0082;
+    a { color: #4b0082; }
+    .hint {
+      font-size: 12px;
+      color: #666;
+      margin-top: 6px;
     }
   </style>
 </head>
+
 <body>
   <div class="form-container">
-    <h2>Software Dental<br>Clínica Dra. Leidi Silva3</h2>
-    <input type="email" id="email" placeholder="Correo electrónico" required />
-    <input type="password" id="password" placeholder="Contraseña" required />
-    <button id="boton-registrar">Crear cuenta</button>
-    <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+    <h2>Software Dental<br>Clínica Dra. Leidi Silva</h2>
+
+    <input type="email" id="email" placeholder="Correo electrónico" autocomplete="email" required />
+    <input type="password" id="password" placeholder="Contraseña" autocomplete="new-password" required />
+
+    <select id="role" required>
+      <option value="user">Usuario</option>
+      <option value="doctor">Doctor</option>
+      <option value="auxiliar">Auxiliar</option>
+      <option value="admin">Administrador</option>
+    </select>
+
+    <button id="boton-registrar" disabled>Crear cuenta</button>
+
+    <p style="margin:10px 0 0;">¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+    <p class="hint">⚠️ Esta página solo está habilitada para el administrador.</p>
     <p id="error" class="mensaje-error"></p>
   </div>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabaseUrl = 'https://dmcfrmpqlkrqbpjhrfyo.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE';
-
+    const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    document.getElementById("boton-registrar").addEventListener("click", async () => {
+    const ADMIN_EMAIL = "camilo-1000@hotmail.com";
+    const LOGIN_URL = "login.html";
+    const INDEX_URL = "index.html";
+
+    const btn = document.getElementById("boton-registrar");
+    const errorDiv = document.getElementById("error");
+
+    function setError(msg) {
+      errorDiv.textContent = msg || "";
+    }
+
+    // ✅ Bloquear esta página si no es admin
+    async function protegerRegistro() {
+      setError("");
+
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) {
+        setError("Error obteniendo sesión: " + error.message);
+        return false;
+      }
+
+      if (!session) {
+        alert("Debes iniciar sesión.");
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+
+      const email = (session.user.email || "").toLowerCase();
+      if (email !== ADMIN_EMAIL.toLowerCase()) {
+        alert("No autorizado.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+
+      // ✅ Admin OK
+      btn.disabled = false;
+      return true;
+    }
+
+    await protegerRegistro();
+
+    btn.addEventListener("click", async () => {
       const email = document.getElementById("email").value.trim();
       const password = document.getElementById("password").value.trim();
-      const errorDiv = document.getElementById("error");
-      errorDiv.textContent = "";
+      const role = document.getElementById("role").value;
 
-      if (!email || !password) {
-        errorDiv.textContent = "Por favor completa todos los campos.";
+      setError("");
+
+      if (!email || !password || !role) {
+        setError("Por favor completa todos los campos.");
         return;
       }
 
+      btn.disabled = true;
+      btn.textContent = "Creando...";
+
       try {
+        // 1) Crear usuario en Auth
         const { data, error } = await supabase.auth.signUp({ email, password });
 
-        console.log("📤 Datos enviados:", { email, password });
-        console.log("📥 Respuesta:", { data, error });
-
         if (error) {
-          errorDiv.textContent = "Error: " + error.message;
-        } else {
-          alert("Cuenta creada correctamente. Revisa tu correo para confirmar.");
-          window.location.href = "login.html";
+          setError("Error: " + error.message);
+          return;
         }
+
+        const newUserId = data.user?.id;
+        if (!newUserId) {
+          setError("No se pudo obtener el ID del usuario creado.");
+          return;
+        }
+
+        // 2) Guardar rol en profiles (UP SERT para evitar duplicados si existe trigger)
+        const { error: perr } = await supabase
+          .from("profiles")
+          .upsert([{ id: newUserId, email, role }], { onConflict: "id" });
+
+        if (perr) {
+          console.warn("Error guardando perfil:", perr.message);
+          setError("Usuario creado, pero no se pudo asignar el rol (profiles).");
+          return;
+        }
+
+        alert("✅ Cuenta creada y rol asignado. Revisa el correo para confirmar.");
+        window.location.href = INDEX_URL;
+
       } catch (err) {
         console.error("❌ Error inesperado:", err);
-        errorDiv.textContent = "Error inesperado al conectar con Supabase.";
+        setError("Error inesperado al conectar con Supabase.");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Crear cuenta";
       }
     });
   </script>
 </body>
 </html>
-
-
-
