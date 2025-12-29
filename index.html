@@ -8,10 +8,10 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ✅ Supabase
+    // ✅ Supabase (IMPORTANTE: usa tu sb_publishable_... aquí)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+      "REEMPLAZA_AQUI_TU_SB_PUBLISHABLE_KEY"
     );
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -24,7 +24,8 @@
       historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
       hoy: "#",
       rips: "#",
-      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html"
+      registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
+      usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html" // ✅ NUEVO
     };
 
     // ✅ Admin por email (como lo venías manejando)
@@ -107,14 +108,17 @@
       const roleEl = document.getElementById("user-role");
       roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
-      // ✅ Permisos admin:
-      // - por email (como pediste)
-      // - (extra) si role === "admin" también cuenta como admin
-      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+      const roleLower = String(role || "").toLowerCase();
+
+      // ✅ Admin si:
+      // - email coincide con ADMIN_EMAIL
+      // - O role === "admin"
+      const isAdmin = (email === ADMIN_EMAIL) || (roleLower === "admin");
 
       // ✅ Activar/Desactivar botones restringidos
       setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador (rol admin)"); // ✅ NUEVO
 
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
@@ -123,9 +127,11 @@
       wireNav("go-plan", URLS.plan, "href");
       wireNav("go-hoy", URLS.hoy, "href");
 
-      // RIPS y Registro solo navegan si no están disabled
       wireNav("go-rips", URLS.rips, "href");
       wireNav("go-registro", URLS.registro, "href");
+
+      // ✅ NUEVO: Usuarios registrados (admin)
+      wireNav("go-usuarios", URLS.usuarios, "href");
 
       // Fecha
       const t = document.getElementById("today");
@@ -516,6 +522,23 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <!-- ✅ NUEVO BOTÓN: Usuarios registrados (solo rol admin) -->
+        <a class="tile" href="#" id="go-usuarios">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M6 11a3 3 0 1 0-3-3 3 3 0 0 0 3 3Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M2 20v-1c0-2.2 2.2-4 5-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M10 20v-1c0-2.8 3.1-5 6-5s6 2.2 6 5v1" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+
       </div>
 
       <div class="footer">
@@ -526,6 +549,7 @@
   </div>
 </body>
 </html>
+
 
 
 
