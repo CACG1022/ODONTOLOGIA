@@ -493,16 +493,18 @@
   border-radius:2px;
 }
 
-    .extra-etiquetas{
+  .extra-etiquetas{
   margin-top: 2px;
   font-size: 12px;
   color: #111;
   line-height: 1.1;
   font-weight: 600;
-}
-.extra-etiquetas div{
   text-align: center;
 }
+.extra-etiquetas .lingual{
+  margin-top: 6px; /* ✅ separa Lingual hacia abajo */
+}
+
 
    
   </style>
@@ -1153,7 +1155,8 @@
 <div class="seccion">
   <div class="fila" id="fila-inferior"></div>
 
-  <div class="etiqueta etiqueta-eje eje-inferior" style="margin-top:8px;">
+ <!--  <div class="etiqueta etiqueta-eje eje-inferior" style="margin-top:8px;">-->
+    <div class="etiqueta etiqueta-eje eje-inferior">
     Vestibular--------------------Maxilar inferior--------------------Vestibular
     <span class="linea-media"></span>
   </div>
@@ -1535,10 +1538,9 @@ if (numero === 24) {
   const extra = document.createElement("div");
   extra.className = "extra-etiquetas";
   extra.innerHTML = `
-    <div>Palatino</div>
-    <div></div>
-    <div>Lingual</div>
-  `;
+  <div>Palatino</div>
+  <div class="lingual">Lingual</div>
+`;
   contenedorDiente.appendChild(extra);
 }
 
