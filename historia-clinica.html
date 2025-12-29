@@ -1617,6 +1617,37 @@ contenedor.appendChild(contenedorDiente);
   const filaInferior = document.getElementById('fila-inferior');
   dientesInferior.forEach(num => crearDiente(num, filaInferior));
 
+  function ajustarLineaMedia() {
+  const topEtiqueta = document.querySelector(".seccion .etiqueta-eje:not(.eje-inferior)");
+  const topLinea = topEtiqueta?.querySelector(".linea-media");
+  const bottomEtiqueta = document.querySelector(".etiqueta-eje.eje-inferior");
+  const bottomLinea = bottomEtiqueta?.querySelector(".linea-media");
+
+  if (!topEtiqueta || !topLinea || !bottomEtiqueta || !bottomLinea) return;
+
+  const rTop = topEtiqueta.getBoundingClientRect();
+  const rBottom = bottomEtiqueta.getBoundingClientRect();
+
+  // Distancia entre el final de la etiqueta superior y el inicio de la etiqueta inferior
+  const dist = rBottom.top - rTop.bottom;
+
+  // Mitad para cada línea (arriba baja, abajo sube)
+  const h = Math.max(0, Math.round(dist / 2));
+
+  topLinea.style.height = h + "px";
+  bottomLinea.style.height = h + "px";
+}
+
+// Ajusta al cargar y al redimensionar
+window.addEventListener("load", ajustarLineaMedia);
+window.addEventListener("resize", ajustarLineaMedia);
+
+// Si cambias a fullscreen, vuelve a calcular (por si cambia el layout)
+document.addEventListener("click", (e) => {
+  if (e.target?.id === "btnExitOdonFS") setTimeout(ajustarLineaMedia, 50);
+});
+
+
   document.body.addEventListener('click', () => {
     document.querySelectorAll('.popup').forEach(p => p.remove());
   });
@@ -2490,6 +2521,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Lleva al odontograma arriba
     wrapper.scrollTop = 0;
     wrapper.scrollLeft = 0;
+    setTimeout(ajustarLineaMedia, 50);
+
   }
 
   function salirFullscreen(){
@@ -2500,6 +2533,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.documentElement.style.overflow = "";
     document.body.style.overflow = "";
+    setTimeout(ajustarLineaMedia, 50);
+
   }
 
   function toggleFullscreen(){
