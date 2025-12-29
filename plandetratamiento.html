@@ -2,38 +2,40 @@
 <html lang="es">
 <head>
   <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = createClient(
-    'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
-  );
+    const supabase = createClient(
+      'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
+    );
 
-  // 🔒 Verificar sesión activa
-  async function verificarSesion() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      console.warn("🚫 No hay sesión activa, redirigiendo al login...");
-      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-    } else {
-      console.log("✅ Usuario autenticado:", session.user.email);
+    // 🔒 Verificar sesión activa
+    async function verificarSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        console.warn("🚫 No hay sesión activa, redirigiendo al login...");
+        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+      } else {
+        console.log("✅ Usuario autenticado:", session.user.email);
+      }
     }
-  }
 
-  // 🧠 Ejecutar al cargar la página
-  verificarSesion();
+    // 🧠 Ejecutar al cargar la página
+    verificarSesion();
 
-  // 🔄 Escuchar cambios en la sesión (por si se cierra o expira)
-  supabase.auth.onAuthStateChange((_event, session) => {
-    if (!session) {
-      console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
-      window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-    }
-  });
-</script>
+    // 🔄 Escuchar cambios en la sesión (por si se cierra o expira)
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
+        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+      }
+    });
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Cotización Odontológica - Dra. Leidi Silva</title>
+
   <style>
     :root{
       --tooth-size: clamp(28px, 5.5vw, 40px);
@@ -112,9 +114,11 @@
     @media (max-width: 480px){ .proc-row { grid-template-columns: 1fr 20px 90px; } }
   </style>
 </head>
+
 <body>
   <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
- <!-- 🔵 BOTÓN DE ACCESO A HISTORIA CLÍNICA -->
+
+  <!-- 🔵 BOTÓN DE ACCESO A HISTORIA CLÍNICA -->
   <div style="text-align: right; margin-bottom: 1em;">
     <a href="historia-clinica.html">
       <button type="button" style="background-color: #2a5d84; color: white; padding: 0.6em 1.2em; border: none; border-radius: 6px; cursor: pointer;">
@@ -122,6 +126,7 @@
       </button>
     </a>
   </div>
+
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
@@ -215,7 +220,13 @@
     <label for="firma">Firma del paciente:</label>
     <canvas id="firma"></canvas>
     <input type="hidden" name="firma" id="firmaInput" />
+
     <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
+
+    <!-- ✅ NUEVO: Guardar (envía a otro webhook) -->
+    <button type="button" id="btn-guardar" style="background:#2a5d84;">Guardar</button>
+
+    <!-- Enviar original -->
     <button type="submit">Enviar</button>
   </form>
 
@@ -247,18 +258,18 @@
 
     /* ========= ODONTOGRAMA ========= */
     const PROC_CATALOGO = [
-     { key: "EndoUni", label: "Endodoncia unirradicular", price: 390000 },
-{ key: "EndoMulti", label: "Endodoncia multirradicular", price: 490000 },
-{ key: "Retratamiento", label: "Retratamientos Endodoncia", price: 380000 },
-{ key: "Desobt", label: "Desobturación de conducto", price: 84000 },
-{ key: "RetiroNucleo", label: "Retiro núcleo", price: 90000 },
-{ key: "RetiroProtesis", label: "Retiro prótesis fija", price: 250000 },
-{ key: "Temporales", label: "Temporales", price: 40000 },
-{ key: "NucleosColados", label: "Núcleos colados", price: 250000 },
-{ key: "CoronaMP", label: "Coronas metal porcelana", price: 900000 },
-{ key: "AumentoCorona", label: "Aumentos corona clínica", price: 150000 },
-{ key: "ProtesisFlex", label: "Prótesis flexible inferior", price: 990000 },
-{ key: "ResinasInf", label: "Resinas inferiores", price: 60000 }
+      { key: "EndoUni", label: "Endodoncia unirradicular", price: 390000 },
+      { key: "EndoMulti", label: "Endodoncia multirradicular", price: 490000 },
+      { key: "Retratamiento", label: "Retratamientos Endodoncia", price: 380000 },
+      { key: "Desobt", label: "Desobturación de conducto", price: 84000 },
+      { key: "RetiroNucleo", label: "Retiro núcleo", price: 90000 },
+      { key: "RetiroProtesis", label: "Retiro prótesis fija", price: 250000 },
+      { key: "Temporales", label: "Temporales", price: 40000 },
+      { key: "NucleosColados", label: "Núcleos colados", price: 250000 },
+      { key: "CoronaMP", label: "Coronas metal porcelana", price: 900000 },
+      { key: "AumentoCorona", label: "Aumentos corona clínica", price: 150000 },
+      { key: "ProtesisFlex", label: "Prótesis flexible inferior", price: 990000 },
+      { key: "ResinasInf", label: "Resinas inferiores", price: 60000 }
     ];
     const selectedTeeth = {}; // { "12":[{key,label,price}, ...] }
 
@@ -299,40 +310,37 @@
       refreshBadges();
     }
 
-      function refreshBadges(){
-    document.querySelectorAll('.tooth').forEach(btn=>{
-      const n = btn.dataset.tooth;
-      btn.classList.toggle('has-procs', Array.isArray(selectedTeeth[n]) && selectedTeeth[n].length>0);
-    });
-
-    const items = Object.entries(selectedTeeth)
-      .filter(([_,arr])=>arr && arr.length)
-      .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
-
-    // HTML para la vista
-    summaryList.innerHTML = items.length
-      ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
-      : '<li>Sin procedimientos asignados.</li>';
-
-    // TEXTO para enviar a n8n / Sheets (sin subtotal, solo líneas por diente)
-    let lines = [];
-    if(items.length){
-      items.forEach(it=>{
-        const procsText = it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ');
-        lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
+    function refreshBadges(){
+      document.querySelectorAll('.tooth').forEach(btn=>{
+        const n = btn.dataset.tooth;
+        btn.classList.toggle('has-procs', Array.isArray(selectedTeeth[n]) && selectedTeeth[n].length>0);
       });
-    } else {
-      lines.push('• Sin procedimientos asignados.');
+
+      const items = Object.entries(selectedTeeth)
+        .filter(([_,arr])=>arr && arr.length)
+        .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
+
+      summaryList.innerHTML = items.length
+        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
+        : '<li>Sin procedimientos asignados.</li>';
+
+      let lines = [];
+      if(items.length){
+        items.forEach(it=>{
+          const procsText = it.arr.map(p=>`${p.label} ($${p.price.toLocaleString('es-CO')})`).join(', ');
+          lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
+        });
+      } else {
+        lines.push('• Sin procedimientos asignados.');
+      }
+      odontoResumen.value = lines.join('\n'); // <-- SIN subtotal
+
+      const subt = items.reduce((s,it)=>s+it.total,0);
+      odontoSubtotalEl.textContent = subt.toLocaleString('es-CO');
+      odontoJson.value = JSON.stringify(selectedTeeth);
+
+      calcularTotal();
     }
-    odontoResumen.value = lines.join('\n'); // <-- SIN subtotal
-
-    // Subtotal solo para la UI (no va al resumen)
-    const subt = items.reduce((s,it)=>s+it.total,0);
-    odontoSubtotalEl.textContent = subt.toLocaleString('es-CO');
-    odontoJson.value = JSON.stringify(selectedTeeth);
-
-    calcularTotal();
-  }
 
     // ---------- Modal ----------
     const backdrop = document.getElementById('panel-backdrop');
@@ -394,13 +402,12 @@
       let subtotal = 0;
 
       const [nProc, pProc] = procedimiento.value.split("|");
-if (procedimiento.value !== "No aplica|0") {
-  subtotal += parseMoney(pProc);
-  document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
-} else {
-  document.querySelector('input[name="procedimiento"]').value = "No aplica";
-}
-
+      if (procedimiento.value !== "No aplica|0") {
+        subtotal += parseMoney(pProc);
+        document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
+      } else {
+        document.querySelector('input[name="procedimiento"]').value = "No aplica";
+      }
 
       const adics = [];
       adicionales.forEach(cb=>{
@@ -446,8 +453,34 @@ if (procedimiento.value !== "No aplica|0") {
     canvas.addEventListener('touchend', ()=> dibujando=false );
     function limpiarFirma(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
     window.limpiarFirma = limpiarFirma;
+
+    // ✅ al enviar (por cualquiera de los dos botones) aseguramos firma lista
     document.getElementById('cotizacion-form').addEventListener('submit', ()=> {
       document.getElementById('firmaInput').value = canvas.toDataURL();
+    });
+
+    /* =============================
+       ✅ NUEVO BOTÓN GUARDAR (n8n)
+       ============================= */
+    const WEBHOOK_ENVIAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2";
+    const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
+
+    const form = document.getElementById("cotizacion-form");
+    const btnGuardar = document.getElementById("btn-guardar");
+
+    btnGuardar.addEventListener("click", () => {
+      // recalcula por si algo cambió antes de guardar
+      calcularTotal();
+
+      // cambia action temporalmente
+      const originalAction = form.getAttribute("action") || WEBHOOK_ENVIAR;
+      form.setAttribute("action", WEBHOOK_GUARDAR);
+
+      // dispara submit normal (para que corra firmaInput y todo lo demás)
+      form.requestSubmit();
+
+      // restaura el action
+      form.setAttribute("action", originalAction);
     });
 
     /* ====== CARGA POR CÉDULA (n8n) ====== */
@@ -536,30 +569,26 @@ if (procedimiento.value !== "No aplica|0") {
         .then(loadFromWebhook)
         .catch(()=> setHintHTML("No fue posible verificar. Intenta de nuevo.", "#c0392b"));
     });
+
     function initCedulaFromQuery() {
-  try {
-    const params = new URLSearchParams(window.location.search);
-    const cedula = (params.get("cedula") || "").trim();
-    if (!cedula) return;
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const cedula = (params.get("cedula") || "").trim();
+        if (!cedula) return;
 
-    const cedulaInput = document.getElementById("cedula");
-    if (!cedulaInput) return;
+        const cedulaInput = document.getElementById("cedula");
+        if (!cedulaInput) return;
 
-    // coloca la cédula en el campo
-    cedulaInput.value = cedula;
-
-    // dispara la búsqueda automáticamente usando el mismo flujo existente (blur)
-    cedulaInput.dispatchEvent(new Event("blur", { bubbles: true }));
-  } catch (e) {
-    console.warn("No se pudo inicializar la cédula desde la URL:", e);
-  }
-}
-
-// Ejecutar cuando el DOM ya esté listo
-document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
-
+        cedulaInput.value = cedula;
+        cedulaInput.dispatchEvent(new Event("blur", { bubbles: true }));
+      } catch (e) {
+        console.warn("No se pudo inicializar la cédula desde la URL:", e);
+      }
+    }
+    document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
   </script>
 </body>
 </html>
+
 
 
