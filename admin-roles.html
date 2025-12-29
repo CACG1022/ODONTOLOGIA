@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Administrar Roles - Clínica</title>
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#eef3ff;
+      margin:0;
+      padding:24px;
+    }
+    .card{
+      max-width: 980px;
+      margin: 0 auto;
+      background:#fff;
+      border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      padding:18px;
+    }
+    h2{ margin:0 0 12px; }
+    .row{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-bottom:12px;
+    }
+    input{
+      padding:10px;
+      border:1px solid #ccc;
+      border-radius:8px;
+      min-width:260px;
+      flex:1;
+    }
+    button{
+      padding:10px 12px;
+      border:none;
+      border-radius:8px;
+      background:#2c52ff;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+    }
+    button:hover{ background:#1a38cc; }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:10px;
+    }
+    th, td{
+      border-bottom:1px solid #eee;
+      padding:10px;
+      text-align:left;
+      font-size:14px;
+    }
+    th{ background:#fafafa; }
+    select{
+      padding:8px;
+      border:1px solid #ccc;
+      border-radius:8px;
+    }
+    .muted{ color:#6b7280; font-size:12px; }
+    .msg{ margin-top:10px; color:#b91c1c; white-space:pre-line; }
+    .ok{ color:#047857; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h2>Administrar usuarios y roles</h2>
+    <div class="muted">Solo el administrador puede ver y modificar roles.</div>
+
+    <div class="row" style="margin-top:12px;">
+      <input id="q" placeholder="Buscar por email (opcional)..." />
+      <button id="btn-refresh">Actualizar lista</button>
+      <button id="btn-logout" style="background:#111827;">Cerrar sesión</button>
+    </div>
+
+    <div id="status" class="msg"></div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Creado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+    const supabaseKey = "SUPABASE_PUBLISHABLE_KEY"; // <-- sb_publishable_...
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const ADMIN_EMAIL = "camilo-1000@hotmail.com".toLowerCase();
+    const LOGIN_URL = "login.html";
+    const INDEX_URL = "index.html";
+
+    const tbody = document.getElementById("tbody");
+    const status = document.getElementById("status");
+
+    function setStatus(msg, ok=false){
+      status.textContent = msg || "";
+      status.className = "msg" + (ok ? " ok" : "");
+    }
+
+    async function requireAdmin(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+      const email = (session.user?.email || "").toLowerCase();
+      if (email !== ADMIN_EMAIL){
+        alert("No autorizado");
+        window.location.href = INDEX_URL;
+        return null;
+      }
+      return session;
+    }
+
+    function roleSelect(current){
+      const roles = ["user","doctor","auxiliar","admin"];
+      return `
+        <select class="role">
+          ${roles.map(r => `<option value="${r}" ${r===current?"selected":""}>${r}</option>`).join("")}
+        </select>
+      `;
+    }
+
+    function fmtDate(v){
+      if(!v) return "";
+      try { return new Date(v).toLocaleString("es-CO"); } catch { return v; }
+    }
+
+    async function loadProfiles(){
+      setStatus("Cargando usuarios...");
+      tbody.innerHTML = "";
+
+      const q = (document.getElementById("q").value || "").trim().toLowerCase();
+
+      let query = supabase
+        .from("profiles")
+        .select("id,email,role,created_at")
+        .order("created_at", { ascending: false })
+        .limit(200);
+
+      // filtro opcional por email (ilike)
+      if (q) query = query.ilike("email", `%${q}%`);
+
+      const { data, error } = await query;
+
+      if (error){
+        setStatus("Error cargando perfiles:\n" + error.message);
+        return;
+      }
+
+      if (!data || data.length === 0){
+        setStatus("No hay usuarios para mostrar.", true);
+        return;
+      }
+
+      for (const p of data){
+        const tr = document.createElement("tr");
+        tr.dataset.id = p.id;
+
+        tr.innerHTML = `
+          <td>${p.email || ""}</td>
+          <td>${roleSelect((p.role || "user").toLowerCase())}</td>
+          <td>${fmtDate(p.created_at)}</td>
+          <td><button class="save">Guardar</button></td>
+        `;
+
+        tr.querySelector(".save").addEventListener("click", async () => {
+          const newRole = tr.querySelector(".role").value;
+
+          setStatus("Actualizando rol...");
+          const { error: uerr } = await supabase
+            .from("profiles")
+            .update({ role: newRole })
+            .eq("id", p.id);
+
+          if (uerr){
+            setStatus("No se pudo actualizar:\n" + uerr.message);
+            return;
+          }
+
+          setStatus("✅ Rol actualizado para " + (p.email || ""), true);
+        });
+
+        tbody.appendChild(tr);
+      }
+
+      setStatus("Usuarios cargados: " + data.length, true);
+    }
+
+    document.getElementById("btn-refresh").addEventListener("click", loadProfiles);
+
+    document.getElementById("btn-logout").addEventListener("click", async () => {
+      try { await supabase.auth.signOut(); } catch(e){}
+      window.location.href = LOGIN_URL;
+    });
+
+    await requireAdmin();
+    await loadProfiles();
+  </script>
+</body>
+</html>
