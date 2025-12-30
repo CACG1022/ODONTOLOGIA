@@ -144,7 +144,7 @@
       const { data, error } = await supabase
         .from("procedimientos_precios")
         .select("id,procedimiento,valor,updated_at")
-        .order("nombre", { ascending: true });
+        .order("procedimiento", { ascending: true });
 
       if (error){
         setStatus("Error: " + error.message);
