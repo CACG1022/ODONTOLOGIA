@@ -1791,7 +1791,42 @@ async function agregarEvolucion() {
 
     alert("Información enviada correctamente a N8N");
   }
+function normalizarConsentimientosDeWebhook(data) {
+  let raw = data?.consentimientos;
 
+  // Caso: vienen dentro de data.consentimientos.consentimientos
+  if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.consentimientos)) {
+    raw = raw.consentimientos;
+  }
+
+  // Caso: string JSON
+  if (typeof raw === "string") {
+    try { raw = JSON.parse(raw); } catch (e) { raw = []; }
+  }
+
+  if (!Array.isArray(raw)) raw = [];
+
+  // Normaliza campos y nombres
+  return raw.map(c => ({
+    cedula_paciente: c.cedula_paciente ?? c.paciente_doc ?? c.doc ?? "",
+    paciente_nombre: c.paciente_nombre ?? c.paciente ?? "",
+    evolucion_id: c.evolucion_id ?? c.evolucionId ?? c.id_evolucion ?? c.idEvolucion ?? "",
+    procedimiento: c.procedimiento ?? "",
+    profesional: c.profesional ?? "",
+    template: c.template ?? c.template_key ?? c.templateKey ?? "AUTO",
+    texto: c.texto ?? c.consent_texto ?? "",
+    firma_paciente: c.firma_paciente ?? "",
+    firma_profesional: c.firma_profesional ?? "",
+    firmado_en: c.firmado_en ?? c.firmadoEn ?? null,
+    creado_en: c.creado_en ?? c.creadoEn ?? null,
+    creado_por: c.creado_por ?? c.creadoPor ?? null,
+    hash_documento: c.hash_documento ?? c.hash ?? null,
+    pdf_path: c.pdf_path ?? null
+  })).filter(x => String(x.evolucion_id || "").trim() !== "");
+}
+
+
+  
   // ==============================
   // ✅ BUSCAR HISTORIA
   // ==============================
@@ -1820,7 +1855,15 @@ async function agregarEvolucion() {
       const od = data.odontograma || {};
 
       evoluciones = normalizarEvolucionesDeWebhook(data);
-      renderEvoluciones();
+
+// ✅ NUEVO: cargar consentimientos desde webhook
+consentimientos = normalizarConsentimientosDeWebhook(data);
+
+// ✅ Guardar en localStorage (para que el ✅ salga de inmediato)
+try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
+
+renderEvoluciones();
+
 
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
