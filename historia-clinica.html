@@ -1778,54 +1778,74 @@
     return;
   }
 
-  // ⚠️ Usa el webhook que tengas para "consultar" historia
-  // (puede ser el mismo, pero si tu webhook está configurado SOLO POST,
-  // esta función ya lo maneja)
-  const baseUrl = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+  // ✅ PON AQUÍ TU WEBHOOK REAL (NO LO DEJES VACÍO)
+  const WEBHOOK_CONSULTA = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-  // Para evitar caché raro en algunos navegadores
-  const cacheBuster = `&_t=${Date.now()}`;
+  // Si esto queda vacío o mal, fetch termina trayendo TU HTML (historia-clinica.html)
+  if (!WEBHOOK_CONSULTA || !WEBHOOK_CONSULTA.startsWith("http")) {
+    alert("La URL del webhook (WEBHOOK_CONSULTA) está vacía o incorrecta.");
+    return;
+  }
 
   try {
     let resp, raw;
 
-    // 1) ✅ Intento POST primero (más estable con n8n)
+    // 1) Intento POST (recomendado en n8n)
     try {
-      resp = await fetch(baseUrl, {
+      resp = await fetch(WEBHOOK_CONSULTA, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cedula }),
-        // mode: "cors" // (por defecto ya lo es)
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({ cedula })
       });
-
       raw = await resp.text();
+
       if (!resp.ok) {
-        throw new Error(`POST HTTP ${resp.status}: ${raw.slice(0, 300)}`);
+        throw new Error(`POST HTTP ${resp.status}: ${raw.slice(0, 250)}`);
       }
     } catch (postErr) {
-      // 2) 🔁 Si POST falla, intento GET
-      const urlGet = `${baseUrl}?cedula=${encodeURIComponent(cedula)}${cacheBuster}`;
-      resp = await fetch(urlGet);
+      // 2) Si POST falla, intento GET
+      const urlGet = `${WEBHOOK_CONSULTA}?cedula=${encodeURIComponent(cedula)}&_t=${Date.now()}`;
+      resp = await fetch(urlGet, { headers: { "Accept": "application/json" } });
       raw = await resp.text();
 
       if (!resp.ok) {
-        throw new Error(`GET HTTP ${resp.status}: ${raw.slice(0, 300)} | POST error: ${postErr?.message || postErr}`);
+        throw new Error(`GET HTTP ${resp.status}: ${raw.slice(0, 250)} | POST error: ${postErr?.message || postErr}`);
       }
     }
 
-    // 3) ✅ Intentar parsear JSON
-    let data;
-    try {
-      data = JSON.parse(raw);
-    } catch (e) {
+    // 🔥 Si llega HTML, NO es el webhook JSON. Es URL vacía/mal o redirección.
+    const rawTrim = (raw || "").trim();
+    if (rawTrim.startsWith("<!DOCTYPE html") || rawTrim.startsWith("<html")) {
       throw new Error(
-        "La respuesta del webhook NO es JSON. " +
-        "Esto pasa cuando N8N devuelve HTML o texto. " +
-        "Respuesta (recorte): " + raw.slice(0, 300)
+        "El servidor respondió HTML (tu página), no JSON.\n" +
+        "Esto pasa cuando la URL del webhook está vacía/mal, o estás llamando una ruta que redirige.\n" +
+        "Revisa WEBHOOK_CONSULTA.\n" +
+        "Recorte: " + rawTrim.slice(0, 120)
       );
     }
 
-    // ---- TU LÓGICA ORIGINAL (con los mismos nombres que venías usando) ----
+    // 3) Parsear JSON
+    let data;
+    try {
+      data = JSON.parse(rawTrim);
+    } catch (e) {
+      throw new Error("La respuesta NO es JSON válido. Recorte: " + rawTrim.slice(0, 250));
+    }
+
+    // ✅ Tu webhook devuelve ARRAY: [ { ... } ]
+    if (Array.isArray(data)) {
+      data = data[0] || {};
+    }
+
+    // Validación mínima
+    if (typeof data !== "object" || data === null) {
+      throw new Error("JSON inesperado (no es objeto).");
+    }
+
+    // ---- LÓGICA DE CARGA ----
     if (!data.existe) {
       evoluciones = [];
       consentimientos = _cargarConsentimientosLS(cedula);
@@ -1837,10 +1857,9 @@
 
     const h = data.historia || {};
     const od = data.odontograma || {};
+    const cedulaPaciente = String(data.id || cedula).trim();
 
-    const cedulaPaciente = (data.id || cedula || "").trim();
-
-    // Cargar consentimientos (si vienen del webhook, mejor)
+    // Consentimientos: si vienen del webhook, mejor
     consentimientos = Array.isArray(data.consentimientos)
       ? data.consentimientos
       : _cargarConsentimientosLS(cedulaPaciente);
@@ -1851,7 +1870,7 @@
     evoluciones = normalizarEvolucionesDeWebhook(data);
     renderEvoluciones();
 
-    // Rellenar campos
+    // Rellenar campos (igual que ya lo tienes)
     document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
     document.getElementById("paciente_edad").value = h["Edad"] ?? "";
     document.getElementById("paciente_numdoc").value = cedulaPaciente;
@@ -1870,46 +1889,43 @@
     document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
     document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-    // checkboxes que son arrays guardados como JSON
+    // Arrays guardados como JSON-string
     let tiposID = [];
-    try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
-    document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+    try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch (e) { tiposID = []; }
+    document.querySelectorAll("input[name='idtipo']").forEach(c => c.checked = tiposID.includes(c.value));
 
     let hijos = [];
-    try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
-    document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
+    try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch (e) { hijos = []; }
+    document.querySelectorAll("input[name='hijos']").forEach(c => c.checked = hijos.includes(c.value));
 
-    // ... (aquí sigue igual tu resto de asignaciones si quieres mantenerlo)
-
-    // Pintar odontograma
+    // Odontograma
     document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
     reporte = {};
 
     Object.entries(od).forEach(([diente, regiones]) => {
-      Object.entries(regiones).forEach(([region, estado]) => {
+      Object.entries(regiones || {}).forEach(([region, estado]) => {
         if (!estado) return;
 
+        // viene "CARIES" → lo normalizamos a "Caries"
         const estadoNormalizado =
-          estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
+          String(estado).charAt(0).toUpperCase() + String(estado).slice(1).toLowerCase();
 
         const color = preexistencias[estadoNormalizado];
         if (!color) return;
 
         let cara = null;
-
-        switch(region) {
-          case "Mesial":     cara = "derecha"; break;
-          case "Distal":     cara = "izquierda"; break;
-          case "Oclusal":    cara = "centro"; break;
+        switch (region) {
+          case "Mesial": cara = "derecha"; break;
+          case "Distal": cara = "izquierda"; break;
+          case "Oclusal": cara = "centro"; break;
           case "Vestibular":
-            cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
+            cara = (Number(diente) >= 11 && Number(diente) <= 28) ? "superior" : "inferior";
             break;
-          case "Lingual":    cara = "superior"; break;
-          case "Palatino":   cara = "inferior"; break;
+          case "Lingual": cara = "superior"; break;
+          case "Palatino": cara = "inferior"; break;
         }
 
         if (!cara) return;
-
         const selector = `.diente[data-numero='${diente}'] .${cara}`;
         const elem = document.querySelector(selector);
         if (!elem) return;
@@ -1927,6 +1943,7 @@
     alert("Error consultando N8N:\n" + (err?.message || err));
   }
 }
+
 
 
   // ==============================
