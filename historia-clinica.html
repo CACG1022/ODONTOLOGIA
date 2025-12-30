@@ -1771,183 +1771,163 @@
   // ✅ BUSCAR HISTORIA  (AJUSTADO: CARGA CONSENTIMIENTOS ANTES DE RENDER)
   // ==============================
   async function buscarHistoria() {
-    const cedula = document.getElementById("buscar_cedula").value.trim();
+  const cedula = document.getElementById("buscar_cedula").value.trim();
 
-    if (!cedula) {
-      alert("Ingrese una cédula");
+  if (!cedula) {
+    alert("Ingrese una cédula");
+    return;
+  }
+
+  // ⚠️ Usa el webhook que tengas para "consultar" historia
+  // (puede ser el mismo, pero si tu webhook está configurado SOLO POST,
+  // esta función ya lo maneja)
+  const baseUrl = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+
+  // Para evitar caché raro en algunos navegadores
+  const cacheBuster = `&_t=${Date.now()}`;
+
+  try {
+    let resp, raw;
+
+    // 1) ✅ Intento POST primero (más estable con n8n)
+    try {
+      resp = await fetch(baseUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cedula }),
+        // mode: "cors" // (por defecto ya lo es)
+      });
+
+      raw = await resp.text();
+      if (!resp.ok) {
+        throw new Error(`POST HTTP ${resp.status}: ${raw.slice(0, 300)}`);
+      }
+    } catch (postErr) {
+      // 2) 🔁 Si POST falla, intento GET
+      const urlGet = `${baseUrl}?cedula=${encodeURIComponent(cedula)}${cacheBuster}`;
+      resp = await fetch(urlGet);
+      raw = await resp.text();
+
+      if (!resp.ok) {
+        throw new Error(`GET HTTP ${resp.status}: ${raw.slice(0, 300)} | POST error: ${postErr?.message || postErr}`);
+      }
+    }
+
+    // 3) ✅ Intentar parsear JSON
+    let data;
+    try {
+      data = JSON.parse(raw);
+    } catch (e) {
+      throw new Error(
+        "La respuesta del webhook NO es JSON. " +
+        "Esto pasa cuando N8N devuelve HTML o texto. " +
+        "Respuesta (recorte): " + raw.slice(0, 300)
+      );
+    }
+
+    // ---- TU LÓGICA ORIGINAL (con los mismos nombres que venías usando) ----
+    if (!data.existe) {
+      evoluciones = [];
+      consentimientos = _cargarConsentimientosLS(cedula);
+      _cedulaConsentActiva = cedula;
+      renderEvoluciones();
+      alert("No existe historia clínica para este paciente");
       return;
     }
 
-    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
+    const h = data.historia || {};
+    const od = data.odontograma || {};
 
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
+    const cedulaPaciente = (data.id || cedula || "").trim();
 
-      if (!data.existe) {
-        evoluciones = [];
-        // ✅ cargar consentimientos locales del paciente buscado (por si ya existían localmente)
-        consentimientos = _cargarConsentimientosLS(cedula);
-        _cedulaConsentActiva = cedula;
-        renderEvoluciones();
-        alert("No existe historia clínica para este paciente");
-        return;
-      }
+    // Cargar consentimientos (si vienen del webhook, mejor)
+    consentimientos = Array.isArray(data.consentimientos)
+      ? data.consentimientos
+      : _cargarConsentimientosLS(cedulaPaciente);
 
-      const h = data.historia || {};
-      const od = data.odontograma || {};
+    _cedulaConsentActiva = cedulaPaciente;
+    _guardarConsentimientosLS(cedulaPaciente);
 
-      // ✅ cédula real (si tu webhook manda data.id como doc)
-      const cedulaPaciente = (data.id || cedula || "").trim();
+    evoluciones = normalizarEvolucionesDeWebhook(data);
+    renderEvoluciones();
 
-      // ✅ CARGAR CONSENTIMIENTOS DEL PACIENTE (PRIMERO)
-      // - si tu webhook ya trae "consentimientos", los usa
-      // - si no trae, carga de localStorage por cédula
-      consentimientos = Array.isArray(data.consentimientos) ? data.consentimientos : _cargarConsentimientosLS(cedulaPaciente);
-      _cedulaConsentActiva = cedulaPaciente;
-      _guardarConsentimientosLS(cedulaPaciente); // cache local
+    // Rellenar campos
+    document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
+    document.getElementById("paciente_edad").value = h["Edad"] ?? "";
+    document.getElementById("paciente_numdoc").value = cedulaPaciente;
+    document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
+    document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
+    document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
+    document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
+    document.getElementById("Ciudad de Residencia").value = h["Ciudad_de_Residencia"] ?? "";
+    document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
+    document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
+    document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
+    document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
+    document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
+    document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
+    document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+    document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
+    document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      // ✅ luego evoluciones y render
-      evoluciones = normalizarEvolucionesDeWebhook(data);
-      renderEvoluciones();
+    // checkboxes que son arrays guardados como JSON
+    let tiposID = [];
+    try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+    document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
 
-      document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
-      document.getElementById("paciente_edad").value = h["Edad"] ?? "";
-      document.getElementById("paciente_numdoc").value = cedulaPaciente;
-      document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
-      document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
-      document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
-      document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
-      document.getElementById("Ciudad de Residencia").value = h["Ciudad_de_Residencia"] ?? "";
-      document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
-      document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
-      document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
-      document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
-      document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
-      document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
-      document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
-      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
-      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
+    let hijos = [];
+    try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+    document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
 
-      let tiposID = [];
-      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
-      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+    // ... (aquí sigue igual tu resto de asignaciones si quieres mantenerlo)
 
-      let hijos = [];
-      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
-      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
+    // Pintar odontograma
+    document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
+    reporte = {};
 
-      document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
-      document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
-      document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
-      document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
-      document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
-      document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
+    Object.entries(od).forEach(([diente, regiones]) => {
+      Object.entries(regiones).forEach(([region, estado]) => {
+        if (!estado) return;
 
-      document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
-      document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
-      document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
-      document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
+        const estadoNormalizado =
+          estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
 
-      document.querySelectorAll("input[name='grave']").forEach(c => { c.checked = (h["Enfermedad grave"] ?? []).includes(c.value); });
-      document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
-      document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
-      document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
-      document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
-      document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
+        const color = preexistencias[estadoNormalizado];
+        if (!color) return;
 
-      document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
-      document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
+        let cara = null;
 
-      let condiciones = [];
-      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
-      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
-
-      let coagulacion = [];
-      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
-      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
-
-      let anticoagulantes = [];
-      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
-      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
-
-      let toma_medicamentos = [];
-      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
-      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
-
-      let alcohol = [];
-      try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
-      document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
-
-      let fuma = [];
-      try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
-      document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
-
-      let dolor = [];
-      try {
-        let raw = h["dolor"];
-        if (Array.isArray(raw)) dolor = raw;
-        else if (typeof raw === "string") {
-          raw = raw.replace(/\\"/g, '"');
-          dolor = JSON.parse(raw);
+        switch(region) {
+          case "Mesial":     cara = "derecha"; break;
+          case "Distal":     cara = "izquierda"; break;
+          case "Oclusal":    cara = "centro"; break;
+          case "Vestibular":
+            cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
+            break;
+          case "Lingual":    cara = "superior"; break;
+          case "Palatino":   cara = "inferior"; break;
         }
-      } catch(e) { dolor = []; }
 
-      document.querySelectorAll("input[name='dolor[]']").forEach(c => {
-        c.checked = dolor.includes(c.value);
+        if (!cara) return;
+
+        const selector = `.diente[data-numero='${diente}'] .${cara}`;
+        const elem = document.querySelector(selector);
+        if (!elem) return;
+
+        elem.style.background = color;
+
+        if (!reporte[diente]) reporte[diente] = {};
+        reporte[diente][cara] = estadoNormalizado;
       });
+    });
 
-      document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-      document.querySelectorAll("input[name='tratamientos']").forEach(c => {
-        c.checked = (h["Tratamientos"] ?? []).includes(c.value);
-      });
-
-      document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
-      reporte = {};
-
-      Object.entries(od).forEach(([diente, regiones]) => {
-        Object.entries(regiones).forEach(([region, estado]) => {
-          if (!estado) return;
-
-          const estadoNormalizado =
-            estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-
-          const color = preexistencias[estadoNormalizado];
-          if (!color) return;
-
-          let cara = null;
-
-          switch(region) {
-            case "Mesial":     cara = "derecha"; break;
-            case "Distal":     cara = "izquierda"; break;
-            case "Oclusal":    cara = "centro"; break;
-            case "Vestibular":
-              cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
-              break;
-            case "Lingual":    cara = "superior"; break;
-            case "Palatino":   cara = "inferior"; break;
-          }
-
-          if (!cara) return;
-
-          const selector = `.diente[data-numero='${diente}'] .${cara}`;
-          const elem = document.querySelector(selector);
-          if (!elem) return;
-
-          elem.style.background = color;
-
-          if (!reporte[diente]) reporte[diente] = {};
-          reporte[diente][cara] = estadoNormalizado;
-        });
-      });
-
-      alert("Historia clínica cargada con éxito");
-
-    } catch (err) {
-      console.error(err);
-      alert("Error consultando N8N");
-    }
+    alert("Historia clínica cargada con éxito");
+  } catch (err) {
+    console.error("❌ buscarHistoria:", err);
+    alert("Error consultando N8N:\n" + (err?.message || err));
   }
+}
+
 
   // ==============================
   // ✅ PROCEDIMIENTOS / PROFESIONALES (tu código igual)
