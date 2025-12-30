@@ -130,14 +130,20 @@
     }
 
     function applyFilter(){
-      const q = String(document.getElementById("search").value || "").trim().toLowerCase();
-      if(!q){
-        state.filtered = [...state.all];
-      } else {
-        state.filtered = state.all.filter(r => String(r.nombre||"").toLowerCase().includes(q));
-      }
-      render();
-    }
+  const q = String(document.getElementById("search").value || "")
+    .trim()
+    .toLowerCase();
+
+  if (!q) {
+    state.filtered = [...state.all];
+  } else {
+    state.filtered = state.all.filter(r =>
+      String(r.procedimiento || "").toLowerCase().includes(q)
+    );
+  }
+  render();
+}
+
 
     async function cargarProcedimientos(){
       setStatus("Cargando procedimientos...");
@@ -170,8 +176,8 @@
       const procedimiento = normalizeName(edit.procedimiento);
       const valor = money(edit.valor);
 
-      if(!nombre){
-        showToast("El nombre es obligatorio", "err");
+      if(!procedimiento){
+        showToast("El nombre del procedimiento es obligatorio", "err");
         return;
       }
 
@@ -229,7 +235,7 @@
       setStatus("Creando...");
       const { error } = await supabase
         .from("procedimientos_precios")
-        .insert([{ nombre, valor: valor === null ? null : valor }]);
+        .insert([{ procedimiento, valor: valor === null ? null : valor }]);
 
       setStatus("");
       if(error){
