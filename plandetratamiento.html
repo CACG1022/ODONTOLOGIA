@@ -79,7 +79,7 @@
 
     /* ✅ Barra superior fija */
     .topbar{
-      position: fixed;
+      position: sticky;
       top: 0; left: 0; right: 0;
       z-index: 2000;
       background: #e5e7eb;          /* gris */
@@ -394,11 +394,13 @@
     .btn-primary{ background: var(--brand); }
 
     @media (max-width: 480px){
-      body{ padding-top: 92px; }
-      .topbar-title{ font-size: 24px; }
-      .proc-row{ grid-template-columns: 1fr 20px 105px; }
-      .panel{ width: 95vw; }
-    }
+      body{
+  font-family: var(--font);
+  margin: 0;
+  padding: 1em;
+  background: var(--page-bg);
+  color: #0f172a;
+}
   </style>
 </head>
 
