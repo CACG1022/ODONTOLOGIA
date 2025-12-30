@@ -38,22 +38,35 @@
     :root{
       --tooth-size: clamp(28px, 5.5vw, 40px);
       --gap: 6px;
+
+      /* ✅ Tus colores base */
       --brand: #2a5d84;
       --ink: #1e4a66;
-    }
-    * { box-sizing: border-box; }
-    body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #f9f9f9; }
 
-    /* ✅ Barra superior */
+      /* ✅ Color solicitado para botones Inicio/Historia */
+      --topbtn: #009688;
+      --topbtn-hover: #00796b;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 1em;
+      background: #f9f9f9;
+      padding-top: 72px; /* ✅ deja espacio para la barra fija */
+    }
+
+    /* ✅ Barra superior SIEMPRE visible */
     .topbar{
-      position: sticky; /* si quieres fijo total usa fixed */
-      top: 0;
-      z-index: 1000;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 2000;
       background: rgba(249,249,249,.92);
       backdrop-filter: blur(8px);
-      padding: 10px 0 12px;
-      margin: -1em -1em 12px; /* compensa el padding del body */
       border-bottom: 1px solid #e6eaee;
+      padding: 10px 0;
     }
     .topbar-inner{
       max-width: 960px;
@@ -64,6 +77,11 @@
       justify-content:space-between;
       gap: 10px;
     }
+    .topbar-title{
+      font-weight: 800;
+      color: var(--ink);
+      white-space: nowrap;
+    }
     .topbar-actions{
       display:flex;
       gap: 10px;
@@ -71,51 +89,90 @@
       justify-content:flex-end;
       flex-wrap: wrap;
     }
+
+    /* ✅ Botones TOP (Inicio / Historia) en #009688 */
     .btn-top{
-      background: var(--brand);
-      color: #fff;
+      background: var(--topbtn) !important;
+      color: #fff !important;
       padding: 0.55em 1.0em;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 800;
       display:inline-flex;
       align-items:center;
       gap: 8px;
       box-shadow: 0 4px 14px rgba(0,0,0,.10);
     }
-    .btn-top:hover{ opacity: .96; }
+    .btn-top:hover{
+      background: var(--topbtn-hover) !important;
+      opacity: 1 !important;
+    }
 
     h2 { text-align: center; color: var(--brand); font-size: 1.5em; margin-bottom: 1em; }
-    form { background: #fff; padding: 1em; max-width: 960px; margin: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
-    label { font-weight: 700; margin-top: 1em; display: block; }
-    input[type="text"], input[type="number"], input[type="email"], select, textarea {
-      width: 100%; padding: .8em; margin-top: .4em; margin-bottom: .5em; border: 1px solid #d7dce0; border-radius: 8px; font-size: 1em;
+
+    form {
+      background: #fff;
+      padding: 1em;
+      max-width: 960px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,.08);
     }
+
+    label { font-weight: 700; margin-top: 1em; display: block; }
+
+    input[type="text"], input[type="number"], input[type="email"], select, textarea {
+      width: 100%;
+      padding: .8em;
+      margin-top: .4em;
+      margin-bottom: .5em;
+      border: 1px solid #d7dce0;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+
     .datetime { margin-bottom: 1em; color: #333; }
     .checkbox-group { display: flex; gap: 1em; flex-wrap: wrap; margin-bottom: 1em; }
     .checkbox-group label { font-weight: 500; }
     canvas { border: 1px solid #ccc; border-radius: 8px; width: 100%; height: 120px; margin: 1em 0 1.5em; }
     .totales { background: #f6f8fa; border: 1px solid #e6eaee; border-radius: 10px; padding: 12px; margin-top: 14px; }
     .totales span { display: block; margin-bottom: 6px; }
+
     button { padding: .8em; border: none; color: #fff; border-radius: 8px; width: 100%; cursor: pointer; margin-top: 10px; }
     button[type="submit"] { background: #28a745; }
     button[type="button"] { background: var(--brand); }
     button:hover { opacity: .96; }
-    .link-btn { background: var(--brand); color:#fff; border:none; border-radius:50%; width:24px; height:24px; display:inline-flex; align-items:center; justify-content:center; font-size:12px; }
+
+    .link-btn {
+      background: var(--brand);
+      color:#fff;
+      border:none;
+      border-radius:50%;
+      width:24px;
+      height:24px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+    }
     #cedula-hint { display:block; min-height:1.2em; font-size:.9em; color:#666; }
 
     .odontograma-wrap {
-      margin-top: 16px; border:1px solid #e6eaee; border-radius: 12px; padding: 14px; background:#fcfdff;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      margin-top: 16px;
+      border:1px solid #e6eaee;
+      border-radius: 12px;
+      padding: 14px;
+      background:#fcfdff;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
     .row-title { text-align:center; font-weight:700; color: var(--brand); margin: 6px 0 6px; }
     .side-labels { display:flex; justify-content:space-between; color: var(--ink); font-weight:700; margin:4px 0 6px; }
     .teeth-row {
       position: relative;
       display: grid;
-      grid-template-columns:
-        repeat(8, var(--tooth-size)) 2px repeat(8, var(--tooth-size));
+      grid-template-columns: repeat(8, var(--tooth-size)) 2px repeat(8, var(--tooth-size));
       justify-content: center;
       column-gap: var(--gap);
       padding: 6px 0;
@@ -123,12 +180,27 @@
       min-width: calc(16 * var(--tooth-size) + 15 * var(--gap) + 2px);
     }
     .teeth-row::after {
-      content:""; position:absolute; left:calc(50% - 1px); top:2px; bottom:2px; width:2px; background:#cfd6dc; border-radius:2px;
+      content:"";
+      position:absolute;
+      left:calc(50% - 1px);
+      top:2px; bottom:2px;
+      width:2px;
+      background:#cfd6dc;
+      border-radius:2px;
     }
     .tooth {
-      position: relative; width: var(--tooth-size); aspect-ratio: 1/1.12;
-      border-radius: 8px; border:1px solid var(--ink); background: var(--ink);
-      display:flex; align-items:center; justify-content:center; color:#fff; cursor:pointer; user-select:none;
+      position: relative;
+      width: var(--tooth-size);
+      aspect-ratio: 1/1.12;
+      border-radius: 8px;
+      border:1px solid var(--ink);
+      background: var(--ink);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      cursor:pointer;
+      user-select:none;
       transition: transform .06s ease, box-shadow .1s ease;
     }
     .tooth:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.12); }
@@ -137,6 +209,7 @@
     .tooth-num { position: absolute; top:3px; left:4px; font-size: clamp(9px, 2.2vw, 11px); font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,.35); }
     .tooth-badge { position: absolute; right:4px; bottom:3px; font-size: clamp(8px, 2vw, 10px); background:#eef6ff; color: var(--ink); padding:1px 4px; border-radius:999px; display:none; }
     .tooth.has-procs .tooth-badge{ display:inline-block; }
+
     .odontograma-summary { margin-top: 8px; border-top: 1px dashed #e3e8ee; padding-top: 6px; }
     .summary-list { margin:0; padding-left: 18px; }
     .summary-list li { margin: 4px 0; }
@@ -161,55 +234,25 @@
     @media (max-width: 480px){
       .proc-row { grid-template-columns: 1fr 20px 105px; }
       .panel { width: 95vw; }
+      body{ padding-top: 86px; }
     }
-    .top-actions{
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 1000;
-  padding: 10px 14px;
-  background: rgba(249,249,249,.92);
-  backdrop-filter: blur(8px);
-  border-bottom: 1px solid #e6eaee;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
-}
-
-.btn-top{
-  background: #009688;      /* ✅ color del botón */
-  color: #fff;              /* ✅ color del texto */
-  padding: 0.6em 1.2em;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  font-weight: 700;
-}
-
-.btn-top:hover{ opacity: .95; }
-
   </style>
 </head>
 
 <body>
-  <!-- ✅ NUEVO: Botón arriba para ir a index -->
+  <!-- ✅ Barra fija arriba -->
   <div class="topbar">
     <div class="topbar-inner">
-      <div style="font-weight:800;color:#1e4a66;">Plan de tratamiento</div>
+      <div class="topbar-title">Plan de tratamiento</div>
       <div class="topbar-actions">
-        <button
-          type="button"
-          class="btn-top"
+        <button type="button" class="btn-top"
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">
-           Inicio
+          🏠 Inicio
         </button>
 
-        <button
-          type="button"
-          class="btn-top"
+        <button type="button" class="btn-top"
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
-          Historia Clínica
+          📝 Historia Clínica
         </button>
       </div>
     </div>
@@ -217,8 +260,7 @@
 
   <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
 
-  <!-- (Quité el bloque viejo del botón Historia Clínica porque ya quedó arriba) -->
-
+  <!-- 👇 Desde aquí tu contenido sigue igual (no lo toqué) -->
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
@@ -470,10 +512,8 @@
     function renderProcRows(filterText = ""){
       const q = String(filterText || "").trim().toLowerCase();
       const base = PROC_CATALOGO || [];
-
       const list = q ? base.filter(p => String(p.label).toLowerCase().includes(q)) : base;
       procCount.textContent = `${list.length} items`;
-
       procsContainer.innerHTML = "";
 
       if(!PROC_READY){
@@ -544,7 +584,6 @@
 
       procSearch.value = "";
       renderProcRows("");
-
       backdrop.style.display='flex';
       procSearch.focus();
     }
@@ -557,9 +596,7 @@
     btnClose.addEventListener('click', closePanel);
     backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closePanel(); });
 
-    procSearch.addEventListener("input", (e)=>{
-      renderProcRows(e.target.value);
-    });
+    procSearch.addEventListener("input", (e)=> renderProcRows(e.target.value));
 
     btnSave.addEventListener('click', ()=>{
       if(!currentTooth) return;
@@ -803,7 +840,6 @@
   </script>
 </body>
 </html>
-
 
 
 
