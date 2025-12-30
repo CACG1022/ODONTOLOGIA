@@ -25,14 +25,11 @@
       hoy: "#",
       rips: "#",
       registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
+      usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
       precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html"
-
-
-      // ✅ NUEVO: página para administrar usuarios/roles
-      usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html"
     };
 
-    // ✅ Admin por email (como lo venías manejando)
+    // ✅ Admin por email
     const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
 
     function setDisabled(el, disabled, reason = "No autorizado") {
@@ -43,14 +40,18 @@
         el.setAttribute("aria-disabled", "true");
         el.dataset.disabledReason = reason;
 
-        el.addEventListener("click", (e) => {
+        // Evita acumular listeners si se re-ejecuta
+        el.onclick = (e) => {
           e.preventDefault();
           alert("🚫 Acceso restringido: " + reason);
-        }, { once: true });
+        };
       } else {
         el.classList.remove("disabled");
         el.removeAttribute("aria-disabled");
         delete el.dataset.disabledReason;
+
+        // si estaba bloqueado, quitamos el onclick de bloqueo
+        if (el.onclick) el.onclick = null;
       }
     }
 
@@ -58,10 +59,10 @@
       const el = document.getElementById(id);
       if (!el) return;
 
+      // Evita duplicar listeners
       el.addEventListener("click", (e) => {
         e.preventDefault();
 
-        // si está disabled, no hacemos nada (ya tiene listener de alerta)
         if (el.classList.contains("disabled")) return;
 
         if (!url || url === "#") {
@@ -70,7 +71,7 @@
         }
         if (mode === "href") window.location.href = url;
         else window.open(url, "_blank");
-      });
+      }, { passive: false });
     }
 
     // ✅ Lee rol desde profiles
@@ -94,10 +95,6 @@
     }
 
     async function verificarSesionYPermisos() {
-
-      setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
-      wireNav("go-precios", URLS.precios, "href");
-
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
@@ -114,19 +111,16 @@
       // ✅ Cargar rol y mostrarlo
       const role = await cargarRolDesdeProfiles(session.user.id);
       const roleEl = document.getElementById("user-role");
-      roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+      if (roleEl) roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
-      // ✅ Permisos admin:
-      // - por email (como pediste)
-      // - (extra) si role === "admin" también cuenta como admin
+      // ✅ Permisos admin
       const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
 
       // ✅ Activar/Desactivar botones restringidos
       setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
-
-      // ✅ Usuarios registrados solo admin
       setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
 
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
@@ -134,20 +128,21 @@
       wireNav("go-historia", URLS.historia, "href");
       wireNav("go-plan", URLS.plan, "href");
       wireNav("go-hoy", URLS.hoy, "href");
-
-      // RIPS y Registro solo navegan si no están disabled
       wireNav("go-rips", URLS.rips, "href");
       wireNav("go-registro", URLS.registro, "href");
-
-      // ✅ Usuarios registrados
       wireNav("go-usuarios", URLS.usuarios, "href");
+      wireNav("go-precios", URLS.precios, "href");
 
       // Fecha
       const t = document.getElementById("today");
-      if (t) t.textContent =
-        new Date().toLocaleDateString("es-CO", { year:"numeric", month:"long", day:"2-digit" });
+      if (t) {
+        t.textContent = new Date().toLocaleDateString("es-CO", {
+          year:"numeric", month:"long", day:"2-digit"
+        });
+      }
 
-      document.getElementById("year").textContent = new Date().getFullYear();
+      const y = document.getElementById("year");
+      if (y) y.textContent = new Date().getFullYear();
     }
 
     verificarSesionYPermisos();
@@ -167,16 +162,13 @@
 
   <style>
     :root{
-      /* Paleta salud: blancos/grises + acento azul clínico */
       --bg: #f5f7fb;
       --surface: #ffffff;
       --surface-2: #fbfcff;
       --border: rgba(15, 23, 42, 0.10);
-      --border-2: rgba(15, 23, 42, 0.14);
       --text: #0f172a;
       --muted: #64748b;
-      --muted-2: #94a3b8;
-      --accent: #2563eb;      /* azul elegante */
+      --accent: #2563eb;
       --accent-2: #1d4ed8;
       --ok: #16a34a;
 
@@ -210,11 +202,7 @@
       gap: 18px;
     }
 
-    .logo-top{
-      display:flex;
-      justify-content:center;
-    }
-
+    .logo-top{ display:flex; justify-content:center; }
     .logo-top img{
       width: 170px;
       height: auto;
@@ -260,12 +248,8 @@
       letter-spacing: .2px;
     }
 
-    #user-email{
-      color: var(--text) !important;
-      font-weight: 700 !important;
-    }
+    #user-email{ color: var(--text) !important; font-weight: 700 !important; }
 
-    /* ✅ rol como “pill” elegante */
     #user-role{
       display:inline-flex;
       align-items:center;
@@ -348,10 +332,7 @@
       border-color: rgba(37,99,235,.28);
       box-shadow: 0 16px 28px rgba(15,23,42,.12);
     }
-
-    .tile:active{
-      transform: translateY(0px);
-    }
+    .tile:active{ transform: translateY(0px); }
 
     .tile.disabled{
       opacity: .55;
@@ -363,12 +344,7 @@
       filter: grayscale(.15);
     }
 
-    .left{
-      display:flex;
-      align-items:center;
-      gap: 12px;
-      min-width:0;
-    }
+    .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
 
     .icon{
       width: 44px; height: 44px;
@@ -382,12 +358,7 @@
     .icon svg{ width: 20px; height: 20px; color: var(--accent); }
 
     .ttext{ min-width:0; }
-    .ttext h3{
-      margin:0;
-      font-size: 14px;
-      letter-spacing:.2px;
-      color: var(--text);
-    }
+    .ttext h3{ margin:0; font-size: 14px; letter-spacing:.2px; color: var(--text); }
     .ttext p{
       margin: 6px 0 0;
       color: var(--muted);
@@ -591,23 +562,21 @@
           <div class="arrow">→</div>
         </a>
 
-        <!-- ✅ NUEVO: Actualización de precios (solo admin) -->
-<a class="tile" href="#" id="go-precios">
-  <div class="left">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M12 1v4M12 19v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" stroke-width="2"/>
-      </svg>
-    </div>
-    <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
-  </div>
-  <div class="arrow">→</div>
-</a>
-
+        <a class="tile" href="#" id="go-precios">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 1v4M12 19v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" stroke-width="2"/>
+              </svg>
+            </div>
+            <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
       </div>
 
       <div class="footer">
@@ -618,9 +587,6 @@
   </div>
 </body>
 </html>
-
-
-
 
 
 
