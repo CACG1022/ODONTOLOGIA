@@ -56,9 +56,9 @@
       --page-bg: #f4f7fb;
       --card-bg: #ffffff;
       --field-bg: #ffffff;
-      --field-border: #d6e3f3;     /* azul suave */
-      --field-border-2: #bcd4f4;   /* foco */
-      --label: #5b6b7c;            /* gris azulado */
+      --field-border: #d6e3f3;
+      --field-border-2: #bcd4f4;
+      --label: #5b6b7c;
       --title: #1f4e72;
 
       --radius: 14px;
@@ -69,21 +69,20 @@
     * { box-sizing: border-box; }
 
     body {
-  font-family: var(--font);
-  margin: 0;
-  padding: 1em;
-  background: var(--page-bg);
-  color: #0f172a;
-}
+      font-family: var(--font);
+      margin: 0;
+      padding: 1em;
+      background: var(--page-bg);
+      color: #0f172a;
+    }
 
- 
     /* ✅ Barra superior NORMAL (NO fija, NO sticky) */
-.topbar{
-  position: relative;   /* <-- antes: sticky */
-  background: #e5e7eb;
-  border-bottom: 1px solid #d6dde6;
-  padding: 12px 0;
-}
+    .topbar{
+      position: relative;
+      background: #e5e7eb;
+      border-bottom: 1px solid #d6dde6;
+      padding: 12px 0;
+    }
 
     .topbar-inner{
       max-width: 960px;
@@ -145,7 +144,6 @@
       border: 1px solid #e6eef8;
     }
 
-    /* ✅ labels tipo la imagen */
     label{
       font-weight: 600;
       margin-top: 14px;
@@ -155,7 +153,6 @@
       letter-spacing: .2px;
     }
 
-    /* ✅ inputs como la imagen */
     input[type="text"],
     input[type="number"],
     input[type="email"],
@@ -188,7 +185,7 @@
       box-shadow: 0 0 0 4px rgba(59,130,246,.14);
     }
 
-    /* ✅ select con altura consistente */
+    /* ✅ select con altura consistente (si lo usas visible) */
     select{
       appearance: none;
       background-image:
@@ -258,7 +255,6 @@
       font-weight: 600;
     }
 
-    /* ✅ Botones de abajo */
     button{
       padding: 0.95em;
       border: none;
@@ -275,8 +271,8 @@
     }
     button:hover{ opacity: .96; transform: translateY(-1px); }
 
-    button[type="submit"]{ background: #16a34a; } /* enviar */
-    button[type="button"]{ background: var(--brand); } /* genéricos */
+    button[type="submit"]{ background: #16a34a; }
+    button[type="button"]{ background: var(--brand); }
 
     .link-btn{
       background: var(--brand);
@@ -301,7 +297,6 @@
       margin-bottom: 6px;
     }
 
-    /* odontograma (lo dejé igual, solo armonicé un poquito) */
     .odontograma-wrap{
       margin-top: 16px;
       border:1px solid #e1eaf7;
@@ -373,7 +368,9 @@
     .summary-list{ margin:0; padding-left: 18px; color:#334155; }
     .summary-list li{ margin: 4px 0; }
 
-    /* modal */
+    /* ==========================
+       ✅ MODAL (procedimientos)
+       ========================== */
     .panel-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
     .panel{ width: 560px; max-width: 95vw; background:#fff; border-radius:16px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.22); border:1px solid #e6eef8; }
     .panel header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
@@ -384,27 +381,77 @@
     .proc-search{ flex:1; margin:0; }
     .proc-toolbar small{ color:#64748b; font-weight:600; }
 
-    .proc-row{ display:grid; grid-template-columns: 1fr 24px 120px; gap: 8px 10px; align-items:center; padding: 10px 10px; border:1px solid #e6eef8; border-radius:14px; background:#fbfdff; }
+    /* ✅ AQUÍ: filas más bajitas */
+    .proc-row{
+      display:grid;
+      grid-template-columns: 1fr 24px 120px;
+      gap: 6px 10px;
+      align-items:center;
+      padding: 6px 10px;              /* ⬅️ antes 10px 10px */
+      border:1px solid #e6eef8;
+      border-radius:12px;             /* un poco menor */
+      background:#fbfdff;
+    }
     .proc-row:hover{ background:#f4f9ff; }
-    .panel .price{ width:100%; border:1.6px solid var(--field-border); border-radius:12px; padding:10px 10px; }
+
+    /* el label dentro del row (más compacto) */
+    .proc-row > label{
+      margin:0;
+      font-weight:700;
+      font-size: 12px;               /* ⬅️ más pequeño */
+      line-height: 1.15;             /* ⬅️ menos alto */
+      color:#334155;
+      letter-spacing: .2px;
+    }
+
+    /* input precio más bajito */
+    .panel .price{
+      width:100%;
+      border:1.6px solid var(--field-border);
+      border-radius:12px;
+      padding:8px 10px;              /* ⬅️ antes 10px 10px */
+      font-size: 13px;               /* ⬅️ más pequeño */
+      margin:0;
+    }
+
+    /* checkbox/radio un pelín más compacto */
+    .proc-check{
+      width: 16px;
+      height: 16px;
+      accent-color: var(--topbtn);
+      margin: 0 auto;
+    }
 
     .panel footer{ display:flex; gap:10px; margin-top:14px; }
     .btn-secondary{ background:#94a3b8; }
     .btn-primary{ background: var(--brand); }
 
+    /* ✅ Campo "Procedimiento principal" con el mismo look y abre el modal */
+    .picker{
+      position: relative;
+    }
+    .picker input{
+      cursor: pointer;
+      padding-right: 44px;
+    }
+    .picker .picker-icon{
+      position:absolute;
+      right: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color:#64748b;
+      font-weight: 900;
+      pointer-events:none;
+    }
+
     @media (max-width: 480px){
-      body{
-  font-family: var(--font);
-  margin: 0;
-  padding: 1em;
-  background: var(--page-bg);
-  color: #0f172a;
-}
+      .panel{ width: 95vw; }
+      .proc-row{ grid-template-columns: 1fr 22px 110px; }
+    }
   </style>
 </head>
 
 <body>
-  <!-- ✅ Barra fija arriba -->
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
@@ -443,15 +490,22 @@
     <label for="correo">Correo electrónico:</label>
     <input type="email" id="correo" name="correo" required />
 
-    <label for="procedimiento">Procedimiento principal:</label>
-    <select id="procedimiento" name="procedimiento_raw">
+    <!-- ✅ Procedimiento principal usando el MISMO modal -->
+    <label for="procedimiento_display">Procedimiento principal:</label>
+    <div class="picker">
+      <input
+        type="text"
+        id="procedimiento_display"
+        placeholder="Selecciona procedimiento..."
+        readonly
+      />
+      <span class="picker-icon">▾</span>
+    </div>
+
+    <!-- ✅ mantenemos el select (oculto) para NO romper tu lógica/calcularTotal/loadFromWebhook -->
+    <select id="procedimiento" name="procedimiento_raw" style="display:none;">
       <option value="No aplica|0">No aplica</option>
-      <option value="Profilaxis (Limpieza)|70000">Profilaxis (Limpieza) - $70,000</option>
-      <option value="Resina Dental|150000">Resina Dental - $150,000</option>
-      <option value="Blanqueamiento Dental|300000">Blanqueamiento Dental - $300,000</option>
-      <option value="Endodoncia|350000">Endodoncia (1 raíz) - $350,000</option>
-      <option value="Corona|800000">Corona Metal-Porcelana - $800,000</option>
-      <option value="Protesis Flexible inferior|990000">Protesis Flexible inferior - $990,000</option>
+      <!-- se rellena desde Supabase -->
     </select>
 
     <label>Procedimientos adicionales:</label>
@@ -521,7 +575,7 @@
     <button type="submit">Enviar a paciente</button>
   </form>
 
-  <!-- Modal odontograma -->
+  <!-- Modal odontograma / y también para Procedimiento principal -->
   <div class="panel-backdrop" id="panel-backdrop" aria-hidden="true">
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
       <header>
@@ -552,6 +606,7 @@
     document.getElementById("input-fecha").value = now.toLocaleDateString('es-CO') + " " + now.toLocaleTimeString('es-CO');
 
     const procedimiento = document.getElementById("procedimiento");
+    const procedimientoDisplay = document.getElementById("procedimiento_display");
     const adicionales = document.querySelectorAll(".checkbox-group input[type='checkbox']");
     const descuentoSel = document.getElementById("descuento");
     const parseMoney = v => parseInt(String(v ?? '').replace(/[^\d]/g,''), 10) || 0;
@@ -561,6 +616,34 @@
        ========================== */
     let PROC_CATALOGO = [];
     let PROC_READY = false;
+
+    function fillProcedimientoSelectFromCatalog(){
+      // Mantener "No aplica"
+      procedimiento.innerHTML = `<option value="No aplica|0">No aplica</option>`;
+
+      (PROC_CATALOGO || []).forEach(p=>{
+        const price = Number.isFinite(p.price) ? p.price : 0;
+        const opt = document.createElement("option");
+        opt.value = `${p.label}|${price}`;
+        opt.textContent = `${p.label} - $${price.toLocaleString('es-CO')}`;
+        procedimiento.appendChild(opt);
+      });
+
+      // Si no hay nada seleccionado, mostrar "No aplica"
+      if(!procedimiento.value) procedimiento.value = "No aplica|0";
+      syncProcedimientoDisplay();
+    }
+
+    function syncProcedimientoDisplay(){
+      const val = procedimiento.value || "No aplica|0";
+      const [name, price] = val.split("|");
+      if(val === "No aplica|0"){
+        procedimientoDisplay.value = "No aplica";
+      }else{
+        const p = parseMoney(price);
+        procedimientoDisplay.value = `${name} - $${p.toLocaleString('es-CO')}`;
+      }
+    }
 
     async function cargarCatalogoDesdeSupabase() {
       try {
@@ -579,10 +662,16 @@
         }));
 
         PROC_READY = true;
+
+        // ✅ Usar el mismo catálogo para "Procedimiento principal" (select oculto)
+        fillProcedimientoSelectFromCatalog();
       } catch (e) {
         console.warn("No se pudo cargar procedimientos desde Supabase:", e?.message || e);
         PROC_CATALOGO = [];
         PROC_READY = false;
+
+        // aun así, que el display no quede vacío
+        syncProcedimientoDisplay();
       }
     }
 
@@ -601,7 +690,7 @@
       const b = document.createElement('button');
       b.type='button'; b.className='tooth'; b.dataset.tooth=String(num);
       b.innerHTML = `<span class="tooth-num">${num}</span>${toothSVG()}<span class="tooth-badge">+ Proc.</span>`;
-      b.addEventListener('click', ()=>openPanel(num));
+      b.addEventListener('click', ()=>openPanelTooth(num));
       return b;
     }
 
@@ -664,6 +753,7 @@
     const backdrop = document.getElementById('panel-backdrop');
     const procsContainer = document.getElementById('procs-container');
     const lblTooth = document.getElementById('panel-tooth');
+    const panelTitle = document.getElementById('panel-title');
     const btnSave = document.getElementById('btn-save');
     const btnClear = document.getElementById('btn-clear');
     const btnClose = document.getElementById('btn-close');
@@ -671,11 +761,13 @@
     const procCount = document.getElementById('proc-count');
 
     let currentTooth = null;
+    let panelMode = "tooth"; // "tooth" | "principal"
 
     function renderProcRows(filterText = ""){
       const q = String(filterText || "").trim().toLowerCase();
       const base = PROC_CATALOGO || [];
       const list = q ? base.filter(p => String(p.label).toLowerCase().includes(q)) : base;
+
       procCount.textContent = `${list.length} items`;
       procsContainer.innerHTML = "";
 
@@ -697,6 +789,8 @@
         return;
       }
 
+      const selectedPrincipal = (procedimiento.value || "No aplica|0").split("|")[0];
+
       list.forEach(proc=>{
         const row = document.createElement('div');
         row.className='proc-row';
@@ -707,8 +801,15 @@
         name.textContent = proc.label;
 
         const check = document.createElement('input');
-        check.type='checkbox';
         check.className='proc-check';
+
+        // ✅ Si es modo "principal" usamos RADIO (una sola selección)
+        if(panelMode === "principal"){
+          check.type = "radio";
+          check.name = "principal_pick";
+        }else{
+          check.type = 'checkbox';
+        }
 
         const price = document.createElement('input');
         price.type='number';
@@ -718,17 +819,35 @@
         price.placeholder = proc.price == null ? "Sin precio" : "";
         price.value = proc.price == null ? "" : String(proc.price);
 
-        const existing = (selectedTeeth[currentTooth]||[]).find(p=>String(p.key)===String(proc.key));
-        if(existing){
-          check.checked = true;
-          price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
+        if(panelMode === "principal"){
+          // Para principal: el precio no se edita aquí (lo toma del catálogo)
+          price.disabled = true;
+          price.style.opacity = "1";
+          price.style.background = "#fff";
         }
 
-        check.addEventListener("change", ()=>{
-          if(check.checked && !parseMoney(price.value)){
-            price.focus();
+        if(panelMode === "principal"){
+          if(String(proc.label).trim().toLowerCase() === String(selectedPrincipal).trim().toLowerCase()){
+            check.checked = true;
           }
-        });
+          // click en toda la fila selecciona
+          row.addEventListener("click", (e)=>{
+            if(e.target.tagName.toLowerCase() === "input") return;
+            check.checked = true;
+          });
+        }else{
+          const existing = (selectedTeeth[currentTooth]||[]).find(p=>String(p.key)===String(proc.key));
+          if(existing){
+            check.checked = true;
+            price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
+          }
+
+          check.addEventListener("change", ()=>{
+            if(check.checked && !parseMoney(price.value)){
+              price.focus();
+            }
+          });
+        }
 
         row.appendChild(name);
         row.appendChild(check);
@@ -737,9 +856,27 @@
       });
     }
 
-    async function openPanel(toothNumber){
+    async function openPanelTooth(toothNumber){
+      panelMode = "tooth";
       currentTooth = String(toothNumber);
+      panelTitle.childNodes[0].nodeValue = "Procedimientos diente ";
       lblTooth.textContent = currentTooth;
+
+      if(!PROC_READY){
+        await cargarCatalogoDesdeSupabase();
+      }
+
+      procSearch.value = "";
+      renderProcRows("");
+      backdrop.style.display='flex';
+      procSearch.focus();
+    }
+
+    async function openPanelPrincipal(){
+      panelMode = "principal";
+      currentTooth = null;
+      panelTitle.childNodes[0].nodeValue = "Procedimiento principal";
+      lblTooth.textContent = "";
 
       if(!PROC_READY){
         await cargarCatalogoDesdeSupabase();
@@ -754,14 +891,36 @@
     function closePanel(){
       backdrop.style.display='none';
       currentTooth=null;
+      panelMode="tooth";
     }
 
     btnClose.addEventListener('click', closePanel);
     backdrop.addEventListener('click', e=>{ if(e.target===backdrop) closePanel(); });
-
     procSearch.addEventListener("input", (e)=> renderProcRows(e.target.value));
 
     btnSave.addEventListener('click', ()=>{
+      if(panelMode === "principal"){
+        const picked = procsContainer.querySelector('input[type="radio"][name="principal_pick"]:checked');
+        if(!picked){
+          procedimiento.value = "No aplica|0";
+          syncProcedimientoDisplay();
+          calcularTotal();
+          closePanel();
+          return;
+        }
+        const row = picked.closest(".proc-row");
+        const label = row.dataset.label;
+        const priceEl = row.querySelector(".price");
+        const price = parseMoney(priceEl.value);
+
+        procedimiento.value = `${label}|${price}`;
+        syncProcedimientoDisplay();
+        calcularTotal();
+        closePanel();
+        return;
+      }
+
+      // modo tooth (igual que tenías)
       if(!currentTooth) return;
 
       const rows = procsContainer.querySelectorAll('.proc-row');
@@ -786,11 +945,22 @@
     });
 
     btnClear.addEventListener('click', ()=>{
+      if(panelMode === "principal"){
+        procedimiento.value = "No aplica|0";
+        syncProcedimientoDisplay();
+        calcularTotal();
+        closePanel();
+        return;
+      }
+
       if(!currentTooth) return;
       delete selectedTeeth[currentTooth];
       refreshBadges();
       closePanel();
     });
+
+    // ✅ Abrir modal al tocar el campo de procedimiento principal
+    procedimientoDisplay.addEventListener("click", openPanelPrincipal);
 
     function odontogramaSubtotal(){
       return Object.values(selectedTeeth).reduce((acc, arr)=> acc + arr.reduce((s,p)=>s+(p.price||0),0), 0);
@@ -799,10 +969,11 @@
     function calcularTotal(){
       let subtotal = 0;
 
-      const [nProc, pProc] = procedimiento.value.split("|");
+      const [nProc, pProc] = (procedimiento.value || "No aplica|0").split("|");
       if (procedimiento.value !== "No aplica|0") {
         subtotal += parseMoney(pProc);
-        document.querySelector('input[name="procedimiento"]').value = `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
+        document.querySelector('input[name="procedimiento"]').value =
+          `${nProc} - $${parseMoney(pProc).toLocaleString('es-CO')}`;
       } else {
         document.querySelector('input[name="procedimiento"]').value = "No aplica";
       }
@@ -835,10 +1006,15 @@
     window.addEventListener('load', async ()=>{
       await cargarCatalogoDesdeSupabase();
       renderOdontograma();
+      syncProcedimientoDisplay();
       calcularTotal();
     });
 
-    procedimiento.addEventListener('change', calcularTotal);
+    // si el select cambia por código, mantenemos el display sincronizado
+    procedimiento.addEventListener('change', ()=>{
+      syncProcedimientoDisplay();
+      calcularTotal();
+    });
     descuentoSel.addEventListener('change', calcularTotal);
     adicionales.forEach(cb=> cb.addEventListener('change', calcularTotal));
 
@@ -942,6 +1118,9 @@
       else if(data.procedimiento){ const pr = parseNicePair(data.procedimiento); if(pr){ pn=pr.name; pp=pr.price; } }
       if(pn) selectProcedimiento(pn, pp);
 
+      // ✅ sincronizar display del procedimiento principal
+      syncProcedimientoDisplay();
+
       adicionales.forEach(cb=> cb.checked=false);
       if (Array.isArray(data.adicionalesRaw)){
         data.adicionalesRaw.forEach(s=>{ const [n,p] = String(s).split('|'); markAdicional(n, parseInt(p,10)||null); });
@@ -1003,5 +1182,6 @@
   </script>
 </body>
 </html>
+
 
 
