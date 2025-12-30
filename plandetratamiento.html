@@ -43,6 +43,49 @@
     }
     * { box-sizing: border-box; }
     body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #f9f9f9; }
+
+    /* ✅ Barra superior */
+    .topbar{
+      position: sticky; /* si quieres fijo total usa fixed */
+      top: 0;
+      z-index: 1000;
+      background: rgba(249,249,249,.92);
+      backdrop-filter: blur(8px);
+      padding: 10px 0 12px;
+      margin: -1em -1em 12px; /* compensa el padding del body */
+      border-bottom: 1px solid #e6eaee;
+    }
+    .topbar-inner{
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 1em;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .topbar-actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap: wrap;
+    }
+    .btn-top{
+      background: var(--brand);
+      color: #fff;
+      padding: 0.55em 1.0em;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      box-shadow: 0 4px 14px rgba(0,0,0,.10);
+    }
+    .btn-top:hover{ opacity: .96; }
+
     h2 { text-align: center; color: var(--brand); font-size: 1.5em; margin-bottom: 1em; }
     form { background: #fff; padding: 1em; max-width: 960px; margin: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
     label { font-weight: 700; margin-top: 1em; display: block; }
@@ -123,15 +166,31 @@
 </head>
 
 <body>
+  <!-- ✅ NUEVO: Botón arriba para ir a index -->
+  <div class="topbar">
+    <div class="topbar-inner">
+      <div style="font-weight:800;color:#1e4a66;">Plan de tratamiento</div>
+      <div class="topbar-actions">
+        <button
+          type="button"
+          class="btn-top"
+          onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">
+          🏠 Inicio
+        </button>
+
+        <button
+          type="button"
+          class="btn-top"
+          onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
+          📝 Historia Clínica
+        </button>
+      </div>
+    </div>
+  </div>
+
   <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
 
-  <div style="text-align: right; margin-bottom: 1em;">
-    <a href="historia-clinica.html">
-      <button type="button" style="background-color: #2a5d84; color: white; padding: 0.6em 1.2em; border: none; border-radius: 6px; cursor: pointer;">
-        📝 Historia Clínica
-      </button>
-    </a>
-  </div>
+  <!-- (Quité el bloque viejo del botón Historia Clínica porque ya quedó arriba) -->
 
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
@@ -226,9 +285,7 @@
     <input type="hidden" name="firma" id="firmaInput" />
 
     <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
-
     <button type="button" id="btn-guardar" style="background:#2a5d84;">Guardar</button>
-
     <button type="submit">Enviar a paciente</button>
   </form>
 
@@ -240,7 +297,6 @@
         <button type="button" class="btn-secondary" id="btn-close">Cerrar</button>
       </header>
 
-      <!-- ✅ BUSCADOR -->
       <div class="proc-toolbar">
         <input id="proc-search" class="proc-search" type="text" placeholder="Buscar procedimiento..." />
         <small id="proc-count"></small>
@@ -271,9 +327,7 @@
     /* ==========================
        ✅ Catálogo desde Supabase
        ========================== */
-    // Estructura esperada en Supabase:
-    // procedimientos_precios: { id, procedimiento, valor, activo }
-    let PROC_CATALOGO = []; // [{key,label,price}]
+    let PROC_CATALOGO = [];
     let PROC_READY = false;
 
     async function cargarCatalogoDesdeSupabase() {
@@ -287,9 +341,9 @@
         if (error) throw error;
 
         PROC_CATALOGO = (data || []).map(row => ({
-          key: String(row.id),                 // ✅ key estable (id)
-          label: String(row.procedimiento),    // ✅ nombre
-          price: row.valor == null ? null : Number(row.valor) // ✅ puede ser null
+          key: String(row.id),
+          label: String(row.procedimiento),
+          price: row.valor == null ? null : Number(row.valor)
         }));
 
         PROC_READY = true;
@@ -301,7 +355,7 @@
     }
 
     /* ========= ODONTOGRAMA ========= */
-    const selectedTeeth = {}; // { "12":[{key,label,price}, ...] }
+    const selectedTeeth = {};
 
     const summaryList = document.getElementById('summary-list');
     const odontoSubtotalEl = document.getElementById('odonto-subtotal');
@@ -390,10 +444,7 @@
       const q = String(filterText || "").trim().toLowerCase();
       const base = PROC_CATALOGO || [];
 
-      const list = q
-        ? base.filter(p => String(p.label).toLowerCase().includes(q))
-        : base;
-
+      const list = q ? base.filter(p => String(p.label).toLowerCase().includes(q)) : base;
       procCount.textContent = `${list.length} items`;
 
       procsContainer.innerHTML = "";
@@ -437,14 +488,12 @@
         price.placeholder = proc.price == null ? "Sin precio" : "";
         price.value = proc.price == null ? "" : String(proc.price);
 
-        // si ya estaba seleccionado, lo marcamos
         const existing = (selectedTeeth[currentTooth]||[]).find(p=>String(p.key)===String(proc.key));
         if(existing){
           check.checked = true;
           price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
         }
 
-        // UX: si marca checkbox y no hay precio, foco al input
         check.addEventListener("change", ()=>{
           if(check.checked && !parseMoney(price.value)){
             price.focus();
@@ -462,7 +511,6 @@
       currentTooth = String(toothNumber);
       lblTooth.textContent = currentTooth;
 
-      // Asegura catálogo cargado
       if(!PROC_READY){
         await cargarCatalogoDesdeSupabase();
       }
@@ -498,19 +546,9 @@
         if(!check.checked) return;
 
         const price = parseMoney(priceEl.value);
+        if(price <= 0) return;
 
-        // si el usuario selecciona sin precio, lo ignoramos (o puedes forzar 0)
-        if(price <= 0){
-          // opcional: avisar rápido
-          // alert("Hay procedimientos seleccionados sin precio. Completa el valor.");
-          return;
-        }
-
-        next.push({
-          key: row.dataset.key,
-          label: row.dataset.label,
-          price
-        });
+        next.push({ key: row.dataset.key, label: row.dataset.label, price });
       });
 
       if(next.length) selectedTeeth[currentTooth]=next;
@@ -568,7 +606,6 @@
     }
 
     window.addEventListener('load', async ()=>{
-      // Carga el catálogo una vez al inicio
       await cargarCatalogoDesdeSupabase();
       renderOdontograma();
       calcularTotal();
@@ -601,7 +638,7 @@
     function limpiarFirma(){ ctx.clearRect(0,0,canvas.width,canvas.height); }
     window.limpiarFirma = limpiarFirma;
 
-    document.getElementById('cotizacion-form').addEventListener('submit', ()=> {
+    document.getElementById('cotizacion-form').addEventListener('submit', ()=>{
       document.getElementById('firmaInput').value = canvas.toDataURL();
     });
 
@@ -618,14 +655,9 @@
         document.getElementById('firmaInput').value = canvas.toDataURL();
 
         const fd = new FormData(form);
-
-        const resp = await fetch(WEBHOOK_GUARDAR, {
-          method: "POST",
-          body: fd
-        });
+        const resp = await fetch(WEBHOOK_GUARDAR, { method: "POST", body: fd });
 
         if (!resp.ok) throw new Error("HTTP " + resp.status);
-
         alert("Guardado ✅");
       } catch (e) {
         console.error(e);
