@@ -509,9 +509,6 @@
 .extra-etiquetas .lingual{
   margin-top: 5px; /* ✅ separa Lingual hacia abajo */
 }
-
-
-   
   </style>
 </head>
 
@@ -532,9 +529,6 @@
   <small id="voz_estado" style="color:#6b7a90;">Estado: apagado</small>
   <div id="voz_ultima" style="margin-top:6px; font-size:13px; color:#19324d;"></div>
 </div>-->
-
-
-    
     <div class="legend">Buscar historia clínica existente</div>
 
     <div class="grid g-2 search-grid">
@@ -564,7 +558,7 @@
       <div class="ctrl">
         <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
       </div>
-     
+
       <div class="ctrl">
         <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
       </div>
@@ -1024,64 +1018,62 @@
         <input id="evo_hora" type="time" readonly>
       </div>
 
-<div class="ctrl">
-  <label for="evo_profesional">Profesional</label>
+      <div class="ctrl">
+        <label for="evo_profesional">Profesional</label>
 
-  <div class="inline" style="gap:10px;">
-    <input
-      id="evo_profesional"
-      type="text"
-      list="profesionales_list"
-      placeholder="Buscar o escribir profesional..."
-      autocomplete="off"
-      style="flex:1;"
-    />
+        <div class="inline" style="gap:10px;">
+          <input
+            id="evo_profesional"
+            type="text"
+            list="profesionales_list"
+            placeholder="Buscar o escribir profesional..."
+            autocomplete="off"
+            style="flex:1;"
+          />
 
-    <button
-      type="button"
-      onclick="agregarProfesionalDesdeCampo()"
-      class="btn btn-agenda"
-      style="width:auto; padding:10px 14px;"
-      title="Agregar el texto actual al listado"
-    >
-      + Agregar
-    </button>
-  </div>
+          <button
+            type="button"
+            onclick="agregarProfesionalDesdeCampo()"
+            class="btn btn-agenda"
+            style="width:auto; padding:10px 14px;"
+            title="Agregar el texto actual al listado"
+          >
+            + Agregar
+          </button>
+        </div>
 
-  <datalist id="profesionales_list"></datalist>
-</div>
+        <datalist id="profesionales_list"></datalist>
+      </div>
 
+      <div class="ctrl">
+        <label for="evo_tipo">Procedimiento</label>
 
-<div class="ctrl">
-  <label for="evo_tipo">Procedimiento</label>
+        <div class="inline" style="gap:10px;">
+          <!-- ✅ Input con búsqueda (datalist) -->
+          <input
+            id="evo_tipo"
+            type="text"
+            list="procedimientos_list"
+            placeholder="Buscar o escribir procedimiento..."
+            autocomplete="off"
+            style="flex:1;"
+          />
 
-  <div class="inline" style="gap:10px;">
-    <!-- ✅ Input con búsqueda (datalist) -->
-    <input
-      id="evo_tipo"
-      type="text"
-      list="procedimientos_list"
-      placeholder="Buscar o escribir procedimiento..."
-      autocomplete="off"
-      style="flex:1;"
-    />
+          <!-- ✅ Botón para agregar si no existe -->
+          <button
+            type="button"
+            onclick="agregarProcedimientoDesdeCampo()"
+            class="btn btn-agenda"
+            style="width:auto; padding:10px 14px;"
+            title="Agregar el texto actual al listado"
+          >
+            + Agregar
+          </button>
+        </div>
 
-    <!-- ✅ Botón para agregar si no existe -->
-    <button
-      type="button"
-      onclick="agregarProcedimientoDesdeCampo()"
-      class="btn btn-agenda"
-      style="width:auto; padding:10px 14px;"
-      title="Agregar el texto actual al listado"
-    >
-      + Agregar
-    </button>
-  </div>
-
-  <!-- ✅ Datalist (desplegable con búsqueda) -->
-  <datalist id="procedimientos_list"></datalist>
-</div>
-
+        <!-- ✅ Datalist (desplegable con búsqueda) -->
+        <datalist id="procedimientos_list"></datalist>
+      </div>
 
       <div class="ctrl full">
         <label for="evo_detalle">Detalle / Observaciones</label>
@@ -1125,28 +1117,10 @@
   <div id="odontograma-wrapper">
     <h1>Odontograma Internacional FDI</h1>
     <div id="odontograma-guias" style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
-  <!--<div style="position:absolute; top:130px; left:50%; transform:translateX(-50%); width:1300px; height:1px; background:#D0D0D0; z-index:3;"></div>
-   <div style="position:absolute; top:119px; left:50%; width:1px; height:100px; transform:translateX(-50%); background:#D0D0D0; z-index:3;"></div> -->
-
       <div style="position:absolute; top:70px; left:-130px; color:#D0D0D0; font-weight:bold;">Distal1</div>
       <div style="position:absolute; top:70px; right:-130px; color:#D0D0D0; font-weight:bold;">Distal2</div>
-
-       <!--<div style="position:absolute; top:140px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino1</div>
-      <div style="position:absolute; top:140px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Palatino2</div>
-
-      <div style="position:absolute; top:180px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual4</div>
-      <div style="position:absolute; top:180px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Lingual3</div>-->
-
-     <!--  <div style="position:absolute; top:300px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular3</div>
-      <div style="position:absolute; top:10px; left:83%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular2</div>
-      <div style="position:absolute; top:10px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular1</div>
-      <div style="position:absolute; top:300px; left:20%; transform:translateX(-50%); color:#D0D0D0; font-weight:bold;">Vestibular4</div>-->
-
       <div style="position:absolute; top:230px; left:-130px; color:#D0D0D0; font-weight:bold;">Distal4</div>
       <div style="position:absolute; top:230px; right:-130px; color:#D0D0D0; font-weight:bold;">Distal3</div>
-
-     <!-- <div style="position:absolute; top:60px; left:50%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial1</div>-->
-     <!-- <div style="position:absolute; top:220px; left:50%; transform:translateX(-50%) rotate(180deg); color:#D0D0D0; font-weight:bold; writing-mode:vertical-rl;">Mesial2</div>-->
     </div>
 
    <div class="odontograma">
@@ -1164,7 +1138,6 @@
 <div class="seccion">
   <div class="fila" id="fila-inferior"></div>
 
- <!--  <div class="etiqueta etiqueta-eje eje-inferior" style="margin-top:8px;">-->
     <div class="etiqueta etiqueta-eje eje-inferior">
     Vestibular--------------------Maxilar inferior--------------------Vestibular
     <span class="linea-media"></span>
@@ -1249,7 +1222,6 @@
   function irInicio() {
   window.location.href = URL_INICIO;
   }
-
 
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
@@ -1375,17 +1347,12 @@ async function agregarEvolucion() {
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-    // opcional: si n8n responde json
-    // const data = await resp.json();
-
     console.log("✅ Evolución enviada a n8n");
-    // alert("✅ Evolución guardada y enviada a n8n");
   } catch (err) {
     console.warn("⚠️ Evolución guardada pero NO se pudo enviar a n8n:", err);
     alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n. Verifica conexión o webhook.");
   }
 }
-
 
   function eliminarEvolucion(idx) {
     evoluciones.splice(idx, 1);
@@ -1394,14 +1361,12 @@ async function agregarEvolucion() {
 
   function _soloFechaYYYYMMDD(valor) {
     if (!valor) return "";
-    // si viene timestamp "2025-12-22T00:00:00+00:00" -> "2025-12-22"
     if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
     return String(valor);
   }
 
   function _soloHoraHHMM(valor) {
     if (!valor) return "";
-    // si viene "18:25:00" -> "18:25"
     const s = String(valor);
     if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
     return s;
@@ -1442,35 +1407,26 @@ async function agregarEvolucion() {
     });
   }
 
-  // ✅ Normaliza lo que venga del webhook a un array estándar
   function normalizarEvolucionesDeWebhook(data) {
     let raw = data?.evoluciones;
 
-    // Caso: viene anidado { evoluciones: [...] }
     if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
       raw = raw.evoluciones;
     }
 
-    // Caso: viene string JSON
     if (typeof raw === "string") {
       try { raw = JSON.parse(raw); } catch(e) { raw = []; }
     }
 
     if (!Array.isArray(raw)) raw = [];
 
-    // Normalizamos llaves y formatos
     return raw.map((e) => ({
-      // id único: prioriza id-evolucion / id_evolucion, si no existe usa id, si no existe genera uuid
       id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
-
       fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
       hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
-
       profesional: e.profesional ?? e.evo_profesional ?? "",
       procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
       detalle: e.detalle ?? e.evo_detalle ?? "",
-
-      // extras si vienen
       created_at: e.created_at ?? null,
       ts: e.ts ?? e.created_at ?? new Date().toISOString()
     }));
@@ -1542,25 +1498,23 @@ async function agregarEvolucion() {
     diente.appendChild(centro);
 
     const label = document.createElement('div');
-label.className = 'numero';
-label.textContent = numero;
+    label.className = 'numero';
+    label.textContent = numero;
 
-contenedorDiente.appendChild(diente);
-contenedorDiente.appendChild(label);
+    contenedorDiente.appendChild(diente);
+    contenedorDiente.appendChild(label);
 
-// ✅ SOLO para el diente 24
-if (numero === 14 || numero === 24) {
-  const extra = document.createElement("div");
-  extra.className = "extra-etiquetas";
-  extra.innerHTML = `
-  <div>Palatino</div>
-  <div class="lingual">Lingual</div>
-`;
-  contenedorDiente.appendChild(extra);
-}
+    if (numero === 14 || numero === 24) {
+      const extra = document.createElement("div");
+      extra.className = "extra-etiquetas";
+      extra.innerHTML = `
+        <div>Palatino</div>
+        <div class="lingual">Lingual</div>
+      `;
+      contenedorDiente.appendChild(extra);
+    }
 
-contenedor.appendChild(contenedorDiente);
-
+    contenedor.appendChild(contenedorDiente);
   }
 
   function mostrarPopup(event, elemento) {
@@ -1633,35 +1587,29 @@ contenedor.appendChild(contenedorDiente);
   dientesInferior.forEach(num => crearDiente(num, filaInferior));
 
   function ajustarLineaMedia() {
-  const topEtiqueta = document.querySelector(".seccion .etiqueta-eje:not(.eje-inferior)");
-  const topLinea = topEtiqueta?.querySelector(".linea-media");
-  const bottomEtiqueta = document.querySelector(".etiqueta-eje.eje-inferior");
-  const bottomLinea = bottomEtiqueta?.querySelector(".linea-media");
+    const topEtiqueta = document.querySelector(".seccion .etiqueta-eje:not(.eje-inferior)");
+    const topLinea = topEtiqueta?.querySelector(".linea-media");
+    const bottomEtiqueta = document.querySelector(".etiqueta-eje.eje-inferior");
+    const bottomLinea = bottomEtiqueta?.querySelector(".linea-media");
 
-  if (!topEtiqueta || !topLinea || !bottomEtiqueta || !bottomLinea) return;
+    if (!topEtiqueta || !topLinea || !bottomEtiqueta || !bottomLinea) return;
 
-  const rTop = topEtiqueta.getBoundingClientRect();
-  const rBottom = bottomEtiqueta.getBoundingClientRect();
+    const rTop = topEtiqueta.getBoundingClientRect();
+    const rBottom = bottomEtiqueta.getBoundingClientRect();
 
-  // Distancia entre el final de la etiqueta superior y el inicio de la etiqueta inferior
-  const dist = rBottom.top - rTop.bottom;
+    const dist = rBottom.top - rTop.bottom;
+    const h = Math.max(0, Math.round(dist / 2));
 
-  // Mitad para cada línea (arriba baja, abajo sube)
-  const h = Math.max(0, Math.round(dist / 2));
+    topLinea.style.height = h + "px";
+    bottomLinea.style.height = h + "px";
+  }
 
-  topLinea.style.height = h + "px";
-  bottomLinea.style.height = h + "px";
-}
+  window.addEventListener("load", ajustarLineaMedia);
+  window.addEventListener("resize", ajustarLineaMedia);
 
-// Ajusta al cargar y al redimensionar
-window.addEventListener("load", ajustarLineaMedia);
-window.addEventListener("resize", ajustarLineaMedia);
-
-// Si cambias a fullscreen, vuelve a calcular (por si cambia el layout)
-document.addEventListener("click", (e) => {
-  if (e.target?.id === "btnExitOdonFS") setTimeout(ajustarLineaMedia, 50);
-});
-
+  document.addEventListener("click", (e) => {
+    if (e.target?.id === "btnExitOdonFS") setTimeout(ajustarLineaMedia, 50);
+  });
 
   document.body.addEventListener('click', () => {
     document.querySelectorAll('.popup').forEach(p => p.remove());
@@ -1853,7 +1801,6 @@ document.addEventListener("click", (e) => {
       const h = data.historia || {};
       const od = data.odontograma || {};
 
-      // ✅ CARGA + NORMALIZA EVOLUCIONES AQUÍ
       evoluciones = normalizarEvolucionesDeWebhook(data);
       renderEvoluciones();
 
@@ -1994,599 +1941,431 @@ document.addEventListener("click", (e) => {
       alert("Error consultando N8N");
     }
   }
-// ==============================
-// ✅ PROCEDIMIENTOS (desplegable con búsqueda + agregar)
-// ==============================
 
-// Lista base (únicos). Puedes agregar más si luego te faltan.
-const PROCEDIMIENTOS_BASE = [
-  "ACLARACION",
-  "ACLARAMIENTO DENTAL ACTIVADO CON LUZ",
-  "ACLARAMIENTO DENTAL CON CUBETAS",
-  "ACLARAMIENTO INTERNO",
-  "ALARGAMIENTO CORONAL",
-  "ALARGAMIENTO CORONAL POR DIENTE",
-  "ALISADO RADICULAR",
-  "AMPLIACION",
-  "CAJA DE RETENEDORES Ó PLACA",
-  "CAMBIO DE TORNILLOS PASANTES DE 44 Y 46",
-  "CANCELA CITA",
-  "CAUCHOS DE RETENCION",
-  "CEMENTACIÓN",
-  "CEMENTACION CARILLAS",
-  "CEMENTACIÓN CORONA METAL-CERAMICA",
-  "CEMENTACIÓN CORONA ZIRCONIO",
-  "CEMENTACIÓN DE INCRUSTACIÓN",
-  "CEMENTACIÓN DE NUCLEO COLADO",
-  "CEMENTACIÓN INCRUSTACIÓN",
-  "CEMENTACIÓN POSTE FIBRA DE VIDRIO",
-  "CIRUGÍA DE IMPLANTE",
-  "CIRUGIA ENDODONTICA",
-  "CIRUGÍA EXPLORATORIA",
-  "CITA INCUMPLIDA",
-  "CITA MAL AGENDADA",
-  "CITA MODIFICADA POR PACIENTE",
-  "COLOCACION DE IMPLANTE",
-  "COLOCACIÓN DE MINI IMPLANTE",
-  "COLOCACION DE MINI IMPLANTE ORTODONTICO",
-  "CONSULTA PERIODONCIA",
-  "CONTRAREMISION",
-  "CONTROL",
-  "CONTROL CORONA SOBRE IMPLANTE",
-  "CONTROL DE ORTOPEDIA N° 3",
-  "CONTROL DE REHABILITACIÓN",
-  "CONTROL DE RESINA",
-  "CONTROL DE RETENEDORES",
-  "CONTROL DE RETENEDOR",
-  "CONTROL ORTODONCIA",
-  "CONTROL PERIODONTAL",
-  "CORONA 16",
-  "CORONA IMPLANTOSOPORTADA PRUEBA",
-  "CORRECCIÓN",
-  "CUÑA DISTAL",
-  "DEBRIDAMIENTO",
-  "DEBRIDAMIENTO QUIRURGICO",
-  "DESOBTURACION ENDODONTICA",
-  "DETARTRAJE DE 4 CUADRANTES Y PROFILAXIS",
-  "ELASTICOS",
-  "ELEVACION SENO MAXILAR",
-  "ENDODONCIA",
-  "ENDODONCIA MULTIRRADICULAR",
-  "ENTREGA APARATO ORTOPEDIA",
-  "ENTREGA APARATOS ORTOPEDIA",
-  "ENTREGA CARILLAS DISILICATO DE LITIO",
-  "ENTREGA CORONA IMPLANTOSOPORTADA",
-  "ENTREGA CORONA METAL PORCELANA",
-  "ENTREGA CORONA ZIRCONIO",
-  "ENTREGA DE APARATOLOGIA",
-  "ENTREGA DE CORONA IMPLANTOSOPORTADA 26",
-  "ENTREGA DE CORONA METAL-CERÁMICA DEL 26",
-  "ENTREGA DE KIT DE HIGIENE",
-  "ENTREGA DE PACIENTES",
-  "ENTREGA DE PLACA NMR",
-  "ENTREGA DE PROVISIONALES",
-  "ENTREGA DE RETENEDOR",
-  "ENTREGA DE TEMPORL",
-  "ENTREGA KIT DE ORTODONCIA",
-  "ENTREGA MUCOSOPORTADA",
-  "ENTREGA PPF METAL CERÁMICA",
-  "ENTREGA PROTESIS INMEDIATA",
-  "ENTREGA PROTESIS TOTAL",
-  "ENTREGA REHABILITACION ORAL",
-  "ERROR DE EVOLUCION",
-  "EXODONCIA",
-  "EXODONCIA METODO ABIERTO DE 37 Y 47",
-  "EXODONCIA METODO CERRADO ALTA Y MEDIO",
-  "EXODONCIA SIMPLE",
-  "EXPLANTE (RETIRO DE IMPLANTE)",
-  "FASE HIGIENICA",
-  "FASE HIGIENICA PERIODONTAL",
-  "FASE HIGIENICA POR HIGIENISTA ORAL",
-  "FASE HIGIENICA Y RESINA",
-  "FERULIZACION",
-  "FINAL",
-  "FRENILLECTOMIA",
-  "GARANTIA DE BRACKET",
-  "GINGIVECTOMIA POR DIENTE",
-  "GINGIVECTOMIA POR SEXTANTE",
-  "HUESO MISS 0.5",
-  "IMPRESIÓN DEFINITIVA",
-  "IMPRESION PARA ORTOPEDIA",
-  "IMPRESIÓN PRELIMINAR",
-  "INJERTO DE TEJIDO CONECTIVO",
-  "LIMPIEZA DENTAL",
-  "LLEGA TARDE 15 MIN SE REPROGRAMA CITA",
-  "MANTENIMIENTO PERIODONTAL IMPLANTE",
-  "MONTAJE INFERIOR",
-  "MONTAJE SUPERIOR",
-  "MONTAJE SUPERIOR E INFERIOR",
-  "NO ASISTENCIA",
-  "NO ASISTENCIA A CONTROL DE ORTODONCIA",
-  "NO ASISTIÓ",
-  "OBTURACION",
-  "OBTURACION EN RESINA",
-  "ORIENTACIÓN DE RODETE",
-  "ORIENTACIÓN DE RODETES Y TOMA DE COLOR",
-  "ORTODONCIA INVISIBLE",
-  "PACIENTE AGENDADO POR ERROR",
-  "PACIENTE CON CONVENIO- COMPENSAR",
-  "PACIENTE LLEGA TARDE A CITA PROGRAMADA",
-  "PACIENTE NO ASISTE A CONSULTA",
-  "PACIENTE NO ASISTE A LA CITA",
-  "PACK FASE HIGIENICA",
-  "PANORAMICA DE CONTROL ESPECIALISTA",
-  "PANORAMICA PRIMERA VEZ",
-  "PANORAMICA REEVALUACION",
-  "PAQUETE DE FINALIZACION ORTODONCIA",
-  "PAQUETE INCIAL DE ORTODONCIA",
-  "PATRON DE NUCLEO",
-  "PEDIDO REHABILITACIÓN",
-  "POSTE EN FIBRA DE VIDRIO",
-  "PROFILAXIS",
-  "PROTESIS",
-  "PRÓTESIS FLEXIDENT SUPERIOR",
-  "PROVISIONAL",
-  "PROVISIONAL EN CONSULTORIO",
-  "PRUEBA COFIAS EN METAL",
-  "PRUEBA DE CERAMICA SOBRE IMPLANTE",
-  "PRUEBA DE COFIA EN PATTERN RESIN",
-  "PRUEBA DE COFIA EN ZIRCONIO",
-  "PRUEBA DE ENFILADO",
-  "PRUEBA DE ESTRUCTURA",
-  "PRUEBA DE REHABILITACIÓN",
-  "PRUEBA DE RODETE",
-  "PRUEBA METALICA SOBRE IMPLANTE",
-  "PULPECTOMIA",
-  "SEGUNDA FASE IMPLANTE",
-  "SEGUNDA FASE QUIRÚRGICA",
-  "SELLANTES",
-  "TERAPIA DE MANTENIMIENTO PERIODONTAL",
-  "TERAPIA ENDODONTICA",
-  "TOMA DE IMPRESION",
-  "TOMA DE IMPRESIONES",
-  "URGENCIA",
-  "URGENCIA ORTODONCIA",
-  "VALORACION",
-  "VALORACION ASEGURADORA",
-  "VALORACION CLINICA Y RADIOGRAFICA",
-  "VALORACION ENDODONCIA",
-  "VALORACION MAS RADIOGRAFIA",
-  "VALORACION ORTODONCIA",
-  "VALORACION PERIODONTAL",
-  "VALORACIÓN REHABILITACIÓN ORAL",
-  "VENTANA QUIRÚRGICA"
-];
+  // ==============================
+  // ✅ PROCEDIMIENTOS (desplegable con búsqueda + agregar)
+  // ==============================
+  const PROCEDIMIENTOS_BASE = [
+    "ACLARACION","ACLARAMIENTO DENTAL ACTIVADO CON LUZ","ACLARAMIENTO DENTAL CON CUBETAS","ACLARAMIENTO INTERNO",
+    "ALARGAMIENTO CORONAL","ALARGAMIENTO CORONAL POR DIENTE","ALISADO RADICULAR","AMPLIACION",
+    "CAJA DE RETENEDORES Ó PLACA","CAMBIO DE TORNILLOS PASANTES DE 44 Y 46","CANCELA CITA","CAUCHOS DE RETENCION",
+    "CEMENTACIÓN","CEMENTACION CARILLAS","CEMENTACIÓN CORONA METAL-CERAMICA","CEMENTACIÓN CORONA ZIRCONIO",
+    "CEMENTACIÓN DE INCRUSTACIÓN","CEMENTACIÓN DE NUCLEO COLADO","CEMENTACIÓN INCRUSTACIÓN",
+    "CEMENTACIÓN POSTE FIBRA DE VIDRIO","CIRUGÍA DE IMPLANTE","CIRUGIA ENDODONTICA","CIRUGÍA EXPLORATORIA",
+    "CITA INCUMPLIDA","CITA MAL AGENDADA","CITA MODIFICADA POR PACIENTE","COLOCACION DE IMPLANTE",
+    "COLOCACIÓN DE MINI IMPLANTE","COLOCACION DE MINI IMPLANTE ORTODONTICO","CONSULTA PERIODONCIA",
+    "CONTRAREMISION","CONTROL","CONTROL CORONA SOBRE IMPLANTE","CONTROL DE ORTOPEDIA N° 3",
+    "CONTROL DE REHABILITACIÓN","CONTROL DE RESINA","CONTROL DE RETENEDORES","CONTROL DE RETENEDOR",
+    "CONTROL ORTODONCIA","CONTROL PERIODONTAL","CORONA 16","CORONA IMPLANTOSOPORTADA PRUEBA","CORRECCIÓN",
+    "CUÑA DISTAL","DEBRIDAMIENTO","DEBRIDAMIENTO QUIRURGICO","DESOBTURACION ENDODONTICA",
+    "DETARTRAJE DE 4 CUADRANTES Y PROFILAXIS","ELASTICOS","ELEVACION SENO MAXILAR","ENDODONCIA",
+    "ENDODONCIA MULTIRRADICULAR","ENTREGA APARATO ORTOPEDIA","ENTREGA APARATOS ORTOPEDIA",
+    "ENTREGA CARILLAS DISILICATO DE LITIO","ENTREGA CORONA IMPLANTOSOPORTADA","ENTREGA CORONA METAL PORCELANA",
+    "ENTREGA CORONA ZIRCONIO","ENTREGA DE APARATOLOGIA","ENTREGA DE CORONA IMPLANTOSOPORTADA 26",
+    "ENTREGA DE CORONA METAL-CERÁMICA DEL 26","ENTREGA DE KIT DE HIGIENE","ENTREGA DE PACIENTES",
+    "ENTREGA DE PLACA NMR","ENTREGA DE PROVISIONALES","ENTREGA DE RETENEDOR","ENTREGA DE TEMPORL",
+    "ENTREGA KIT DE ORTODONCIA","ENTREGA MUCOSOPORTADA","ENTREGA PPF METAL CERÁMICA","ENTREGA PROTESIS INMEDIATA",
+    "ENTREGA PROTESIS TOTAL","ENTREGA REHABILITACION ORAL","ERROR DE EVOLUCION","EXODONCIA",
+    "EXODONCIA METODO ABIERTO DE 37 Y 47","EXODONCIA METODO CERRADO ALTA Y MEDIO","EXODONCIA SIMPLE",
+    "EXPLANTE (RETIRO DE IMPLANTE)","FASE HIGIENICA","FASE HIGIENICA PERIODONTAL","FASE HIGIENICA POR HIGIENISTA ORAL",
+    "FASE HIGIENICA Y RESINA","FERULIZACION","FINAL","FRENILLECTOMIA","GARANTIA DE BRACKET",
+    "GINGIVECTOMIA POR DIENTE","GINGIVECTOMIA POR SEXTANTE","HUESO MISS 0.5","IMPRESIÓN DEFINITIVA",
+    "IMPRESION PARA ORTOPEDIA","IMPRESIÓN PRELIMINAR","INJERTO DE TEJIDO CONECTIVO","LIMPIEZA DENTAL",
+    "LLEGA TARDE 15 MIN SE REPROGRAMA CITA","MANTENIMIENTO PERIODONTAL IMPLANTE","MONTAJE INFERIOR","MONTAJE SUPERIOR",
+    "MONTAJE SUPERIOR E INFERIOR","NO ASISTENCIA","NO ASISTENCIA A CONTROL DE ORTODONCIA","NO ASISTIÓ",
+    "OBTURACION","OBTURACION EN RESINA","ORIENTACIÓN DE RODETE","ORIENTACIÓN DE RODETES Y TOMA DE COLOR",
+    "ORTODONCIA INVISIBLE","PACIENTE AGENDADO POR ERROR","PACIENTE CON CONVENIO- COMPENSAR",
+    "PACIENTE LLEGA TARDE A CITA PROGRAMADA","PACIENTE NO ASISTE A CONSULTA","PACIENTE NO ASISTE A LA CITA",
+    "PACK FASE HIGIENICA","PANORAMICA DE CONTROL ESPECIALISTA","PANORAMICA PRIMERA VEZ","PANORAMICA REEVALUACION",
+    "PAQUETE DE FINALIZACION ORTODONCIA","PAQUETE INCIAL DE ORTODONCIA","PATRON DE NUCLEO","PEDIDO REHABILITACIÓN",
+    "POSTE EN FIBRA DE VIDRIO","PROFILAXIS","PROTESIS","PRÓTESIS FLEXIDENT SUPERIOR","PROVISIONAL",
+    "PROVISIONAL EN CONSULTORIO","PRUEBA COFIAS EN METAL","PRUEBA DE CERAMICA SOBRE IMPLANTE",
+    "PRUEBA DE COFIA EN PATTERN RESIN","PRUEBA DE COFIA EN ZIRCONIO","PRUEBA DE ENFILADO","PRUEBA DE ESTRUCTURA",
+    "PRUEBA DE REHABILITACIÓN","PRUEBA DE RODETE","PRUEBA METALICA SOBRE IMPLANTE","PULPECTOMIA",
+    "SEGUNDA FASE IMPLANTE","SEGUNDA FASE QUIRÚRGICA","SELLANTES","TERAPIA DE MANTENIMIENTO PERIODONTAL",
+    "TERAPIA ENDODONTICA","TOMA DE IMPRESION","TOMA DE IMPRESIONES","URGENCIA","URGENCIA ORTODONCIA",
+    "VALORACION","VALORACION ASEGURADORA","VALORACION CLINICA Y RADIOGRAFICA","VALORACION ENDODONCIA",
+    "VALORACION MAS RADIOGRAFIA","VALORACION ORTODONCIA","VALORACION PERIODONTAL","VALORACIÓN REHABILITACIÓN ORAL",
+    "VENTANA QUIRÚRGICA"
+  ];
 
-// Key para guardar nuevos procedimientos
-const LS_PROC_KEY = "procedimientos_custom";
+  const LS_PROC_KEY = "procedimientos_custom";
 
-// Normaliza para comparar (quita dobles espacios, mayúsculas)
-function _normProc(s) {
-  return String(s || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toUpperCase();
-}
-
-function _cargarProcedimientosCustom() {
-  try {
-    const raw = localStorage.getItem(LS_PROC_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function _guardarProcedimientosCustom(arr) {
-  try { localStorage.setItem(LS_PROC_KEY, JSON.stringify(arr)); } catch(e) {}
-}
-
-function _getProcedimientosUnicos() {
-  const base = PROCEDIMIENTOS_BASE.map(_normProc);
-  const custom = _cargarProcedimientosCustom().map(_normProc);
-
-  const set = new Set([...base, ...custom].filter(Boolean));
-  return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
-}
-
-function _poblarDatalistProcedimientos() {
-  const dl = document.getElementById("procedimientos_list");
-  if (!dl) return;
-
-  const items = _getProcedimientosUnicos();
-
-  dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
-}
-
-// Botón + Agregar
-function agregarProcedimientoDesdeCampo() {
-  const input = document.getElementById("evo_tipo");
-  if (!input) return;
-
-  const val = _normProc(input.value);
-  if (!val) { alert("⚠️ Escribe un procedimiento para agregar."); return; }
-
-  const actuales = _getProcedimientosUnicos();
-  if (actuales.includes(val)) {
-    alert("✅ Ese procedimiento ya existe en la lista.");
-    return;
-  }
-
-  // Guardar en custom
-  const custom = _cargarProcedimientosCustom().map(_normProc);
-  custom.push(val);
-  _guardarProcedimientosCustom(Array.from(new Set(custom)));
-
-  _poblarDatalistProcedimientos();
-  alert("✅ Procedimiento agregado al listado.");
-}
-
-// Inicializa al cargar
-document.addEventListener("DOMContentLoaded", () => {
-  _poblarDatalistProcedimientos();
-
-  // Si presionas Enter en el campo y NO existe, pregunta si lo agrega
-  const input = document.getElementById("evo_tipo");
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        // evita que el Enter dispare cosas raras
-        e.preventDefault();
-
-        const val = _normProc(input.value);
-        if (!val) return;
-
-        const actuales = _getProcedimientosUnicos();
-        if (!actuales.includes(val)) {
-          const ok = confirm("Este procedimiento no está en la lista.\n\n¿Deseas agregarlo?");
-          if (ok) agregarProcedimientoDesdeCampo();
-        }
-      }
-    });
-  }
-});
-
- // ==============================
-// ✅ PROFESIONALES (desplegable con búsqueda + agregar)
-// ==============================
-
-const PROFESIONALES_BASE = [
-  "LEIDI FERNANDA SILVA OROPEZA"
-];
-
-const LS_PROF_KEY = "profesionales_custom";
-
-function _normProf(s) {
-  return String(s || "")
-    .trim()
-    .replace(/\s+/g, " ")
-    .toUpperCase();
-}
-
-function _cargarProfesionalesCustom() {
-  try {
-    const raw = localStorage.getItem(LS_PROF_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function _guardarProfesionalesCustom(arr) {
-  try { localStorage.setItem(LS_PROF_KEY, JSON.stringify(arr)); } catch(e) {}
-}
-
-function _getProfesionalesUnicos() {
-  const base = PROFESIONALES_BASE.map(_normProf);
-  const custom = _cargarProfesionalesCustom().map(_normProf);
-
-  const set = new Set([...base, ...custom].filter(Boolean));
-  return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
-}
-
-function _poblarDatalistProfesionales() {
-  const dl = document.getElementById("profesionales_list");
-  if (!dl) return;
-
-  const items = _getProfesionalesUnicos();
-  dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
-}
-
-function agregarProfesionalDesdeCampo() {
-  const input = document.getElementById("evo_profesional");
-  if (!input) return;
-
-  const val = _normProf(input.value);
-  if (!val) { alert("⚠️ Escribe el nombre del profesional para agregar."); return; }
-
-  const actuales = _getProfesionalesUnicos();
-  if (actuales.includes(val)) {
-    alert("✅ Ese profesional ya existe en la lista.");
-    return;
-  }
-
-  const custom = _cargarProfesionalesCustom().map(_normProf);
-  custom.push(val);
-  _guardarProfesionalesCustom(Array.from(new Set(custom)));
-
-  _poblarDatalistProfesionales();
-  alert("✅ Profesional agregado al listado.");
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  _poblarDatalistProfesionales();
-
-  const input = document.getElementById("evo_profesional");
-  if (input) {
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-
-        const val = _normProf(input.value);
-        if (!val) return;
-
-        const actuales = _getProfesionalesUnicos();
-        if (!actuales.includes(val)) {
-          const ok = confirm("Este profesional no está en la lista.\n\n¿Deseas agregarlo?");
-          if (ok) agregarProfesionalDesdeCampo();
-        }
-      }
-    });
-  }
-});
-/**
- /* ======================================================
-   🎤 VOZ POR CAMPO – MODO TOGGLE (CLICK ON / CLICK OFF)
-   ====================================================== */
-(function () {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    alert("⚠️ Tu navegador no soporta reconocimiento de voz (usa Chrome o Edge).");
-    return;
-  }
-
-  let rec = null;
-  let escuchando = false;
-  let campoActivo = null;
-  let botonActivo = null;
-
-  const LANG = "es-CO";
-
-  function norm(s) {
+  function _normProc(s) {
     return String(s || "")
-      .toLowerCase()
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .trim();
+      .trim()
+      .replace(/\s+/g, " ")
+      .toUpperCase();
   }
 
-  function dispatchInput(el) {
-    el.dispatchEvent(new Event("input", { bubbles: true }));
-    el.dispatchEvent(new Event("change", { bubbles: true }));
-  }
-
-  function parseFecha(txt) {
-    txt = norm(txt);
-    if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
-    const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-    if (m) {
-      return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+  function _cargarProcedimientosCustom() {
+    try {
+      const raw = localStorage.getItem(LS_PROC_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
     }
-    return null;
   }
 
-  function escribir(el, texto) {
-    if (!el || el.disabled || el.readOnly) return;
-
-    if (el.type === "date") {
-      el.value = parseFecha(texto) || texto;
-    } else if (el.type === "number") {
-      el.value = texto.replace(/[^\d]/g, "");
-    } else if (el.type === "tel") {
-      el.value = texto.replace(/[^\d+]/g, "");
-    } else if (el.tagName === "SELECT") {
-      const opt = [...el.options].find(o =>
-        norm(o.textContent) === norm(texto) ||
-        norm(o.value) === norm(texto)
-      );
-      if (opt) el.value = opt.value;
-    } else {
-      el.value = texto;
-    }
-
-    dispatchInput(el);
+  function _guardarProcedimientosCustom(arr) {
+    try { localStorage.setItem(LS_PROC_KEY, JSON.stringify(arr)); } catch(e) {}
   }
 
-  function setEstado(txt) {
-    const e = document.getElementById("voz_estado");
-    if (e) e.textContent = "Estado: " + txt;
+  function _getProcedimientosUnicos() {
+    const base = PROCEDIMIENTOS_BASE.map(_normProc);
+    const custom = _cargarProcedimientosCustom().map(_normProc);
+
+    const set = new Set([...base, ...custom].filter(Boolean));
+    return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
   }
 
-  function setBoton(b, on) {
-    if (!b) return;
-    b.classList.toggle("on", on);
+  function _poblarDatalistProcedimientos() {
+    const dl = document.getElementById("procedimientos_list");
+    if (!dl) return;
+
+    const items = _getProcedimientosUnicos();
+    dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
   }
 
-  function initRec() {
-    const r = new SpeechRecognition();
-    r.lang = LANG;
-    r.continuous = true;
-    r.interimResults = false;
+  function agregarProcedimientoDesdeCampo() {
+    const input = document.getElementById("evo_tipo");
+    if (!input) return;
 
-    r.onstart = () => {
-      escuchando = true;
-      setEstado("escuchando");
-      setBoton(botonActivo, true);
-    };
+    const val = _normProc(input.value);
+    if (!val) { alert("⚠️ Escribe un procedimiento para agregar."); return; }
 
-    r.onend = () => {
-      escuchando = false;
-      setEstado("apagado");
-      setBoton(botonActivo, false);
-      campoActivo = null;
-      botonActivo = null;
-    };
-
-    r.onerror = (e) => {
-      console.warn("Voz error:", e);
-      setEstado("error");
-      setBoton(botonActivo, false);
-    };
-
-    r.onresult = (ev) => {
-      const res = ev.results[ev.results.length - 1];
-      const texto = res[0].transcript.trim();
-      if (campoActivo) escribir(campoActivo, texto);
-    };
-
-    return r;
-  }
-
-  function toggleDictado(campo, boton) {
-    if (!rec) rec = initRec();
-
-    // 🔁 Si ya está grabando ESTE campo → apagar
-    if (escuchando && campoActivo === campo) {
-      rec.stop();
+    const actuales = _getProcedimientosUnicos();
+    if (actuales.includes(val)) {
+      alert("✅ Ese procedimiento ya existe en la lista.");
       return;
     }
 
-    // 🔁 Si estaba grabando otro campo → cambiar
-    if (escuchando) rec.stop();
+    const custom = _cargarProcedimientosCustom().map(_normProc);
+    custom.push(val);
+    _guardarProcedimientosCustom(Array.from(new Set(custom)));
 
-    campoActivo = campo;
-    botonActivo = boton;
-
-    campo.focus();
-    campo.scrollIntoView({ behavior: "smooth", block: "center" });
-
-    try { rec.start(); } catch(e) {}
+    _poblarDatalistProcedimientos();
+    alert("✅ Procedimiento agregado al listado.");
   }
 
-  function wrapCampos() {
-    const campos = document.querySelectorAll(".container input, .container textarea, .container select");
+  document.addEventListener("DOMContentLoaded", () => {
+    _poblarDatalistProcedimientos();
 
-    campos.forEach(el => {
-      if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
-      if (el.closest(".vwrap")) return;
+    const input = document.getElementById("evo_tipo");
+    if (input) {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
 
-      const wrap = document.createElement("div");
-      wrap.className = "vwrap";
+          const val = _normProc(input.value);
+          if (!val) return;
 
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = "vbtn";
-      btn.textContent = "";
-      btn.title = "Dictar por voz (click para iniciar / detener)";
-
-      btn.addEventListener("click", () => toggleDictado(el, btn));
-
-      el.parentNode.insertBefore(wrap, el);
-      wrap.appendChild(el);
-      wrap.appendChild(btn);
-    });
-
-    setEstado("apagado");
-  }
-
-  document.addEventListener("DOMContentLoaded", wrapCampos);
-
-  // Compatibilidad con botones viejos
-  window.vozStart = () => alert("Usa el 🎤 del campo que quieras dictar.");
-  window.vozStop = () => rec && rec.stop();
-  window.vozModo  = () => alert("El dictado ahora es por campo 🎤.");
-
-})();
-  /* ======================================================
-   🔎 ODONTOGRAMA: DOBLE CLICK / DOBLE TAP => PANTALLA COMPLETA
-   ====================================================== */
-(function(){
-  const wrapper = document.getElementById("odontograma-wrapper");
-  if (!wrapper) return;
-
-  let isFS = false;
-  let exitBtn = null;
-
-  function crearBotonSalir(){
-    if (exitBtn) return;
-    exitBtn = document.createElement("button");
-    exitBtn.id = "btnExitOdonFS";
-    exitBtn.type = "button";
-    exitBtn.textContent = "Salir ✕";
-    exitBtn.addEventListener("click", salirFullscreen);
-    document.body.appendChild(exitBtn);
-  }
-
-  function quitarBotonSalir(){
-    if (exitBtn) exitBtn.remove();
-    exitBtn = null;
-  }
-
-  function entrarFullscreen(){
-    if (isFS) return;
-    isFS = true;
-    wrapper.classList.add("fullscreen");
-    crearBotonSalir();
-
-    // Evita que el body se desplace por detrás
-    document.documentElement.style.overflow = "hidden";
-    document.body.style.overflow = "hidden";
-
-    // Lleva al odontograma arriba
-    wrapper.scrollTop = 0;
-    wrapper.scrollLeft = 0;
-    setTimeout(ajustarLineaMedia, 50);
-
-  }
-
-  function salirFullscreen(){
-    if (!isFS) return;
-    isFS = false;
-    wrapper.classList.remove("fullscreen");
-    quitarBotonSalir();
-
-    document.documentElement.style.overflow = "";
-    document.body.style.overflow = "";
-    setTimeout(ajustarLineaMedia, 50);
-
-  }
-
-  function toggleFullscreen(){
-    if (isFS) salirFullscreen();
-    else entrarFullscreen();
-  }
-
-  // 🖱️ Doble click (desktop)
-  wrapper.addEventListener("dblclick", (e) => {
-    e.preventDefault();
-    toggleFullscreen();
-  });
-
-  // 📱 Doble tap (móvil)
-  let lastTap = 0;
-  wrapper.addEventListener("touchend", (e) => {
-    const now = Date.now();
-    if (now - lastTap < 300) { // doble toque
-      e.preventDefault();
-      toggleFullscreen();
+          const actuales = _getProcedimientosUnicos();
+          if (!actuales.includes(val)) {
+            const ok = confirm("Este procedimiento no está en la lista.\n\n¿Deseas agregarlo?");
+            if (ok) agregarProcedimientoDesdeCampo();
+          }
+        }
+      });
     }
-    lastTap = now;
-  }, { passive: false });
-
-  // ⌨️ ESC para salir
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") salirFullscreen();
   });
-})();
 
-</script>
+  // ==============================
+  // ✅ PROFESIONALES (desplegable con búsqueda + agregar)
+  // ==============================
+  const PROFESIONALES_BASE = [
+    "LEIDI FERNANDA SILVA OROPEZA"
+  ];
 
+  const LS_PROF_KEY = "profesionales_custom";
 
-</body>
-</html>
+  function _normProf(s) {
+    return String(s || "")
+      .trim()
+      .replace(/\s+/g, " ")
+      .toUpperCase();
+  }
 
+  function _cargarProfesionalesCustom() {
+    try {
+      const raw = localStorage.getItem(LS_PROF_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) {
+      return [];
+    }
+  }
 
+  function _guardarProfesionalesCustom(arr) {
+    try { localStorage.setItem(LS_PROF_KEY, JSON.stringify(arr)); } catch(e) {}
+  }
+
+  function _getProfesionalesUnicos() {
+    const base = PROFESIONALES_BASE.map(_normProf);
+    const custom = _cargarProfesionalesCustom().map(_normProf);
+
+    const set = new Set([...base, ...custom].filter(Boolean));
+    return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
+  }
+
+  function _poblarDatalistProfesionales() {
+    const dl = document.getElementById("profesionales_list");
+    if (!dl) return;
+
+    const items = _getProfesionalesUnicos();
+    dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
+  }
+
+  function agregarProfesionalDesdeCampo() {
+    const input = document.getElementById("evo_profesional");
+    if (!input) return;
+
+    const val = _normProf(input.value);
+    if (!val) { alert("⚠️ Escribe el nombre del profesional para agregar."); return; }
+
+    const actuales = _getProfesionalesUnicos();
+    if (actuales.includes(val)) {
+      alert("✅ Ese profesional ya existe en la lista.");
+      return;
+    }
+
+    const custom = _cargarProfesionalesCustom().map(_normProf);
+    custom.push(val);
+    _guardarProfesionalesCustom(Array.from(new Set(custom)));
+
+    _poblarDatalistProfesionales();
+    alert("✅ Profesional agregado al listado.");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    _poblarDatalistProfesionales();
+
+    const input = document.getElementById("evo_profesional");
+    if (input) {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") {
+          e.preventDefault();
+
+          const val = _normProf(input.value);
+          if (!val) return;
+
+          const actuales = _getProfesionalesUnicos();
+          if (!actuales.includes(val)) {
+            const ok = confirm("Este profesional no está en la lista.\n\n¿Deseas agregarlo?");
+            if (ok) agregarProfesionalDesdeCampo();
+          }
+        }
+      });
+    }
+  });
+
+  /* ======================================================
+     🎤 VOZ POR CAMPO – MODO TOGGLE (CLICK ON / CLICK OFF)
+     ✅ FIX: EN evo_detalle NO SOBREESCRIBE, SINO QUE AGREGA (APPEND)
+     ====================================================== */
+  (function () {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("⚠️ Tu navegador no soporta reconocimiento de voz (usa Chrome o Edge).");
+      return;
+    }
+
+    let rec = null;
+    let escuchando = false;
+    let campoActivo = null;
+    let botonActivo = null;
+
+    const LANG = "es-CO";
+
+    function norm(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function dispatchInput(el) {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function parseFecha(txt) {
+      txt = norm(txt);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+      const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) {
+        return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+      }
+      return null;
+    }
+
+    // ✅ Inserta texto EN EL CURSOR (si no hay selección, se comporta como "append")
+    function insertAtCursor(el, text) {
+      const start = (typeof el.selectionStart === "number") ? el.selectionStart : el.value.length;
+      const end   = (typeof el.selectionEnd === "number") ? el.selectionEnd : el.value.length;
+
+      const before = el.value.slice(0, start);
+      const after  = el.value.slice(end);
+
+      // separador inteligente: si ya hay texto, agrega salto de línea si no termina en espacio/salto
+      let sep = "";
+      if (before && !/[ \n]$/.test(before)) sep = " ";
+      // si quieres SIEMPRE salto de línea, cambia a: sep = before ? "\n" : "";
+
+      el.value = before + sep + text + after;
+
+      const caret = (before + sep + text).length;
+      try {
+        el.setSelectionRange(caret, caret);
+      } catch(e) {}
+    }
+
+    function escribir(el, texto) {
+      if (!el || el.disabled || el.readOnly) return;
+
+      // ✅ Campo donde NO quieres sobreescribir
+      const esDetalleObservaciones = (el.id === "evo_detalle");
+
+      // 👉 Si quieres que aplique a TODOS los textarea, descomenta esta línea:
+      // const esDetalleObservaciones = (el.tagName === "TEXTAREA");
+
+      if (esDetalleObservaciones) {
+        // Agrega (append) en lugar de reemplazar
+        insertAtCursor(el, texto);
+        dispatchInput(el);
+        return;
+      }
+
+      // 🔽 Comportamiento normal para los demás campos (reemplaza)
+      if (el.type === "date") {
+        el.value = parseFecha(texto) || texto;
+      } else if (el.type === "number") {
+        el.value = texto.replace(/[^\d]/g, "");
+      } else if (el.type === "tel") {
+        el.value = texto.replace(/[^\d+]/g, "");
+      } else if (el.tagName === "SELECT") {
+        const opt = [...el.options].find(o =>
+          norm(o.textContent) === norm(texto) ||
+          norm(o.value) === norm(texto)
+        );
+        if (opt) el.value = opt.value;
+      } else {
+        el.value = texto;
+      }
+
+      dispatchInput(el);
+    }
+
+    function setEstado(txt) {
+      const e = document.getElementById("voz_estado");
+      if (e) e.textContent = "Estado: " + txt;
+    }
+
+    function setBoton(b, on) {
+      if (!b) return;
+      b.classList.toggle("on", on);
+    }
+
+    function initRec() {
+      const r = new SpeechRecognition();
+      r.lang = LANG;
+      r.continuous = true;
+      r.interimResults = false;
+
+      r.onstart = () => {
+        escuchando = true;
+        setEstado("escuchando");
+        setBoton(botonActivo, true);
+      };
+
+      r.onend = () => {
+        escuchando = false;
+        setEstado("apagado");
+        setBoton(botonActivo, false);
+        campoActivo = null;
+        botonActivo = null;
+      };
+
+      r.onerror = (e) => {
+        console.warn("Voz error:", e);
+        setEstado("error");
+        setBoton(botonActivo, false);
+      };
+
+      r.onresult = (ev) => {
+        const res = ev.results[ev.results.length - 1];
+        const texto = res[0].transcript.trim();
+        if (campoActivo) escribir(campoActivo, texto);
+      };
+
+      return r;
+    }
+
+    function toggleDictado(campo, boton) {
+      if (!rec) rec = initRec();
+
+      // 🔁 Si ya está grabando ESTE campo → apagar
+      if (escuchando && campoActivo === campo) {
+        rec.stop();
+        return;
+      }
+
+      // 🔁 Si estaba grabando otro campo → cambiar
+      if (escuchando) rec.stop();
+
+      campoActivo = campo;
+      botonActivo = boton;
+
+      campo.focus();
+      campo.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      try { rec.start(); } catch(e) {}
+    }
+
+    function wrapCampos() {
+      const campos = document.querySelectorAll(".container input, .container textarea, .container select");
+
+      campos.forEach(el => {
+        if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+        if (el.closest(".vwrap")) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "vwrap";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "vbtn";
+        btn.textContent = "";
+        btn.title = "Dictar por voz (click para iniciar / detener)";
+
+        btn.addEventListener("click", () => toggleDictado(el, btn));
+
+        el.parentNode.insertBefore(wrap, el);
+        wrap.appendChild(el);
+        wrap.appendChild(btn);
+      });
+
+      setEstado("apagado");
+    }
+
+    document.addEventListener("DOMContentLoaded", wrapCampos);
+
+    // Compatibilidad con botones viejos
+    window.vozStart = () => alert("Usa el 🎤 del campo que quieras dictar.");
+    window.vozStop = () => rec && rec.stop();
+    window.vozModo  = () => alert("El dictado ahora es por campo 🎤.");
+
+  })();
+
+  /* ======================================================
+     🔎 ODONTOGRAMA: DOBLE CLICK / DOBLE TAP => PANTALLA COMPLETA
+     ====================================================== */
+  (function(){
+    const wrapper = document.getElementById("odontograma-wrapper");
+    if (!wrapper) return;
+
+    let isFS = false
 
 
 
