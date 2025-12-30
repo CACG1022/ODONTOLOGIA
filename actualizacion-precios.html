@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Actualización de precios - Clínica Dra. Leidi Silva</title>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Supabase
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+
+    // ✅ Lee rol desde profiles
+    async function cargarRolDesdeProfiles(userId) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) return null;
+        return data?.role || null;
+      } catch {
+        return null;
+      }
+    }
+
+    function money(v) {
+      const n = parseInt(String(v ?? "").replace(/[^\d]/g, ""), 10);
+      return Number.isFinite(n) ? n : null;
+    }
+
+    function normalizeName(s){
+      return String(s || "").trim();
+    }
+
+    const state = {
+      all: [],
+      filtered: [],
+      editing: new Map(), // id -> {nombre, valor}
+      isAdmin: false
+    };
+
+    function showToast(msg, type="ok"){
+      const el = document.getElementById("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 1800);
+    }
+
+    function setStatus(msg){
+      document.getElementById("status").textContent = msg || "";
+    }
+
+    function render(){
+      const tbody = document.getElementById("tbody");
+      const count = document.getElementById("count");
+      count.textContent = `${state.filtered.length} procedimientos`;
+
+      tbody.innerHTML = "";
+
+      state.filtered.forEach((row)=>{
+        const tr = document.createElement("tr");
+
+        const tdNombre = document.createElement("td");
+        const inpNombre = document.createElement("input");
+        inpNombre.type = "text";
+        inpNombre.value = row.nombre ?? "";
+        inpNombre.addEventListener("input", ()=>{
+          const next = state.editing.get(row.id) || { nombre: row.nombre, valor: row.valor };
+          next.nombre = inpNombre.value;
+          state.editing.set(row.id, next);
+          markDirty(tr, true);
+        });
+        tdNombre.appendChild(inpNombre);
+
+        const tdValor = document.createElement("td");
+        const inpValor = document.createElement("input");
+        inpValor.type = "number";
+        inpValor.min = "0";
+        inpValor.step = "100";
+        inpValor.placeholder = "Sin precio";
+        inpValor.value = (row.valor ?? "") === null ? "" : (row.valor ?? "");
+        inpValor.addEventListener("input", ()=>{
+          const next = state.editing.get(row.id) || { nombre: row.nombre, valor: row.valor };
+          next.valor = inpValor.value;
+          state.editing.set(row.id, next);
+          markDirty(tr, true);
+        });
+        tdValor.appendChild(inpValor);
+
+        const tdAcc = document.createElement("td");
+        tdAcc.className = "actions";
+
+        const btnSave = document.createElement("button");
+        btnSave.className = "btn primary";
+        btnSave.textContent = "Guardar";
+        btnSave.addEventListener("click", ()=>guardarFila(row.id));
+
+        const btnDel = document.createElement("button");
+        btnDel.className = "btn danger";
+        btnDel.textContent = "Eliminar";
+        btnDel.addEventListener("click", ()=>eliminarFila(row.id, row.nombre));
+
+        tdAcc.appendChild(btnSave);
+        tdAcc.appendChild(btnDel);
+
+        tr.appendChild(tdNombre);
+        tr.appendChild(tdValor);
+        tr.appendChild(tdAcc);
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function markDirty(tr, dirty){
+      tr.classList.toggle("dirty", !!dirty);
+    }
+
+    function applyFilter(){
+      const q = String(document.getElementById("search").value || "").trim().toLowerCase();
+      if(!q){
+        state.filtered = [...state.all];
+      } else {
+        state.filtered = state.all.filter(r => String(r.nombre||"").toLowerCase().includes(q));
+      }
+      render();
+    }
+
+    async function cargarProcedimientos(){
+      setStatus("Cargando procedimientos...");
+      const { data, error } = await supabase
+        .from("procedimientos_precios")
+        .select("id,nombre,valor,updated_at")
+        .order("nombre", { ascending: true });
+
+      if (error){
+        setStatus("Error: " + error.message);
+        showToast("No se pudo cargar", "err");
+        return;
+      }
+
+      state.all = data || [];
+      state.filtered = [...state.all];
+      state.editing.clear();
+
+      setStatus("");
+      render();
+    }
+
+    async function guardarFila(id){
+      const edit = state.editing.get(id);
+      if(!edit){
+        showToast("No hay cambios", "warn");
+        return;
+      }
+
+      const nombre = normalizeName(edit.nombre);
+      const valor = money(edit.valor);
+
+      if(!nombre){
+        showToast("El nombre es obligatorio", "err");
+        return;
+      }
+
+      // Permitir valor null (sin precio)
+      const payload = { nombre, valor: valor === null ? null : valor };
+
+      setStatus("Guardando...");
+      const { error } = await supabase
+        .from("procedimientos_precios")
+        .update(payload)
+        .eq("id", id);
+
+      setStatus("");
+      if(error){
+        console.error(error);
+        showToast("Error al guardar: " + error.message, "err");
+        return;
+      }
+
+      showToast("Guardado ✅", "ok");
+      await cargarProcedimientos();
+      document.getElementById("search").dispatchEvent(new Event("input"));
+    }
+
+    async function eliminarFila(id, nombre){
+      if(!confirm(`¿Eliminar "${nombre}"?`)) return;
+
+      setStatus("Eliminando...");
+      const { error } = await supabase
+        .from("procedimientos_precios")
+        .delete()
+        .eq("id", id);
+
+      setStatus("");
+      if(error){
+        console.error(error);
+        showToast("Error al eliminar: " + error.message, "err");
+        return;
+      }
+
+      showToast("Eliminado ✅", "ok");
+      await cargarProcedimientos();
+      document.getElementById("search").dispatchEvent(new Event("input"));
+    }
+
+    async function crearProcedimiento(){
+      const nombre = normalizeName(document.getElementById("new-nombre").value);
+      const valor = money(document.getElementById("new-valor").value);
+
+      if(!nombre){
+        showToast("Escribe un nombre", "err");
+        return;
+      }
+
+      setStatus("Creando...");
+      const { error } = await supabase
+        .from("procedimientos_precios")
+        .insert([{ nombre, valor: valor === null ? null : valor }]);
+
+      setStatus("");
+      if(error){
+        console.error(error);
+        showToast("Error al crear: " + error.message, "err");
+        return;
+      }
+
+      document.getElementById("new-nombre").value = "";
+      document.getElementById("new-valor").value = "";
+
+      showToast("Creado ✅", "ok");
+      await cargarProcedimientos();
+      applyFilter();
+    }
+
+    async function init(){
+      // 🔒 sesión
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      // email
+      document.getElementById("user-email").textContent = session.user?.email || "Usuario";
+
+      // rol
+      const role = await cargarRolDesdeProfiles(session.user.id);
+      document.getElementById("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+
+      const email = (session.user?.email || "").toLowerCase();
+      state.isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+
+      if(!state.isAdmin){
+        document.getElementById("guard").style.display = "block";
+        document.getElementById("app").style.display = "none";
+        return;
+      }
+
+      document.getElementById("guard").style.display = "none";
+      document.getElementById("app").style.display = "block";
+
+      // events
+      document.getElementById("search").addEventListener("input", applyFilter);
+      document.getElementById("btn-refresh").addEventListener("click", cargarProcedimientos);
+      document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
+      document.getElementById("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+
+      await cargarProcedimientos();
+    }
+
+    init();
+
+    // 🔄 sesión expirada
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    // Logout
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    };
+  </script>
+
+  <style>
+    :root{
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --ok: #067647;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    .topbar{
+      max-width: 1100px;
+      margin: 0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .brand h1{
+      font-size: 16px;
+      margin:0;
+      letter-spacing:.2px;
+    }
+    .meta{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+    .chip{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      white-space:nowrap;
+    }
+    .chip b{ color: var(--text); }
+
+    .container{
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .header-left{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .header-left .title{
+      font-weight: 800;
+      font-size: 14px;
+    }
+    .header-left .count{
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .header-actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"], input[type="number"]{
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      min-width: 240px;
+      font-size: 14px;
+      background:#fff;
+    }
+    input[type="number"]{ min-width: 160px; }
+
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{
+      background: #fff;
+      color: var(--danger);
+      border-color: #f2c6c6;
+    }
+
+    .new-row{
+      padding: 14px 16px;
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+      align-items:center;
+    }
+    .new-row .hint{
+      color: var(--muted);
+      font-size: 12px;
+      margin-left:auto;
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+    }
+    th, td{
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td input{
+      width: 100%;
+      min-width: auto;
+      padding: 10px 10px;
+    }
+    td.actions{
+      width: 220px;
+      white-space: nowrap;
+    }
+    td.actions .btn{
+      margin-right: 8px;
+    }
+    tr.dirty td{
+      background: #fffdf3;
+    }
+
+    .footer{
+      padding: 12px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+    .status{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    /* Toast */
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+    }
+    #toast.show{
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+
+    /* Guard (no admin) */
+    #guard{
+      max-width: 800px;
+      margin: 14px auto;
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display:none;
+    }
+    #guard h2{ margin:0 0 8px; font-size: 16px; }
+    #guard p{ margin:0; color: var(--muted); }
+
+    @media (max-width: 560px){
+      input[type="text"]{ min-width: 100%; }
+      input[type="number"]{ min-width: 100%; }
+      td.actions{ width:auto; }
+      .header{ align-items:flex-start; flex-direction: column; }
+      .header-actions{ width: 100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>Actualización de precios</h1>
+    </div>
+    <div class="meta">
+      <div class="chip"><b id="user-email"></b></div>
+      <div class="chip"><span id="user-role">Rol: ...</span></div>
+      <button class="btn" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div id="guard">
+    <h2>Acceso restringido</h2>
+    <p>Solo el administrador puede actualizar precios.</p>
+    <div style="margin-top:12px;">
+      <button class="btn" type="button" onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">Volver al inicio</button>
+    </div>
+  </div>
+
+  <div class="container" id="app" style="display:none;">
+    <div class="header">
+      <div class="header-left">
+        <div class="title">Procedimientos</div>
+        <div class="count" id="count">0 procedimientos</div>
+      </div>
+      <div class="header-actions">
+        <input id="search" type="text" placeholder="Buscar (ej: resina, endodoncia...)" />
+        <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
+        <button class="btn" type="button" id="btn-back">Volver</button>
+      </div>
+    </div>
+
+    <div class="new-row">
+      <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
+      <input id="new-valor" type="number" min="0" step="100" placeholder="Valor (opcional)" />
+      <button class="btn primary" type="button" id="btn-add">Agregar</button>
+      <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
+    </div>
+
+    <div style="max-height: 62vh; overflow:auto;">
+      <table>
+        <thead>
+          <tr>
+            <th>Procedimiento</th>
+            <th style="width: 220px;">Valor</th>
+            <th style="width: 240px;">Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div class="footer">
+      <div class="status" id="status"></div>
+      <div>© <span id="year"></span> Clínica Dra. Leidi Silva</div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    document.getElementById("year").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
+
