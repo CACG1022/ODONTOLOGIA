@@ -1843,7 +1843,14 @@ function _normalizarDataURLFirma(valor) {
     try {
       const obj = JSON.parse(v);
       if (obj && typeof obj === "object") {
-        v = String(obj.data || obj.base64 || obj.firma || obj.value || (Array.isArray(obj) ? obj[0] : "") || "").trim();
+        v = String(
+          obj.data ||
+          obj.base64 ||
+          obj.firma ||
+          obj.value ||
+          (Array.isArray(obj) ? obj[0] : "") ||
+          ""
+        ).trim();
       }
     } catch(e) {}
   }
@@ -1860,16 +1867,22 @@ function _normalizarDataURLFirma(valor) {
   // Arregla base64 dañado por espacios
   v = v.replace(/\s/g, "+");
 
-  // Si ya es dataURL
-  if (v.startsWith("data:image")) return v;
+  // Si ya es dataURL (png/jpg/jpeg/webp)
+  if (v.startsWith("data:image/")) return v;
 
-  // Si viene solo el base64 sin prefijo
+  // Si viene solo base64 sin prefijo
   if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
     return "data:image/png;base64," + v;
   }
 
+  // Si viene como "image/png;base64,...." (sin data:)
+  if (v.startsWith("image/") && v.includes("base64,")) {
+    return "data:" + v;
+  }
+
   return "";
 }
+
 
   
   // ==============================
@@ -2529,15 +2542,12 @@ function abrirConsentimiento(evolucionId){
     document.getElementById("consent_template").value = existente.template || "AUTO";
     document.getElementById("consent_texto").value = existente.texto || "";
 
-    // ✅ Pinta firmas en el siguiente frame (y un frame extra por robustez)
-    requestAnimationFrame(() => {
-      _setFirmaDesdeDataURL("firmaPaciente", existente.firma_paciente || "");
-      _setFirmaDesdeDataURL("firmaProfesional", existente.firma_profesional || "");
-      requestAnimationFrame(() => {
-        _setFirmaDesdeDataURL("firmaPaciente", existente.firma_paciente || "");
-        _setFirmaDesdeDataURL("firmaProfesional", existente.firma_profesional || "");
-      });
-    });
+    // ✅ pinta firmas (espera a que canvas tenga tamaño visible)
+setTimeout(() => {
+  _setFirmaDesdeDataURL("firmaPaciente", existente.firma_paciente || existente.firmaPaciente || "");
+  _setFirmaDesdeDataURL("firmaProfesional", existente.firma_profesional || existente.firmaProfesional || "");
+}, 120);
+
   } else {
     document.getElementById("consent_template").value = "AUTO";
     const autoKey = _plantillaAutoPorProcedimiento(procedimiento);
@@ -2662,27 +2672,76 @@ function _getFirmaDataURL(canvasId){
   return hasInk ? canvas.toDataURL("image/png") : "";
 }
 
-/* ✅✅ FIX FIRMA: drawImage en requestAnimationFrame */
-function _setFirmaDesdeDataURL(canvasId, dataURL){
+function _resizeCanvasToDisplaySize(canvas){
+  // Ajusta el tamaño interno del canvas al tamaño CSS real (y a DPI)
+  const rect = canvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+
+  // Si el canvas está oculto, rect puede dar 0
+  if (!rect.width || !rect.height) return false;
+
+  const width = Math.round(rect.width * dpr);
+  const height = Math.round(rect.height * dpr);
+
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // coord en CSS px
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+  }
+  return true;
+}
+
+function _setFirmaDesdeDataURL(canvasId, dataURL, intentos = 20){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
 
+  // 🔁 Esperar a que el canvas sea visible y tenga tamaño
+  const okSize = _resizeCanvasToDisplaySize(canvas);
+
+  if (!okSize) {
+    if (intentos <= 0) {
+      console.warn("❌ Canvas sin tamaño visible:", canvasId);
+      return;
+    }
+    setTimeout(() => _setFirmaDesdeDataURL(canvasId, dataURL, intentos - 1), 80);
+    return;
+  }
+
   const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   const fijo = _normalizarDataURLFirma(dataURL);
-  if (!fijo) return;
+  if (!fijo) {
+    // console.warn("⚠️ Firma vacía/ inválida para", canvasId);
+    return;
+  }
 
   const img = new Image();
+  img.decoding = "async";
+
   img.onload = () => {
-    requestAnimationFrame(() => {
-      try { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); }
-      catch(e){ console.warn("❌ drawImage falló:", e); }
-    });
+    try {
+      // ✅ dibuja usando el tamaño CSS (por el setTransform del resize)
+      const cssW = canvas.getBoundingClientRect().width;
+      const cssH = canvas.getBoundingClientRect().height;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, cssW, cssH);
+    } catch (e) {
+      console.warn("❌ drawImage falló:", e);
+    }
   };
-  img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0,60) + "...");
+
+  img.onerror = () => {
+    console.warn("❌ Firma inválida/no cargó:", (fijo || "").slice(0, 80) + "...");
+  };
+
   img.src = fijo;
 }
+
 
 function _uuidConsent() {
   try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
