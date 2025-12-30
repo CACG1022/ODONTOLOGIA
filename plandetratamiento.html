@@ -69,23 +69,22 @@
     * { box-sizing: border-box; }
 
     body {
-      font-family: var(--font);
-      margin: 0;
-      padding: 1em;
-      background: var(--page-bg);
-      padding-top: 78px; /* espacio para barra fija */
-      color: #0f172a;
-    }
+  font-family: var(--font);
+  margin: 0;
+  padding: 1em;
+  background: var(--page-bg);
+  color: #0f172a;
+}
 
-    /* ✅ Barra superior fija */
-    .topbar{
-      position: sticky;
-      top: 0; left: 0; right: 0;
-      z-index: 2000;
-      background: #e5e7eb;          /* gris */
-      border-bottom: 1px solid #d6dde6;
-      padding: 12px 0;
-    }
+ 
+    /* ✅ Barra superior NORMAL (NO fija, NO sticky) */
+.topbar{
+  position: relative;   /* <-- antes: sticky */
+  background: #e5e7eb;
+  border-bottom: 1px solid #d6dde6;
+  padding: 12px 0;
+}
+
     .topbar-inner{
       max-width: 960px;
       margin: 0 auto;
