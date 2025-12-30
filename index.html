@@ -25,6 +25,8 @@
       hoy: "#",
       rips: "#",
       registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
+      precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html"
+
 
       // ✅ NUEVO: página para administrar usuarios/roles
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html"
@@ -92,6 +94,10 @@
     }
 
     async function verificarSesionYPermisos() {
+
+      setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
+      wireNav("go-precios", URLS.precios, "href");
+
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session) {
@@ -584,6 +590,24 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <!-- ✅ NUEVO: Actualización de precios (solo admin) -->
+<a class="tile" href="#" id="go-precios">
+  <div class="left">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M12 1v4M12 19v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </div>
+    <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
+  </div>
+  <div class="arrow">→</div>
+</a>
+
       </div>
 
       <div class="footer">
