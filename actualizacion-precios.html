@@ -16,7 +16,7 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+    const ADMIN_EMAIL = "camilo-1000@hotmail.com"; // lowercase
 
     // ✅ Lee rol desde profiles
     async function cargarRolDesdeProfiles(userId) {
@@ -34,8 +34,11 @@
       }
     }
 
+    // ✅ Convierte input a número o null si está vacío
     function money(v) {
-      const n = parseInt(String(v ?? "").replace(/[^\d]/g, ""), 10);
+      const raw = String(v ?? "").trim();
+      if (!raw) return null;
+      const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
       return Number.isFinite(n) ? n : null;
     }
 
@@ -46,7 +49,7 @@
     const state = {
       all: [],
       filtered: [],
-      editing: new Map(), // id -> {nombre, valor}
+      editing: new Map(), // id -> {procedimiento, valor}
       isAdmin: false
     };
 
@@ -60,7 +63,12 @@
     }
 
     function setStatus(msg){
-      document.getElementById("status").textContent = msg || "";
+      const el = document.getElementById("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function markDirty(tr, dirty){
+      tr.classList.toggle("dirty", !!dirty);
     }
 
     function render(){
@@ -73,51 +81,60 @@
       state.filtered.forEach((row)=>{
         const tr = document.createElement("tr");
 
-        const tdNombre = document.createElement("td");
-        const inpNombre = document.createElement("input");
-        inpNombre.type = "text";
-        inpNombre.value = row.procedimiento ?? "";
-        inpNombre.addEventListener("input", ()=>{
-          const next = state.editing.get(row.id) || { nombre: row.nombre, valor: row.valor };
-          next.nombre = inpNombre.value;
-          state.editing.set(row.id, next);
+        // ===== Procedimiento =====
+        const tdProc = document.createElement("td");
+        const inpProc = document.createElement("input");
+        inpProc.type = "text";
+        inpProc.value = row.procedimiento ?? "";
+
+        inpProc.addEventListener("input", ()=>{
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor };
+          prev.procedimiento = inpProc.value;
+          state.editing.set(row.id, prev);
           markDirty(tr, true);
         });
-        tdNombre.appendChild(inpNombre);
 
+        tdProc.appendChild(inpProc);
+
+        // ===== Valor =====
         const tdValor = document.createElement("td");
         const inpValor = document.createElement("input");
         inpValor.type = "number";
         inpValor.min = "0";
         inpValor.step = "100";
         inpValor.placeholder = "Sin precio";
-        inpValor.value = (row.valor ?? "") === null ? "" : (row.valor ?? "");
-        inpValor.addEventListener("input", ()=>{
-          const next = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor };
-          next.procedimiento = inpNombre.value;
+        inpValor.value = (row.valor === null || row.valor === undefined) ? "" : String(row.valor);
 
-          state.editing.set(row.id, next);
+        inpValor.addEventListener("input", ()=>{
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor };
+          prev.procedimiento = inpProc.value;
+          prev.valor = inpValor.value; // guardamos lo que escribe (string), money() lo convierte luego
+          state.editing.set(row.id, prev);
           markDirty(tr, true);
         });
+
         tdValor.appendChild(inpValor);
 
+        // ===== Acciones =====
         const tdAcc = document.createElement("td");
         tdAcc.className = "actions";
 
         const btnSave = document.createElement("button");
         btnSave.className = "btn primary";
+        btnSave.type = "button";
         btnSave.textContent = "Guardar";
         btnSave.addEventListener("click", ()=>guardarFila(row.id));
 
         const btnDel = document.createElement("button");
         btnDel.className = "btn danger";
+        btnDel.type = "button";
         btnDel.textContent = "Eliminar";
-        btnDel.addEventListener("click", ()=>eliminarFila(row.id, row.nombre));
+        btnDel.addEventListener("click", ()=>eliminarFila(row.id, row.procedimiento));
 
         tdAcc.appendChild(btnSave);
         tdAcc.appendChild(btnDel);
 
-        tr.appendChild(tdNombre);
+        tr.appendChild(tdProc);
         tr.appendChild(tdValor);
         tr.appendChild(tdAcc);
 
@@ -125,45 +142,44 @@
       });
     }
 
-    function markDirty(tr, dirty){
-      tr.classList.toggle("dirty", !!dirty);
-    }
-
     function applyFilter(){
-  const q = String(document.getElementById("search").value || "")
-    .trim()
-    .toLowerCase();
+      const q = String(document.getElementById("search").value || "")
+        .trim()
+        .toLowerCase();
 
-  if (!q) {
-    state.filtered = [...state.all];
-  } else {
-    state.filtered = state.all.filter(r =>
-      String(r.procedimiento || "").toLowerCase().includes(q)
-    );
-  }
-  render();
-}
-
+      if (!q) {
+        state.filtered = [...state.all];
+      } else {
+        state.filtered = state.all.filter(r =>
+          String(r.procedimiento || "").toLowerCase().includes(q)
+        );
+      }
+      render();
+    }
 
     async function cargarProcedimientos(){
       setStatus("Cargando procedimientos...");
-      const { data, error } = await supabase
-        .from("procedimientos_precios")
-        .select("id,procedimiento,valor,updated_at")
-        .order("procedimiento", { ascending: true });
+      try{
+        const { data, error } = await supabase
+          .from("procedimientos_precios")
+          .select("id,procedimiento,valor,updated_at")
+          .order("procedimiento", { ascending: true });
 
-      if (error){
-        setStatus("Error: " + error.message);
-        showToast("No se pudo cargar", "err");
-        return;
+        if (error){
+          setStatus("Error: " + error.message);
+          showToast("No se pudo cargar", "err");
+          return;
+        }
+
+        state.all = data || [];
+        state.filtered = [...state.all];
+        state.editing.clear();
+
+        setStatus("");
+        render();
+      } finally {
+        // por si algo falla antes
       }
-
-      state.all = data || [];
-      state.filtered = [...state.all];
-      state.editing.clear();
-
-      setStatus("");
-      render();
     }
 
     async function guardarFila(id){
@@ -181,7 +197,6 @@
         return;
       }
 
-      // Permitir valor null (sin precio)
       const payload = { procedimiento, valor: valor === null ? null : valor };
 
       setStatus("Guardando...");
@@ -202,8 +217,8 @@
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
 
-    async function eliminarFila(id, nombre){
-      if(!confirm(`¿Eliminar "${nombre}"?`)) return;
+    async function eliminarFila(id, procedimiento){
+      if(!confirm(`¿Eliminar "${procedimiento}"?`)) return;
 
       setStatus("Eliminando...");
       const { error } = await supabase
@@ -235,7 +250,7 @@
       setStatus("Creando...");
       const { error } = await supabase
         .from("procedimientos_precios")
-        .insert([{ procedimiento, valor: valor === null ? null : valor }]);
+        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor }]);
 
       setStatus("");
       if(error){
@@ -253,6 +268,9 @@
     }
 
     async function init(){
+      // año
+      document.getElementById("year").textContent = new Date().getFullYear();
+
       // 🔒 sesión
       const { data: { session } } = await supabase.auth.getSession();
       if(!session){
@@ -312,7 +330,6 @@
       --brand: #1f6aa5;
       --brand2: #114a75;
       --danger: #b42318;
-      --ok: #067647;
       --shadow: 0 10px 30px rgba(16,24,40,.08);
       --radius: 14px;
     }
@@ -605,10 +622,7 @@
   </div>
 
   <div id="toast"></div>
-
-  <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-  </script>
 </body>
 </html>
+
 
