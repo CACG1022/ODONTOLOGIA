@@ -162,6 +162,33 @@
       .proc-row { grid-template-columns: 1fr 20px 105px; }
       .panel { width: 95vw; }
     }
+    .top-actions{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  padding: 10px 14px;
+  background: rgba(249,249,249,.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid #e6eaee;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btn-top{
+  background: #009688;      /* ✅ color del botón */
+  color: #fff;              /* ✅ color del texto */
+  padding: 0.6em 1.2em;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.btn-top:hover{ opacity: .95; }
+
   </style>
 </head>
 
@@ -175,14 +202,14 @@
           type="button"
           class="btn-top"
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">
-          🏠 Inicio
+           Inicio
         </button>
 
         <button
           type="button"
           class="btn-top"
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
-          📝 Historia Clínica
+          Historia Clínica
         </button>
       </div>
     </div>
