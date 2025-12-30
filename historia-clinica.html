@@ -1376,39 +1376,52 @@ async function agregarEvolucion() {
   }
 
   function renderEvoluciones() {
-    const tbody = document.getElementById("tabla_evoluciones");
-    if (!tbody) return;
+  const tbody = document.getElementById("tabla_evoluciones");
+  if (!tbody) return;
 
-    tbody.innerHTML = "";
+  tbody.innerHTML = "";
 
-    evoluciones.forEach((evo, idx) => {
-      const tr = document.createElement("tr");
+  evoluciones.forEach((evo, idx) => {
+    const tr = document.createElement("tr");
 
-      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
-      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
-      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
-      const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
-      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
+    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+    const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
+    const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
+    const profesional = evo.profesional ?? evo.evo_profesional ?? "";
+    const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
+    const detalle = evo.detalle ?? evo.evo_detalle ?? "";
 
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${idEvo}
-        </td>
-        <td>${fecha}</td>
-        <td>${hora}</td>
-        <td>${String(profesional).toUpperCase()}</td>
-        <td>${String(procedimiento).toUpperCase()}</td>
-        <td style="white-space:pre-wrap;">${detalle}</td>
-        <td>
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
-            Eliminar
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+    // ✅ Estado de consentimiento (simple: si existe para esa evolución)
+    const tieneConsent = Array.isArray(consentimientos) && consentimientos.some(c => c.evolucion_id === idEvo);
+
+    tr.innerHTML = `
+      <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+        ${idEvo}
+      </td>
+      <td>${fecha}</td>
+      <td>${hora}</td>
+      <td>${String(profesional).toUpperCase()}</td>
+      <td>${String(procedimiento).toUpperCase()}</td>
+      <td style="white-space:pre-wrap;">${detalle}</td>
+      <td style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn ${tieneConsent ? "btn-agenda" : "btn-buscar"}"
+          style="padding:8px 10px; width:auto;"
+          onclick="abrirConsentimiento('${idEvo}')">
+          ${tieneConsent ? "Consentimiento ✅" : "Consentimiento"}
+        </button>
+
+        <button type="button" class="btn btn-buscar"
+          style="padding:8px 10px; width:auto;"
+          onclick="eliminarEvolucion(${idx})">
+          Eliminar
+        </button>
+      </td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
 
   function normalizarEvolucionesDeWebhook(data) {
     let raw = data?.evoluciones;
@@ -1764,12 +1777,14 @@ async function agregarEvolucion() {
     document.getElementById("usuarioN8N").value = usuario;
 
     const payload = {
-      historia_clinica: datosHistoria,
-      odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,
-      fecha_envio: new Date().toISOString(),
-      usuario_logueado: usuario
-    };
+  historia_clinica: datosHistoria,
+  odontograma: odontogramaCompleto,
+  evoluciones: evoluciones,
+  consentimientos: consentimientos, // ✅ NUEVO
+  fecha_envio: new Date().toISOString(),
+  usuario_logueado: usuario
+};
+
 
     document.getElementById("dataN8N").value = JSON.stringify(payload);
     document.getElementById("formN8N").submit();
@@ -2271,8 +2286,454 @@ async function agregarEvolucion() {
       if (e.key === "Escape") salirFullscreen();
     });
   })();
+// ==============================
+// ✅ CONSENTIMIENTOS INFORMADOS (COMPLETO)
+// ==============================
+let consentimientos = [];
+const LS_CONS_KEY = "consentimientos_local";
+
+// ⚠️ Cambia por tu webhook real de n8n (para consentimientos)
+const N8N_WEBHOOK_CONSENT = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/PUT-AQUI-TU-WEBHOOK";
+
+// ---- Plantillas (puedes editar los textos a tu gusto)
+const CONSENT_TEMPLATES = {
+  ODONTO_GENERAL: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO DE ODONTOLOGÍA GENERAL
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Usted tiene derecho a conocer el procedimiento a que va a ser sometido y las posibles complicaciones.
+Lea atentamente y pregunte cualquier duda.
+
+CONSISTE:
+Procedimientos odontológicos generales orientados a mantener salud bucal, diagnosticar, prevenir y tratar condiciones comunes.
+
+BENEFICIOS:
+- Prevención y detección temprana
+- Eliminación/control de caries y placa
+- Conservación de estructura dental
+- Educación en higiene oral
+
+RIESGOS / COMPLICACIONES POSIBLES:
+- Sensibilidad temporal
+- Irritación gingival
+- Desprendimiento de restauraciones
+- En casos poco comunes: reacciones alérgicas
+
+CONSECUENCIAS DE NO REALIZAR EL PROCEDIMIENTO:
+- Progresión de caries, dolor, infección
+- Mayor complejidad y costo futuro
+- Riesgo de pérdida dental
+
+ACEPTACIÓN:
+Declaro que he sido informado(a), he podido preguntar y entiendo beneficios, riesgos y alternativas. Autorizo la realización del procedimiento.
+`.trim(),
+
+  REHABILITACION: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO DE REHABILITACIÓN ORAL
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Usted tiene derecho a conocer el procedimiento y las posibles complicaciones.
+Lea atentamente y pregunte cualquier duda.
+
+CONSISTE:
+La rehabilitación oral busca restaurar salud, función y estética (prótesis, coronas, carillas, puentes, etc.).
+
+BENEFICIOS:
+- Recuperar función masticatoria y fonética
+- Mejorar estética
+- Prevenir problemas oclusales/ATM
+- Mejorar calidad de vida
+
+RIESGOS / COMPLICACIONES POSIBLES:
+- Molestias o sensibilidad
+- Fractura/aflojamiento de prótesis
+- Inflamación o infección
+- Necesidad de ajustes y controles adicionales
+
+COMPROMISOS DEL PACIENTE:
+- Asistir a controles
+- Seguir indicaciones
+- Mantener higiene oral
+
+ACEPTACIÓN:
+Declaro que he sido informado(a), entiendo beneficios, riesgos y alternativas, y autorizo la realización del procedimiento.
+`.trim(),
+
+  GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
+He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
+`.trim()
+};
+
+// Mapeo AUTO por palabras clave (ajusta como quieras)
+function _plantillaAutoPorProcedimiento(proc) {
+  const p = String(proc || "").toUpperCase();
+
+  const esRehab = /(NUCLEO|NÚCLEO|CORONA|PUENTE|CARILLA|PROTESIS|PRÓTESIS|REHABILITACION|REHABILITACIÓN)/.test(p);
+  const esGeneral = /(HIGIEN|HIGIENE|PROFILAXIS|SELLANTES|RESINA|AMALGAMA|OBTURACION|OBTURACIÓN|OPERATORIA)/.test(p);
+
+  if (esRehab) return "REHABILITACION";
+  if (esGeneral) return "ODONTO_GENERAL";
+  return "GENERICA";
+}
+
+function _cargarConsentimientosLS(){
+  try {
+    const raw = localStorage.getItem(LS_CONS_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch(e){ return []; }
+}
+function _guardarConsentimientosLS(){
+  try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  consentimientos = _cargarConsentimientosLS();
+  _initCanvasFirma("firmaPaciente");
+  _initCanvasFirma("firmaProfesional");
+});
+
+// ---- Modal open/close
+let _evolucionActualId = null;
+
+function abrirConsentimiento(evolucionId){
+  _evolucionActualId = evolucionId;
+
+  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === evolucionId) ||
+              evoluciones.find(x => x.id === evolucionId);
+
+  if (!evo) { alert("No se encontró la evolución."); return; }
+
+  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+
+  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
+  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
+  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
+
+  document.getElementById("consent_procedimiento").value = procedimiento;
+
+  // Si ya existe consentimiento para esa evolución → cargarlo
+  const existente = consentimientos.find(c => c.evolucion_id === evolucionId);
+  if (existente){
+    document.getElementById("consent_template").value = existente.template || "AUTO";
+    document.getElementById("consent_texto").value = existente.texto || "";
+    _setFirmaDesdeDataURL("firmaPaciente", existente.firma_paciente || "");
+    _setFirmaDesdeDataURL("firmaProfesional", existente.firma_profesional || "");
+  } else {
+    document.getElementById("consent_template").value = "AUTO";
+    const autoKey = _plantillaAutoPorProcedimiento(procedimiento);
+    const texto = (CONSENT_TEMPLATES[autoKey] || CONSENT_TEMPLATES.GENERICA)({
+      paciente, doc, procedimiento, profesional, fecha
+    });
+    document.getElementById("consent_texto").value = texto;
+    limpiarFirma("PAC");
+    limpiarFirma("PRO");
+  }
+
+  document.getElementById("consent_meta").textContent =
+    `Evolución: ${evolucionId} • Paciente: ${paciente || "-"} • Doc: ${doc || "-"} • Profesional: ${profesional || "-"}`;
+
+  document.getElementById("modalConsent").style.display = "block";
+}
+
+function cerrarConsentimiento(){
+  document.getElementById("modalConsent").style.display = "none";
+  _evolucionActualId = null;
+
+  // refresca tabla para que muestre ✅ si guardaste
+  renderEvoluciones();
+}
+
+function cargarPlantillaConsentimiento(){
+  if (!_evolucionActualId) return;
+
+  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === _evolucionActualId) ||
+              evoluciones.find(x => x.id === _evolucionActualId);
+  if (!evo) return;
+
+  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
+  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
+  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
+
+  const sel = document.getElementById("consent_template").value;
+
+  let key = sel;
+  if (sel === "AUTO") key = _plantillaAutoPorProcedimiento(procedimiento);
+  if (!CONSENT_TEMPLATES[key]) key = "GENERICA";
+
+  document.getElementById("consent_texto").value =
+    CONSENT_TEMPLATES[key]({paciente, doc, procedimiento, profesional, fecha});
+}
+
+// ---- Firmas (canvas)
+const _firmas = {}; // por canvasId: {drawing,lastX,lastY}
+
+function _initCanvasFirma(canvasId){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+
+  const ctx = canvas.getContext("2d");
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+
+  _firmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
+
+  function pos(e){
+    const r = canvas.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  function start(e){
+    e.preventDefault();
+    const p = pos(e);
+    _firmas[canvasId].drawing = true;
+    _firmas[canvasId].lastX = p.x;
+    _firmas[canvasId].lastY = p.y;
+  }
+
+  function move(e){
+    if (!_firmas[canvasId].drawing) return;
+    e.preventDefault();
+    const p = pos(e);
+    ctx.beginPath();
+    ctx.moveTo(_firmas[canvasId].lastX, _firmas[canvasId].lastY);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    _firmas[canvasId].lastX = p.x;
+    _firmas[canvasId].lastY = p.y;
+  }
+
+  function end(e){
+    e.preventDefault();
+    _firmas[canvasId].drawing = false;
+  }
+
+  // mouse
+  canvas.addEventListener("mousedown", start);
+  canvas.addEventListener("mousemove", move);
+  window.addEventListener("mouseup", end);
+
+  // touch
+  canvas.addEventListener("touchstart", start, { passive:false });
+  canvas.addEventListener("touchmove", move, { passive:false });
+  canvas.addEventListener("touchend", end, { passive:false });
+}
+
+function limpiarFirma(tipo){
+  const id = (tipo === "PAC") ? "firmaPaciente" : "firmaProfesional";
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width, canvas.height);
+}
+
+function _getFirmaDataURL(canvasId){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return "";
+
+  // si está vacío, devuelve ""
+  const ctx = canvas.getContext("2d");
+  const pixels = ctx.getImageData(0,0,canvas.width, canvas.height).data;
+  let hasInk = false;
+  for (let i=3; i<pixels.length; i+=4){ // alpha
+    if (pixels[i] !== 0) { hasInk = true; break; }
+  }
+  return hasInk ? canvas.toDataURL("image/png") : "";
+}
+
+function _setFirmaDesdeDataURL(canvasId, dataURL){
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width, canvas.height);
+  if (!dataURL) return;
+
+  const img = new Image();
+  img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  img.src = dataURL;
+}
+
+function _uuidConsent() {
+  try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
+  catch(e){ return _uuidFallback(); }
+}
+
+// ---- Guardar consentimiento
+async function guardarConsentimiento(){
+  if (!_evolucionActualId) { alert("No hay evolución activa."); return; }
+
+  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === _evolucionActualId) ||
+              evoluciones.find(x => x.id === _evolucionActualId);
+  if (!evo) { alert("No se encontró la evolución."); return; }
+
+  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+
+  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
+  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
+  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
+  const hora = (evo.hora || evo.evo_hora || _horaHHMM()).trim();
+
+  const texto = (document.getElementById("consent_texto")?.value || "").trim();
+  if (!texto) { alert("El texto del consentimiento está vacío."); return; }
+
+  const firma_paciente = _getFirmaDataURL("firmaPaciente");
+  const firma_profesional = _getFirmaDataURL("firmaProfesional");
+
+  if (!firma_paciente) { alert("Falta la firma del paciente."); return; }
+  if (!firma_profesional) { alert("Falta la firma del profesional."); return; }
+
+  const templateSel = document.getElementById("consent_template").value;
+  const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+  const cedulaPaciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
+
+  const nuevo = {
+    id: _uuidConsent(),
+    evolucion_id: _evolucionActualId,
+    cedula_paciente: cedulaPaciente,
+    paciente_nombre: paciente,
+    paciente_doc: doc,
+    procedimiento,
+    profesional,
+    fecha,
+    hora,
+    template: templateSel,
+    texto,
+    firma_paciente,
+    firma_profesional,
+    usuario,
+    ts: new Date().toISOString()
+  };
+
+  // 1 consentimiento por evolución (upsert)
+  const i = consentimientos.findIndex(c => c.evolucion_id === _evolucionActualId);
+  if (i >= 0) consentimientos[i] = nuevo;
+  else consentimientos.unshift(nuevo);
+
+  _guardarConsentimientosLS();
+
+  // Enviar a n8n
+  try {
+    const payload = {
+      evento: "guardar_consentimiento",
+      consentimiento: nuevo,
+      usuario_logueado: usuario,
+      fecha_envio: new Date().toISOString()
+    };
+
+    // si no cambiaste el webhook, evita fallo silencioso
+    if (N8N_WEBHOOK_CONSENT.includes("PUT-AQUI-TU-WEBHOOK")) {
+      alert("✅ Consentimiento guardado localmente.\n⚠️ Falta configurar N8N_WEBHOOK_CONSENT.");
+      cerrarConsentimiento();
+      return;
+    }
+
+    const resp = await fetch(N8N_WEBHOOK_CONSENT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    alert("✅ Consentimiento guardado y enviado.");
+  } catch (err) {
+    console.warn("⚠️ Guardado local, pero no se pudo enviar a n8n:", err);
+    alert("⚠️ Consentimiento guardado localmente, pero NO se pudo enviar a n8n.");
+  }
+
+  cerrarConsentimiento();
+}
 
 </script>
+<!-- ==========================
+     ✅ MODAL CONSENTIMIENTOS
+========================== -->
+<div id="modalConsent" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000003; padding:18px;">
+  <div style="max-width:980px; margin:0 auto; background:#fff; border-radius:14px; border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.18); overflow:hidden;">
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#eef6ff; border-bottom:1px solid #e7edf5;">
+      <div>
+        <div style="font-weight:800; color:#0D47A1;">Consentimiento informado</div>
+        <div style="font-size:12px; color:#6b7a90;" id="consent_meta"></div>
+      </div>
+      <button type="button" class="btn btn-buscar" style="width:auto; padding:8px 12px;" onclick="cerrarConsentimiento()">Cerrar ✕</button>
+    </div>
+
+    <div style="padding:16px;">
+      <div class="grid g-2">
+        <div class="ctrl">
+          <label>Procedimiento (desde la evolución)</label>
+          <input id="consent_procedimiento" type="text" readonly>
+        </div>
+
+        <div class="ctrl">
+          <label>Plantilla</label>
+          <select id="consent_template" onchange="cargarPlantillaConsentimiento()">
+            <option value="AUTO">Automática (según procedimiento)</option>
+            <option value="ODONTO_GENERAL">Odontología general</option>
+            <option value="REHABILITACION">Rehabilitación oral</option>
+            <option value="GENERICA">Genérica</option>
+          </select>
+        </div>
+
+        <div class="ctrl full">
+          <label>Texto del consentimiento (editable)</label>
+          <textarea id="consent_texto" style="min-height:220px;"></textarea>
+        </div>
+      </div>
+
+      <div class="rowline"></div>
+
+      <div class="grid g-2">
+        <div class="ctrl">
+          <label>Firma paciente</label>
+          <canvas id="firmaPaciente" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
+          <div class="inline" style="margin-top:8px;">
+            <button type="button" class="btn btn-buscar" style="width:auto;" onclick="limpiarFirma('PAC')">Limpiar</button>
+          </div>
+        </div>
+
+        <div class="ctrl">
+          <label>Firma profesional</label>
+          <canvas id="firmaProfesional" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
+          <div class="inline" style="margin-top:8px;">
+            <button type="button" class="btn btn-buscar" style="width:auto;" onclick="limpiarFirma('PRO')">Limpiar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="rowline"></div>
+
+      <div class="inline" style="justify-content:flex-end; gap:10px;">
+        <button type="button" class="btn btn-agenda" style="width:auto;" onclick="guardarConsentimiento()">
+          Guardar consentimiento
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 
