@@ -2293,7 +2293,8 @@ let consentimientos = [];
 const LS_CONS_KEY = "consentimientos_local";
 
 // ⚠️ Cambia por tu webhook real de n8n (para consentimientos)
-const N8N_WEBHOOK_CONSENT = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/PUT-AQUI-TU-WEBHOOK";
+const N8N_WEBHOOK_CONSENT = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9a2c4949-da38-4f56-b6ff-d292eee820af";
+
 
 // ---- Plantillas (puedes editar los textos a tu gusto)
 const CONSENT_TEMPLATES = {
@@ -2580,6 +2581,12 @@ function _uuidConsent() {
 }
 
 // ---- Guardar consentimiento
+async function sha256Hex(text) {
+  const enc = new TextEncoder().encode(text);
+  const buf = await crypto.subtle.digest("SHA-256", enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
 async function guardarConsentimiento(){
   if (!_evolucionActualId) { alert("No hay evolución activa."); return; }
 
@@ -2587,16 +2594,18 @@ async function guardarConsentimiento(){
               evoluciones.find(x => x.id === _evolucionActualId);
   if (!evo) { alert("No se encontró la evolución."); return; }
 
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+  const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const cedula_paciente  = (document.getElementById("paciente_numdoc")?.value || "").trim();
 
   const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
-  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
-  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
-  const hora = (evo.hora || evo.evo_hora || _horaHHMM()).trim();
+  const profesional   = (evo.profesional || evo.evo_profesional || "").trim();
+  const texto         = (document.getElementById("consent_texto")?.value || "").trim();
 
-  const texto = (document.getElementById("consent_texto")?.value || "").trim();
-  if (!texto) { alert("El texto del consentimiento está vacío."); return; }
+  if (!cedula_paciente) { alert("Falta la cédula del paciente."); return; }
+  if (!paciente_nombre) { alert("Falta el nombre del paciente."); return; }
+  if (!procedimiento)   { alert("Falta el procedimiento."); return; }
+  if (!profesional)     { alert("Falta el profesional."); return; }
+  if (!texto)           { alert("El texto del consentimiento está vacío."); return; }
 
   const firma_paciente = _getFirmaDataURL("firmaPaciente");
   const firma_profesional = _getFirmaDataURL("firmaProfesional");
@@ -2604,50 +2613,52 @@ async function guardarConsentimiento(){
   if (!firma_paciente) { alert("Falta la firma del paciente."); return; }
   if (!firma_profesional) { alert("Falta la firma del profesional."); return; }
 
-  const templateSel = document.getElementById("consent_template").value;
-  const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-  const cedulaPaciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
+  const template_key = document.getElementById("consent_template")?.value || "AUTO";
+  const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
 
-  const nuevo = {
-    id: _uuidConsent(),
-    evolucion_id: _evolucionActualId,
-    cedula_paciente: cedulaPaciente,
-    paciente_nombre: paciente,
-    paciente_doc: doc,
+  const firmado_en = new Date().toISOString();
+  const creado_en = firmado_en;
+
+  // ✅ Hash (texto + firmas + datos claves) para trazabilidad
+  const hash_documento = await sha256Hex(
+    JSON.stringify({
+      cedula_paciente, paciente_nombre, procedimiento, profesional, template_key,
+      texto, firma_paciente, firma_profesional, firmado_en
+    })
+  );
+
+  // ✅ Armamos el registro EXACTO para tu tabla `consentimientos`
+  // Ajusta nombres si alguno en tu tabla difiere (por ejemplo paciente_doc_ vs paciente_doc)
+  const row = {
+    // id: lo genera Supabase con gen_random_uuid()
+    cedula_paciente,
+    paciente_nombre,
+    paciente_doc: cedula_paciente,        // si tu columna es "paciente_doc" y quieres guardar el doc aquí
+    evolucion_id: _evolucionActualId,     // UUID de tu evolución
     procedimiento,
     profesional,
-    fecha,
-    hora,
-    template: templateSel,
+    template_key,
     texto,
-    firma_paciente,
-    firma_profesional,
-    usuario,
-    ts: new Date().toISOString()
+    firma_paciente,                       // base64 (dataURL)
+    firma_profesional,                    // base64 (dataURL)
+    pdf_path: null,                       // opcional si luego generas PDF en n8n
+    firmado_en,
+    creado_en,
+    creado_por,
+    ip: null,                             // el frontend no puede obtener IP fácil; mejor que lo ponga n8n
+    user_agent: navigator.userAgent,
+    hash_documento
   };
 
-  // 1 consentimiento por evolución (upsert)
+  // ✅ Guardado local (opcional)
   const i = consentimientos.findIndex(c => c.evolucion_id === _evolucionActualId);
-  if (i >= 0) consentimientos[i] = nuevo;
-  else consentimientos.unshift(nuevo);
+  if (i >= 0) consentimientos[i] = row;
+  else consentimientos.unshift(row);
+  try { localStorage.setItem("consentimientos_local", JSON.stringify(consentimientos)); } catch(e){}
 
-  _guardarConsentimientosLS();
-
-  // Enviar a n8n
+  // ✅ Enviar a n8n
   try {
-    const payload = {
-      evento: "guardar_consentimiento",
-      consentimiento: nuevo,
-      usuario_logueado: usuario,
-      fecha_envio: new Date().toISOString()
-    };
-
-    // si no cambiaste el webhook, evita fallo silencioso
-    if (N8N_WEBHOOK_CONSENT.includes("PUT-AQUI-TU-WEBHOOK")) {
-      alert("✅ Consentimiento guardado localmente.\n⚠️ Falta configurar N8N_WEBHOOK_CONSENT.");
-      cerrarConsentimiento();
-      return;
-    }
+    const payload = { evento: "guardar_consentimiento", row };
 
     const resp = await fetch(N8N_WEBHOOK_CONSENT, {
       method: "POST",
@@ -2657,14 +2668,15 @@ async function guardarConsentimiento(){
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-    alert("✅ Consentimiento guardado y enviado.");
+    alert("✅ Consentimiento enviado a n8n y listo para guardar en Supabase.");
+    cerrarConsentimiento();
+    renderEvoluciones();
   } catch (err) {
     console.warn("⚠️ Guardado local, pero no se pudo enviar a n8n:", err);
     alert("⚠️ Consentimiento guardado localmente, pero NO se pudo enviar a n8n.");
   }
-
-  cerrarConsentimiento();
 }
+
 
 </script>
 <!-- ==========================
