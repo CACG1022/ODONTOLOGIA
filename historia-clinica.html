@@ -1815,8 +1815,9 @@ function normalizarConsentimientosDeWebhook(data) {
     profesional: c.profesional ?? "",
     template: c.template ?? c.template_key ?? c.templateKey ?? "AUTO",
     texto: c.texto ?? c.consent_texto ?? "",
-    firma_paciente: c.firma_paciente ?? "",
-    firma_profesional: c.firma_profesional ?? "",
+    firma_paciente: c.firma_paciente ?? c.firmaPaciente ?? c.firma_pac ?? "",
+    firma_profesional: c.firma_profesional ?? c.firmaProfesional ?? c.firma_prof ?? "",
+
     firmado_en: c.firmado_en ?? c.firmadoEn ?? null,
     creado_en: c.creado_en ?? c.creadoEn ?? null,
     creado_por: c.creado_por ?? c.creadoPor ?? null,
@@ -1825,6 +1826,28 @@ function normalizarConsentimientosDeWebhook(data) {
   })).filter(x => String(x.evolucion_id || "").trim() !== "");
 }
 
+function _normalizarDataURLFirma(valor) {
+  if (!valor) return "";
+
+  let v = String(valor).trim();
+
+  // Si viene URL-encoded
+  try { v = decodeURIComponent(v); } catch(e) {}
+
+  // Arregla base64 dañado por espacios
+  v = v.replace(/\s/g, "+");
+
+  // Si ya es dataURL, ok
+  if (v.startsWith("data:image")) return v;
+
+  // Si viene solo el base64 sin prefijo, lo añadimos
+  // (típico si en n8n guardaste solo el "base64" sin "data:image/png;base64,")
+  if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
+    return "data:image/png;base64," + v;
+  }
+
+  return ""; // si no parece una firma válida
+}
 
   
   // ==============================
@@ -2609,14 +2632,19 @@ function _getFirmaDataURL(canvasId){
 function _setFirmaDesdeDataURL(canvasId, dataURL){
   const canvas = document.getElementById(canvasId);
   if (!canvas) return;
+
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0,0,canvas.width, canvas.height);
-  if (!dataURL) return;
+
+  const fijo = _normalizarDataURLFirma(dataURL);
+  if (!fijo) return;
 
   const img = new Image();
   img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  img.src = dataURL;
+  img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0,40) + "...");
+  img.src = fijo;
 }
+
 
 function _uuidConsent() {
   try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
@@ -2697,7 +2725,8 @@ async function guardarConsentimiento(){
   const i = consentimientos.findIndex(c => c.evolucion_id === _evolucionActualId);
   if (i >= 0) consentimientos[i] = row;
   else consentimientos.unshift(row);
-  try { localStorage.setItem("consentimientos_local", JSON.stringify(consentimientos)); } catch(e){}
+  try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
+
 
   // ✅ Enviar a n8n
   try {
