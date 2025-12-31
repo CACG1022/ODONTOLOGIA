@@ -1375,8 +1375,15 @@
   // Si viene URL-encoded
   try { v = decodeURIComponent(v); } catch(e) {}
 
-  // ✅ CLAVE: espacios => "+"
-  v = v.replace(/\s/g, "+");
+  // ✅ IMPORTANTE:
+  // 1) quitar saltos de línea/tabs (no convertirlos a "+")
+  v = v.replace(/[\r\n\t]/g, "");
+
+  // 2) solo espacios => "+"
+  v = v.replace(/ /g, "+");
+
+  // 3) quitar comillas si viniera como "...."
+  v = v.replace(/^"+|"+$/g, "");
 
   if (v.startsWith("data:image")) return v;
 
@@ -1387,6 +1394,7 @@
 
   return "";
 }
+
 
 
 
