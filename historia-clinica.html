@@ -1815,7 +1815,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
-  function imprimirDocumento(){function imprimirDocumento(){
+  // ==============================
+// ✅ IMPRIMIR / DESCARGAR HTML
+// ==============================
+function imprimirDocumento(){
   if (!_docVistaActual) return;
   const d = _docVistaActual;
 
@@ -1862,7 +1865,6 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
 <script>
 (async function(){
-  // Esperar a que carguen las imágenes antes de imprimir
   const imgs = Array.from(document.images || []);
   const waits = imgs.map(img => {
     if (img.complete) return Promise.resolve();
@@ -1872,8 +1874,6 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     });
   });
   await Promise.all(waits);
-
-  // Extra: pequeño delay para el render final
   setTimeout(() => window.print(), 150);
 })();
 <\/script>
@@ -1887,15 +1887,14 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   w.document.close();
 }
 
+function descargarHTMLDocumento(){
+  if (!_docVistaActual) return;
+  const d = _docVistaActual;
 
-  function descargarHTMLDocumento(){
-    if (!_docVistaActual) return;
-    const d = _docVistaActual;
+  const fp = _normalizarDataURLFirma(d.firma_paciente || "");
+  const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
 
-    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
-
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Documento ${escapeHtml(d.id || "")}</title></head>
 <body style="font-family:system-ui,Segoe UI,Arial;padding:20px;">
 <h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
@@ -1916,14 +1915,15 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 </div>
 </body></html>`;
 
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `documento_${(d.id || "sin_id")}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `documento_${(d.id || "sin_id")}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 
   // Init documentos
   document.addEventListener("DOMContentLoaded", () => {
@@ -2067,30 +2067,6 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
