@@ -2290,15 +2290,62 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     return "GENERICA";
   }
 
-  function _normalizarDataURLFirma(valor) {
-    if (!valor) return "";
-    let v = String(valor).trim();
-    try { v = decodeURIComponent(v); } catch(e) {}
-    v = v.replace(/\s/g, "+");
-    if (v.startsWith("data:image")) return v;
-    if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) return "data:image/png;base64," + v;
-    return "";
+  // ✅ 1px transparente para evitar "imagen rota"
+const _IMG_TRANSPARENTE =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO1p0wAAAABJRU5ErkJggg==";
+
+// ✅ normaliza cualquier firma que venga como:
+// - data:image...
+// - base64 puro (sin prefijo)
+// - urlencoded (%2B, %2F)
+// - con espacios en vez de '+'
+// - string con comillas
+// - JSON (ej: {"data":"data:image/png;base64,...."} ó {"firma":"..."} )
+function _normalizarDataURLFirma(valor) {
+  if (!valor) return "";
+
+  let v = valor;
+
+  // si viene como objeto
+  if (typeof v === "object") {
+    v = v.data || v.firma || v.firma_paciente || v.firma_profesional || "";
   }
+
+  v = String(v).trim();
+
+  // si viene JSON string
+  if ((v.startsWith("{") && v.endsWith("}")) || (v.startsWith("[") && v.endsWith("]"))) {
+    try {
+      const obj = JSON.parse(v);
+      v = obj.data || obj.firma || obj.firma_paciente || obj.firma_profesional || "";
+      v = String(v || "").trim();
+    } catch (e) {
+      // si no parsea, seguimos con v tal como está
+    }
+  }
+
+  // quitar comillas si venía "...."
+  v = v.replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
+
+  // si está url-encoded, lo decodificamos solo si parece encoded
+  if (/%[0-9A-Fa-f]{2}/.test(v)) {
+    try { v = decodeURIComponent(v); } catch (e) {}
+  }
+
+  // muchos sistemas cambian + por espacios
+  v = v.replace(/\s/g, "+");
+
+  // ya es dataURL correcto
+  if (v.startsWith("data:image/")) return v;
+
+  // si es base64 "puro" largo -> le ponemos prefijo
+  const base64Like = /^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 200;
+  if (base64Like) return "data:image/png;base64," + v;
+
+  // si no cumple, devolvemos vacío
+  return "";
+}
+
 
   // Canvas firmas documentos
   const _docFirmas = {};
@@ -2447,6 +2494,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
   documentos.forEach((d) => {
     const tr = document.createElement("tr");
+
+    // ✅ pasar ID seguro (sin romper comillas / html)
+    const idJS = JSON.stringify(String(d.id || ""));
+
     tr.innerHTML = `
       <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
         ${escapeHtml(d.id || "")}
@@ -2457,18 +2508,19 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       <td>${escapeHtml(d.profesional || "")}</td>
       <td style="display:flex; gap:8px; flex-wrap:wrap;">
         <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-          onclick="verDocumento('${escapeHtml(d.id)}')">Ver</button>
+          onclick="verDocumento(${idJS})">Ver</button>
 
         <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-          onclick="editarDocumento('${escapeHtml(d.id)}')">Editar</button>
+          onclick="editarDocumento(${idJS})">Editar</button>
 
         <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-          onclick="eliminarDocumentoSupabase('${escapeHtml(d.id)}')">Eliminar</button>
+          onclick="eliminarDocumentoSupabase(${idJS})">Eliminar</button>
       </td>
     `;
     tbody.appendChild(tr);
   });
 }
+
 
 
   function _docById(id){
@@ -2883,21 +2935,26 @@ function verDocumento(id){
   document.getElementById("verDoc_profesional").textContent = d.profesional || "";
   document.getElementById("verDoc_texto").textContent = d.texto || "";
 
-  // ✅ firmas como imagen (dataURL)
-  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
-  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+  // ✅ firmas normalizadas (soporta base64 raro, urlencoded, sin prefijo, etc.)
+  const fp   = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || d.firma || "");
+  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || d.firma2 || "");
 
   const imgPac = document.getElementById("verDoc_firmaPaciente");
   const imgPro = document.getElementById("verDoc_firmaProfesional");
 
-  imgPac.src = fp || "";
-  imgPro.src = fpro || "";
+  // ✅ evitar "imagen rota"
+  imgPac.src = fp || _IMG_TRANSPARENTE;
+  imgPro.src = fpro || _IMG_TRANSPARENTE;
 
-  imgPac.style.opacity = fp ? "1" : ".35";
-  imgPro.style.opacity = fpro ? "1" : ".35";
+  imgPac.style.opacity = fp ? "1" : ".25";
+  imgPro.style.opacity = fpro ? "1" : ".25";
+
+  imgPac.title = fp ? "Firma cargada" : "Sin firma";
+  imgPro.title = fpro ? "Firma cargada" : "Sin firma";
 
   abrirModalVerDoc();
 }
+
 
 // ==============================
 // ✅ IMPRIMIR / PDF (desde navegador)
