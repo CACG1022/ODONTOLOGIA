@@ -162,9 +162,6 @@
     }
     .tabla-docs thead tr{ background:#eef6ff; }
 
-    /* ✅ IMPORTANTE: permite dibujar en móvil sin scroll */
-    canvas { touch-action: none; }
-
     /* ODONTOGRAMA (igual) */
     #odontograma-wrapper * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     #odontograma-wrapper { background: #f9f9f9; padding: 20px 0 40px; margin-top: 30px; border-radius: 14px; }
@@ -1341,7 +1338,7 @@
   })();
 
   // =====================================================================
-  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) + FIRMAS CORREGIDAS
+  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - CON FIX DE COLUMNAS: *_path
   // =====================================================================
   let documentos = [];
   let _docEditId = null;
@@ -1351,35 +1348,49 @@
   const _IMG_TRANSPARENTE =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO1p0wAAAABJRU5ErkJggg==";
 
-  // ✅ normaliza base64 / dataURL
   function _normalizarDataURLFirma(valor) {
     if (!valor) return "";
     let v = String(valor).trim();
 
+    // si viene urlencoded
     try { v = decodeURIComponent(v); } catch(e) {}
+
+    // si viene con espacios, se dañan los +
     v = v.replace(/\s/g, "+");
 
+    // si ya es dataURL completo
     if (v.startsWith("data:image")) return v;
 
+    // si parece base64 "puro"
     if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
       return "data:image/png;base64," + v;
     }
     return "";
   }
 
-  // ==============================
-  // ✅ FIRMAS EN CANVAS (FIX REAL)
-  // ==============================
-  const _docFirmas = {};
+  const DOC_TEMPLATES = {
+    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO
 
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
+He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
+`.trim()
+  };
+
+  // Canvas firmas
+  const _docFirmas = {};
   function _initCanvasDoc(canvasId){
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 2;
     ctx.lineCap = "round";
-    ctx.strokeStyle = "#111";
 
     _docFirmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
 
@@ -1389,7 +1400,6 @@
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       return { x: clientX - r.left, y: clientY - r.top };
     }
-
     function start(e){
       e.preventDefault();
       const p = pos(e);
@@ -1397,32 +1407,26 @@
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
-
     function move(e){
       if (!_docFirmas[canvasId].drawing) return;
       e.preventDefault();
       const p = pos(e);
-
       ctx.beginPath();
       ctx.moveTo(_docFirmas[canvasId].lastX, _docFirmas[canvasId].lastY);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
-
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
-
     function end(e){
       e.preventDefault();
       _docFirmas[canvasId].drawing = false;
     }
 
-    // PC
     canvas.addEventListener("mousedown", start);
     canvas.addEventListener("mousemove", move);
     window.addEventListener("mouseup", end);
 
-    // Móvil
     canvas.addEventListener("touchstart", start, { passive:false });
     canvas.addEventListener("touchmove", move, { passive:false });
     canvas.addEventListener("touchend", end, { passive:false });
@@ -1450,6 +1454,7 @@
 
   function _pintarFirmaEnCanvas(canvas, dataURL) {
     if (!canvas) return;
+
     const ctx = canvas.getContext("2d");
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -1458,8 +1463,10 @@
 
     const img = new Image();
     img.onload = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const w = canvas.width || 420;
+      const h = canvas.height || 160;
+      ctx.clearRect(0, 0, w, h);
+      ctx.drawImage(img, 0, 0, w, h);
     };
     img.onerror = () => console.warn("❌ Firma inválida:", fijo.slice(0, 80));
     img.src = fijo;
@@ -1469,20 +1476,6 @@
     const canvas = document.getElementById(canvasId);
     _pintarFirmaEnCanvas(canvas, dataURL);
   }
-
-  const DOC_TEMPLATES = {
-    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
-CONSENTIMIENTO INFORMADO
-
-Paciente: ${paciente} - Identificación: ${doc}
-Procedimiento: ${procedimiento}
-Profesional: ${profesional}
-Fecha: ${fecha}
-
-Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
-He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
-`.trim()
-  };
 
   function nuevoDocumento(){
     _docEditId = null;
@@ -1568,6 +1561,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     _docVistaActual = null;
   }
 
+  // ✅ FIX: leer desde firma_paciente_path / firma_profesional_path
   function verDocumento(id){
     const d = _docById(id);
     if (!d) { alert("Documento no encontrado."); return; }
@@ -1581,8 +1575,8 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     document.getElementById("verDoc_profesional").textContent = d.profesional || "";
     document.getElementById("verDoc_texto").textContent = d.texto || "";
 
-    const fp   = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || d.firma || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || d.firma2 || "");
+    const fp   = _normalizarDataURLFirma(d.firma_paciente_path || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
 
     const imgPac = document.getElementById("verDoc_firmaPaciente");
     const imgPro = document.getElementById("verDoc_firmaProfesional");
@@ -1596,6 +1590,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     abrirModalVerDoc();
   }
 
+  // ✅ FIX: cargar al canvas desde *_path
   function editarDocumento(id){
     const d = _docById(id);
     if (!d) { alert("Documento no encontrado."); return; }
@@ -1613,11 +1608,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     limpiarFirmaDocumento("PAC");
     limpiarFirmaDocumento("PRO");
 
-    // ✅ pintar firmas guardadas
     setTimeout(() => {
-      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente || d.firmaPaciente || d.firma || "");
-      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional || d.firmaProfesional || d.firma2 || "");
-    }, 120);
+      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente_path || "");
+      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional_path || "");
+    }, 250);
   }
 
   async function sha256Hex(text) {
@@ -1626,6 +1620,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
+  // ✅ FIX: mapear desde Supabase con *_path
   async function cargarDocumentosPacienteDesdeSupabase(cedula){
     documentos = [];
     renderDocumentos();
@@ -1656,8 +1651,11 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
         profesional: x.profesional ?? "",
         template_key: x.template_key ?? x.template ?? "AUTO",
         texto: x.texto ?? "",
-        firma_paciente: x.firma_paciente ?? "",
-        firma_profesional: x.firma_profesional ?? "",
+
+        // 👇 CLAVE: tus columnas reales
+        firma_paciente_path: x.firma_paciente_path ?? "",
+        firma_profesional_path: x.firma_profesional_path ?? "",
+
         firmado_en: x.firmado_en ?? null,
         creado_en: x.creado_en ?? x.created_at ?? null,
         creado_por: x.creado_por ?? null,
@@ -1672,6 +1670,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
+  // ✅ FIX: guardar en Supabase usando firma_paciente_path / firma_profesional_path
   async function guardarDocumentoSupabase(){
     const cedula_paciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
     const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
@@ -1691,18 +1690,17 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!profesional) { alert("⚠️ Falta el profesional."); return; }
     if (!texto) { alert("⚠️ El texto está vacío."); return; }
 
-    // ✅ firmas capturadas del canvas
-    const firma_paciente = _getFirmaDataURLDoc("doc_firmaPaciente");
-    const firma_profesional = _getFirmaDataURLDoc("doc_firmaProfesional");
-    if (!firma_paciente) { alert("⚠️ Falta la firma del paciente."); return; }
-    if (!firma_profesional) { alert("⚠️ Falta la firma del profesional."); return; }
+    const firma_paciente_path = _getFirmaDataURLDoc("doc_firmaPaciente");
+    const firma_profesional_path = _getFirmaDataURLDoc("doc_firmaProfesional");
+    if (!firma_paciente_path) { alert("⚠️ Falta la firma del paciente."); return; }
+    if (!firma_profesional_path) { alert("⚠️ Falta la firma del profesional."); return; }
 
     const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
     const firmado_en = new Date(fecha + "T00:00:00").toISOString();
     const creado_en = new Date().toISOString();
 
     const hash_documento = await sha256Hex(
-      JSON.stringify({ id, cedula_paciente, paciente_nombre, procedimiento, profesional, template_key, texto, firma_paciente, firma_profesional, firmado_en })
+      JSON.stringify({ id, cedula_paciente, paciente_nombre, procedimiento, profesional, template_key, texto, firma_paciente_path, firma_profesional_path, firmado_en })
     );
 
     const row = {
@@ -1715,8 +1713,11 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       profesional,
       template_key,
       texto,
-      firma_paciente,
-      firma_profesional,
+
+      // 👇 CLAVE: tus columnas reales
+      firma_paciente_path,
+      firma_profesional_path,
+
       pdf_path: null,
       firmado_en,
       creado_en,
@@ -1781,13 +1782,15 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
-  // ✅ IMPRIMIR / DESCARGAR HTML
+  // ==============================
+  // ✅ IMPRIMIR / DESCARGAR HTML (FIX *_path)
+  // ==============================
   function imprimirDocumento(){
     if (!_docVistaActual) return;
     const d = _docVistaActual;
 
-    const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+    const fp = _normalizarDataURLFirma(d.firma_paciente_path || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
 
     const html = `
 <!DOCTYPE html>
@@ -1855,8 +1858,8 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!_docVistaActual) return;
     const d = _docVistaActual;
 
-    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
+    const fp = _normalizarDataURLFirma(d.firma_paciente_path || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
 
     const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Documento ${escapeHtml(d.id || "")}</title></head>
@@ -1888,7 +1891,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     a.remove();
   }
 
-  // ✅ INIT: firmas + documento nuevo
+  // Init documentos
   document.addEventListener("DOMContentLoaded", () => {
     _initCanvasDoc("doc_firmaPaciente");
     _initCanvasDoc("doc_firmaProfesional");
@@ -1896,7 +1899,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   });
 
   // ==============================
-  // ✅ BUSCAR HISTORIA
+  // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
   // ==============================
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
@@ -1934,6 +1937,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
 
+      // ✅ FIX: id sin espacios
       document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
 
       document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
@@ -1944,6 +1948,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
 
+      // odontograma (tu mismo mapping)
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
       reporte = {};
 
@@ -1977,8 +1982,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
         });
       });
 
+      // ✅ cargar documentos del paciente
       await cargarDocumentosPacienteDesdeSupabase(cedula);
 
+      // preparar doc nuevo
       document.getElementById("doc_id").value = uuid();
       document.getElementById("doc_fecha").value = _hoyISO();
       document.getElementById("doc_profesional").value = "";
@@ -2025,9 +2032,6 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 </script>
 </body>
 </html>
-
-
-
 
 
 
