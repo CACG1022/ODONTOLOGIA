@@ -2539,6 +2539,11 @@ function abrirConsentimiento(evolucionId){
   // Si ya existe consentimiento para esa evolución → cargarlo
   const existente = consentimientos.find(c => c.evolucion_id === evolucionId);
   if (existente){
+console.log("🧾 Consentimiento encontrado:", existente);
+console.log("✍️ firma_paciente length:", (existente.firma_paciente || "").length);
+console.log("✍️ firma_profesional length:", (existente.firma_profesional || "").length);
+console.log("firma_paciente head:", String(existente.firma_paciente || "").slice(0, 80));
+
     document.getElementById("consent_template").value = existente.template || "AUTO";
     document.getElementById("consent_texto").value = existente.texto || "";
 
