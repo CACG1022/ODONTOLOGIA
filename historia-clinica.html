@@ -15,7 +15,6 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
 
-    // ✅ Para que cerrarSesion() funcione desde el <script> normal
     window.supabase = supabase;
 
     async function verificarSesion() {
@@ -208,12 +207,12 @@
     }
 
     .fila {
-  display: flex;
-  flex-wrap: nowrap;
-  justify-content: center;
-  gap: var(--tooth-gap);
-  min-width: max-content;
-        }
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: var(--tooth-gap);
+      min-width: max-content;
+    }
 
     .contenedor-diente {
       display: flex;
@@ -222,14 +221,14 @@
     }
 
     .diente {
-  position: relative;
-  width: var(--tooth-size);
-  height: var(--tooth-size);
-  border-radius: 50%;
-  border: 2px solid #ccc;
-  background: white;
-  overflow: hidden;
-}
+      position: relative;
+      width: var(--tooth-size);
+      height: var(--tooth-size);
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      background: white;
+      overflow: hidden;
+    }
 
     .cara {
       position: absolute;
@@ -261,37 +260,36 @@
     .derecha   { clip-path: polygon(50% 50%, 100% 0%, 100% 100%); }
 
     .centro {
-  width: var(--center-size);
-  height: var(--center-size);
-  border-radius: 50%;
-  border: 1.5px solid gray;
-  background: white;
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 5;
-  cursor: pointer;
-}
+      width: var(--center-size);
+      height: var(--center-size);
+      border-radius: 50%;
+      border: 1.5px solid gray;
+      background: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      cursor: pointer;
+    }
 
-  .numero {
-  font-size: var(--num-size);
-  color: #555;
-  margin-top: 5px;
-}
+    .numero {
+      font-size: var(--num-size);
+      color: #555;
+      margin-top: 5px;
+    }
 
     .popup {
-  position: absolute;
-  display: none;
-  background: #fff;
-  border: 1px solid #ccc;
-  padding: 10px;
-  z-index: 1000002;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  max-height: 250px;
-  overflow-y: auto;
-}
-
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      z-index: 1000002;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      max-height: 250px;
+      overflow-y: auto;
+    }
 
     .popup div {
       margin: 4px 0;
@@ -331,205 +329,172 @@
       gap: 8px 16px;
       font-size: 14px;
     }
-   /* ====== VOZ POR CAMPO (auto botón mic al lado) ====== */
-.ctrl .input-voz-wrap{
-  display:flex;
-  gap:10px;
-  align-items:center;
-}
 
-.btn-mic{
-  width:44px;
-  min-width:44px;
-  height:44px;
-  border-radius:10px;
-  border:1px solid var(--line);
-  background:#fff;
-  cursor:pointer;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:18px;
-}
+    /* ====== VOZ POR CAMPO (auto-inyecta botón 🎤) ====== */
+    .vwrap{
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .vwrap .vfield{
+      flex: 1;
+    }
+    .vbtn{
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #F5F5F5;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: transparent;
+    }
+    .vbtn.on{
+      background: #0D47A1;
+      color: #fff;
+      border-color: #0D47A1;
+    }
+    .vhint{
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
 
-.btn-mic.grabando{
-  background:#0D47A1;
-  color:#fff;
-}
-/* ====== VOZ POR CAMPO (auto-inyecta botón 🎤) ====== */
-.vwrap{
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.vwrap .vfield{
-  flex: 1;
-}
-.vbtn{
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px solid var(--line);
-  background: #F5F5F5;      /* gris */
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  color: transparent;        /* por si quedara algo */
-}
-.vbtn.on{
-  background: #9ca3af;      /* gris más oscuro cuando graba */
-  border-color: #9ca3af;
-  color: transparent;
-}
+    /* ==========================
+       🖥️🔎 ODONTOGRAMA FULLSCREEN
+    ========================== */
+    #odontograma-wrapper.fullscreen{
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #f9f9f9;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      padding: 10px 10px 25px;
+      overflow: auto;
+    }
+    #odontograma-wrapper.fullscreen .odontograma{
+      margin-left: 0 !important;
+      padding: 10px;
+    }
+    #btnExitOdonFS{
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 100000;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: #0D47A1;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
+    }
+    #odontograma-wrapper.fullscreen .odontograma{
+      margin-left: auto !important;
+      margin-right: auto !important;
+      width: max-content;
+      min-width: max-content;
+    }
+    #odontograma-wrapper.fullscreen #odontograma-guias{
+      max-width: none !important;
+      width: 1300px !important;
+      margin: 5px auto 0 !important;
+    }
+    #odontograma-wrapper{
+      --tooth-size: 56px;
+      --tooth-gap: 10px;
+      --num-size: 11px;
+      --center-size: 20px;
+    }
+    .extra-etiquetas{
+      margin-top: 25px;
+      font-size: 15px;
+      color: #D0D0D0;
+      line-height: 1.1;
+      font-weight: 600;
+      text-align: center;
+    }
+    .extra-etiquetas .lingual{
+      margin-top: 5px;
+    }
 
-.vbtn.on{
-  background: #0D47A1;
-  color: #fff;
-  border-color: #0D47A1;
-}
-.vhint{
-  margin-top: 6px;
-  font-size: 12px;
-  color: var(--muted);
-}
-/* ==========================
-   🖥️🔎 ODONTOGRAMA FULLSCREEN
-========================== */
-#odontograma-wrapper.fullscreen{
-  position: fixed;
-  inset: 0;
-  z-index: 99999;
-  background: #f9f9f9;
-  margin: 0 !important;
-  border-radius: 0 !important;
-  padding: 10px 10px 25px;
-  overflow: auto;
-}
+    /* ✅ etiqueta con línea centrada */
+    .etiqueta-eje{
+      position: relative;
+      display: inline-block;
+      padding: 0 10px;
+    }
+    .linea-media{
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      background: #E3E3E3;
+      z-index: 999999;
+      pointer-events: none;
+    }
+    .etiqueta-eje .linea-media{
+      top: 100%;
+      height: 0px;
+    }
+    .eje-inferior .linea-media{
+      top: auto;
+      bottom: 100%;
+      height: 0px;
+    }
+    .linea-media.linea-cruce::after{
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:0;
+      transform:translateX(-50%);
+      width:1000px;
+      height:2px;
+      background:#E3E3E3;
+      border-radius:2px;
+    }
 
-/* Cuando esté en fullscreen, centramos mejor y dejamos scroll horizontal/vertical */
-#odontograma-wrapper.fullscreen .odontograma{
-  margin-left: 0 !important;
-  padding: 10px;
-}
-
-/* Botón flotante para salir (se crea por JS) */
-#btnExitOdonFS{
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 100000;
-  border: none;
-  border-radius: 12px;
-  padding: 10px 14px;
-  cursor: pointer;
-  background: #0D47A1;
-  color: #fff;
-  font-weight: 700;
-  box-shadow: 0 8px 18px rgba(0,0,0,.18);
-}
-/* ==========================
-   🎯 CENTRAR ODONTOGRAMA EN FULLSCREEN
-========================== */
-#odontograma-wrapper.fullscreen .odontograma{
-  margin-left: auto !important;
-  margin-right: auto !important;
-  width: max-content;
-  min-width: max-content;
-}
-/* ✅ En fullscreen: solo centramos la caja de guías */
-#odontograma-wrapper.fullscreen #odontograma-guias{
-  max-width: none !important;
-  width: 1300px !important; /* igual al ancho de la línea */
-  margin: 5px auto 0 !important;
-}
-  /* ✅ Ajuste fino: tamaño y separación de dientes */
-#odontograma-wrapper{
-  --tooth-size: 56px;   /* antes 64px */
-  --tooth-gap: 10px;    /* antes 16px */
-  --num-size: 11px;     /* antes 12px */
-  --center-size: 20px;  /* antes 24px */
-}
-  /* ✅ etiqueta con línea centrada */
-.etiqueta-eje{
-  position: relative;
-  display: inline-block;
-  padding: 0 10px;
-}
-
-/* ✅ la línea vertical azul */
-/* Base común */
-.linea-media{
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 3px;
-  background: #E3E3E3;
-  z-index: 999999;
-  pointer-events: none;
-}
-
-/* Línea del maxilar superior → baja */
-.etiqueta-eje .linea-media{
-  top: 100%;
-  height: 0px;   /* 🔧 AJUSTE FINO */
-}
-
-/* Línea del maxilar inferior → sube */
-.eje-inferior .linea-media{
-  top: auto;
-  bottom: 100%;
-  height: 0px;   /* 🔧 MISMA ALTURA */
-}
-
- /* ✅ Línea horizontal en el punto de cruce (al final de la línea superior) */
-.linea-media.linea-cruce::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  bottom:0;                  
-  transform:translateX(-50%);
-  width:1000px;               
-  height:2px;
-  background:#E3E3E3;
-  border-radius:2px;
-}
-
-  .extra-etiquetas{
-  margin-top: 25px;
-  font-size: 15px;
-  color: #D0D0D0;
-  line-height: 1.1;
-  font-weight: 600;
-  text-align: center;
-}
-.extra-etiquetas .lingual{
-  margin-top: 5px; /* ✅ separa Lingual hacia abajo */
-}
+    /* ==========================
+       DOCUMENTOS (tabla + preview firmas)
+    ========================== */
+    .tabla-doc{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .tabla-doc th,.tabla-doc td{
+      padding:10px;
+      border:1px solid var(--line);
+      vertical-align:top;
+    }
+    .tabla-doc thead tr{
+      background:#eef6ff;
+    }
+    .img-firma{
+      width: 180px;
+      height: 70px;
+      border:1px solid #cbd5e1;
+      border-radius:10px;
+      background:#fff;
+      object-fit:contain;
+      display:block;
+    }
   </style>
 </head>
 
 <body>
 <div class="container">
+
   <!-- ==========================
        BUSCAR HISTORIA CLÍNICA EXISTENTE
   ============================== -->
   <section class="card">
-   <div class="ctrl full">
-   <!--<label>🎙️ Diligenciamiento por voz</label>
-  <div class="inline" style="gap:10px;">
-   <button type="button" class="btn btn-agenda" onclick="vozStart()">Iniciar voz</button>
-    <button type="button" class="btn btn-buscar" onclick="vozStop()">Detener</button>
-    <button type="button" class="btn btn-agenda" onclick="vozModo('focus')">Modo: Dictado por foco</button>
-    <button type="button" class="btn btn-agenda" onclick="vozModo('cmd')">Modo: Comandos</button>
-  </div>
-  <small id="voz_estado" style="color:#6b7a90;">Estado: apagado</small>
-  <div id="voz_ultima" style="margin-top:6px; font-size:13px; color:#19324d;"></div>
-</div>-->
-
     <div class="legend">Buscar historia clínica existente</div>
 
     <div class="grid g-2 search-grid">
@@ -541,11 +506,10 @@
         <label>&nbsp;</label>
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
       </div>
+
       <div class="ctrl">
-        <button type="button" onclick="irInicio()" class="btn btn-inicio">
-         IR A INICIO
-         </button>
-       </div>
+        <button type="button" onclick="irInicio()" class="btn btn-inicio">IR A INICIO</button>
+      </div>
       <div class="ctrl">
         <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
       </div>
@@ -559,11 +523,10 @@
       <div class="ctrl">
         <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
       </div>
-     
+
       <div class="ctrl">
         <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
       </div>
-
     </div>
   </section>
 
@@ -781,13 +744,8 @@
       <div class="ctrl">
         <label>¿Enfermedad grave actualmente o previa?</label>
         <div class="inline">
-          <label class="chip">
-            <input type="checkbox" name="grave" value="Si"> Sí
-          </label>
-
-          <label class="chip">
-            <input type="checkbox" name="grave" value="No"> No
-          </label>
+          <label class="chip"><input type="checkbox" name="grave" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="grave" value="No"> No</label>
         </div>
       </div>
 
@@ -1004,6 +962,7 @@
 
   <!-- ==========================
        ✅ EVOLUCIONES
+       (Se mantienen, pero SIN consentimiento aquí)
   ============================== -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -1019,64 +978,56 @@
         <input id="evo_hora" type="time" readonly>
       </div>
 
-<div class="ctrl">
-  <label for="evo_profesional">Profesional</label>
+      <div class="ctrl">
+        <label for="evo_profesional">Profesional</label>
 
-  <div class="inline" style="gap:10px;">
-    <input
-      id="evo_profesional"
-      type="text"
-      list="profesionales_list"
-      placeholder="Buscar o escribir profesional..."
-      autocomplete="off"
-      style="flex:1;"
-    />
+        <div class="inline" style="gap:10px;">
+          <input
+            id="evo_profesional"
+            type="text"
+            list="profesionales_list"
+            placeholder="Buscar o escribir profesional..."
+            autocomplete="off"
+            style="flex:1;"
+          />
+          <button
+            type="button"
+            onclick="agregarProfesionalDesdeCampo()"
+            class="btn btn-agenda"
+            style="width:auto; padding:10px 14px;"
+            title="Agregar el texto actual al listado"
+          >
+            + Agregar
+          </button>
+        </div>
+        <datalist id="profesionales_list"></datalist>
+      </div>
 
-    <button
-      type="button"
-      onclick="agregarProfesionalDesdeCampo()"
-      class="btn btn-agenda"
-      style="width:auto; padding:10px 14px;"
-      title="Agregar el texto actual al listado"
-    >
-      + Agregar
-    </button>
-  </div>
+      <div class="ctrl">
+        <label for="evo_tipo">Procedimiento</label>
 
-  <datalist id="profesionales_list"></datalist>
-</div>
+        <div class="inline" style="gap:10px;">
+          <input
+            id="evo_tipo"
+            type="text"
+            list="procedimientos_list"
+            placeholder="Buscar o escribir procedimiento..."
+            autocomplete="off"
+            style="flex:1;"
+          />
+          <button
+            type="button"
+            onclick="agregarProcedimientoDesdeCampo()"
+            class="btn btn-agenda"
+            style="width:auto; padding:10px 14px;"
+            title="Agregar el texto actual al listado"
+          >
+            + Agregar
+          </button>
+        </div>
 
-
-<div class="ctrl">
-  <label for="evo_tipo">Procedimiento</label>
-
-  <div class="inline" style="gap:10px;">
-    <!-- ✅ Input con búsqueda (datalist) -->
-    <input
-      id="evo_tipo"
-      type="text"
-      list="procedimientos_list"
-      placeholder="Buscar o escribir procedimiento..."
-      autocomplete="off"
-      style="flex:1;"
-    />
-
-    <!-- ✅ Botón para agregar si no existe -->
-    <button
-      type="button"
-      onclick="agregarProcedimientoDesdeCampo()"
-      class="btn btn-agenda"
-      style="width:auto; padding:10px 14px;"
-      title="Agregar el texto actual al listado"
-    >
-      + Agregar
-    </button>
-  </div>
-
-  <!-- ✅ Datalist (desplegable con búsqueda) -->
-  <datalist id="procedimientos_list"></datalist>
-</div>
-
+        <datalist id="procedimientos_list"></datalist>
+      </div>
 
       <div class="ctrl full">
         <label for="evo_detalle">Detalle / Observaciones</label>
@@ -1126,28 +1077,23 @@
       <div style="position:absolute; top:230px; right:-130px; color:#D0D0D0; font-weight:bold;">Distal3</div>
     </div>
 
-   <div class="odontograma">
+    <div class="odontograma">
+      <div class="seccion">
+        <div class="etiqueta etiqueta-eje">
+          Vestibular---------------------Maxilar superior--------------------Vestibular
+          <span class="linea-media linea-cruce"></span>
+        </div>
+        <div class="fila" id="fila-superior"></div>
+      </div>
 
-  <!-- MAXILAR SUPERIOR -->
-  <div class="seccion">
-    <div class="etiqueta etiqueta-eje">
-      Vestibular---------------------Maxilar superior--------------------Vestibular
-      <span class="linea-media linea-cruce"></span>
+      <div class="seccion">
+        <div class="fila" id="fila-inferior"></div>
+        <div class="etiqueta etiqueta-eje eje-inferior">
+          Vestibular--------------------Maxilar inferior--------------------Vestibular
+          <span class="linea-media"></span>
+        </div>
+      </div>
     </div>
-    <div class="fila" id="fila-superior"></div>
-  </div>
-
-  <!-- MAXILAR INFERIOR -->
-<div class="seccion">
-  <div class="fila" id="fila-inferior"></div>
-
-    <div class="etiqueta etiqueta-eje eje-inferior">
-    Vestibular--------------------Maxilar inferior--------------------Vestibular
-    <span class="linea-media"></span>
-  </div>
-</div>
-
-</div>
 
     <div class="leyenda">
       <h2>Leyenda de Preexistencias</h2>
@@ -1166,6 +1112,110 @@
       </div>
     </div>
   </div>
+
+  <!-- ==========================
+       ✅ NUEVA SECCIÓN: DOCUMENTOS
+       (Aquí van los consentimientos informados)
+  ============================== -->
+  <section class="card">
+    <div class="legend">DOCUMENTOS</div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>ID documento (automático)</label>
+        <input id="doc_id" type="text" readonly>
+      </div>
+
+      <div class="ctrl">
+        <label>Tipo de documento</label>
+        <select id="doc_tipo">
+          <option value="CONSENTIMIENTO">Consentimiento informado</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label>Procedimiento</label>
+        <input id="doc_procedimiento" type="text" list="procedimientos_list" placeholder="Ej: CACC / HIGIENE / RESINA...">
+      </div>
+
+      <div class="ctrl">
+        <label>Profesional</label>
+        <input id="doc_profesional" type="text" list="profesionales_list" placeholder="Ej: LEIDI FERNANDA SILVA OROPEZA">
+      </div>
+
+      <div class="ctrl">
+        <label>Plantilla</label>
+        <select id="doc_template" onchange="docCargarPlantilla()">
+          <option value="AUTO">Automática (según procedimiento)</option>
+          <option value="ODONTO_GENERAL">Odontología general</option>
+          <option value="REHABILITACION">Rehabilitación oral</option>
+          <option value="GENERICA">Genérica</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label>Fecha</label>
+        <input id="doc_fecha" type="date">
+      </div>
+
+      <div class="ctrl full">
+        <label>Texto del documento (editable)</label>
+        <textarea id="doc_texto" style="min-height:220px;"></textarea>
+      </div>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>Firma paciente</label>
+        <canvas id="doc_firmaPaciente" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
+        <div class="inline" style="margin-top:8px;">
+          <button type="button" class="btn btn-buscar" style="width:auto;" onclick="docLimpiarFirma('PAC')">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>Firma profesional</label>
+        <canvas id="doc_firmaProfesional" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
+        <div class="inline" style="margin-top:8px;">
+          <button type="button" class="btn btn-buscar" style="width:auto;" onclick="docLimpiarFirma('PRO')">Limpiar</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div class="inline" style="justify-content:flex-end; gap:10px;">
+      <button type="button" class="btn btn-buscar" style="width:auto;" onclick="docNuevo()">
+        Nuevo documento
+      </button>
+      <button type="button" class="btn btn-agenda" style="width:auto;" onclick="docGuardar()">
+        Guardar documento
+      </button>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div style="overflow:auto;">
+      <table class="tabla-doc">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Fecha</th>
+            <th>Tipo</th>
+            <th>Procedimiento</th>
+            <th>Profesional</th>
+            <th>Firma paciente</th>
+            <th>Firma profesional</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla_documentos"></tbody>
+      </table>
+    </div>
+  </section>
+
 </div>
 
 <!-- 📤 FORMULARIO OCULTO PARA N8N -->
@@ -1222,14 +1272,10 @@
   const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento";
   const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-  function irInicio() {
-  window.location.href = URL_INICIO;
-  }
-
+  function irInicio() { window.location.href = URL_INICIO; }
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
   function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
 
-  // ✅ Plan de tratamiento: abre la página y envía la cédula del paciente
   function irPlanTratamiento() {
     const cedula = (
       document.getElementById("paciente_numdoc")?.value ||
@@ -1291,71 +1337,69 @@
     if (d) d.value = "";
   }
 
-async function agregarEvolucion() {
-  const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
-  const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
-  const profesional = document.getElementById("evo_profesional").value.trim();
-  const tipo = document.getElementById("evo_tipo").value.trim();
-  const detalle = document.getElementById("evo_detalle").value.trim();
+  async function agregarEvolucion() {
+    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
+    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
+    const profesional = document.getElementById("evo_profesional").value.trim();
+    const tipo = document.getElementById("evo_tipo").value.trim();
+    const detalle = document.getElementById("evo_detalle").value.trim();
 
-  if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
-  if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
+    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
+    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
 
-  const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-  const cedula = (
-    document.getElementById("paciente_numdoc")?.value ||
-    document.getElementById("buscar_cedula")?.value ||
-    ""
-  ).trim();
+    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+    const cedula = (
+      document.getElementById("paciente_numdoc")?.value ||
+      document.getElementById("buscar_cedula")?.value ||
+      ""
+    ).trim();
 
-  if (!cedula) {
-    alert("⚠️ Primero debes tener la cédula del paciente (buscar o diligenciar identificación).");
-    return;
-  }
+    if (!cedula) {
+      alert("⚠️ Primero debes tener la cédula del paciente (buscar o diligenciar identificación).");
+      return;
+    }
 
-  const item = {
-    id: generarEvolucionId(),
-    fecha,
-    hora,
-    profesional,
-    procedimiento: tipo,
-    detalle,
-    cedula_paciente: cedula,
-    usuario,
-    ts: new Date().toISOString()
-  };
-
-  // ✅ 1) Guarda local (no se pierde)
-  evoluciones.unshift(item);
-  renderEvoluciones();
-  limpiarEvolucionForm();
-
-  // ✅ 2) Enviar a n8n (SIN recargar, SIN abrir otra pestaña)
-  try {
-    const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
-
-    const payload = {
-      evento: "agregar_evolucion",
-      cedula: cedula,
-      evolucion: item,
-      fecha_envio: new Date().toISOString(),
-      usuario_logueado: usuario
+    const item = {
+      id: generarEvolucionId(),
+      fecha,
+      hora,
+      profesional,
+      procedimiento: tipo,
+      detalle,
+      cedula_paciente: cedula,
+      usuario,
+      ts: new Date().toISOString()
     };
 
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
+    evoluciones.unshift(item);
+    renderEvoluciones();
+    limpiarEvolucionForm();
 
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
+    try {
+      const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
 
-    console.log("✅ Evolución enviada a n8n");
-  } catch (err) {
-    console.warn("⚠️ Evolución guardada pero NO se pudo enviar a n8n:", err);
-    alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n. Verifica conexión o webhook.");
+      const payload = {
+        evento: "agregar_evolucion",
+        cedula: cedula,
+        evolucion: item,
+        fecha_envio: new Date().toISOString(),
+        usuario_logueado: usuario
+      };
+
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+      console.log("✅ Evolución enviada a n8n");
+    } catch (err) {
+      console.warn("⚠️ Evolución guardada pero NO se pudo enviar a n8n:", err);
+      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n. Verifica conexión o webhook.");
+    }
   }
-}
 
   function eliminarEvolucion(idx) {
     evoluciones.splice(idx, 1);
@@ -1376,52 +1420,42 @@ async function agregarEvolucion() {
   }
 
   function renderEvoluciones() {
-  const tbody = document.getElementById("tabla_evoluciones");
-  if (!tbody) return;
+    const tbody = document.getElementById("tabla_evoluciones");
+    if (!tbody) return;
 
-  tbody.innerHTML = "";
+    tbody.innerHTML = "";
 
-  evoluciones.forEach((evo, idx) => {
-    const tr = document.createElement("tr");
+    evoluciones.forEach((evo, idx) => {
+      const tr = document.createElement("tr");
 
-    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-    const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
-    const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
-    const profesional = evo.profesional ?? evo.evo_profesional ?? "";
-    const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
-    const detalle = evo.detalle ?? evo.evo_detalle ?? "";
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
+      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
+      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
+      const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
+      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
 
-    // ✅ Estado de consentimiento (simple: si existe para esa evolución)
-    const tieneConsent = Array.isArray(consentimientos) && consentimientos.some(c => c.evolucion_id === idEvo);
+      tr.innerHTML = `
+        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+          ${idEvo}
+        </td>
+        <td>${fecha}</td>
+        <td>${hora}</td>
+        <td>${String(profesional).toUpperCase()}</td>
+        <td>${String(procedimiento).toUpperCase()}</td>
+        <td note style="white-space:pre-wrap;">${detalle}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-buscar"
+            style="padding:8px 10px; width:auto;"
+            onclick="eliminarEvolucion(${idx})">
+            Eliminar
+          </button>
+        </td>
+      `;
 
-    tr.innerHTML = `
-      <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-        ${idEvo}
-      </td>
-      <td>${fecha}</td>
-      <td>${hora}</td>
-      <td>${String(profesional).toUpperCase()}</td>
-      <td>${String(procedimiento).toUpperCase()}</td>
-      <td style="white-space:pre-wrap;">${detalle}</td>
-      <td style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn ${tieneConsent ? "btn-agenda" : "btn-buscar"}"
-          style="padding:8px 10px; width:auto;"
-          onclick="abrirConsentimiento('${idEvo}')">
-          ${tieneConsent ? "Consentimiento ✅" : "Consentimiento"}
-        </button>
-
-        <button type="button" class="btn btn-buscar"
-          style="padding:8px 10px; width:auto;"
-          onclick="eliminarEvolucion(${idx})">
-          Eliminar
-        </button>
-      </td>
-    `;
-
-    tbody.appendChild(tr);
-  });
-}
-
+      tbody.appendChild(tr);
+    });
+  }
 
   function normalizarEvolucionesDeWebhook(data) {
     let raw = data?.evoluciones;
@@ -1523,10 +1557,7 @@ async function agregarEvolucion() {
     if (numero === 14 || numero === 24) {
       const extra = document.createElement("div");
       extra.className = "extra-etiquetas";
-      extra.innerHTML = `
-      <div>Palatino</div>
-      <div class="lingual">Lingual</div>
-    `;
+      extra.innerHTML = `<div>Palatino</div><div class="lingual">Lingual</div>`;
       contenedorDiente.appendChild(extra);
     }
 
@@ -1777,14 +1808,13 @@ async function agregarEvolucion() {
     document.getElementById("usuarioN8N").value = usuario;
 
     const payload = {
-  historia_clinica: datosHistoria,
-  odontograma: odontogramaCompleto,
-  evoluciones: evoluciones,
-  consentimientos: consentimientos, // ✅ NUEVO
-  fecha_envio: new Date().toISOString(),
-  usuario_logueado: usuario
-};
-
+      historia_clinica: datosHistoria,
+      odontograma: odontogramaCompleto,
+      evoluciones: evoluciones,
+      documentos: documentos, // ✅ ahora documentos (consentimientos) van aquí
+      fecha_envio: new Date().toISOString(),
+      usuario_logueado: usuario
+    };
 
     document.getElementById("dataN8N").value = JSON.stringify(payload);
     document.getElementById("formN8N").submit();
@@ -1792,99 +1822,6 @@ async function agregarEvolucion() {
     alert("Información enviada correctamente a N8N");
   }
 
-function normalizarConsentimientosDeWebhook(data) {
-  let raw = data?.consentimientos;
-
-  // Caso: vienen dentro de data.consentimientos.consentimientos
-  if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.consentimientos)) {
-    raw = raw.consentimientos;
-  }
-
-  // Caso: string JSON
-  if (typeof raw === "string") {
-    try { raw = JSON.parse(raw); } catch (e) { raw = []; }
-  }
-
-  if (!Array.isArray(raw)) raw = [];
-
-  // Normaliza campos y nombres
-  return raw.map(c => ({
-    cedula_paciente: c.cedula_paciente ?? c.paciente_doc ?? c.doc ?? "",
-    paciente_nombre: c.paciente_nombre ?? c.paciente ?? "",
-    evolucion_id: c.evolucion_id ?? c.evolucionId ?? c.id_evolucion ?? c.idEvolucion ?? "",
-    procedimiento: c.procedimiento ?? "",
-    profesional: c.profesional ?? "",
-    template: c.template ?? c.template_key ?? c.templateKey ?? "AUTO",
-    texto: c.texto ?? c.consent_texto ?? "",
-    firma_paciente: c.firma_paciente ?? c.firmaPaciente ?? c.firma_pac ?? c.firmaPacienteBase64 ?? c.firmaPacienteData ?? "",
-    firma_profesional: c.firma_profesional ?? c.firmaProfesional ?? c.firma_prof ?? c.firmaProfesionalBase64 ?? c.firmaProfesionalData ?? "",
-    firmado_en: c.firmado_en ?? c.firmadoEn ?? null,
-    creado_en: c.creado_en ?? c.creadoEn ?? null,
-    creado_por: c.creado_por ?? c.creadoPor ?? null,
-    hash_documento: c.hash_documento ?? c.hash ?? null,
-    pdf_path: c.pdf_path ?? null
-  })).filter(x => String(x.evolucion_id || "").trim() !== "");
-}
-
-/* ✅✅ FIX FIRMA: normalizador robusto (soporta json string, objeto, comillas, escapes, urlencoded, base64 sin prefijo) */
-function _normalizarDataURLFirma(valor) {
-  if (valor == null) return "";
-
-  // Si viene como objeto
-  if (typeof valor === "object") {
-    valor = valor.data || valor.base64 || valor.firma || valor.value || "";
-  }
-
-  let v = String(valor).trim();
-  if (!v) return "";
-
-  // Si viene como string JSON: {"data":"..."}
-  if ((v.startsWith("{") && v.endsWith("}")) || (v.startsWith("[") && v.endsWith("]"))) {
-    try {
-      const obj = JSON.parse(v);
-      if (obj && typeof obj === "object") {
-        v = String(
-          obj.data ||
-          obj.base64 ||
-          obj.firma ||
-          obj.value ||
-          (Array.isArray(obj) ? obj[0] : "") ||
-          ""
-        ).trim();
-      }
-    } catch(e) {}
-  }
-
-  // Quitar comillas envolventes
-  v = v.replace(/^"+|"+$/g, "").trim();
-
-  // Quitar escapes comunes
-  v = v.replace(/\\n/g, "").replace(/\\"/g, '"').trim();
-
-  // Si viene URL-encoded
-  try { v = decodeURIComponent(v); } catch(e) {}
-
-  // Arregla base64 dañado por espacios
-  v = v.replace(/\s/g, "+");
-
-  // Si ya es dataURL (png/jpg/jpeg/webp)
-  if (v.startsWith("data:image/")) return v;
-
-  // Si viene solo base64 sin prefijo
-  if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
-    return "data:image/png;base64," + v;
-  }
-
-  // Si viene como "image/png;base64,...." (sin data:)
-  if (v.startsWith("image/") && v.includes("base64,")) {
-    return "data:" + v;
-  }
-
-  return "";
-}
-
-
-  
   // ==============================
   // ✅ BUSCAR HISTORIA
   // ==============================
@@ -1905,6 +1842,12 @@ function _normalizarDataURLFirma(valor) {
       if (!data.existe) {
         evoluciones = [];
         renderEvoluciones();
+
+        // documentos: limpiar al buscar un no existente
+        documentos = [];
+        _docsGuardarLS();
+        renderDocumentos();
+
         alert("No existe historia clínica para este paciente");
         return;
       }
@@ -1913,14 +1856,12 @@ function _normalizarDataURLFirma(valor) {
       const od = data.odontograma || {};
 
       evoluciones = normalizarEvolucionesDeWebhook(data);
-
-      // ✅ NUEVO: cargar consentimientos desde webhook
-      consentimientos = normalizarConsentimientosDeWebhook(data);
-
-      // ✅ Guardar en localStorage (para que el ✅ salga de inmediato)
-      try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
-
       renderEvoluciones();
+
+      // ✅ CARGAR DOCUMENTOS desde webhook (si vienen)
+      documentos = normalizarDocumentosDeWebhook(data);
+      _docsGuardarLS();
+      renderDocumentos();
 
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
@@ -2052,8 +1993,10 @@ function _normalizarDataURLFirma(valor) {
         });
       });
 
-      alert("Historia clínica cargada con éxito");
+      // al cargar historia, prepara un documento nuevo por defecto (no lo guarda)
+      docNuevo();
 
+      alert("Historia clínica cargada con éxito");
     } catch (err) {
       console.error(err);
       alert("Error consultando N8N");
@@ -2157,7 +2100,6 @@ function _normalizarDataURLFirma(valor) {
       return null;
     }
 
-    // ✅ Inserta texto sin borrar (respeta cursor). Usado SOLO para evo_detalle.
     function insertAtCursor(el, text) {
       if (!el) return;
       const start = el.selectionStart ?? el.value.length;
@@ -2166,7 +2108,6 @@ function _normalizarDataURLFirma(valor) {
       const before = el.value.slice(0, start);
       const after = el.value.slice(end);
 
-      // separador suave
       const needsSpace =
         before.length > 0 &&
         !before.endsWith(" ") &&
@@ -2184,14 +2125,12 @@ function _normalizarDataURLFirma(valor) {
     function escribir(el, texto) {
       if (!el || el.disabled || el.readOnly) return;
 
-      // ✅ SOLO PARA Detalle/Observaciones: agregar, no reemplazar
       if (el.id === "evo_detalle") {
         insertAtCursor(el, texto);
         dispatchInput(el);
         return;
       }
 
-      // ✅ Para el resto, se mantiene tu comportamiento: reemplazar valor
       if (el.type === "date") {
         el.value = parseFecha(texto) || texto;
       } else if (el.type === "number") {
@@ -2211,11 +2150,6 @@ function _normalizarDataURLFirma(valor) {
       dispatchInput(el);
     }
 
-    function setEstado(txt) {
-      const e = document.getElementById("voz_estado");
-      if (e) e.textContent = "Estado: " + txt;
-    }
-
     function setBoton(b, on) {
       if (!b) return;
       b.classList.toggle("on", on);
@@ -2229,13 +2163,11 @@ function _normalizarDataURLFirma(valor) {
 
       r.onstart = () => {
         escuchando = true;
-        setEstado("escuchando");
         setBoton(botonActivo, true);
       };
 
       r.onend = () => {
         escuchando = false;
-        setEstado("apagado");
         setBoton(botonActivo, false);
         campoActivo = null;
         botonActivo = null;
@@ -2243,7 +2175,6 @@ function _normalizarDataURLFirma(valor) {
 
       r.onerror = (e) => {
         console.warn("Voz error:", e);
-        setEstado("error");
         setBoton(botonActivo, false);
       };
 
@@ -2259,13 +2190,11 @@ function _normalizarDataURLFirma(valor) {
     function toggleDictado(campo, boton) {
       if (!rec) rec = initRec();
 
-      // 🔁 Si ya está grabando ESTE campo → apagar
       if (escuchando && campoActivo === campo) {
         rec.stop();
         return;
       }
 
-      // 🔁 Si estaba grabando otro campo → cambiar
       if (escuchando) rec.stop();
 
       campoActivo = campo;
@@ -2299,17 +2228,13 @@ function _normalizarDataURLFirma(valor) {
         wrap.appendChild(el);
         wrap.appendChild(btn);
       });
-
-      setEstado("apagado");
     }
 
     document.addEventListener("DOMContentLoaded", wrapCampos);
 
-    // Compatibilidad con botones viejos
     window.vozStart = () => alert("Usa el 🎤 del campo que quieras dictar.");
     window.vozStop = () => rec && rec.stop();
     window.vozModo  = () => alert("El dictado ahora es por campo 🎤.");
-
   })();
 
   /* ======================================================
@@ -2387,20 +2312,18 @@ function _normalizarDataURLFirma(valor) {
     });
   })();
 
+  // ======================================================
+  // ✅ DOCUMENTOS (CONSENTIMIENTOS) — NUEVO FLUJO
+  // ======================================================
+  let documentos = [];
+  const LS_DOCS_KEY = "documentos_local";
 
-// ==============================
-// ✅ CONSENTIMIENTOS INFORMADOS (COMPLETO)
-// ==============================
-let consentimientos = [];
-const LS_CONS_KEY = "consentimientos_local";
+  // ⚠️ tu webhook para guardar consentimientos en n8n
+  const N8N_WEBHOOK_CONSENT = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9a2c4949-da38-4f56-b6ff-d292eee820af";
 
-// ⚠️ Cambia por tu webhook real de n8n (para consentimientos)
-const N8N_WEBHOOK_CONSENT = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9a2c4949-da38-4f56-b6ff-d292eee820af";
-
-
-// ---- Plantillas (puedes editar los textos a tu gusto)
-const CONSENT_TEMPLATES = {
-  ODONTO_GENERAL: ({paciente, doc, procedimiento, profesional, fecha}) => `
+  // Plantillas
+  const CONSENT_TEMPLATES = {
+    ODONTO_GENERAL: ({paciente, doc, procedimiento, profesional, fecha}) => `
 CONSENTIMIENTO INFORMADO DE ODONTOLOGÍA GENERAL
 
 Paciente: ${paciente} - Identificación: ${doc}
@@ -2435,7 +2358,7 @@ ACEPTACIÓN:
 Declaro que he sido informado(a), he podido preguntar y entiendo beneficios, riesgos y alternativas. Autorizo la realización del procedimiento.
 `.trim(),
 
-  REHABILITACION: ({paciente, doc, procedimiento, profesional, fecha}) => `
+    REHABILITACION: ({paciente, doc, procedimiento, profesional, fecha}) => `
 CONSENTIMIENTO INFORMADO DE REHABILITACIÓN ORAL
 
 Paciente: ${paciente} - Identificación: ${doc}
@@ -2470,7 +2393,7 @@ ACEPTACIÓN:
 Declaro que he sido informado(a), entiendo beneficios, riesgos y alternativas, y autorizo la realización del procedimiento.
 `.trim(),
 
-  GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
+    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
 CONSENTIMIENTO INFORMADO
 
 Paciente: ${paciente} - Identificación: ${doc}
@@ -2481,441 +2404,373 @@ Fecha: ${fecha}
 Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
 He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
 `.trim()
-};
+  };
 
-// Mapeo AUTO por palabras clave (ajusta como quieras)
-function _plantillaAutoPorProcedimiento(proc) {
-  const p = String(proc || "").toUpperCase();
-
-  const esRehab = /(NUCLEO|NÚCLEO|CORONA|PUENTE|CARILLA|PROTESIS|PRÓTESIS|REHABILITACION|REHABILITACIÓN)/.test(p);
-  const esGeneral = /(HIGIEN|HIGIENE|PROFILAXIS|SELLANTES|RESINA|AMALGAMA|OBTURACION|OBTURACIÓN|OPERATORIA)/.test(p);
-
-  if (esRehab) return "REHABILITACION";
-  if (esGeneral) return "ODONTO_GENERAL";
-  return "GENERICA";
-}
-
-function _cargarConsentimientosLS(){
-  try {
-    const raw = localStorage.getItem(LS_CONS_KEY);
-    const arr = raw ? JSON.parse(raw) : [];
-    return Array.isArray(arr) ? arr : [];
-  } catch(e){ return []; }
-}
-function _guardarConsentimientosLS(){
-  try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  consentimientos = _cargarConsentimientosLS();
-  _initCanvasFirma("firmaPaciente");
-  _initCanvasFirma("firmaProfesional");
-});
-
-// ---- Modal open/close
-let _evolucionActualId = null;
-
-/* ✅✅ FIX FIRMA: abrir modal ANTES de pintar firmas */
-function abrirConsentimiento(evolucionId){
-  _evolucionActualId = evolucionId;
-
-  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === evolucionId) ||
-              evoluciones.find(x => x.id === evolucionId);
-
-  if (!evo) { alert("No se encontró la evolución."); return; }
-
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
-
-  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
-  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
-  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
-
-  document.getElementById("consent_procedimiento").value = procedimiento;
-
-  // ✅ Mostrar modal primero (clavísimo para que canvas pinte bien)
-  document.getElementById("modalConsent").style.display = "block";
-
-  // Si ya existe consentimiento para esa evolución → cargarlo
-  const existente = consentimientos.find(c => c.evolucion_id === evolucionId);
-  if (existente){
-console.log("🧾 Consentimiento encontrado:", existente);
-console.log("✍️ firma_paciente length:", (existente.firma_paciente || "").length);
-console.log("✍️ firma_profesional length:", (existente.firma_profesional || "").length);
-console.log("firma_paciente head:", String(existente.firma_paciente || "").slice(0, 80));
-
-    document.getElementById("consent_template").value = existente.template || "AUTO";
-    document.getElementById("consent_texto").value = existente.texto || "";
-
-    // ✅ pinta firmas (espera a que canvas tenga tamaño visible)
-setTimeout(() => {
-  _setFirmaDesdeDataURL("firmaPaciente", existente.firma_paciente || existente.firmaPaciente || "");
-  _setFirmaDesdeDataURL("firmaProfesional", existente.firma_profesional || existente.firmaProfesional || "");
-}, 120);
-
-  } else {
-    document.getElementById("consent_template").value = "AUTO";
-    const autoKey = _plantillaAutoPorProcedimiento(procedimiento);
-    const texto = (CONSENT_TEMPLATES[autoKey] || CONSENT_TEMPLATES.GENERICA)({
-      paciente, doc, procedimiento, profesional, fecha
-    });
-    document.getElementById("consent_texto").value = texto;
-    limpiarFirma("PAC");
-    limpiarFirma("PRO");
+  function plantillaAutoProcedimiento(proc) {
+    const p = String(proc || "").toUpperCase();
+    const esRehab = /(NUCLEO|NÚCLEO|CORONA|PUENTE|CARILLA|PROTESIS|PRÓTESIS|REHABILITACION|REHABILITACIÓN)/.test(p);
+    const esGeneral = /(HIGIEN|HIGIENE|PROFILAXIS|SELLANTES|RESINA|AMALGAMA|OBTURACION|OBTURACIÓN|OPERATORIA)/.test(p);
+    if (esRehab) return "REHABILITACION";
+    if (esGeneral) return "ODONTO_GENERAL";
+    return "GENERICA";
   }
 
-  document.getElementById("consent_meta").textContent =
-    `Evolución: ${evolucionId} • Paciente: ${paciente || "-"} • Doc: ${doc || "-"} • Profesional: ${profesional || "-"}`;
-}
-
-function cerrarConsentimiento(){
-  document.getElementById("modalConsent").style.display = "none";
-  _evolucionActualId = null;
-
-  // refresca tabla para que muestre ✅ si guardaste
-  renderEvoluciones();
-}
-
-function cargarPlantillaConsentimiento(){
-  if (!_evolucionActualId) return;
-
-  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === _evolucionActualId) ||
-              evoluciones.find(x => x.id === _evolucionActualId);
-  if (!evo) return;
-
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
-  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
-  const profesional = (evo.profesional || evo.evo_profesional || "").trim();
-  const fecha = (evo.fecha || evo.evo_fecha || _hoyISO()).trim();
-
-  const sel = document.getElementById("consent_template").value;
-
-  let key = sel;
-  if (sel === "AUTO") key = _plantillaAutoPorProcedimiento(procedimiento);
-  if (!CONSENT_TEMPLATES[key]) key = "GENERICA";
-
-  document.getElementById("consent_texto").value =
-    CONSENT_TEMPLATES[key]({paciente, doc, procedimiento, profesional, fecha});
-}
-
-// ---- Firmas (canvas)
-const _firmas = {}; // por canvasId: {drawing,lastX,lastY}
-
-function _initCanvasFirma(canvasId){
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  ctx.lineWidth = 2;
-  ctx.lineCap = "round";
-
-  _firmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
-
-  function pos(e){
-    const r = canvas.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    return { x: clientX - r.left, y: clientY - r.top };
+  function _docsCargarLS(){
+    try {
+      const raw = localStorage.getItem(LS_DOCS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function _docsGuardarLS(){
+    try { localStorage.setItem(LS_DOCS_KEY, JSON.stringify(documentos)); } catch(e){}
   }
 
-  function start(e){
-    e.preventDefault();
-    const p = pos(e);
-    _firmas[canvasId].drawing = true;
-    _firmas[canvasId].lastX = p.x;
-    _firmas[canvasId].lastY = p.y;
+  function _genDocId(){
+    try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
+    catch(e){ return _uuidFallback(); }
   }
 
-  function move(e){
-    if (!_firmas[canvasId].drawing) return;
-    e.preventDefault();
-    const p = pos(e);
-    ctx.beginPath();
-    ctx.moveTo(_firmas[canvasId].lastX, _firmas[canvasId].lastY);
-    ctx.lineTo(p.x, p.y);
-    ctx.stroke();
-    _firmas[canvasId].lastX = p.x;
-    _firmas[canvasId].lastY = p.y;
+  function _normalizarDataURLFirma(valor) {
+    if (!valor) return "";
+    let v = String(valor).trim();
+    try { v = decodeURIComponent(v); } catch(e) {}
+    v = v.replace(/\s/g, "+");
+    if (v.startsWith("data:image")) return v;
+    if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
+      return "data:image/png;base64," + v;
+    }
+    return "";
   }
 
-  function end(e){
-    e.preventDefault();
-    _firmas[canvasId].drawing = false;
-  }
+  // canvas firmas documentos
+  const _docFirmas = {}; // id => state
 
-  // mouse
-  canvas.addEventListener("mousedown", start);
-  canvas.addEventListener("mousemove", move);
-  window.addEventListener("mouseup", end);
-
-  // touch
-  canvas.addEventListener("touchstart", start, { passive:false });
-  canvas.addEventListener("touchmove", move, { passive:false });
-  canvas.addEventListener("touchend", end, { passive:false });
-}
-
-function limpiarFirma(tipo){
-  const id = (tipo === "PAC") ? "firmaPaciente" : "firmaProfesional";
-  const canvas = document.getElementById(id);
-  if (!canvas) return;
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0,0,canvas.width, canvas.height);
-}
-
-function _getFirmaDataURL(canvasId){
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return "";
-
-  // si está vacío, devuelve ""
-  const ctx = canvas.getContext("2d");
-  const pixels = ctx.getImageData(0,0,canvas.width, canvas.height).data;
-  let hasInk = false;
-  for (let i=3; i<pixels.length; i+=4){ // alpha
-    if (pixels[i] !== 0) { hasInk = true; break; }
-  }
-  return hasInk ? canvas.toDataURL("image/png") : "";
-}
-
-function _resizeCanvasToDisplaySize(canvas){
-  // Ajusta el tamaño interno del canvas al tamaño CSS real (y a DPI)
-  const rect = canvas.getBoundingClientRect();
-  const dpr = window.devicePixelRatio || 1;
-
-  // Si el canvas está oculto, rect puede dar 0
-  if (!rect.width || !rect.height) return false;
-
-  const width = Math.round(rect.width * dpr);
-  const height = Math.round(rect.height * dpr);
-
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
+  function _initCanvasDoc(canvasId){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // coord en CSS px
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
+
+    _docFirmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
+
+    function pos(e){
+      const r = canvas.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - r.left, y: clientY - r.top };
+    }
+    function start(e){
+      e.preventDefault();
+      const p = pos(e);
+      _docFirmas[canvasId].drawing = true;
+      _docFirmas[canvasId].lastX = p.x;
+      _docFirmas[canvasId].lastY = p.y;
+    }
+    function move(e){
+      if (!_docFirmas[canvasId].drawing) return;
+      e.preventDefault();
+      const p = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(_docFirmas[canvasId].lastX, _docFirmas[canvasId].lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      _docFirmas[canvasId].lastX = p.x;
+      _docFirmas[canvasId].lastY = p.y;
+    }
+    function end(e){
+      e.preventDefault();
+      _docFirmas[canvasId].drawing = false;
+    }
+
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", end);
+
+    canvas.addEventListener("touchstart", start, { passive:false });
+    canvas.addEventListener("touchmove", move, { passive:false });
+    canvas.addEventListener("touchend", end, { passive:false });
   }
-  return true;
-}
 
-function _setFirmaDesdeDataURL(canvasId, dataURL, intentos = 20){
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
+  function docLimpiarFirma(tipo){
+    const id = (tipo === "PAC") ? "doc_firmaPaciente" : "doc_firmaProfesional";
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+  }
 
-  // 🔁 Esperar a que el canvas sea visible y tenga tamaño
-  const okSize = _resizeCanvasToDisplaySize(canvas);
+  function _docGetFirmaDataURL(canvasId){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return "";
+    const ctx = canvas.getContext("2d");
+    const pixels = ctx.getImageData(0,0,canvas.width, canvas.height).data;
+    let hasInk = false;
+    for (let i=3; i<pixels.length; i+=4){
+      if (pixels[i] !== 0) { hasInk = true; break; }
+    }
+    return hasInk ? canvas.toDataURL("image/png") : "";
+  }
 
-  if (!okSize) {
-    if (intentos <= 0) {
-      console.warn("❌ Canvas sin tamaño visible:", canvasId);
+  function _docSetFirmaDesdeDataURL(canvasId, dataURL){
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0,0,canvas.width, canvas.height);
+
+    const fijo = _normalizarDataURLFirma(dataURL);
+    if (!fijo) return;
+
+    const img = new Image();
+    img.onload = () => {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0,80));
+    img.src = fijo;
+  }
+
+  async function sha256Hex(text) {
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function docCargarPlantilla(){
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
+    const profesional = (document.getElementById("doc_profesional")?.value || "").trim();
+    const fecha = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
+
+    const sel = document.getElementById("doc_template")?.value || "AUTO";
+
+    let key = sel;
+    if (sel === "AUTO") key = plantillaAutoProcedimiento(procedimiento);
+    if (!CONSENT_TEMPLATES[key]) key = "GENERICA";
+
+    document.getElementById("doc_texto").value =
+      CONSENT_TEMPLATES[key]({paciente, doc, procedimiento, profesional, fecha});
+  }
+
+  function docNuevo(){
+    const id = _genDocId();
+    document.getElementById("doc_id").value = id;
+    document.getElementById("doc_tipo").value = "CONSENTIMIENTO";
+    document.getElementById("doc_template").value = "AUTO";
+    document.getElementById("doc_fecha").value = _hoyISO();
+
+    // si hay profesional/procedimiento en evolución actual, NO lo forzamos (pero sí dejamos por si el usuario lo quiere)
+    // aquí simplemente dejamos vacío
+    document.getElementById("doc_procedimiento").value = "";
+    document.getElementById("doc_profesional").value = "";
+
+    document.getElementById("doc_texto").value = "";
+    docLimpiarFirma("PAC");
+    docLimpiarFirma("PRO");
+  }
+
+  async function docGuardar(){
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+
+    if (!cedula || !paciente){
+      alert("⚠️ Debes tener cargado el paciente (nombre y cédula).");
       return;
     }
-    setTimeout(() => _setFirmaDesdeDataURL(canvasId, dataURL, intentos - 1), 80);
-    return;
-  }
 
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const documento_id = (document.getElementById("doc_id")?.value || "").trim() || _genDocId();
+    const tipo = (document.getElementById("doc_tipo")?.value || "CONSENTIMIENTO").trim();
+    const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
+    const profesional = (document.getElementById("doc_profesional")?.value || "").trim();
+    const template_key = (document.getElementById("doc_template")?.value || "AUTO").trim();
+    const fecha = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
+    const texto = (document.getElementById("doc_texto")?.value || "").trim();
 
-  const fijo = _normalizarDataURLFirma(dataURL);
-  if (!fijo) {
-    // console.warn("⚠️ Firma vacía/ inválida para", canvasId);
-    return;
-  }
+    if (!procedimiento) { alert("⚠️ Falta el procedimiento."); return; }
+    if (!profesional) { alert("⚠️ Falta el profesional."); return; }
+    if (!texto) { alert("⚠️ El texto del documento está vacío."); return; }
 
-  const img = new Image();
-  img.decoding = "async";
+    const firma_paciente = _docGetFirmaDataURL("doc_firmaPaciente");
+    const firma_profesional = _docGetFirmaDataURL("doc_firmaProfesional");
 
-  img.onload = () => {
+    if (!firma_paciente) { alert("⚠️ Falta la firma del paciente."); return; }
+    if (!firma_profesional) { alert("⚠️ Falta la firma del profesional."); return; }
+
+    const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
+    const firmado_en = new Date().toISOString();
+    const creado_en = firmado_en;
+
+    const hash_documento = await sha256Hex(JSON.stringify({
+      documento_id, tipo, cedula, paciente, procedimiento, profesional,
+      template_key, fecha, texto, firma_paciente, firma_profesional, firmado_en
+    }));
+
+    const row = {
+      documento_id,
+      tipo,
+      cedula_paciente: cedula,
+      paciente_nombre: paciente,
+      procedimiento,
+      profesional,
+      template_key,
+      fecha,
+      texto,
+      firma_paciente,
+      firma_profesional,
+      firmado_en,
+      creado_en,
+      creado_por,
+      user_agent: navigator.userAgent,
+      hash_documento
+    };
+
+    const idx = documentos.findIndex(d => d.documento_id === documento_id);
+    if (idx >= 0) documentos[idx] = row;
+    else documentos.unshift(row);
+
+    _docsGuardarLS();
+    renderDocumentos();
+
+    // enviar a n8n (para guardar en supabase)
     try {
-      // ✅ dibuja usando el tamaño CSS (por el setTransform del resize)
-      const cssW = canvas.getBoundingClientRect().width;
-      const cssH = canvas.getBoundingClientRect().height;
+      const payload = { evento: "guardar_documento", row };
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, cssW, cssH);
-    } catch (e) {
-      console.warn("❌ drawImage falló:", e);
+      const resp = await fetch(N8N_WEBHOOK_CONSENT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+      alert("✅ Documento enviado a n8n y listo para guardar en Supabase.");
+      docNuevo();
+      renderDocumentos();
+    } catch (err) {
+      console.warn("⚠️ Guardado local, pero no se pudo enviar a n8n:", err);
+      alert("⚠️ Documento guardado localmente, pero NO se pudo enviar a n8n.");
     }
-  };
-
-  img.onerror = () => {
-    console.warn("❌ Firma inválida/no cargó:", (fijo || "").slice(0, 80) + "...");
-  };
-
-  img.src = fijo;
-}
-
-
-function _uuidConsent() {
-  try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
-  catch(e){ return _uuidFallback(); }
-}
-
-// ---- Guardar consentimiento
-async function sha256Hex(text) {
-  const enc = new TextEncoder().encode(text);
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function guardarConsentimiento(){
-  if (!_evolucionActualId) { alert("No hay evolución activa."); return; }
-
-  const evo = evoluciones.find(x => (x.id_evolucion ?? x.id) === _evolucionActualId) ||
-              evoluciones.find(x => x.id === _evolucionActualId);
-  if (!evo) { alert("No se encontró la evolución."); return; }
-
-  const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const cedula_paciente  = (document.getElementById("paciente_numdoc")?.value || "").trim();
-
-  const procedimiento = (evo.procedimiento || evo.evo_tipo || "").trim();
-  const profesional   = (evo.profesional || evo.evo_profesional || "").trim();
-  const texto         = (document.getElementById("consent_texto")?.value || "").trim();
-
-  if (!cedula_paciente) { alert("Falta la cédula del paciente."); return; }
-  if (!paciente_nombre) { alert("Falta el nombre del paciente."); return; }
-  if (!procedimiento)   { alert("Falta el procedimiento."); return; }
-  if (!profesional)     { alert("Falta el profesional."); return; }
-  if (!texto)           { alert("El texto del consentimiento está vacío."); return; }
-
-  const firma_paciente = _getFirmaDataURL("firmaPaciente");
-  const firma_profesional = _getFirmaDataURL("firmaProfesional");
-
-  if (!firma_paciente) { alert("Falta la firma del paciente."); return; }
-  if (!firma_profesional) { alert("Falta la firma del profesional."); return; }
-
-  const template_key = document.getElementById("consent_template")?.value || "AUTO";
-  const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
-
-  const firmado_en = new Date().toISOString();
-  const creado_en = firmado_en;
-
-  // ✅ Hash (texto + firmas + datos claves) para trazabilidad
-  const hash_documento = await sha256Hex(
-    JSON.stringify({
-      cedula_paciente, paciente_nombre, procedimiento, profesional, template_key,
-      texto, firma_paciente, firma_profesional, firmado_en
-    })
-  );
-
-  // ✅ Armamos el registro EXACTO para tu tabla `consentimientos`
-  const row = {
-    cedula_paciente,
-    paciente_nombre,
-    paciente_doc: cedula_paciente,
-    evolucion_id: _evolucionActualId,
-    procedimiento,
-    profesional,
-    template_key,
-    texto,
-    firma_paciente,
-    firma_profesional,
-    pdf_path: null,
-    firmado_en,
-    creado_en,
-    creado_por,
-    ip: null,
-    user_agent: navigator.userAgent,
-    hash_documento
-  };
-
-  // ✅ Guardado local (opcional)
-  const i = consentimientos.findIndex(c => c.evolucion_id === _evolucionActualId);
-  if (i >= 0) consentimientos[i] = row;
-  else consentimientos.unshift(row);
-  try { localStorage.setItem(LS_CONS_KEY, JSON.stringify(consentimientos)); } catch(e){}
-
-  // ✅ Enviar a n8n
-  try {
-    const payload = { evento: "guardar_consentimiento", row };
-
-    const resp = await fetch(N8N_WEBHOOK_CONSENT, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-    alert("✅ Consentimiento enviado a n8n y listo para guardar en Supabase.");
-    cerrarConsentimiento();
-    renderEvoluciones();
-  } catch (err) {
-    console.warn("⚠️ Guardado local, pero no se pudo enviar a n8n:", err);
-    alert("⚠️ Consentimiento guardado localmente, pero NO se pudo enviar a n8n.");
   }
-}
+
+  function docEditar(documento_id){
+    const d = documentos.find(x => x.documento_id === documento_id);
+    if (!d) return;
+
+    document.getElementById("doc_id").value = d.documento_id || "";
+    document.getElementById("doc_tipo").value = d.tipo || "CONSENTIMIENTO";
+    document.getElementById("doc_procedimiento").value = d.procedimiento || "";
+    document.getElementById("doc_profesional").value = d.profesional || "";
+    document.getElementById("doc_template").value = d.template_key || "AUTO";
+    document.getElementById("doc_fecha").value = d.fecha || _hoyISO();
+    document.getElementById("doc_texto").value = d.texto || "";
+
+    // pintar firmas
+    setTimeout(() => {
+      _docSetFirmaDesdeDataURL("doc_firmaPaciente", d.firma_paciente || "");
+      _docSetFirmaDesdeDataURL("doc_firmaProfesional", d.firma_profesional || "");
+    }, 50);
+
+    // bajar a la sección
+    document.getElementById("doc_id").scrollIntoView({behavior:"smooth", block:"start"});
+  }
+
+  function docEliminar(documento_id){
+    const ok = confirm("¿Eliminar este documento localmente?");
+    if (!ok) return;
+    documentos = documentos.filter(d => d.documento_id !== documento_id);
+    _docsGuardarLS();
+    renderDocumentos();
+  }
+
+  function renderDocumentos(){
+    const tbody = document.getElementById("tabla_documentos");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    documentos.forEach(d => {
+      const tr = document.createElement("tr");
+
+      const fp = _normalizarDataURLFirma(d.firma_paciente || "");
+      const fr = _normalizarDataURLFirma(d.firma_profesional || "");
+
+      tr.innerHTML = `
+        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+          ${d.documento_id || ""}
+        </td>
+        <td>${(d.fecha || "").slice(0,10)}</td>
+        <td>${(d.tipo || "").toUpperCase()}</td>
+        <td>${(d.procedimiento || "").toUpperCase()}</td>
+        <td>${(d.profesional || "").toUpperCase()}</td>
+        <td>${fp ? `<img class="img-firma" src="${fp}">` : "-"}</td>
+        <td>${fr ? `<img class="img-firma" src="${fr}">` : "-"}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
+            onclick="docEditar('${d.documento_id}')">Editar</button>
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+            onclick="docEliminar('${d.documento_id}')">Eliminar</button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Si tu webhook ya devuelve documentos/consentimientos, los normalizamos
+  function normalizarDocumentosDeWebhook(data){
+    let raw = data?.documentos ?? data?.consentimientos;
+
+    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.documentos)) {
+      raw = raw.documentos;
+    }
+    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.consentimientos)) {
+      raw = raw.consentimientos;
+    }
+    if (typeof raw === "string") {
+      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
+    }
+    if (!Array.isArray(raw)) raw = [];
+
+    return raw.map(x => ({
+      documento_id: x.documento_id ?? x.id_documento ?? x.id ?? _genDocId(),
+      tipo: x.tipo ?? "CONSENTIMIENTO",
+      cedula_paciente: x.cedula_paciente ?? x.paciente_doc ?? x.doc ?? "",
+      paciente_nombre: x.paciente_nombre ?? x.paciente ?? "",
+      procedimiento: x.procedimiento ?? "",
+      profesional: x.profesional ?? "",
+      template_key: x.template_key ?? x.template ?? "AUTO",
+      fecha: x.fecha ?? (x.firmado_en ? String(x.firmado_en).slice(0,10) : _hoyISO()),
+      texto: x.texto ?? "",
+      firma_paciente: x.firma_paciente ?? x.firma_paciente_path ?? x.firmaPaciente ?? "",
+      firma_profesional: x.firma_profesional ?? x.firma_profesional_path ?? x.firmaProfesional ?? "",
+      firmado_en: x.firmado_en ?? null,
+      creado_en: x.creado_en ?? null,
+      creado_por: x.creado_por ?? null,
+      hash_documento: x.hash_documento ?? x.hash ?? null
+    }));
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    // init firmas doc
+    _initCanvasDoc("doc_firmaPaciente");
+    _initCanvasDoc("doc_firmaProfesional");
+
+    // cargar docs desde LS al abrir
+    documentos = _docsCargarLS();
+    renderDocumentos();
+
+    // preparar nuevo doc default
+    docNuevo();
+
+    // autogenerar texto si el usuario cambia procedimiento/profesional
+    const proc = document.getElementById("doc_procedimiento");
+    const prof = document.getElementById("doc_profesional");
+    if (proc) proc.addEventListener("change", docCargarPlantilla);
+    if (prof) prof.addEventListener("change", docCargarPlantilla);
+  });
 
 </script>
-
-<!-- ==========================
-     ✅ MODAL CONSENTIMIENTOS
-========================== -->
-<div id="modalConsent" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000003; padding:18px;">
-  <div style="max-width:980px; margin:0 auto; background:#fff; border-radius:14px; border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.18); overflow:hidden;">
-    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px; background:#eef6ff; border-bottom:1px solid #e7edf5;">
-      <div>
-        <div style="font-weight:800; color:#0D47A1;">Consentimiento informado</div>
-        <div style="font-size:12px; color:#6b7a90;" id="consent_meta"></div>
-      </div>
-      <button type="button" class="btn btn-buscar" style="width:auto; padding:8px 12px;" onclick="cerrarConsentimiento()">Cerrar ✕</button>
-    </div>
-
-    <div style="padding:16px;">
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label>Procedimiento (desde la evolución)</label>
-          <input id="consent_procedimiento" type="text" readonly>
-        </div>
-
-        <div class="ctrl">
-          <label>Plantilla</label>
-          <select id="consent_template" onchange="cargarPlantillaConsentimiento()">
-            <option value="AUTO">Automática (según procedimiento)</option>
-            <option value="ODONTO_GENERAL">Odontología general</option>
-            <option value="REHABILITACION">Rehabilitación oral</option>
-            <option value="GENERICA">Genérica</option>
-          </select>
-        </div>
-
-        <div class="ctrl full">
-          <label>Texto del consentimiento (editable)</label>
-          <textarea id="consent_texto" style="min-height:220px;"></textarea>
-        </div>
-      </div>
-
-      <div class="rowline"></div>
-
-      <div class="grid g-2">
-        <div class="ctrl">
-          <label>Firma paciente</label>
-          <canvas id="firmaPaciente" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
-          <div class="inline" style="margin-top:8px;">
-            <button type="button" class="btn btn-buscar" style="width:auto;" onclick="limpiarFirma('PAC')">Limpiar</button>
-          </div>
-        </div>
-
-        <div class="ctrl">
-          <label>Firma profesional</label>
-          <canvas id="firmaProfesional" width="420" height="160" style="border:1px solid #cbd5e1; border-radius:10px; background:#fff;"></canvas>
-          <div class="inline" style="margin-top:8px;">
-            <button type="button" class="btn btn-buscar" style="width:auto;" onclick="limpiarFirma('PRO')">Limpiar</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="rowline"></div>
-
-      <div class="inline" style="justify-content:flex-end; gap:10px;">
-        <button type="button" class="btn btn-agenda" style="width:auto;" onclick="guardarConsentimiento()">
-          Guardar consentimiento
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
 
 </body>
 </html>
