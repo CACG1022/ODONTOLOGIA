@@ -1482,20 +1482,32 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     return hasInk ? canvas.toDataURL("image/png") : "";
   }
 
-  function _setFirmaDocDesdeDataURL(canvasId, dataURL){
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0,0,canvas.width, canvas.height);
+ function _pintarFirmaEnCanvas(canvas, dataURL) {
+  if (!canvas) return;
 
-    const fijo = _normalizarDataURLFirma(dataURL);
-    if (!fijo) return;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const img = new Image();
-    img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0,60) + "...");
-    img.src = fijo;
-  }
+  const fijo = _normalizarDataURLFirma(dataURL);
+  if (!fijo) return;
+
+  const img = new Image();
+  img.onload = () => {
+    // ✅ por si el canvas aún no tiene tamaño correcto
+    const w = canvas.width || 420;
+    const h = canvas.height || 160;
+    ctx.clearRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+  };
+  img.onerror = () => console.warn("❌ Firma inválida:", fijo.slice(0, 80));
+  img.src = fijo;
+}
+
+function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
+  const canvas = document.getElementById(canvasId);
+  _pintarFirmaEnCanvas(canvas, dataURL);
+}
+
 
   function nuevoDocumento(){
     _docEditId = null;
@@ -1627,9 +1639,14 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     limpiarFirmaDocumento("PRO");
 
     setTimeout(() => {
-      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente || "");
-      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional || "");
-    }, 50);
+  _setFirmaDocDesdeDataURL("doc_firmaPaciente",
+    d.firma_paciente || d.firmaPaciente || d.firma || ""
+  );
+  _setFirmaDocDesdeDataURL("doc_firmaProfesional",
+    d.firma_profesional || d.firmaProfesional || d.firma2 || ""
+  );
+}, 250);
+
   }
 
   async function sha256Hex(text) {
