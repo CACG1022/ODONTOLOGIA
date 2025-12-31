@@ -162,6 +162,9 @@
     }
     .tabla-docs thead tr{ background:#eef6ff; }
 
+    /* ✅ IMPORTANTE: permite dibujar en móvil sin scroll */
+    canvas { touch-action: none; }
+
     /* ODONTOGRAMA (igual) */
     #odontograma-wrapper * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
     #odontograma-wrapper { background: #f9f9f9; padding: 20px 0 40px; margin-top: 30px; border-radius: 14px; }
@@ -373,9 +376,6 @@
     </div>
   </section>
 
-  <!-- (Secciones restantes del formulario igual a tu archivo: acudiente, emergencia, historia médica, etc.) -->
-  <!-- Para mantenerlo completo y pegable, dejo lo demás intacto salvo fixes de Documentos y Ciudad_de_Residencia -->
-  <!-- ========================================================= -->
   <!-- ✅ EVOLUCIONES -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -438,7 +438,7 @@
     </div>
   </section>
 
-  <!-- ODONTOGRAMA (igual a tu archivo, lo dejo tal cual) -->
+  <!-- ODONTOGRAMA -->
   <div id="odontograma-wrapper">
     <h1>Odontograma Internacional FDI</h1>
     <div id="odontograma-guias" style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
@@ -784,7 +784,7 @@
   document.addEventListener("DOMContentLoaded", cargarProcedimientosDesdeSupabase);
 
   // ==============================
-  // ✅ EVOLUCIONES (tu lógica original)
+  // ✅ EVOLUCIONES
   // ==============================
   let evoluciones = [];
 
@@ -949,7 +949,7 @@
   });
 
   // ==============================
-  // ODONTOGRAMA (tu lógica original)
+  // ODONTOGRAMA
   // ==============================
   const preexistencias = {
     Caries: 'red',
@@ -1288,7 +1288,7 @@
   document.addEventListener("DOMContentLoaded", _poblarDatalistProfesionales);
 
   // ==============================
-  // ✅ ODONTOGRAMA FULLSCREEN (igual)
+  // ✅ ODONTOGRAMA FULLSCREEN
   // ==============================
   (function(){
     const wrapper = document.getElementById("odontograma-wrapper");
@@ -1341,7 +1341,7 @@
   })();
 
   // =====================================================================
-  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - FIX COMPLETO VER/EDITAR/ELIMINAR
+  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) + FIRMAS CORREGIDAS
   // =====================================================================
   let documentos = [];
   let _docEditId = null;
@@ -1351,97 +1351,35 @@
   const _IMG_TRANSPARENTE =
     "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO1p0wAAAABJRU5ErkJggg==";
 
- function _normalizarDataURLFirma(valor) {
-  if (!valor) return "";
-  let v = String(valor).trim();
+  // ✅ normaliza base64 / dataURL
+  function _normalizarDataURLFirma(valor) {
+    if (!valor) return "";
+    let v = String(valor).trim();
 
-  // si viene urlencoded
-  try { v = decodeURIComponent(v); } catch(e) {}
+    try { v = decodeURIComponent(v); } catch(e) {}
+    v = v.replace(/\s/g, "+");
 
-  // si viene con espacios, se dañan los +
-  v = v.replace(/\s/g, "+");
+    if (v.startsWith("data:image")) return v;
 
-  // si ya es dataURL completo
-  if (v.startsWith("data:image")) return v;
-
-  // si parece base64 "puro"
-  if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
-    return "data:image/png;base64," + v;
+    if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
+      return "data:image/png;base64," + v;
+    }
+    return "";
   }
 
-  return "";
-}
-
-function setFirmaEnCanvas(canvasId, dataURL) {
-  const canvas = document.getElementById(canvasId);
-  if (!canvas) return;
-
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  const fijo = _normalizarDataURLFirma(dataURL);
-  if (!fijo) return;
-
-  const img = new Image();
-  img.onload = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-  };
-  img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0, 80));
-  img.src = fijo;
-}
-
-// opcional: para esperar a que el canvas quede pintado (útil antes de exportar)
-function setFirmaEnCanvasAsync(canvasId, dataURL) {
-  return new Promise((resolve) => {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return resolve(false);
-
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const fijo = _normalizarDataURLFirma(dataURL);
-    if (!fijo) return resolve(false);
-
-    const img = new Image();
-    img.onload = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      resolve(true);
-    };
-    img.onerror = () => resolve(false);
-    img.src = fijo;
-  });
-}
-
-
-
-
-
-
-  const DOC_TEMPLATES = {
-    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
-CONSENTIMIENTO INFORMADO
-
-Paciente: ${paciente} - Identificación: ${doc}
-Procedimiento: ${procedimiento}
-Profesional: ${profesional}
-Fecha: ${fecha}
-
-Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
-He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
-`.trim()
-  };
-
-  // Canvas firmas
+  // ==============================
+  // ✅ FIRMAS EN CANVAS (FIX REAL)
+  // ==============================
   const _docFirmas = {};
+
   function _initCanvasDoc(canvasId){
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.lineCap = "round";
+    ctx.strokeStyle = "#111";
 
     _docFirmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
 
@@ -1451,6 +1389,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       return { x: clientX - r.left, y: clientY - r.top };
     }
+
     function start(e){
       e.preventDefault();
       const p = pos(e);
@@ -1458,26 +1397,32 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
+
     function move(e){
       if (!_docFirmas[canvasId].drawing) return;
       e.preventDefault();
       const p = pos(e);
+
       ctx.beginPath();
       ctx.moveTo(_docFirmas[canvasId].lastX, _docFirmas[canvasId].lastY);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
+
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
+
     function end(e){
       e.preventDefault();
       _docFirmas[canvasId].drawing = false;
     }
 
+    // PC
     canvas.addEventListener("mousedown", start);
     canvas.addEventListener("mousemove", move);
     window.addEventListener("mouseup", end);
 
+    // Móvil
     canvas.addEventListener("touchstart", start, { passive:false });
     canvas.addEventListener("touchmove", move, { passive:false });
     canvas.addEventListener("touchend", end, { passive:false });
@@ -1503,32 +1448,41 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     return hasInk ? canvas.toDataURL("image/png") : "";
   }
 
- function _pintarFirmaEnCanvas(canvas, dataURL) {
-  if (!canvas) return;
+  function _pintarFirmaEnCanvas(canvas, dataURL) {
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  const ctx = canvas.getContext("2d");
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const fijo = _normalizarDataURLFirma(dataURL);
+    if (!fijo) return;
 
-  const fijo = _normalizarDataURLFirma(dataURL);
-  if (!fijo) return;
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+    img.onerror = () => console.warn("❌ Firma inválida:", fijo.slice(0, 80));
+    img.src = fijo;
+  }
 
-  const img = new Image();
-  img.onload = () => {
-    // ✅ por si el canvas aún no tiene tamaño correcto
-    const w = canvas.width || 420;
-    const h = canvas.height || 160;
-    ctx.clearRect(0, 0, w, h);
-    ctx.drawImage(img, 0, 0, w, h);
+  function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
+    const canvas = document.getElementById(canvasId);
+    _pintarFirmaEnCanvas(canvas, dataURL);
+  }
+
+  const DOC_TEMPLATES = {
+    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
+He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
+`.trim()
   };
-  img.onerror = () => console.warn("❌ Firma inválida:", fijo.slice(0, 80));
-  img.src = fijo;
-}
-
-function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
-  const canvas = document.getElementById(canvasId);
-  _pintarFirmaEnCanvas(canvas, dataURL);
-}
-
 
   function nuevoDocumento(){
     _docEditId = null;
@@ -1627,14 +1581,6 @@ function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
     document.getElementById("verDoc_profesional").textContent = d.profesional || "";
     document.getElementById("verDoc_texto").textContent = d.texto || "";
 
-    console.log("DOC RAW:", d);
-
-const rawPac = d.firma_paciente || d.firmaPaciente || d.firma || "";
-const rawPro = d.firma_profesional || d.firmaProfesional || d.firma2 || "";
-
-console.log("RAW PAC len:", String(rawPac || "").length, "head:", String(rawPac || "").slice(0, 40));
-console.log("RAW PRO len:", String(rawPro || "").length, "head:", String(rawPro || "").slice(0, 40));
-
     const fp   = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || d.firma || "");
     const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || d.firma2 || "");
 
@@ -1667,15 +1613,11 @@ console.log("RAW PRO len:", String(rawPro || "").length, "head:", String(rawPro 
     limpiarFirmaDocumento("PAC");
     limpiarFirmaDocumento("PRO");
 
+    // ✅ pintar firmas guardadas
     setTimeout(() => {
-  _setFirmaDocDesdeDataURL("doc_firmaPaciente",
-    d.firma_paciente || d.firmaPaciente || d.firma || ""
-  );
-  _setFirmaDocDesdeDataURL("doc_firmaProfesional",
-    d.firma_profesional || d.firmaProfesional || d.firma2 || ""
-  );
-}, 250);
-
+      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente || d.firmaPaciente || d.firma || "");
+      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional || d.firmaProfesional || d.firma2 || "");
+    }, 120);
   }
 
   async function sha256Hex(text) {
@@ -1749,6 +1691,7 @@ console.log("RAW PRO len:", String(rawPro || "").length, "head:", String(rawPro 
     if (!profesional) { alert("⚠️ Falta el profesional."); return; }
     if (!texto) { alert("⚠️ El texto está vacío."); return; }
 
+    // ✅ firmas capturadas del canvas
     const firma_paciente = _getFirmaDataURLDoc("doc_firmaPaciente");
     const firma_profesional = _getFirmaDataURLDoc("doc_firmaProfesional");
     if (!firma_paciente) { alert("⚠️ Falta la firma del paciente."); return; }
@@ -1838,17 +1781,15 @@ console.log("RAW PRO len:", String(rawPro || "").length, "head:", String(rawPro 
     }
   }
 
-  // ==============================
-// ✅ IMPRIMIR / DESCARGAR HTML
-// ==============================
-function imprimirDocumento(){
-  if (!_docVistaActual) return;
-  const d = _docVistaActual;
+  // ✅ IMPRIMIR / DESCARGAR HTML
+  function imprimirDocumento(){
+    if (!_docVistaActual) return;
+    const d = _docVistaActual;
 
-  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
-  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+    const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
 
-  const html = `
+    const html = `
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1904,20 +1845,20 @@ function imprimirDocumento(){
 </body>
 </html>`;
 
-  const w = window.open("", "_blank");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
+    const w = window.open("", "_blank");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+  }
 
-function descargarHTMLDocumento(){
-  if (!_docVistaActual) return;
-  const d = _docVistaActual;
+  function descargarHTMLDocumento(){
+    if (!_docVistaActual) return;
+    const d = _docVistaActual;
 
-  const fp = _normalizarDataURLFirma(d.firma_paciente || "");
-  const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
+    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
 
-  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
 <title>Documento ${escapeHtml(d.id || "")}</title></head>
 <body style="font-family:system-ui,Segoe UI,Arial;padding:20px;">
 <h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
@@ -1938,17 +1879,16 @@ function descargarHTMLDocumento(){
 </div>
 </body></html>`;
 
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = `documento_${(d.id || "sin_id")}.html`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `documento_${(d.id || "sin_id")}.html`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
 
-
-  // Init documentos
+  // ✅ INIT: firmas + documento nuevo
   document.addEventListener("DOMContentLoaded", () => {
     _initCanvasDoc("doc_firmaPaciente");
     _initCanvasDoc("doc_firmaProfesional");
@@ -1956,7 +1896,7 @@ function descargarHTMLDocumento(){
   });
 
   // ==============================
-  // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
+  // ✅ BUSCAR HISTORIA
   // ==============================
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
@@ -1994,7 +1934,6 @@ function descargarHTMLDocumento(){
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
 
-      // ✅ FIX: id sin espacios
       document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
 
       document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
@@ -2005,7 +1944,6 @@ function descargarHTMLDocumento(){
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
 
-      // odontograma (tu mismo mapping)
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
       reporte = {};
 
@@ -2039,10 +1977,8 @@ function descargarHTMLDocumento(){
         });
       });
 
-      // ✅ cargar documentos del paciente
       await cargarDocumentosPacienteDesdeSupabase(cedula);
 
-      // preparar doc nuevo
       document.getElementById("doc_id").value = uuid();
       document.getElementById("doc_fecha").value = _hoyISO();
       document.getElementById("doc_profesional").value = "";
@@ -2086,7 +2022,6 @@ function descargarHTMLDocumento(){
   window.limpiarEvolucionForm = limpiarEvolucionForm;
 
   window.agregarProfesionalDesdeCampo = agregarProfesionalDesdeCampo;
-
 </script>
 </body>
 </html>
