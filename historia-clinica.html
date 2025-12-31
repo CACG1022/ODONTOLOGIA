@@ -117,6 +117,9 @@
       .checks{ grid-template-columns:1fr; }
     }
 
+    /* ==========================
+       BOTONES DE BUSQUEDA / AGENDA / SALIR
+    ============================== */
     .search-grid{ grid-template-columns: 1.2fr 1fr; align-items:end; }
     .btn{
       width:100%;
@@ -138,6 +141,9 @@
       font-weight:700;
     }
 
+    /* =====================================================
+       EVOLUCIONES (tabla)
+    ===================================================== */
     .tabla-evo{
       width:100%;
       border-collapse:collapse;
@@ -151,6 +157,9 @@
       background:#eef6ff;
     }
 
+    /* =====================================================
+       DOCUMENTOS (tabla)
+    ===================================================== */
     .tabla-docs{
       width:100%;
       border-collapse:collapse;
@@ -162,62 +171,290 @@
     }
     .tabla-docs thead tr{ background:#eef6ff; }
 
-    /* ODONTOGRAMA (igual) */
-    #odontograma-wrapper * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-    #odontograma-wrapper { background: #f9f9f9; padding: 20px 0 40px; margin-top: 30px; border-radius: 14px; }
-    #odontograma-wrapper h1 { text-align: center; color: #0D47A1; margin-bottom: 10px; }
-    .odontograma { display: flex; flex-direction: column; align-items: center; gap: 40px; position: relative; z-index: 10; overflow-x: visible !important; width: max-content; margin: 0 auto; }
+    /* =====================================================
+       ESTILOS DEL ODONTOGRAMA
+    ===================================================== */
+    #odontograma-wrapper * {
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    #odontograma-wrapper {
+      background: #f9f9f9;
+      padding: 20px 0 40px;
+      margin-top: 30px;
+      border-radius: 14px;
+    }
+
+    #odontograma-wrapper h1 {
+      text-align: center;
+      color: #0D47A1;
+      margin-bottom: 10px;
+    }
+
+    .odontograma {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+      position: relative;
+      z-index: 10;
+      overflow-x: visible !important;
+      width: max-content;
+      margin: 0 auto;
+    }
+
     .seccion { text-align: center; }
-    .etiqueta { font-weight: bold; color: #D0D0D0; margin-bottom: 10px; }
-    .fila { display: flex; flex-wrap: nowrap; justify-content: center; gap: var(--tooth-gap); min-width: max-content; }
-    .contenedor-diente { display: flex; flex-direction: column; align-items: center; }
-    .diente { position: relative; width: var(--tooth-size); height: var(--tooth-size); border-radius: 50%; border: 2px solid #ccc; background: white; overflow: hidden; }
-    .cara { position: absolute; width: 100%; height: 100%; cursor: pointer; transition: background 0.2s; z-index: 1; }
-    .cara::before,.cara::after { content: ""; position: absolute; width: 1px; height: 100%; background: gray; left: 50%; top: 0; z-index: 0; }
+    .etiqueta {
+      font-weight: bold;
+      color: #D0D0D0;
+      margin-bottom: 10px;
+    }
+
+    .fila {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: center;
+      gap: var(--tooth-gap);
+      min-width: max-content;
+    }
+
+    .contenedor-diente {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .diente {
+      position: relative;
+      width: var(--tooth-size);
+      height: var(--tooth-size);
+      border-radius: 50%;
+      border: 2px solid #ccc;
+      background: white;
+      overflow: hidden;
+    }
+
+    .cara {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      cursor: pointer;
+      transition: background 0.2s;
+      z-index: 1;
+    }
+
+    .cara::before,
+    .cara::after {
+      content: "";
+      position: absolute;
+      width: 1px;
+      height: 100%;
+      background: gray;
+      left: 50%;
+      top: 0;
+      z-index: 0;
+    }
+
     .cara::before { transform: rotate(45deg); }
     .cara::after  { transform: rotate(-45deg); }
+
     .superior { clip-path: polygon(50% 50%, 0% 0%, 100% 0%); }
     .inferior { clip-path: polygon(50% 50%, 0% 100%, 100% 100%); }
     .izquierda { clip-path: polygon(50% 50%, 0% 0%, 0% 100%); }
     .derecha   { clip-path: polygon(50% 50%, 100% 0%, 100% 100%); }
-    .centro { width: var(--center-size); height: var(--center-size); border-radius: 50%; border: 1.5px solid gray; background: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; cursor: pointer; }
-    .numero { font-size: var(--num-size); color: #555; margin-top: 5px; }
-    .popup { position: absolute; display: none; background: #fff; border: 1px solid #ccc; padding: 10px; z-index: 1000002; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-height: 250px; overflow-y: auto; }
-    .popup div { margin: 4px 0; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .color-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; margin-right: 4px; }
-    .leyenda { max-width: 1000px; margin: 60px auto 20px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
-    .leyenda h2 { text-align: center; color: #0D47A1; margin-bottom: 16px; }
-    .leyenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; font-size: 14px; }
 
-    .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
+    .centro {
+      width: var(--center-size);
+      height: var(--center-size);
+      border-radius: 50%;
+      border: 1.5px solid gray;
+      background: white;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      cursor: pointer;
+    }
+
+    .numero {
+      font-size: var(--num-size);
+      color: #555;
+      margin-top: 5px;
+    }
+
+    .popup {
+      position: absolute;
+      display: none;
+      background: #fff;
+      border: 1px solid #ccc;
+      padding: 10px;
+      z-index: 1000002;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      max-height: 250px;
+      overflow-y: auto;
+    }
+
+    .popup div {
+      margin: 4px 0;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .color-box {
+      width: 12px;
+      height: 12px;
+      border-radius: 2px;
+      display: inline-block;
+      margin-right: 4px;
+    }
+
+    .leyenda {
+      max-width: 1000px;
+      margin: 60px auto 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .leyenda h2 {
+      text-align: center;
+      color: #0D47A1;
+      margin-bottom: 16px;
+    }
+
+    .leyenda-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 8px 16px;
+      font-size: 14px;
+    }
+
+    /* ====== VOZ POR CAMPO (auto-inyecta botón 🎤) ====== */
+    .vwrap{
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
     .vwrap .vfield{ flex: 1; }
-    .vbtn{ width: 44px; min-width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: #F5F5F5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; color: transparent; }
-    .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
+    .vbtn{
+      width: 44px;
+      min-width: 44px;
+      height: 44px;
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: #F5F5F5;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      color: transparent;
+    }
+    .vbtn.on{
+      background: #0D47A1;
+      color: #fff;
+      border-color: #0D47A1;
+    }
 
+    /* ==========================
+       🖥️🔎 ODONTOGRAMA FULLSCREEN
+    ========================== */
     #odontograma-wrapper.fullscreen{
-      position: fixed; inset: 0; z-index: 99999; background: #f9f9f9;
-      margin: 0 !important; border-radius: 0 !important; padding: 10px 10px 25px; overflow: auto;
+      position: fixed;
+      inset: 0;
+      z-index: 99999;
+      background: #f9f9f9;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      padding: 10px 10px 25px;
+      overflow: auto;
     }
-    #odontograma-wrapper.fullscreen .odontograma{ margin-left: auto !important; margin-right: auto !important; width: max-content; min-width: max-content; padding: 10px; }
+    #odontograma-wrapper.fullscreen .odontograma{
+      margin-left: auto !important;
+      margin-right: auto !important;
+      width: max-content;
+      min-width: max-content;
+      padding: 10px;
+    }
     #btnExitOdonFS{
-      position: fixed; top: 12px; right: 12px; z-index: 100000;
-      border: none; border-radius: 12px; padding: 10px 14px; cursor: pointer;
-      background: #0D47A1; color: #fff; font-weight: 700; box-shadow:0 8px 18px rgba(0,0,0,.18);
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 100000;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      cursor: pointer;
+      background: #0D47A1;
+      color: #fff;
+      font-weight: 700;
+      box-shadow: 0 8px 18px rgba(0,0,0,.18);
     }
-    #odontograma-wrapper.fullscreen #odontograma-guias{ max-width: none !important; width: 1300px !important; margin: 5px auto 0 !important; }
+    #odontograma-wrapper.fullscreen #odontograma-guias{
+      max-width: none !important;
+      width: 1300px !important;
+      margin: 5px auto 0 !important;
+    }
 
-    #odontograma-wrapper{ --tooth-size: 56px; --tooth-gap: 10px; --num-size: 11px; --center-size: 20px; }
+    /* ✅ Ajuste fino: tamaño y separación de dientes */
+    #odontograma-wrapper{
+      --tooth-size: 56px;
+      --tooth-gap: 10px;
+      --num-size: 11px;
+      --center-size: 20px;
+    }
 
-    .extra-etiquetas{ margin-top: 25px; font-size: 15px; color: #D0D0D0; line-height: 1.1; font-weight: 600; text-align: center; }
+    .extra-etiquetas{
+      margin-top: 25px;
+      font-size: 15px;
+      color: #D0D0D0;
+      line-height: 1.1;
+      font-weight: 600;
+      text-align: center;
+    }
     .extra-etiquetas .lingual{ margin-top: 5px; }
 
-    .etiqueta-eje{ position: relative; display: inline-block; padding: 0 10px; }
-    .linea-media{ position: absolute; left: 50%; transform: translateX(-50%); width: 3px; background: #E3E3E3; z-index: 999999; pointer-events: none; }
-    .etiqueta-eje .linea-media{ top: 100%; height: 0px; }
-    .eje-inferior .linea-media{ top: auto; bottom: 100%; height: 0px; }
+    /* ✅ etiqueta con línea centrada */
+    .etiqueta-eje{
+      position: relative;
+      display: inline-block;
+      padding: 0 10px;
+    }
+    .linea-media{
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 3px;
+      background: #E3E3E3;
+      z-index: 999999;
+      pointer-events: none;
+    }
+    .etiqueta-eje .linea-media{
+      top: 100%;
+      height: 0px;
+    }
+    .eje-inferior .linea-media{
+      top: auto;
+      bottom: 100%;
+      height: 0px;
+    }
     .linea-media.linea-cruce::after{
-      content:""; position:absolute; left:50%; bottom:0; transform:translateX(-50%);
-      width:1000px; height:2px; background:#E3E3E3; border-radius:2px;
+      content:"";
+      position:absolute;
+      left:50%;
+      bottom:0;
+      transform:translateX(-50%);
+      width:1000px;
+      height:2px;
+      background:#E3E3E3;
+      border-radius:2px;
     }
   </style>
 </head>
@@ -225,7 +462,9 @@
 <body>
 <div class="container">
 
-  <!-- BUSCAR -->
+  <!-- ==========================
+       BUSCAR HISTORIA CLÍNICA EXISTENTE
+  ============================== -->
   <section class="card">
     <div class="legend">Buscar historia clínica existente</div>
 
@@ -264,10 +503,13 @@
 
   <h1>Historia Clínica Odontológica</h1>
 
-  <!-- DATOS BÁSICOS -->
+  <!-- ==========================
+       DATOS BÁSICOS DEL PACIENTE
+  ============================== -->
   <section class="card">
     <div class="legend">Datos básicos del paciente</div>
     <div class="grid g-2">
+
       <div class="ctrl">
         <label for="paciente_nombre">*Nombres y apellidos</label>
         <input id="paciente_nombre" type="text">
@@ -322,10 +564,9 @@
         <input id="paciente_direccion" type="text">
       </div>
 
-      <!-- ✅ FIX: id sin espacios -->
       <div class="ctrl">
-        <label for="Ciudad_de_Residencia">Ciudad de Residencia</label>
-        <input id="Ciudad_de_Residencia" type="text">
+        <label for="Ciudad de Residencia">Ciudad de Residencia</label>
+        <input id="Ciudad de Residencia" type="text">
       </div>
 
       <div class="ctrl">
@@ -370,13 +611,325 @@
           <label class="chip"><input type="checkbox" name="hijos" value="No"> No</label>
         </div>
       </div>
+
     </div>
   </section>
 
-  <!-- (Secciones restantes del formulario igual a tu archivo: acudiente, emergencia, historia médica, etc.) -->
-  <!-- Para mantenerlo completo y pegable, dejo lo demás intacto salvo fixes de Documentos y Ciudad_de_Residencia -->
-  <!-- ========================================================= -->
-  <!-- ✅ EVOLUCIONES -->
+  <!-- ==========================
+       DATOS DEL ACUDIENTE
+  ============================== -->
+  <section class="card">
+    <div class="legend">Datos del acudiente</div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label for="padre_nombre">Nombre del padre</label>
+        <input id="padre_nombre" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_nombre">Nombre de la madre</label>
+        <input id="madre_nombre" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="padre_tel">Teléfono padre</label>
+        <input id="padre_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_tel">Teléfono madre</label>
+        <input id="madre_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="padre_eps">E.P.S. padre</label>
+        <input id="padre_eps" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_eps">E.P.S. madre</label>
+        <input id="madre_eps" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="padre_tipo">Beneficiario / Cotizante (padre)</label>
+        <select id="padre_tipo" name="padre_tipo">
+          <option value="">Seleccione</option>
+          <option value="Beneficiario">Beneficiario</option>
+          <option value="Cotizante">Cotizante</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label for="madre_tipo">Beneficiario / Cotizante (madre)</label>
+        <select id="madre_tipo" name="madre_tipo">
+          <option value="">Seleccione</option>
+          <option value="Beneficiario">Beneficiario</option>
+          <option value="Cotizante">Cotizante</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       EMERGENCIA
+  ============================== -->
+  <section class="card">
+    <div class="legend">En caso de emergencia avisar a</div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label for="emergencia_nombre">Nombres y apellidos</label>
+        <input id="emergencia_nombre" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_parentesco">Parentesco</label>
+        <input id="emergencia_parentesco" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_tel">Teléfono</label>
+        <input id="emergencia_tel" type="tel">
+      </div>
+
+      <div class="ctrl">
+        <label for="emergencia_cel">Celular</label>
+        <input id="emergencia_cel" type="tel">
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       HISTORIA MÉDICA
+  ============================== -->
+  <section class="card">
+    <div class="legend">Historia médica</div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>¿Enfermedad grave actualmente o previa?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="grave" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="grave" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="grave_cual">¿Cuál?</label>
+        <input id="grave_cual" type="text">
+      </div>
+    </div>
+
+    <div class="ctrl">
+      <label>Condiciones (marque las que apliquen)</label>
+
+      <div class="checks">
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones cardíacas">Alteraciones cardíacas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Asma">Asma</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Cáncer">Cáncer</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones vasculares o circulatorias">Alteraciones vasculares o circulatorias</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones psicológicas o psiquiátricas">Alteraciones psicológicas o psiquiátricas</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Enfisema">Enfisema</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Artritis">Artritis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Diabetes">Diabetes</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hepatitis">Hepatitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Desmayos o convulsiones">Desmayos o convulsiones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hospitalizaciones">Hospitalizaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipotiroidismo">Hipotiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Fiebre reumática">Fiebre reumática</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertiroidismos o hiperparatiroidismo">Hipertiroidismos o hiperparatiroidismo</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Lupus">Lupus</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Hipertensión">Hipertensión</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Leucemia">Leucemia</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Sinusitis">Sinusitis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Irradiaciones">Irradiaciones</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Problemas renales">Problemas renales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="VIH (Sida)">VIH (Sida)</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Osteoporosis">Osteoporosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Trauma">Trauma</label>
+
+        <div class="check" style="display:block;">
+          <div class="grid g-2">
+            <label class="inline">
+              <input type="checkbox" name="condiciones" value="Otra">
+              Otra
+            </label>
+            <input id="otra_cual" type="text" name="otra_cual" placeholder="¿Cuál?">
+          </div>
+        </div>
+
+        <label class="check"><input type="checkbox" name="condiciones" value="Tuberculosis">Tuberculosis</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones nutricionales">Alteraciones nutricionales</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Alteraciones del hígado">Alteraciones del hígado</label>
+        <label class="check"><input type="checkbox" name="condiciones" value="Anemia">Anemia</label>
+      </div>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label>¿Problemas de coagulación?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="coagulacion" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="coagulacion" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Toma anticoagulantes?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="anticoagulantes" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="anticoagulantes" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Toma medicamentos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="toma_medicamentos" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="toma_medicamentos" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="medicamentos_cuales">¿Cuáles?</label>
+        <input id="medicamentos_cuales" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="med_dosis">Dosis y frecuencia</label>
+        <input id="med_dosis" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label for="alergia_meds">Alergia a medicamentos</label>
+        <input id="alergia_meds" type="text">
+      </div>
+    </div>
+
+    <div class="rowline"></div>
+
+    <div class="grid g-2">
+      <div class="ctrl">
+        <label>¿Toma bebidas alcohólicas?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="alcohol" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="alcohol" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Fuma?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="fuma" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="fuma" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Consume drogas psicoactivas?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="drogas" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="drogas" value="No"> No</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       SÓLO MUJERES
+  ============================== -->
+  <section class="card">
+    <div class="legend">Sólo para mujeres</div>
+
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label>¿Ha tenido embarazos y partos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="embarazos_partos" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="embarazos_partos" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="numero_hijos">No. de hijos</label>
+        <input id="numero_hijos" type="number" min="0">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Actualmente está embarazada?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="embarazada" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="embarazada" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label for="tiempo_embarazo">Tiempo</label>
+        <input id="tiempo_embarazo" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Toma anticonceptivos?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="anticonceptivos" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="anticonceptivos" value="No"> No</label>
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>¿Histerectomía o menopausia?</label>
+        <div class="inline">
+          <label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="Si"> Sí</label>
+          <label class="chip"><input type="checkbox" name="histerectomia_menopausia" value="No"> No</label>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================
+       HISTORIA ODONTOLÓGICA
+  ============================== -->
+  <section class="card">
+    <div class="legend">Historia odontológica</div>
+
+    <div class="grid g-2">
+      <div class="ctrl full">
+        <label for="motivo_consulta">Motivo de consulta odontológica</label>
+        <input id="motivo_consulta" type="text">
+      </div>
+
+      <div class="ctrl">
+        <label>¿Presenta dolor en…?</label>
+        <div class="inline">
+          <label class="chip">boca <input type="checkbox" name="dolor[]" value="boca"></label>
+          <label class="chip">cara <input type="checkbox" name="dolor[]" value="cara"></label>
+          <label class="chip">cuello <input type="checkbox" name="dolor[]" value="cuello"></label>
+        </div>
+      </div>
+
+      <div class="ctrl full">
+        <label>Tratamientos recibidos</label>
+        <div class="checks">
+          <label class="check"><input type="checkbox" name="tratamientos" value="Ortodoncia"> Ortodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Periodoncia"> Periodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Endodoncia"> Endodoncia</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Cirugía maxilofacial"> Cirugía maxilofacial</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Implantes dentales"> Implantes dentales</label>
+          <label class="check"><input type="checkbox" name="tratamientos" value="Restauración oral"> Restauración oral</label>
+        </div>
+      </div>
+
+      <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
+    </div>
+  </section>
+
+  <!-- ==========================
+       ✅ EVOLUCIONES
+  ============================== -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
 
@@ -403,6 +956,7 @@
       <div class="ctrl">
         <label for="evo_tipo">Procedimiento</label>
         <div class="inline" style="gap:10px;">
+          <!-- ✅ ahora usa datalist desde SUPABASE -->
           <input id="evo_tipo" type="text" list="procedimientos_list_supabase" placeholder="Buscar o escribir procedimiento..." autocomplete="off" style="flex:1;" />
         </div>
       </div>
@@ -438,7 +992,9 @@
     </div>
   </section>
 
-  <!-- ODONTOGRAMA (igual a tu archivo, lo dejo tal cual) -->
+  <!-- ==========================
+       ODONTOGRAMA COMPLETO
+  ============================== -->
   <div id="odontograma-wrapper">
     <h1>Odontograma Internacional FDI</h1>
     <div id="odontograma-guias" style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
@@ -449,6 +1005,7 @@
     </div>
 
     <div class="odontograma">
+      <!-- MAXILAR SUPERIOR -->
       <div class="seccion">
         <div class="etiqueta etiqueta-eje">
           Vestibular---------------------Maxilar superior--------------------Vestibular
@@ -457,6 +1014,7 @@
         <div class="fila" id="fila-superior"></div>
       </div>
 
+      <!-- MAXILAR INFERIOR -->
       <div class="seccion">
         <div class="fila" id="fila-inferior"></div>
         <div class="etiqueta etiqueta-eje eje-inferior">
@@ -484,7 +1042,9 @@
     </div>
   </div>
 
-  <!-- ✅ DOCUMENTOS -->
+  <!-- ==========================
+       ✅ DOCUMENTOS (NUEVA SECCIÓN)
+  ============================== -->
   <section class="card" id="seccionDocumentos">
     <div class="legend">DOCUMENTOS</div>
 
@@ -518,8 +1078,10 @@
 
       <div class="ctrl">
         <label>Plantilla</label>
-        <select id="doc_template">
+        <select id="doc_template" onchange="cargarPlantillaDocumento()">
           <option value="AUTO">Automática (según procedimiento)</option>
+          <option value="ODONTO_GENERAL">Odontología general</option>
+          <option value="REHABILITACION">Rehabilitación oral</option>
           <option value="GENERICA">Genérica</option>
         </select>
       </div>
@@ -578,79 +1140,133 @@
       </div>
     </div>
   </section>
+<!-- ==========================
+     ✅ MODAL VER DOCUMENTO (PREVIEW + FIRMAS)
+============================== -->
+<div id="modalVerDoc" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  z-index:1000003;
+  padding:20px;
+">
+  <div style="
+    max-width:1000px;
+    margin:0 auto;
+    background:#fff;
+    border-radius:14px;
+    border:1px solid #e7edf5;
+    box-shadow:0 10px 30px rgba(0,0,0,.2);
+    overflow:hidden;
+  ">
+    <div style="
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:14px 16px;
+      background:#eef6ff;
+      border-bottom:1px solid #e7edf5;
+    ">
+      <div style="font-weight:800; color:#2a5d84;">
+        Vista del documento
+      </div>
+      <button type="button" onclick="cerrarModalVerDoc()" style="
+        border:none;
+        background:#0D47A1;
+        color:#fff;
+        font-weight:700;
+        border-radius:10px;
+        padding:10px 12px;
+        cursor:pointer;
+      ">Cerrar ✕</button>
+    </div>
 
-  <!-- ✅ MODAL VER DOCUMENTO -->
-  <div id="modalVerDoc" style="
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
-    z-index:1000003; padding:20px;">
-    <div style="max-width:1000px; margin:0 auto; background:#fff; border-radius:14px;
-      border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden;">
-      <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
-        background:#eef6ff; border-bottom:1px solid #e7edf5;">
-        <div style="font-weight:800; color:#2a5d84;">Vista del documento</div>
-        <button type="button" onclick="cerrarModalVerDoc()" style="
-          border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
-          padding:10px 12px; cursor:pointer;">Cerrar ✕</button>
+    <div style="padding:16px;">
+      <div style="display:grid; gap:14px; grid-template-columns:1fr 1fr;">
+        <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+          <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Información</div>
+          <div style="font-size:14px; color:#19324d; line-height:1.6;">
+            <div><b>ID:</b> <span id="verDoc_id"></span></div>
+            <div><b>Fecha:</b> <span id="verDoc_fecha"></span></div>
+            <div><b>Tipo:</b> <span id="verDoc_tipo"></span></div>
+            <div><b>Procedimiento:</b> <span id="verDoc_procedimiento"></span></div>
+            <div><b>Profesional:</b> <span id="verDoc_profesional"></span></div>
+          </div>
+        </div>
+
+        <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+          <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Acciones</div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button type="button" onclick="imprimirDocumento()" style="
+              border:none;
+              background:#009688;
+              color:#fff;
+              font-weight:700;
+              border-radius:10px;
+              padding:10px 12px;
+              cursor:pointer;
+            ">Imprimir</button>
+
+            <button type="button" onclick="descargarHTMLDocumento()" style="
+              border:none;
+              background:#0D47A1;
+              color:#fff;
+              font-weight:700;
+              border-radius:10px;
+              padding:10px 12px;
+              cursor:pointer;
+            ">Descargar (HTML)</button>
+          </div>
+          <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
+            (Imprimir sirve para guardar como PDF desde el navegador)
+          </div>
+        </div>
       </div>
 
-      <div style="padding:16px;">
-        <div style="display:grid; gap:14px; grid-template-columns:1fr 1fr;">
-          <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
-            <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Información</div>
-            <div style="font-size:14px; color:#19324d; line-height:1.6;">
-              <div><b>ID:</b> <span id="verDoc_id"></span></div>
-              <div><b>Fecha:</b> <span id="verDoc_fecha"></span></div>
-              <div><b>Tipo:</b> <span id="verDoc_tipo"></span></div>
-              <div><b>Procedimiento:</b> <span id="verDoc_procedimiento"></span></div>
-              <div><b>Profesional:</b> <span id="verDoc_profesional"></span></div>
-            </div>
-          </div>
+      <div style="margin-top:14px; border:1px solid #e7edf5; border-radius:12px; overflow:hidden;">
+        <div style="background:#fafcff; border-bottom:1px solid #e7edf5; padding:10px 12px; font-weight:700; color:#19324d;">
+          Texto del documento
+        </div>
+        <pre id="verDoc_texto" style="
+          margin:0;
+          padding:14px;
+          white-space:pre-wrap;
+          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+          font-size:14px;
+          color:#19324d;
+          min-height:160px;
+        "></pre>
+      </div>
 
-          <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
-            <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Acciones</div>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button type="button" onclick="imprimirDocumento()" style="
-                border:none; background:#009688; color:#fff; font-weight:700; border-radius:10px;
-                padding:10px 12px; cursor:pointer;">Imprimir</button>
-
-              <button type="button" onclick="descargarHTMLDocumento()" style="
-                border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
-                padding:10px 12px; cursor:pointer;">Descargar (HTML)</button>
-            </div>
-            <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
-              (Imprimir sirve para guardar como PDF desde el navegador)
-            </div>
-          </div>
+      <div style="margin-top:14px; display:grid; gap:14px; grid-template-columns:1fr 1fr;">
+        <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+          <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Firma paciente</div>
+          <img id="verDoc_firmaPaciente" alt="Firma paciente" style="
+            width:100%;
+            height:180px;
+            object-fit:contain;
+            border:1px solid #cbd5e1;
+            border-radius:10px;
+            background:#fff;
+          ">
         </div>
 
-        <div style="margin-top:14px; border:1px solid #e7edf5; border-radius:12px; overflow:hidden;">
-          <div style="background:#fafcff; border-bottom:1px solid #e7edf5; padding:10px 12px; font-weight:700; color:#19324d;">
-            Texto del documento
-          </div>
-          <pre id="verDoc_texto" style="
-            margin:0; padding:14px; white-space:pre-wrap;
-            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
-            font-size:14px; color:#19324d; min-height:160px;"></pre>
-        </div>
-
-        <div style="margin-top:14px; display:grid; gap:14px; grid-template-columns:1fr 1fr;">
-          <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
-            <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Firma paciente</div>
-            <img id="verDoc_firmaPaciente" alt="Firma paciente" style="
-              width:100%; height:180px; object-fit:contain;
-              border:1px solid #cbd5e1; border-radius:10px; background:#fff;">
-          </div>
-
-          <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
-            <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Firma profesional</div>
-            <img id="verDoc_firmaProfesional" alt="Firma profesional" style="
-              width:100%; height:180px; object-fit:contain;
-              border:1px solid #cbd5e1; border-radius:10px; background:#fff;">
-          </div>
+        <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+          <div style="font-weight:700; color:#19324d; margin-bottom:8px;">Firma profesional</div>
+          <img id="verDoc_firmaProfesional" alt="Firma profesional" style="
+            width:100%;
+            height:180px;
+            object-fit:contain;
+            border:1px solid #cbd5e1;
+            border-radius:10px;
+            background:#fff;
+          ">
         </div>
       </div>
     </div>
   </div>
+</div>
 
 </div>
 
@@ -663,6 +1279,7 @@
   <input type="hidden" id="usuarioN8N" name="usuario_logueado">
 </form>
 
+<!-- ✅ datalist SUPABASE (procedimientos_precios.procedimiento) -->
 <datalist id="procedimientos_list_supabase"></datalist>
 
 <script>
@@ -670,16 +1287,19 @@
   // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
   // ==============================
   const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-  const INACTIVIDAD_MS = 5 * 60 * 1000;
+  const INACTIVIDAD_MS = 5 * 60 * 1000; // 5 minutos
 
   async function cerrarSesion(motivo = "") {
     try {
       if (window.supabase?.auth?.signOut) {
         await window.supabase.auth.signOut();
       }
-    } catch (e) { console.warn("Error cerrando sesión:", e); }
+    } catch (e) {
+      console.warn("Error cerrando sesión:", e);
+    }
 
     try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
+
     if (motivo) alert(motivo);
     window.location.href = LOGIN_URL;
   }
@@ -696,7 +1316,9 @@
   });
   _reiniciarTimerInactividad();
 
-  // LINKS
+  // ==============================
+  // LINKS DE AGENDA
+  // ==============================
   const URL_AGENDAMIENTO = "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20";
   const URL_AGENDAR = "https://calendar.app.google/kbWJdv1f1TZd9bS36";
   const URL_PLAN_TRATAMIENTO = "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento";
@@ -719,11 +1341,14 @@
     }
 
     try { localStorage.setItem("cedula_paciente_plan", cedula); } catch(e) {}
+
     const url = URL_PLAN_TRATAMIENTO + (URL_PLAN_TRATAMIENTO.includes("?") ? "&" : "?") + "cedula=" + encodeURIComponent(cedula);
     window.open(url, "_blank");
   }
 
+  // ==============================
   // UTILIDADES
+  // ==============================
   function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
@@ -735,33 +1360,32 @@
     try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
     catch(e){ return _uuidFallback(); }
   }
-  function _hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function _hoyISO() {
+    const d = new Date();
+    return d.toISOString().slice(0, 10);
+  }
   function _horaHHMM() {
     const d = new Date();
     return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
   }
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
 
   // ==============================
-  // ✅ PROCEDIMIENTOS DESDE SUPABASE
+  // ✅ PROCEDIMIENTOS: DESDE SUPABASE (procedimientos_precios.procedimiento)
   // ==============================
   async function cargarProcedimientosDesdeSupabase() {
     const dl = document.getElementById("procedimientos_list_supabase");
     if (!dl) return;
 
+    // espera a que window.supabase exista
     let tries = 0;
     while (!window.supabase && tries < 40) {
       await new Promise(r => setTimeout(r, 100));
       tries++;
     }
-    if (!window.supabase) return;
+    if (!window.supabase) {
+      console.warn("⚠️ Supabase no está disponible para cargar procedimientos.");
+      return;
+    }
 
     try {
       const { data, error } = await window.supabase
@@ -777,14 +1401,27 @@
         .filter(Boolean);
 
       dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
+      console.log("✅ Procedimientos cargados:", items.length);
     } catch (e) {
-      console.warn("⚠️ Error cargando procedimientos:", e);
+      console.warn("⚠️ Error cargando procedimientos desde Supabase:", e);
     }
   }
-  document.addEventListener("DOMContentLoaded", cargarProcedimientosDesdeSupabase);
+
+  function escapeHtml(str){
+    return String(str)
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    cargarProcedimientosDesdeSupabase();
+  });
 
   // ==============================
-  // ✅ EVOLUCIONES (tu lógica original)
+  // ✅ EVOLUCIONES
   // ==============================
   let evoluciones = [];
 
@@ -822,7 +1459,7 @@
     ).trim();
 
     if (!cedula) {
-      alert("⚠️ Primero debes tener la cédula del paciente.");
+      alert("⚠️ Primero debes tener la cédula del paciente (buscar o diligenciar identificación).");
       return;
     }
 
@@ -842,6 +1479,7 @@
     renderEvoluciones();
     limpiarEvolucionForm();
 
+    // ✅ enviar evolución a n8n (igual que antes, sin recargar)
     try {
       const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
       const payload = {
@@ -859,9 +1497,10 @@
       });
 
       if (!resp.ok) throw new Error("HTTP " + resp.status);
+      console.log("✅ Evolución enviada a n8n");
     } catch (err) {
-      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
-      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
+      console.warn("⚠️ Evolución guardada pero NO se pudo enviar a n8n:", err);
+      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n. Verifica conexión o webhook.");
     }
   }
 
@@ -900,10 +1539,10 @@
 
       tr.innerHTML = `
         <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}
+          ${idEvo}
         </td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
+        <td>${fecha}</td>
+        <td>${hora}</td>
         <td>${escapeHtml(String(profesional).toUpperCase())}</td>
         <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
@@ -949,7 +1588,7 @@
   });
 
   // ==============================
-  // ODONTOGRAMA (tu lógica original)
+  // ODONTOGRAMA
   // ==============================
   const preexistencias = {
     Caries: 'red',
@@ -973,6 +1612,7 @@
   };
 
   let reporte = {};
+
   const contenedorLeyenda = document.getElementById('grid-leyenda');
   Object.entries(preexistencias).forEach(([nombre, color]) => {
     const item = document.createElement('div');
@@ -1110,7 +1750,10 @@
 
   window.addEventListener("load", ajustarLineaMedia);
   window.addEventListener("resize", ajustarLineaMedia);
-  document.body.addEventListener('click', () => document.querySelectorAll('.popup').forEach(p => p.remove()));
+
+  document.body.addEventListener('click', () => {
+    document.querySelectorAll('.popup').forEach(p => p.remove());
+  });
 
   function obtenerRegion(diente, cara) {
     diente = parseInt(diente);
@@ -1120,6 +1763,7 @@
       if (cara === "superior") return "Vestibular";
       if (cara === "inferior") return "Palatino";
     }
+
     if (diente >= 31 && diente <= 48) {
       if (cara === "superior") return "Lingual";
       if (cara === "inferior") return "Vestibular";
@@ -1140,12 +1784,19 @@
       <h2>Reporte de Preexistencias</h2>
       <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
         <tr style="background:#eee; font-weight:bold;">
-          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th><th>Vestibular</th><th>Lingual</th><th>Palatino</th>
+          <th>Diente</th>
+          <th>Mesial</th>
+          <th>Distal</th>
+          <th>Oclusal</th>
+          <th>Vestibular</th>
+          <th>Lingual</th>
+          <th>Palatino</th>
         </tr>
     `;
 
     Object.entries(reporte).forEach(([diente, caras]) => {
       let fila = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
+
       Object.entries(caras).forEach(([cara, preexistencia]) => {
         let region = obtenerRegion(diente, cara);
         if (region) fila[region] = String(preexistencia || "").toUpperCase();
@@ -1165,6 +1816,7 @@
     });
 
     html += "</table>";
+
     const win = window.open("", "_blank");
     win.document.write(html);
     win.document.close();
@@ -1189,17 +1841,25 @@
 
   function validarCamposObligatorios() {
     const errores = [];
-    const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
+
+    const nombre = document.getElementById("paciente_nombre").value.trim();
     if (!nombre) errores.push("Nombres y apellidos");
-    const edad = document.getElementById("paciente_edad")?.value || "";
+
+    const edad = document.getElementById("paciente_edad").value;
     if (!edad) errores.push("Edad");
+
     const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
     if (tipoID.length === 0) errores.push("Tipo de identificación");
-    const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
+
+    const numDoc = document.getElementById("paciente_numdoc").value.trim();
     if (!numDoc) errores.push("Número de identificación");
-    const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
+
+    const fechaNac = document.getElementById("paciente_nacimiento").value;
     if (!fechaNac) errores.push("Fecha de nacimiento");
-    if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
+
+    if (!reporte || Object.keys(reporte).length === 0) {
+      errores.push("Odontograma (debe marcar al menos un diente)");
+    }
 
     if (errores.length > 0) {
       alert(
@@ -1209,6 +1869,7 @@
       );
       return false;
     }
+
     return true;
   }
 
@@ -1216,8 +1877,10 @@
     if (!validarCamposObligatorios()) return;
 
     const todosLosDientes = [
-      18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
-      48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
+      18,17,16,15,14,13,12,11,
+      21,22,23,24,25,26,27,28,
+      48,47,46,45,44,43,42,41,
+      31,32,33,34,35,36,37,38
     ];
 
     const odontogramaCompleto = {};
@@ -1246,18 +1909,23 @@
 
     document.getElementById("dataN8N").value = JSON.stringify(payload);
     document.getElementById("formN8N").submit();
+
     alert("Información enviada correctamente a N8N");
   }
 
   // ==============================
-  // ✅ PROFESIONALES
+  // ✅ PROFESIONALES (igual que tenías)
   // ==============================
   const PROFESIONALES_BASE = ["LEIDI FERNANDA SILVA OROPEZA"];
   const LS_PROF_KEY = "profesionales_custom";
+
   function _normProf(s) { return String(s || "").trim().replace(/\s+/g, " ").toUpperCase(); }
   function _cargarProfesionalesCustom() {
-    try { const raw = localStorage.getItem(LS_PROF_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; }
-    catch (e) { return []; }
+    try {
+      const raw = localStorage.getItem(LS_PROF_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch (e) { return []; }
   }
   function _guardarProfesionalesCustom(arr) { try { localStorage.setItem(LS_PROF_KEY, JSON.stringify(arr)); } catch(e) {} }
   function _getProfesionalesUnicos() {
@@ -1285,11 +1953,173 @@
     _poblarDatalistProfesionales();
     alert("✅ Profesional agregado al listado.");
   }
-  document.addEventListener("DOMContentLoaded", _poblarDatalistProfesionales);
+  document.addEventListener("DOMContentLoaded", () => {
+    _poblarDatalistProfesionales();
+  });
 
-  // ==============================
-  // ✅ ODONTOGRAMA FULLSCREEN (igual)
-  // ==============================
+  /* ======================================================
+     🎤 VOZ POR CAMPO – MODO TOGGLE (CLICK ON / CLICK OFF)
+     ✅ FIX: evo_detalle ahora NO sobreescribe, sino que AGREGA
+     ====================================================== */
+  (function () {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    let rec = null;
+    let escuchando = false;
+    let campoActivo = null;
+    let botonActivo = null;
+
+    const LANG = "es-CO";
+
+    function norm(s) {
+      return String(s || "")
+        .toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+
+    function dispatchInput(el) {
+      el.dispatchEvent(new Event("input", { bubbles: true }));
+      el.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+
+    function parseFecha(txt) {
+      txt = norm(txt);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+      const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
+      return null;
+    }
+
+    function insertAtCursor(el, text) {
+      if (!el) return;
+      const start = el.selectionStart ?? el.value.length;
+      const end = el.selectionEnd ?? el.value.length;
+
+      const before = el.value.slice(0, start);
+      const after = el.value.slice(end);
+
+      const needsSpace =
+        before.length > 0 &&
+        !before.endsWith(" ") &&
+        !before.endsWith("\n") &&
+        !text.startsWith(" ");
+
+      const sep = needsSpace ? " " : "";
+      el.value = before + sep + text + after;
+
+      const newPos = (before + sep + text).length;
+      try { el.setSelectionRange(newPos, newPos); } catch(e) {}
+    }
+
+    function escribir(el, texto) {
+      if (!el || el.disabled || el.readOnly) return;
+
+      if (el.id === "evo_detalle") {
+        insertAtCursor(el, texto);
+        dispatchInput(el);
+        return;
+      }
+
+      if (el.type === "date") {
+        el.value = parseFecha(texto) || texto;
+      } else if (el.type === "number") {
+        el.value = texto.replace(/[^\d]/g, "");
+      } else if (el.type === "tel") {
+        el.value = texto.replace(/[^\d+]/g, "");
+      } else if (el.tagName === "SELECT") {
+        const opt = [...el.options].find(o =>
+          norm(o.textContent) === norm(texto) ||
+          norm(o.value) === norm(texto)
+        );
+        if (opt) el.value = opt.value;
+      } else {
+        el.value = texto;
+      }
+
+      dispatchInput(el);
+    }
+
+    function initRec() {
+      const r = new SpeechRecognition();
+      r.lang = LANG;
+      r.continuous = true;
+      r.interimResults = false;
+
+      r.onstart = () => {
+        escuchando = true;
+        if (botonActivo) botonActivo.classList.add("on");
+      };
+
+      r.onend = () => {
+        escuchando = false;
+        if (botonActivo) botonActivo.classList.remove("on");
+        campoActivo = null;
+        botonActivo = null;
+      };
+
+      r.onerror = () => {
+        if (botonActivo) botonActivo.classList.remove("on");
+      };
+
+      r.onresult = (ev) => {
+        const res = ev.results[ev.results.length - 1];
+        const texto = res[0].transcript.trim();
+        if (campoActivo) escribir(campoActivo, texto);
+      };
+
+      return r;
+    }
+
+    function toggleDictado(campo, boton) {
+      if (!rec) rec = initRec();
+
+      if (escuchando && campoActivo === campo) {
+        rec.stop();
+        return;
+      }
+
+      if (escuchando) rec.stop();
+
+      campoActivo = campo;
+      botonActivo = boton;
+
+      campo.focus();
+      campo.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      try { rec.start(); } catch(e) {}
+    }
+
+    function wrapCampos() {
+      const campos = document.querySelectorAll(".container input, .container textarea, .container select");
+
+      campos.forEach(el => {
+        if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
+        if (el.closest(".vwrap")) return;
+
+        const wrap = document.createElement("div");
+        wrap.className = "vwrap";
+
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "vbtn";
+        btn.textContent = "";
+        btn.title = "Dictar por voz (click para iniciar / detener)";
+        btn.addEventListener("click", () => toggleDictado(el, btn));
+
+        el.parentNode.insertBefore(wrap, el);
+        wrap.appendChild(el);
+        wrap.appendChild(btn);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", wrapCampos);
+  })();
+
+  /* ======================================================
+     🔎 ODONTOGRAMA: DOBLE CLICK / DOBLE TAP => PANTALLA COMPLETA
+     ====================================================== */
   (function(){
     const wrapper = document.getElementById("odontograma-wrapper");
     if (!wrapper) return;
@@ -1306,7 +2136,12 @@
       exitBtn.addEventListener("click", salirFullscreen);
       document.body.appendChild(exitBtn);
     }
-    function quitarBotonSalir(){ if (exitBtn) exitBtn.remove(); exitBtn = null; }
+
+    function quitarBotonSalir(){
+      if (exitBtn) exitBtn.remove();
+      exitBtn = null;
+    }
+
     function entrarFullscreen(){
       if (isFS) return;
       isFS = true;
@@ -1314,9 +2149,11 @@
       crearBotonSalir();
       document.documentElement.style.overflow = "hidden";
       document.body.style.overflow = "hidden";
-      wrapper.scrollTop = 0; wrapper.scrollLeft = 0;
+      wrapper.scrollTop = 0;
+      wrapper.scrollLeft = 0;
       setTimeout(ajustarLineaMedia, 50);
     }
+
     function salirFullscreen(){
       if (!isFS) return;
       isFS = false;
@@ -1326,60 +2163,111 @@
       document.body.style.overflow = "";
       setTimeout(ajustarLineaMedia, 50);
     }
-    function toggleFullscreen(){ if (isFS) salirFullscreen(); else entrarFullscreen(); }
 
-    wrapper.addEventListener("dblclick", (e) => { e.preventDefault(); toggleFullscreen(); });
+    function toggleFullscreen(){
+      if (isFS) salirFullscreen();
+      else entrarFullscreen();
+    }
+
+    wrapper.addEventListener("dblclick", (e) => {
+      e.preventDefault();
+      toggleFullscreen();
+    });
 
     let lastTap = 0;
     wrapper.addEventListener("touchend", (e) => {
       const now = Date.now();
-      if (now - lastTap < 300) { e.preventDefault(); toggleFullscreen(); }
+      if (now - lastTap < 300) {
+        e.preventDefault();
+        toggleFullscreen();
+      }
       lastTap = now;
     }, { passive: false });
 
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") salirFullscreen(); });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") salirFullscreen();
+    });
   })();
 
-  // =====================================================================
-  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - FIX COMPLETO VER/EDITAR/ELIMINAR
-  // =====================================================================
+  // ==============================
+  // ✅ DOCUMENTOS (CONSENTIMIENTOS) - DIRECTO SUPABASE
+  // ==============================
   let documentos = [];
-  let _docEditId = null;
-  let _docVistaActual = null;
-  let _cedulaActual = "";
+  let _docEditId = null; // id del doc en edición
+  let _cedulaActual = ""; // paciente actual (para filtrar)
 
-  const _IMG_TRANSPARENTE =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO1p0wAAAABJRU5ErkJggg==";
-
-  function _normalizarDataURLFirma(valor) {
-    if (!valor) return "";
-    let v = valor;
-    if (typeof v === "object") v = v.data || v.firma || v.firma_paciente || v.firma_profesional || "";
-    v = String(v).trim();
-
-    if ((v.startsWith("{") && v.endsWith("}")) || (v.startsWith("[") && v.endsWith("]"))) {
-      try {
-        const obj = JSON.parse(v);
-        v = obj.data || obj.firma || obj.firma_paciente || obj.firma_profesional || "";
-        v = String(v || "").trim();
-      } catch (e) {}
-    }
-
-    v = v.replace(/^"+|"+$/g, "").replace(/^'+|'+$/g, "");
-
-    if (/%[0-9A-Fa-f]{2}/.test(v)) {
-      try { v = decodeURIComponent(v); } catch (e) {}
-    }
-
-    if (v.startsWith("data:image/")) return v;
-
-    v = v.replace(/\s/g, "+");
-    const base64Like = /^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 200;
-    if (base64Like) return "data:image/png;base64," + v;
-    return "";
-  }
-
+  // Plantillas
   const DOC_TEMPLATES = {
+    ODONTO_GENERAL: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO DE ODONTOLOGÍA GENERAL
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Usted tiene derecho a conocer el procedimiento a que va a ser sometido y las posibles complicaciones.
+Lea atentamente y pregunte cualquier duda.
+
+CONSISTE:
+Procedimientos odontológicos generales orientados a mantener salud bucal, diagnosticar, prevenir y tratar condiciones comunes.
+
+BENEFICIOS:
+- Prevención y detección temprana
+- Eliminación/control de caries y placa
+- Conservación de estructura dental
+- Educación en higiene oral
+
+RIESGOS / COMPLICACIONES POSIBLES:
+- Sensibilidad temporal
+- Irritación gingival
+- Desprendimiento de restauraciones
+- En casos poco comunes: reacciones alérgicas
+
+CONSECUENCIAS DE NO REALIZAR EL PROCEDIMIENTO:
+- Progresión de caries, dolor, infección
+- Mayor complejidad y costo futuro
+- Riesgo de pérdida dental
+
+ACEPTACIÓN:
+Declaro que he sido informado(a), he podido preguntar y entiendo beneficios, riesgos y alternativas. Autorizo la realización del procedimiento.
+`.trim(),
+
+    REHABILITACION: ({paciente, doc, procedimiento, profesional, fecha}) => `
+CONSENTIMIENTO INFORMADO DE REHABILITACIÓN ORAL
+
+Paciente: ${paciente} - Identificación: ${doc}
+Procedimiento: ${procedimiento}
+Profesional: ${profesional}
+Fecha: ${fecha}
+
+Usted tiene derecho a conocer el procedimiento y las posibles complicaciones.
+Lea atentamente y pregunte cualquier duda.
+
+CONSISTE:
+La rehabilitación oral busca restaurar salud, función y estética (prótesis, coronas, carillas, puentes, etc.).
+
+BENEFICIOS:
+- Recuperar función masticatoria y fonética
+- Mejorar estética
+- Prevenir problemas oclusales/ATM
+- Mejorar calidad de vida
+
+RIESGOS / COMPLICACIONES POSIBLES:
+- Molestias o sensibilidad
+- Fractura/aflojamiento de prótesis
+- Inflamación o infección
+- Necesidad de ajustes y controles adicionales
+
+COMPROMISOS DEL PACIENTE:
+- Asistir a controles
+- Seguir indicaciones
+- Mantener higiene oral
+
+ACEPTACIÓN:
+Declaro que he sido informado(a), entiendo beneficios, riesgos y alternativas, y autorizo la realización del procedimiento.
+`.trim(),
+
     GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
 CONSENTIMIENTO INFORMADO
 
@@ -1393,7 +2281,26 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 `.trim()
   };
 
-  // Canvas firmas
+  function _plantillaAutoPorProcedimiento(proc) {
+    const p = String(proc || "").toUpperCase();
+    const esRehab = /(NUCLEO|NÚCLEO|CORONA|PUENTE|CARILLA|PROTESIS|PRÓTESIS|REHABILITACION|REHABILITACIÓN)/.test(p);
+    const esGeneral = /(HIGIEN|HIGIENE|PROFILAXIS|SELLANTES|RESINA|AMALGAMA|OBTURACION|OBTURACIÓN|OPERATORIA)/.test(p);
+    if (esRehab) return "REHABILITACION";
+    if (esGeneral) return "ODONTO_GENERAL";
+    return "GENERICA";
+  }
+
+  function _normalizarDataURLFirma(valor) {
+    if (!valor) return "";
+    let v = String(valor).trim();
+    try { v = decodeURIComponent(v); } catch(e) {}
+    v = v.replace(/\s/g, "+");
+    if (v.startsWith("data:image")) return v;
+    if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) return "data:image/png;base64," + v;
+    return "";
+  }
+
+  // Canvas firmas documentos
   const _docFirmas = {};
   function _initCanvasDoc(canvasId){
     const canvas = document.getElementById(canvasId);
@@ -1411,6 +2318,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       const clientY = e.touches ? e.touches[0].clientY : e.clientY;
       return { x: clientX - r.left, y: clientY - r.top };
     }
+
     function start(e){
       e.preventDefault();
       const p = pos(e);
@@ -1418,6 +2326,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
+
     function move(e){
       if (!_docFirmas[canvasId].drawing) return;
       e.preventDefault();
@@ -1429,6 +2338,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       _docFirmas[canvasId].lastX = p.x;
       _docFirmas[canvasId].lastY = p.y;
     }
+
     function end(e){
       e.preventDefault();
       _docFirmas[canvasId].drawing = false;
@@ -1474,8 +2384,14 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
     const img = new Image();
     img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-    img.onerror = () => console.warn("❌ Firma inválida/no cargó:", fijo.slice(0,60) + "...");
+    img.onerror = () => console.warn("❌ Firma doc inválida/no cargó:", fijo.slice(0,40) + "...");
     img.src = fijo;
+  }
+
+  async function sha256Hex(text) {
+    const enc = new TextEncoder().encode(text);
+    const buf = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
   function nuevoDocumento(){
@@ -1490,104 +2406,73 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     limpiarFirmaDocumento("PAC");
     limpiarFirmaDocumento("PRO");
 
+    // si ya hay paciente cargado, prearmamos texto genérico
     const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
     const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
     if (paciente && doc) {
-      document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
-        paciente, doc, procedimiento:"", profesional:"", fecha:_hoyISO()
-      });
+      const procedimiento = "";
+      const profesional = "";
+      const fecha = _hoyISO();
+      document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({paciente, doc, procedimiento, profesional, fecha});
     }
+  }
+
+  function cargarPlantillaDocumento(){
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
+    const profesional = (document.getElementById("doc_profesional")?.value || "").trim();
+    const fecha = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
+
+    const sel = document.getElementById("doc_template").value;
+    let key = sel;
+    if (sel === "AUTO") key = _plantillaAutoPorProcedimiento(procedimiento);
+    if (!DOC_TEMPLATES[key]) key = "GENERICA";
+
+    document.getElementById("doc_texto").value = DOC_TEMPLATES[key]({paciente, doc, procedimiento, profesional, fecha});
   }
 
   function renderDocumentos(){
-    const tbody = document.getElementById("tabla_documentos");
-    const empty = document.getElementById("docs_empty");
-    if (!tbody) return;
+  const tbody = document.getElementById("tabla_documentos");
+  const empty = document.getElementById("docs_empty");
+  if (!tbody) return;
 
-    tbody.innerHTML = "";
+  tbody.innerHTML = "";
 
-    if (!documentos || documentos.length === 0) {
-      if (empty) empty.style.display = "block";
-      return;
-    }
-    if (empty) empty.style.display = "none";
-
-    documentos.forEach((d) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(d.id || "")}
-        </td>
-        <td>${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</td>
-        <td>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</td>
-        <td>${escapeHtml(d.procedimiento || "")}</td>
-        <td>${escapeHtml(d.profesional || "")}</td>
-        <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-            data-action="ver" data-id="${escapeHtml(d.id || "")}">Ver</button>
-
-          <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-            data-action="editar" data-id="${escapeHtml(d.id || "")}">Editar</button>
-
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-            data-action="eliminar" data-id="${escapeHtml(d.id || "")}">Eliminar</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
+  if (!documentos || documentos.length === 0) {
+    if (empty) empty.style.display = "block";
+    return;
   }
+  if (empty) empty.style.display = "none";
 
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-action][data-id]");
-    if (!btn) return;
-    const action = btn.getAttribute("data-action");
-    const id = btn.getAttribute("data-id");
+  documentos.forEach((d) => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+        ${escapeHtml(d.id || "")}
+      </td>
+      <td>${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</td>
+      <td>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</td>
+      <td>${escapeHtml(d.procedimiento || "")}</td>
+      <td>${escapeHtml(d.profesional || "")}</td>
+      <td style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+          onclick="verDocumento('${escapeHtml(d.id)}')">Ver</button>
 
-    if (action === "ver") return verDocumento(id);
-    if (action === "editar") return editarDocumento(id);
-    if (action === "eliminar") return eliminarDocumentoSupabase(id);
+        <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
+          onclick="editarDocumento('${escapeHtml(d.id)}')">Editar</button>
+
+        <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+          onclick="eliminarDocumentoSupabase('${escapeHtml(d.id)}')">Eliminar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
   });
+}
+
 
   function _docById(id){
     return (documentos || []).find(x => String(x.id) === String(id));
-  }
-
-  function abrirModalVerDoc(){
-    const m = document.getElementById("modalVerDoc");
-    if (m) m.style.display = "block";
-  }
-  function cerrarModalVerDoc(){
-    const m = document.getElementById("modalVerDoc");
-    if (m) m.style.display = "none";
-    _docVistaActual = null;
-  }
-
-  function verDocumento(id){
-    const d = _docById(id);
-    if (!d) { alert("Documento no encontrado."); return; }
-
-    _docVistaActual = d;
-
-    document.getElementById("verDoc_id").textContent = d.id || "";
-    document.getElementById("verDoc_fecha").textContent = _soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || "");
-    document.getElementById("verDoc_tipo").textContent = d.tipo || "CONSENTIMIENTO";
-    document.getElementById("verDoc_procedimiento").textContent = d.procedimiento || "";
-    document.getElementById("verDoc_profesional").textContent = d.profesional || "";
-    document.getElementById("verDoc_texto").textContent = d.texto || "";
-
-    const fp   = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || d.firma || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || d.firma2 || "");
-
-    const imgPac = document.getElementById("verDoc_firmaPaciente");
-    const imgPro = document.getElementById("verDoc_firmaProfesional");
-
-    imgPac.src = fp || _IMG_TRANSPARENTE;
-    imgPro.src = fpro || _IMG_TRANSPARENTE;
-
-    imgPac.style.opacity = fp ? "1" : ".25";
-    imgPro.style.opacity = fpro ? "1" : ".25";
-
-    abrirModalVerDoc();
   }
 
   function editarDocumento(id){
@@ -1607,23 +2492,20 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     limpiarFirmaDocumento("PAC");
     limpiarFirmaDocumento("PRO");
 
+    // ✅ pintar firmas (canvas visible ya que está en sección)
     setTimeout(() => {
-      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente || "");
-      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional || "");
+      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente || d.firmaPaciente || "");
+      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional || d.firmaProfesional || "");
     }, 50);
-  }
-
-  async function sha256Hex(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
   }
 
   async function cargarDocumentosPacienteDesdeSupabase(cedula){
     documentos = [];
     renderDocumentos();
+
     if (!cedula) return;
 
+    // espera supabase
     let tries = 0;
     while (!window.supabase && tries < 40) {
       await new Promise(r => setTimeout(r, 100));
@@ -1659,7 +2541,8 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
       renderDocumentos();
     } catch (e) {
-      console.warn("⚠️ No se pudieron cargar documentos:", e);
+      // ✅ IMPORTANTÍSIMO: si no hay docs o da error, NO bloquea el cargue de historia/odontograma
+      console.warn("⚠️ No se pudieron cargar documentos del paciente:", e);
       documentos = [];
       renderDocumentos();
     }
@@ -1690,15 +2573,17 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!firma_profesional) { alert("⚠️ Falta la firma del profesional."); return; }
 
     const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
-    const firmado_en = new Date(fecha + "T00:00:00").toISOString();
+    const firmado_en = new Date(fecha + "T00:00:00").toISOString(); // fecha del campo
     const creado_en = new Date().toISOString();
 
     const hash_documento = await sha256Hex(
       JSON.stringify({ id, cedula_paciente, paciente_nombre, procedimiento, profesional, template_key, texto, firma_paciente, firma_profesional, firmado_en })
     );
 
+    // ✅ fila compatible con tu tabla "consentimientos"
+    // - evolucion_id ahora va NULL (ya no depende de evoluciones)
     const row = {
-      id,
+      id: id,
       cedula_paciente,
       paciente_nombre,
       paciente_doc: cedula_paciente,
@@ -1718,6 +2603,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       hash_documento
     };
 
+    // guarda
     try {
       let tries = 0;
       while (!window.supabase && tries < 40) {
@@ -1726,6 +2612,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       }
       if (!window.supabase) throw new Error("Supabase no disponible");
 
+      // upsert por id
       const { error } = await window.supabase
         .from("consentimientos")
         .upsert(row, { onConflict: "id" });
@@ -1733,19 +2620,22 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       if (error) throw error;
 
       alert("✅ Documento guardado en Supabase.");
+
+      // recarga docs del paciente (para que queden filtrados por cédula)
       await cargarDocumentosPacienteDesdeSupabase(cedula_paciente);
+
+      // deja el form listo para un nuevo doc
       document.getElementById("doc_id").value = id;
       _docEditId = id;
     } catch (e) {
-      console.warn("❌ Error guardando documento:", e);
-      alert("❌ No se pudo guardar. Revisa consola.");
+      console.warn("❌ Error guardando documento en Supabase:", e);
+      alert("❌ No se pudo guardar el documento en Supabase. Revisa consola.");
     }
   }
 
   async function eliminarDocumentoSupabase(id){
     const cedula_paciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
     if (!id) return;
-
     const ok = confirm("¿Eliminar este documento?");
     if (!ok) return;
 
@@ -1773,106 +2663,15 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
-  function imprimirDocumento(){
-    if (!_docVistaActual) return;
-    const d = _docVistaActual;
-
-    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
-
-    const html = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<title>Documento ${escapeHtml(d.id || "")}</title>
-<style>
-  body{ font-family: system-ui, Segoe UI, Arial; padding:20px; color:#111; }
-  .meta{ font-size:13px; line-height:1.5; margin-bottom:14px; }
-  pre{ white-space:pre-wrap; border:1px solid #ddd; border-radius:10px; padding:14px; font-size:13px; }
-  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
-  .box{ border:1px solid #ddd; border-radius:10px; padding:10px; }
-  img{ width:100%; height:160px; object-fit:contain; border:1px solid #eee; border-radius:8px; }
-</style>
-</head>
-<body>
-  <h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
-  <div class="meta">
-    <div><b>ID:</b> ${escapeHtml(d.id || "")}</div>
-    <div><b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</div>
-    <div><b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}</div>
-    <div><b>Profesional:</b> ${escapeHtml(d.profesional || "")}</div>
-  </div>
-
-  <pre>${escapeHtml(d.texto || "")}</pre>
-
-  <div class="grid">
-    <div class="box">
-      <b>Firma paciente</b><br>
-      ${fp ? `<img src="${fp}">` : `<div style="opacity:.6;">Sin firma</div>`}
-    </div>
-    <div class="box">
-      <b>Firma profesional</b><br>
-      ${fpro ? `<img src="${fpro}">` : `<div style="opacity:.6;">Sin firma</div>`}
-    </div>
-  </div>
-
-  <script>window.onload = () => window.print();<\/script>
-</body>
-</html>`;
-
-    const w = window.open("", "_blank");
-    w.document.open();
-    w.document.write(html);
-    w.document.close();
-  }
-
-  function descargarHTMLDocumento(){
-    if (!_docVistaActual) return;
-    const d = _docVistaActual;
-
-    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
-
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Documento ${escapeHtml(d.id || "")}</title></head>
-<body style="font-family:system-ui,Segoe UI,Arial;padding:20px;">
-<h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
-<p><b>ID:</b> ${escapeHtml(d.id || "")}<br>
-<b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}<br>
-<b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}<br>
-<b>Profesional:</b> ${escapeHtml(d.profesional || "")}</p>
-<pre style="white-space:pre-wrap;border:1px solid #ddd;border-radius:10px;padding:14px;">${escapeHtml(d.texto || "")}</pre>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
-  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
-    <b>Firma paciente</b><br>
-    ${fp ? `<img src="${fp}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
-  </div>
-  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
-    <b>Firma profesional</b><br>
-    ${fpro ? `<img src="${fpro}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
-  </div>
-</div>
-</body></html>`;
-
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `documento_${(d.id || "sin_id")}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
-  // Init documentos
   document.addEventListener("DOMContentLoaded", () => {
     _initCanvasDoc("doc_firmaPaciente");
     _initCanvasDoc("doc_firmaProfesional");
+    // documento inicial
     nuevoDocumento();
   });
 
   // ==============================
-  // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
+  // ✅ BUSCAR HISTORIA (NO BLOQUEA SI NO HAY DOCUMENTOS)
   // ==============================
   async function buscarHistoria() {
     const cedula = document.getElementById("buscar_cedula").value.trim();
@@ -1880,9 +2679,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
     _cedulaActual = cedula;
 
+    // ✅ SIEMPRE: limpiar documentos del paciente anterior
     documentos = [];
     renderDocumentos();
-    nuevoDocumento();
+    nuevoDocumento(); // genera id nuevo para el form (pero sin mezclar con otros pacientes)
 
     const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
 
@@ -1893,10 +2693,12 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       if (!data.existe) {
         evoluciones = [];
         renderEvoluciones();
+        // limpiar odontograma/historia mínimo
         alert("No existe historia clínica para este paciente");
         return;
       }
 
+      // ✅ cargar historia / odontograma / evoluciones SIEMPRE
       const h = data.historia || {};
       const od = data.odontograma || {};
       evoluciones = normalizarEvolucionesDeWebhook(data);
@@ -1909,10 +2711,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
-
-      // ✅ FIX: id sin espacios
-      document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
-
+      document.getElementById("Ciudad de Residencia").value = h["Ciudad_de_Residencia"] ?? "";
       document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
       document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
       document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
@@ -1920,14 +2719,90 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
+      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      // odontograma (tu mismo mapping)
+      let tiposID = [];
+      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+
+      let hijos = [];
+      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
+
+      document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
+      document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
+      document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
+      document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
+      document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
+      document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
+
+      document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
+      document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
+      document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
+      document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
+
+      document.querySelectorAll("input[name='grave']").forEach(c => { c.checked = (h["Enfermedad grave"] ?? []).includes(c.value); });
+      document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
+      document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
+      document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
+      document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
+      document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
+
+      document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
+      document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
+
+      let condiciones = [];
+      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
+      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
+
+      let coagulacion = [];
+      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
+      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
+
+      let anticoagulantes = [];
+      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
+      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
+
+      let toma_medicamentos = [];
+      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
+      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
+
+      let alcohol = [];
+      try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
+      document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
+
+      let fuma = [];
+      try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
+      document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
+
+      let dolor = [];
+      try {
+        let raw = h["dolor"];
+        if (Array.isArray(raw)) dolor = raw;
+        else if (typeof raw === "string") {
+          raw = raw.replace(/\\"/g, '"');
+          dolor = JSON.parse(raw);
+        }
+      } catch(e) { dolor = []; }
+
+      document.querySelectorAll("input[name='dolor[]']").forEach(c => {
+        c.checked = dolor.includes(c.value);
+      });
+
+      document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
+      document.querySelectorAll("input[name='tratamientos']").forEach(c => {
+        c.checked = (h["Tratamientos"] ?? []).includes(c.value);
+      });
+
+      // odontograma
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
       reporte = {};
 
       Object.entries(od).forEach(([diente, regiones]) => {
         Object.entries(regiones).forEach(([region, estado]) => {
           if (!estado) return;
+
           const estadoNormalizado = estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
           const color = preexistencias[estadoNormalizado];
           if (!color) return;
@@ -1950,15 +2825,16 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
           if (!elem) return;
 
           elem.style.background = color;
+
           if (!reporte[diente]) reporte[diente] = {};
           reporte[diente][cara] = estadoNormalizado;
         });
       });
 
-      // ✅ cargar documentos del paciente
+      // ✅ AHORA: cargar documentos del paciente (pero NO bloquea nada)
       await cargarDocumentosPacienteDesdeSupabase(cedula);
 
-      // preparar doc nuevo
+      // preparar doc nuevo con datos del paciente
       document.getElementById("doc_id").value = uuid();
       document.getElementById("doc_fecha").value = _hoyISO();
       document.getElementById("doc_profesional").value = "";
@@ -1979,33 +2855,172 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
-  // Exponer funciones usadas en HTML
-  window.buscarHistoria = buscarHistoria;
-  window.enviarAN8N = enviarAN8N;
-  window.mostrarReporte = mostrarReporte;
+  // ==============================
+// ✅ VER DOCUMENTO (PREVIEW + FIRMAS)
+// ==============================
+let _docVistaActual = null;
 
-  window.nuevoDocumento = nuevoDocumento;
-  window.guardarDocumentoSupabase = guardarDocumentoSupabase;
-  window.eliminarDocumentoSupabase = eliminarDocumentoSupabase;
-  window.verDocumento = verDocumento;
-  window.editarDocumento = editarDocumento;
-  window.cerrarModalVerDoc = cerrarModalVerDoc;
-  window.abrirModalVerDoc = abrirModalVerDoc;
-  window.imprimirDocumento = imprimirDocumento;
-  window.descargarHTMLDocumento = descargarHTMLDocumento;
-  window.limpiarFirmaDocumento = limpiarFirmaDocumento;
-  window.cargarDocumentosPacienteDesdeSupabase = cargarDocumentosPacienteDesdeSupabase;
-  window.cerrarSesion = cerrarSesion;
+function abrirModalVerDoc(){
+  const m = document.getElementById("modalVerDoc");
+  if (m) m.style.display = "block";
+}
+function cerrarModalVerDoc(){
+  const m = document.getElementById("modalVerDoc");
+  if (m) m.style.display = "none";
+  _docVistaActual = null;
+}
 
-  window.agregarEvolucion = agregarEvolucion;
-  window.eliminarEvolucion = eliminarEvolucion;
-  window.limpiarEvolucionForm = limpiarEvolucionForm;
+function verDocumento(id){
+  const d = _docById(id);
+  if (!d) { alert("Documento no encontrado."); return; }
 
-  window.agregarProfesionalDesdeCampo = agregarProfesionalDesdeCampo;
+  _docVistaActual = d;
+
+  document.getElementById("verDoc_id").textContent = d.id || "";
+  document.getElementById("verDoc_fecha").textContent = _soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || "");
+  document.getElementById("verDoc_tipo").textContent = d.tipo || "CONSENTIMIENTO";
+  document.getElementById("verDoc_procedimiento").textContent = d.procedimiento || "";
+  document.getElementById("verDoc_profesional").textContent = d.profesional || "";
+  document.getElementById("verDoc_texto").textContent = d.texto || "";
+
+  // ✅ firmas como imagen (dataURL)
+  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
+  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+
+  const imgPac = document.getElementById("verDoc_firmaPaciente");
+  const imgPro = document.getElementById("verDoc_firmaProfesional");
+
+  imgPac.src = fp || "";
+  imgPro.src = fpro || "";
+
+  imgPac.style.opacity = fp ? "1" : ".35";
+  imgPro.style.opacity = fpro ? "1" : ".35";
+
+  abrirModalVerDoc();
+}
+
+// ==============================
+// ✅ IMPRIMIR / PDF (desde navegador)
+// ==============================
+function imprimirDocumento(){
+  if (!_docVistaActual) return;
+
+  const d = _docVistaActual;
+  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
+  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+
+  const html = `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<title>Documento ${escapeHtml(d.id || "")}</title>
+<style>
+  body{ font-family: system-ui, Segoe UI, Arial; padding:20px; color:#111; }
+  h1{ margin:0 0 8px; font-size:18px; }
+  .meta{ margin:0 0 14px; font-size:13px; line-height:1.5; }
+  pre{
+    white-space:pre-wrap;
+    border:1px solid #ddd;
+    border-radius:10px;
+    padding:14px;
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size:13px;
+  }
+  .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+  .box{ border:1px solid #ddd; border-radius:10px; padding:10px; }
+  img{ width:100%; height:160px; object-fit:contain; border:1px solid #eee; border-radius:8px; }
+</style>
+</head>
+<body>
+  <h1>Documento: ${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h1>
+  <div class="meta">
+    <div><b>ID:</b> ${escapeHtml(d.id || "")}</div>
+    <div><b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</div>
+    <div><b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}</div>
+    <div><b>Profesional:</b> ${escapeHtml(d.profesional || "")}</div>
+  </div>
+
+  <pre>${escapeHtml(d.texto || "")}</pre>
+
+  <div class="grid">
+    <div class="box">
+      <div style="font-weight:700; margin-bottom:8px;">Firma paciente</div>
+      ${fp ? `<img src="${fp}">` : `<div style="opacity:.6">Sin firma</div>`}
+    </div>
+    <div class="box">
+      <div style="font-weight:700; margin-bottom:8px;">Firma profesional</div>
+      ${fpro ? `<img src="${fpro}">` : `<div style="opacity:.6">Sin firma</div>`}
+    </div>
+  </div>
+
+  <script>window.onload = () => window.print();<\/script>
+</body>
+</html>`;
+
+  const w = window.open("", "_blank");
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+// ==============================
+// ✅ DESCARGAR HTML
+// ==============================
+function descargarHTMLDocumento(){
+  if (!_docVistaActual) return;
+
+  const d = _docVistaActual;
+  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || "");
+  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || "");
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Documento ${escapeHtml(d.id || "")}</title></head>
+<body style="font-family:system-ui,Segoe UI,Arial;padding:20px;">
+<h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
+<p><b>ID:</b> ${escapeHtml(d.id || "")}<br>
+<b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}<br>
+<b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}<br>
+<b>Profesional:</b> ${escapeHtml(d.profesional || "")}</p>
+<pre style="white-space:pre-wrap;border:1px solid #ddd;border-radius:10px;padding:14px;font-family:ui-monospace,Menlo,Consolas,monospace;">${escapeHtml(d.texto || "")}</pre>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
+  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
+    <b>Firma paciente</b><br>
+    ${fp ? `<img src="${fp}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
+  </div>
+  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
+    <b>Firma profesional</b><br>
+    ${fpro ? `<img src="${fpro}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
+  </div>
+</div>
+</body></html>`;
+
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `documento_${(d.id || "sin_id")}.html`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
