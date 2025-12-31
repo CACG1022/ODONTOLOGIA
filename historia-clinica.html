@@ -1835,16 +1835,156 @@
   // ==============================
   // ✅ PROCEDIMIENTOS / PROFESIONALES (igual)
   // ==============================
-  const PROCEDIMIENTOS_BASE = [/* ... (igual a tu lista) ... */];
-  const LS_PROC_KEY = "procedimientos_custom";
-  function _normProc(s) { return String(s || "").trim().replace(/\s+/g, " ").toUpperCase(); }
-  function _cargarProcedimientosCustom() { try { const raw = localStorage.getItem(LS_PROC_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; } catch (e) { return []; } }
-  function _guardarProcedimientosCustom(arr) { try { localStorage.setItem(LS_PROC_KEY, JSON.stringify(arr)); } catch(e) {} }
-  function _getProcedimientosUnicos() { const base = PROCEDIMIENTOS_BASE.map(_normProc); const custom = _cargarProcedimientosCustom().map(_normProc); const set = new Set([...base, ...custom].filter(Boolean)); return Array.from(set).sort((a,b) => a.localeCompare(b, "es")); }
-  function _poblarDatalistProcedimientos() { const dl = document.getElementById("procedimientos_list"); if (!dl) return; const items = _getProcedimientosUnicos(); dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join(""); }
-  function agregarProcedimientoDesdeCampo() { const input = document.getElementById("evo_tipo"); if (!input) return; const val = _normProc(input.value); if (!val) { alert("⚠️ Escribe un procedimiento para agregar."); return; } const actuales = _getProcedimientosUnicos(); if (actuales.includes(val)) { alert("✅ Ese procedimiento ya existe en la lista."); return; } const custom = _cargarProcedimientosCustom().map(_normProc); custom.push(val); _guardarProcedimientosCustom(Array.from(new Set(custom))); _poblarDatalistProcedimientos(); alert("✅ Procedimiento agregado al listado."); }
-  document.addEventListener("DOMContentLoaded", () => {
-    _poblarDatalistProcedimientos();
+  <script>
+/* =====================================================
+   ✅ PROCEDIMIENTOS (DATALIST) DESDE SUPABASE
+   - Tabla: procedimientos_precios
+   - Campo: procedimiento
+   - (Opcional) filtra activo=true si existe la columna
+===================================================== */
+
+const LS_PROC_KEY = "procedimientos_custom";
+
+// Normaliza texto
+function _normProc(s) {
+  return String(s || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toUpperCase();
+}
+
+// Lee custom local (opcional)
+function _cargarProcedimientosCustom() {
+  try {
+    const raw = localStorage.getItem(LS_PROC_KEY);
+    const arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function _guardarProcedimientosCustom(arr) {
+  try { localStorage.setItem(LS_PROC_KEY, JSON.stringify(arr)); } catch(e) {}
+}
+
+// ✅ Trae procedimientos desde Supabase
+async function _cargarProcedimientosSupabase() {
+  const sb = window.supabase;
+  if (!sb) {
+    console.warn("⚠️ Supabase no está disponible en window.supabase");
+    return [];
+  }
+
+  // OJO: si tu tabla NO tiene columna "activo", quita esa línea.
+  // Yo lo dejo “seguro”: intento con activo y si falla, vuelvo a consultar sin filtro.
+  try {
+    const { data, error } = await sb
+      .from("procedimientos_precios")
+      .select("procedimiento, activo")
+      .eq("activo", true)
+      .order("procedimiento", { ascending: true })
+      .limit(2000);
+
+    if (error) throw error;
+
+    return (data || [])
+      .map(x => _normProc(x.procedimiento))
+      .filter(Boolean);
+
+  } catch (err1) {
+    console.warn("⚠️ Consulta con activo=true falló. Intento sin columna activo...", err1);
+
+    const { data, error } = await sb
+      .from("procedimientos_precios")
+      .select("procedimiento")
+      .order("procedimiento", { ascending: true })
+      .limit(2000);
+
+    if (error) {
+      console.error("❌ Error cargando procedimientos desde Supabase:", error);
+      return [];
+    }
+
+    return (data || [])
+      .map(x => _normProc(x.procedimiento))
+      .filter(Boolean);
+  }
+}
+
+// Une Supabase + custom local
+async function _getProcedimientosUnicos() {
+  const supa = await _cargarProcedimientosSupabase();
+  const custom = _cargarProcedimientosCustom().map(_normProc);
+
+  const set = new Set([...supa, ...custom].filter(Boolean));
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "es"));
+}
+
+// Pinta el datalist
+async function _poblarDatalistProcedimientos() {
+  const dl = document.getElementById("procedimientos_list");
+  if (!dl) return;
+
+  dl.innerHTML = `<option value="Cargando..."></option>`;
+
+  const items = await _getProcedimientosUnicos();
+
+  dl.innerHTML = items.map(p => `<option value="${p}"></option>`).join("");
+
+  console.log("✅ Procedimientos cargados:", items.length);
+}
+
+// Botón “+ Agregar” (sigue funcionando)
+async function agregarProcedimientoDesdeCampo() {
+  const input = document.getElementById("evo_tipo");
+  if (!input) return;
+
+  const val = _normProc(input.value);
+  if (!val) { alert("⚠️ Escribe un procedimiento para agregar."); return; }
+
+  const actuales = await _getProcedimientosUnicos();
+  if (actuales.includes(val)) { alert("✅ Ese procedimiento ya existe en la lista."); return; }
+
+  const custom = _cargarProcedimientosCustom().map(_normProc);
+  custom.push(val);
+  _guardarProcedimientosCustom(Array.from(new Set(custom)));
+
+  await _poblarDatalistProcedimientos();
+  alert("✅ Procedimiento agregado al listado (local).");
+}
+
+// ✅ Cargar datalist al iniciar + refrescar cuando enfoques el campo
+document.addEventListener("DOMContentLoaded", async () => {
+  await _poblarDatalistProcedimientos();
+
+  const input = document.getElementById("evo_tipo");
+  if (input) {
+    input.addEventListener("focus", _poblarDatalistProcedimientos);
+
+    input.addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+
+        const val = _normProc(input.value);
+        if (!val) return;
+
+        const actuales = await _getProcedimientosUnicos();
+        if (!actuales.includes(val)) {
+          const ok = confirm("Este procedimiento no está en la lista.\n\n¿Deseas agregarlo?");
+          if (ok) await agregarProcedimientoDesdeCampo();
+        }
+      }
+    });
+  }
+
+  // ✅ Si también tienes un campo de procedimiento en DOCUMENTOS, ponle list="procedimientos_list"
+  // y opcionalmente refresca cuando lo enfoques:
+  const docProc = document.getElementById("doc_procedimiento");
+  if (docProc) {
+    docProc.addEventListener("focus", _poblarDatalistProcedimientos);
+  }
+});
     const input = document.getElementById("evo_tipo");
     if (input) {
       input.addEventListener("keydown", (e) => {
