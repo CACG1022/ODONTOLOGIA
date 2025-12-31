@@ -1372,28 +1372,26 @@
     } catch (e) {}
   }
 
-  // Si viene URL-encoded
-  try { v = decodeURIComponent(v); } catch(e) {}
+  // ✅ SI YA ES dataURL, NO LO TOQUES (aquí tu código a veces lo dañaba)
+  if (v.startsWith("data:image/")) return v;
 
-  // ✅ IMPORTANTE:
-  // 1) quitar saltos de línea/tabs (no convertirlos a "+")
-  v = v.replace(/[\r\n\t]/g, "");
+  // Quitar saltos de línea y tabs
+  v = v.replace(/[\r\n\t]/g, "").trim();
 
-  // 2) solo espacios => "+"
+  // Algunas veces la base64 viene con espacios: conviértelos a +
   v = v.replace(/ /g, "+");
 
-  // 3) quitar comillas si viniera como "...."
+  // Quitar comillas
   v = v.replace(/^"+|"+$/g, "");
 
-  if (v.startsWith("data:image")) return v;
-
-  // base64 "pelado"
-  if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
+  // base64 pelado
+  if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 200) {
     return "data:image/png;base64," + v;
   }
 
   return "";
 }
+
 
 
 
@@ -1605,6 +1603,14 @@ function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
     document.getElementById("verDoc_procedimiento").textContent = d.procedimiento || "";
     document.getElementById("verDoc_profesional").textContent = d.profesional || "";
     document.getElementById("verDoc_texto").textContent = d.texto || "";
+
+    console.log("DOC RAW:", d);
+
+const rawPac = d.firma_paciente || d.firmaPaciente || d.firma || "";
+const rawPro = d.firma_profesional || d.firmaProfesional || d.firma2 || "";
+
+console.log("RAW PAC len:", String(rawPac || "").length, "head:", String(rawPac || "").slice(0, 40));
+console.log("RAW PRO len:", String(rawPro || "").length, "head:", String(rawPro || "").slice(0, 40));
 
     const fp   = _normalizarDataURLFirma(d.firma_paciente || d.firmaPaciente || d.firma || "");
     const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firmaProfesional || d.firma2 || "");
