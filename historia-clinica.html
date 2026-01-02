@@ -550,9 +550,11 @@
     <div class="rowline"></div>
 
     <div class="inline" style="justify-content:flex-end; gap:10px;">
-      <button type="button" class="btn btn-buscar" style="width:auto;" onclick="nuevoDocumento()">Nuevo documento</button>
-      <button type="button" class="btn btn-agenda" style="width:auto;" onclick="guardarDocumentoSupabase()">Guardar documento</button>
-    </div>
+  <button type="button" class="btn btn-buscar" style="width:auto;" onclick="abrirModalPlantillas()">CREAR PLANTILLA</button>
+  <button type="button" class="btn btn-buscar" style="width:auto;" onclick="nuevoDocumento()">Nuevo documento</button>
+  <button type="button" class="btn btn-agenda" style="width:auto;" onclick="guardarDocumentoSupabase()">Guardar documento</button>
+</div>
+
 
     <div class="rowline"></div>
 
@@ -589,7 +591,7 @@
           border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
           padding:10px 12px; cursor:pointer;">Cerrar ✕</button>
       </div>
-
+  
       <div style="padding:16px;">
         <div style="display:grid; gap:14px; grid-template-columns:1fr 1fr;">
           <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
@@ -648,6 +650,108 @@
       </div>
     </div>
   </div>
+
+  <!-- ✅ MODAL PLANTILLAS -->
+<div id="modalPlantillas" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+  z-index:1000004; padding:20px;">
+  <div style="max-width:1000px; margin:0 auto; background:#fff; border-radius:14px;
+    border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.2); overflow:hidden;">
+
+    <div style="display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
+      background:#eef6ff; border-bottom:1px solid #e7edf5;">
+      <div style="font-weight:800; color:#2a5d84;">Plantillas de consentimientos informados</div>
+      <button type="button" onclick="cerrarModalPlantillas()" style="
+        border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
+        padding:10px 12px; cursor:pointer;">Cerrar ✕</button>
+    </div>
+
+    <div style="padding:16px; display:grid; gap:14px; grid-template-columns: 1fr 1.2fr;">
+      <!-- LISTADO -->
+      <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <div style="font-weight:700; color:#19324d;">Mis plantillas</div>
+          <button type="button" onclick="nuevaPlantillaUI()" style="
+            border:none; background:#009688; color:#fff; font-weight:700; border-radius:10px;
+            padding:8px 10px; cursor:pointer;">+ Nueva</button>
+        </div>
+
+        <div style="display:flex; gap:10px; margin-bottom:10px;">
+          <input id="tpl_buscar" type="text" placeholder="Buscar por nombre o procedimiento..." style="flex:1;">
+          <button type="button" onclick="renderListaPlantillas()" style="
+            border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
+            padding:10px 12px; cursor:pointer;">Buscar</button>
+        </div>
+
+        <div style="max-height:420px; overflow:auto;">
+          <table class="tabla-docs">
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Procedimiento</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tabla_plantillas"></tbody>
+          </table>
+          <div id="tpl_empty" style="margin-top:10px; color:#6b7a90; display:none;">
+            No hay plantillas creadas.
+          </div>
+        </div>
+      </div>
+
+      <!-- FORM -->
+      <div style="border:1px solid #e7edf5; border-radius:12px; padding:12px;">
+        <div style="font-weight:700; color:#19324d; margin-bottom:10px;">Editor de plantilla</div>
+
+        <input id="tpl_id" type="text" readonly style="display:none;">
+
+        <div class="ctrl">
+          <label>Nombre de la plantilla</label>
+          <input id="tpl_nombre" type="text" placeholder="Ej: Consentimiento Resina">
+        </div>
+
+        <div class="ctrl" style="margin-top:10px;">
+          <label>Procedimiento asociado</label>
+          <input id="tpl_procedimiento" type="text" list="procedimientos_list_supabase" placeholder="Ej: CACC / HIGIENE / RESINA o GENERICA">
+          <div style="font-size:12px; color:#6b7a90; margin-top:6px;">
+            Tip: si pones <b>GENERICA</b>, aparecerá como plantilla general.
+          </div>
+        </div>
+
+        <div class="ctrl" style="margin-top:10px;">
+          <label>Contenido (puedes usar variables)</label>
+          <textarea id="tpl_contenido" style="min-height:260px;" placeholder="Ej:
+CONSENTIMIENTO INFORMADO
+Paciente: {{PACIENTE}} - Identificación: {{CEDULA}}
+Procedimiento: {{PROCEDIMIENTO}}
+Profesional: {{PROFESIONAL}}
+Fecha: {{FECHA}}
+..."></textarea>
+          <div style="font-size:12px; color:#6b7a90; margin-top:6px;">
+            Variables disponibles:
+            <b>{{PACIENTE}}</b>, <b>{{CEDULA}}</b>, <b>{{PROCEDIMIENTO}}</b>, <b>{{PROFESIONAL}}</b>, <b>{{FECHA}}</b>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:12px; flex-wrap:wrap;">
+          <button type="button" onclick="probarPlantillaEnDocumento()" style="
+            border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
+            padding:10px 12px; cursor:pointer;">Probar en documento</button>
+
+          <button type="button" onclick="guardarPlantillaSupabase()" style="
+            border:none; background:#009688; color:#fff; font-weight:700; border-radius:10px;
+            padding:10px 12px; cursor:pointer;">Guardar plantilla</button>
+
+          <button type="button" onclick="eliminarPlantillaSupabase()" style="
+            border:none; background:#e53935; color:#fff; font-weight:700; border-radius:10px;
+            padding:10px 12px; cursor:pointer;">Eliminar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 </div>
 
@@ -939,11 +1043,12 @@
   }
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (document.getElementById("evo_fecha")) {
-      limpiarEvolucionForm();
-      renderEvoluciones();
-    }
-  });
+  _initCanvasDoc("doc_firmaPaciente");
+  _initCanvasDoc("doc_firmaProfesional");
+  nuevoDocumento();
+  cargarPlantillasDesdeSupabase(); // ✅ NUEVO
+});
+
 
   // ==============================
   // ODONTOGRAMA
@@ -2020,6 +2125,278 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     }
   }
 
+  // ============================================================
+// ✅✅✅ PLANTILLAS DE CONSENTIMIENTOS (SUPABASE)
+// Tabla: consentimiento_plantillas
+// ============================================================
+let plantillas = [];
+let _tplEditId = null;
+
+function abrirModalPlantillas(){
+  const m = document.getElementById("modalPlantillas");
+  if (m) m.style.display = "block";
+  cargarPlantillasDesdeSupabase();
+}
+function cerrarModalPlantillas(){
+  const m = document.getElementById("modalPlantillas");
+  if (m) m.style.display = "none";
+}
+
+function nuevaPlantillaUI(){
+  _tplEditId = null;
+  document.getElementById("tpl_id").value = "";
+  document.getElementById("tpl_nombre").value = "";
+  document.getElementById("tpl_procedimiento").value = "GENERICA";
+  document.getElementById("tpl_contenido").value =
+`CONSENTIMIENTO INFORMADO
+
+Paciente: {{PACIENTE}} - Identificación: {{CEDULA}}
+Procedimiento: {{PROCEDIMIENTO}}
+Profesional: {{PROFESIONAL}}
+Fecha: {{FECHA}}
+
+Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
+He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.`;
+}
+
+async function cargarPlantillasDesdeSupabase(){
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  try{
+    const { data, error } = await window.supabase
+      .from("consentimiento_plantillas")
+      .select("*")
+      .eq("activo", true)
+      .order("creado_en", { ascending:false });
+
+    if (error) throw error;
+
+    plantillas = (data || []).map(x => ({
+      id: x.id,
+      nombre: x.nombre || "",
+      procedimiento: (x.procedimiento || "GENERICA").toUpperCase(),
+      contenido: x.contenido || "",
+      creado_en: x.creado_en || null,
+      activo: x.activo !== false
+    }));
+
+    renderListaPlantillas();
+    poblarSelectPlantillas();
+  }catch(e){
+    console.warn("❌ Error cargando plantillas:", e);
+    plantillas = [];
+    renderListaPlantillas();
+    poblarSelectPlantillas();
+  }
+}
+
+function renderListaPlantillas(){
+  const tbody = document.getElementById("tabla_plantillas");
+  const empty = document.getElementById("tpl_empty");
+  if (!tbody) return;
+
+  const q = (document.getElementById("tpl_buscar")?.value || "").trim().toUpperCase();
+
+  const lista = (plantillas || []).filter(p => {
+    if (!q) return true;
+    return (p.nombre || "").toUpperCase().includes(q) || (p.procedimiento || "").toUpperCase().includes(q);
+  });
+
+  tbody.innerHTML = "";
+  if (!lista.length){
+    if (empty) empty.style.display = "block";
+    return;
+  }
+  if (empty) empty.style.display = "none";
+
+  lista.forEach(p => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${escapeHtml(p.nombre)}</td>
+      <td>${escapeHtml(p.procedimiento)}</td>
+      <td style="display:flex; gap:8px; flex-wrap:wrap;">
+        <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
+          onclick="editarPlantillaUI('${escapeHtml(p.id)}')">Editar</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function editarPlantillaUI(id){
+  const p = (plantillas || []).find(x => String(x.id) === String(id));
+  if (!p) return;
+
+  _tplEditId = p.id;
+  document.getElementById("tpl_id").value = p.id;
+  document.getElementById("tpl_nombre").value = p.nombre || "";
+  document.getElementById("tpl_procedimiento").value = p.procedimiento || "GENERICA";
+  document.getElementById("tpl_contenido").value = p.contenido || "";
+}
+
+async function guardarPlantillaSupabase(){
+  const nombre = (document.getElementById("tpl_nombre")?.value || "").trim();
+  const procedimiento = (document.getElementById("tpl_procedimiento")?.value || "GENERICA").trim().toUpperCase();
+  const contenido = (document.getElementById("tpl_contenido")?.value || "").trim();
+
+  if (!nombre) { alert("⚠️ Falta el nombre de la plantilla."); return; }
+  if (!procedimiento) { alert("⚠️ Falta el procedimiento."); return; }
+  if (!contenido) { alert("⚠️ El contenido está vacío."); return; }
+
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) { alert("Supabase no disponible"); return; }
+
+  const row = {
+    id: _tplEditId || undefined,
+    nombre,
+    procedimiento,
+    contenido,
+    activo: true
+  };
+
+  try{
+    const { error } = await window.supabase
+      .from("consentimiento_plantillas")
+      .upsert(row, { onConflict: "id" });
+
+    if (error) throw error;
+
+    alert("✅ Plantilla guardada.");
+    await cargarPlantillasDesdeSupabase();
+  }catch(e){
+    console.warn("❌ Error guardando plantilla:", e);
+    alert("❌ No se pudo guardar la plantilla.\n\n" + (e?.message || JSON.stringify(e)));
+  }
+}
+
+async function eliminarPlantillaSupabase(){
+  const id = _tplEditId || (document.getElementById("tpl_id")?.value || "").trim();
+  if (!id) { alert("⚠️ Selecciona una plantilla primero."); return; }
+
+  const ok = confirm("¿Eliminar esta plantilla?");
+  if (!ok) return;
+
+  try{
+    const { error } = await window.supabase
+      .from("consentimiento_plantillas")
+      .update({ activo:false })
+      .eq("id", id);
+
+    if (error) throw error;
+
+    alert("✅ Plantilla eliminada.");
+    _tplEditId = null;
+    nuevaPlantillaUI();
+    await cargarPlantillasDesdeSupabase();
+  }catch(e){
+    console.warn("❌ Error eliminando plantilla:", e);
+    alert("❌ No se pudo eliminar.\n\n" + (e?.message || JSON.stringify(e)));
+  }
+}
+
+// ✅ Mete plantillas en el select doc_template
+function poblarSelectPlantillas(){
+  const sel = document.getElementById("doc_template");
+  if (!sel) return;
+
+  // Mantener AUTO y GENERICA (por compatibilidad)
+  const base = [
+    { value:"AUTO", label:"Automática (según procedimiento)" },
+    { value:"GENERICA", label:"Genérica" }
+  ];
+
+  // Plantillas de Supabase
+  const dyn = (plantillas || []).map(p => ({
+    value: "TPL:" + p.id,
+    label: `${p.nombre} (${p.procedimiento})`
+  }));
+
+  sel.innerHTML = base.map(x => `<option value="${escapeHtml(x.value)}">${escapeHtml(x.label)}</option>`).join("")
+    + dyn.map(x => `<option value="${escapeHtml(x.value)}">${escapeHtml(x.label)}</option>`).join("");
+}
+
+// ✅ Reemplaza variables en contenido
+function aplicarVariablesPlantilla(texto){
+  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const cedula   = (document.getElementById("paciente_numdoc")?.value || "").trim();
+  const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
+  const profesional   = (document.getElementById("doc_profesional")?.value || "").trim();
+  const fecha         = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
+
+  return String(texto || "")
+    .replaceAll("{{PACIENTE}}", paciente)
+    .replaceAll("{{CEDULA}}", cedula)
+    .replaceAll("{{PROCEDIMIENTO}}", procedimiento)
+    .replaceAll("{{PROFESIONAL}}", profesional)
+    .replaceAll("{{FECHA}}", fecha);
+}
+
+// ✅ Cuando cambie el select, aplicar plantilla
+document.addEventListener("DOMContentLoaded", () => {
+  const sel = document.getElementById("doc_template");
+  if (sel){
+    sel.addEventListener("change", () => {
+      aplicarPlantillaSeleccionada();
+    });
+  }
+});
+
+function aplicarPlantillaSeleccionada(){
+  const sel = document.getElementById("doc_template");
+  if (!sel) return;
+
+  const val = sel.value;
+
+  // AUTO: si quieres, lo dejamos igual que antes (usa GENÉRICA por defecto)
+  if (val === "AUTO"){
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
+      paciente, doc,
+      procedimiento: (document.getElementById("doc_procedimiento")?.value || "").trim(),
+      profesional: (document.getElementById("doc_profesional")?.value || "").trim(),
+      fecha: (document.getElementById("doc_fecha")?.value || _hoyISO()).trim()
+    });
+    return;
+  }
+
+  if (val === "GENERICA"){
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
+      paciente, doc,
+      procedimiento: (document.getElementById("doc_procedimiento")?.value || "").trim(),
+      profesional: (document.getElementById("doc_profesional")?.value || "").trim(),
+      fecha: (document.getElementById("doc_fecha")?.value || _hoyISO()).trim()
+    });
+    return;
+  }
+
+  // Plantilla Supabase
+  if (val.startsWith("TPL:")){
+    const id = val.slice(4);
+    const p = (plantillas || []).find(x => String(x.id) === String(id));
+    if (!p) return;
+    document.getElementById("doc_texto").value = aplicarVariablesPlantilla(p.contenido);
+  }
+}
+
+function probarPlantillaEnDocumento(){
+  const contenido = (document.getElementById("tpl_contenido")?.value || "").trim();
+  if (!contenido) { alert("⚠️ El contenido está vacío."); return; }
+  document.getElementById("doc_texto").value = aplicarVariablesPlantilla(contenido);
+  alert("✅ Plantilla aplicada al documento (campo Texto).");
+}
+
   // Exponer funciones usadas en HTML
   window.buscarHistoria = buscarHistoria;
   window.enviarAN8N = enviarAN8N;
@@ -2043,6 +2420,16 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   window.limpiarEvolucionForm = limpiarEvolucionForm;
 
   window.agregarProfesionalDesdeCampo = agregarProfesionalDesdeCampo;
+  window.abrirModalPlantillas = abrirModalPlantillas;
+window.cerrarModalPlantillas = cerrarModalPlantillas;
+window.nuevaPlantillaUI = nuevaPlantillaUI;
+window.editarPlantillaUI = editarPlantillaUI;
+window.guardarPlantillaSupabase = guardarPlantillaSupabase;
+window.eliminarPlantillaSupabase = eliminarPlantillaSupabase;
+window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
+window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
+window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
+
 </script>
 </body>
 </html>
