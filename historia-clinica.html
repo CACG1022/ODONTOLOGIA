@@ -1575,8 +1575,9 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     document.getElementById("verDoc_profesional").textContent = d.profesional || "";
     document.getElementById("verDoc_texto").textContent = d.texto || "";
 
-    const fp   = _normalizarDataURLFirma(d.firma_paciente_path || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
+    // ✅ leer firmas desde lo que cargamos (ya normalizado)
+    const fp   = _normalizarDataURLFirma(d.firma_paciente || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
 
     const imgPac = document.getElementById("verDoc_firmaPaciente");
     const imgPro = document.getElementById("verDoc_firmaProfesional");
@@ -1621,6 +1622,12 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   }
 
   // ✅ FIX: mapear desde Supabase con *_path
+  // ============================================================
+  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - AJUSTADO A TU TABLA REAL
+  // Columnas en Supabase:
+  // firma_paciente_path, firma_profesional_path
+  // ============================================================
+
   async function cargarDocumentosPacienteDesdeSupabase(cedula){
     documentos = [];
     renderDocumentos();
@@ -1644,7 +1651,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
       documentos = (data || []).map(x => ({
         id: x.id ?? x.documento_id ?? x.doc_id ?? "",
-        tipo: "CONSENTIMIENTO",
+        tipo: x.tipo ?? "CONSENTIMIENTO",
         cedula_paciente: x.cedula_paciente ?? "",
         paciente_nombre: x.paciente_nombre ?? "",
         procedimiento: x.procedimiento ?? "",
@@ -1652,9 +1659,9 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
         template_key: x.template_key ?? x.template ?? "AUTO",
         texto: x.texto ?? "",
 
-        // 👇 CLAVE: tus columnas reales
-        firma_paciente_path: x.firma_paciente_path ?? "",
-        firma_profesional_path: x.firma_profesional_path ?? "",
+        // ✅ OJO: TU TABLA REAL
+        firma_paciente: x.firma_paciente_path ?? x.firma_paciente ?? "",
+        firma_profesional: x.firma_profesional_path ?? x.firma_profesional ?? "",
 
         firmado_en: x.firmado_en ?? null,
         creado_en: x.creado_en ?? x.created_at ?? null,
@@ -1674,6 +1681,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   async function guardarDocumentoSupabase(){
     const cedula_paciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
     const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
+
     if (!cedula_paciente || !paciente_nombre) {
       alert("⚠️ Primero debes cargar/buscar el paciente (nombre y cédula).");
       return;
@@ -1690,39 +1698,43 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!profesional) { alert("⚠️ Falta el profesional."); return; }
     if (!texto) { alert("⚠️ El texto está vacío."); return; }
 
-    const firma_paciente_path = _getFirmaDataURLDoc("doc_firmaPaciente");
-    const firma_profesional_path = _getFirmaDataURLDoc("doc_firmaProfesional");
-    if (!firma_paciente_path) { alert("⚠️ Falta la firma del paciente."); return; }
-    if (!firma_profesional_path) { alert("⚠️ Falta la firma del profesional."); return; }
+    // ✅ firmas desde canvas
+    const firma_paciente_dataurl = _getFirmaDataURLDoc("doc_firmaPaciente");
+    const firma_profesional_dataurl = _getFirmaDataURLDoc("doc_firmaProfesional");
+
+    if (!firma_paciente_dataurl) { alert("⚠️ Falta la firma del paciente."); return; }
+    if (!firma_profesional_dataurl) { alert("⚠️ Falta la firma del profesional."); return; }
 
     const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
     const firmado_en = new Date(fecha + "T00:00:00").toISOString();
     const creado_en = new Date().toISOString();
 
     const hash_documento = await sha256Hex(
-      JSON.stringify({ id, cedula_paciente, paciente_nombre, procedimiento, profesional, template_key, texto, firma_paciente_path, firma_profesional_path, firmado_en })
+      JSON.stringify({
+        id, cedula_paciente, paciente_nombre,
+        procedimiento, profesional, template_key, texto,
+        firma_paciente_dataurl, firma_profesional_dataurl,
+        firmado_en
+      })
     );
 
+    // ✅✅✅ AQUÍ ESTÁ EL FIX: NOMBRES EXACTOS DE TU TABLA
     const row = {
       id,
       cedula_paciente,
       paciente_nombre,
-      paciente_doc: cedula_paciente,
-      evolucion_id: null,
       procedimiento,
       profesional,
       template_key,
       texto,
 
-      // 👇 CLAVE: tus columnas reales
-      firma_paciente_path,
-      firma_profesional_path,
+      // ✅ En tu tabla se llaman *_path
+      firma_paciente_path: firma_paciente_dataurl,
+      firma_profesional_path: firma_profesional_dataurl,
 
-      pdf_path: null,
       firmado_en,
       creado_en,
       creado_por,
-      ip: null,
       user_agent: navigator.userAgent,
       hash_documento
     };
@@ -1743,11 +1755,13 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
       alert("✅ Documento guardado en Supabase.");
       await cargarDocumentosPacienteDesdeSupabase(cedula_paciente);
+
       document.getElementById("doc_id").value = id;
       _docEditId = id;
     } catch (e) {
+      // ✅ ahora sí verás el error real
       console.warn("❌ Error guardando documento:", e);
-      alert("❌ No se pudo guardar. Revisa consola.");
+      alert("❌ No se pudo guardar. Error:\n\n" + (e?.message || JSON.stringify(e)));
     }
   }
 
