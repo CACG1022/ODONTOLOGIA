@@ -961,7 +961,7 @@ async function cargarProfesionalesDesdeSupabase() {
       // ✅ ESTO ES LO IMPORTANTE:
       // el value será lo que quieres que quede guardado e impreso
       const valor = `${cedula} ${nombre}`.trim(); // ejemplo: "1022956631 Camilo Andres..."
-      const label = `${nombre}${cedula ? " - " + cedula : ""}`; // lo que se ve en la lista
+      const label = nombre; // SOLO nombre
 
       return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
     }).join("");
