@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <meta charset="UTF-8" />
   <title>Historia Clínica Odontológica + Odontograma</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -158,6 +159,84 @@ window.addEventListener("beforeunload", () => {
   try { detenerDictadoEvoDetalle(); } catch(e) {}
 });
 window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
+
+function _fmt(val){
+  if (val === null || val === undefined) return "";
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
+}
+
+function _siNo(arr){
+  const v = Array.isArray(arr) ? arr.join(", ") : String(arr || "");
+  return v || "";
+}
+
+function _tableRow(k, v){
+  return `<tr><td class="k">${escapeHtml(k)}</td><td>${escapeHtml(_fmt(v))}</td></tr>`;
+}
+
+// Odontograma a tabla (ya lo tienes como odontogramaCompleto en enviarAN8N)
+function _odontogramaToHTML(odontogramaCompleto){
+  let html = `
+    <h3>Odontograma (FDI)</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th>
+          <th>Vestibular</th><th>Lingual</th><th>Palatino</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  Object.entries(odontogramaCompleto || {}).forEach(([diente, r]) => {
+    html += `
+      <tr>
+        <td>${escapeHtml(diente)}</td>
+        <td>${escapeHtml((r.Mesial||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Distal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Oclusal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Vestibular||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Lingual||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Palatino||"").toUpperCase())}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+}
+
+function _evolucionesToHTML(evos){
+  const lista = Array.isArray(evos) ? evos : [];
+  if (!lista.length) return `<h3>Evoluciones</h3><div class="muted">Sin evoluciones registradas.</div>`;
+
+  let html = `
+    <h3>Evoluciones</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Hora</th><th>Profesional</th><th>Procedimiento</th><th>Detalle</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  lista.forEach(e => {
+    const fecha = _soloFechaYYYYMMDD(e.fecha || e.evo_fecha || "");
+    const hora  = _soloHoraHHMM(e.hora || e.evo_hora || "");
+    html += `
+      <tr>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(e.profesional || "").toUpperCase())}</td>
+        <td>${escapeHtml(String(e.procedimiento || e.evo_tipo || "").toUpperCase())}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(e.detalle || "")}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+} 
 
   </script>
 
@@ -388,6 +467,13 @@ window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
         <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
       </div>
     </div>
+
+    <div class="ctrl">
+  <button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
+    IMPRIMIR HISTORIA CLÍNICA
+  </button>
+</div>
+
   </section>
 
   <h1>Historia Clínica Odontológica</h1>
@@ -3105,7 +3191,203 @@ window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
 window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
 window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
 
+async function capturarOdontogramaPNG(){
+  const el = document.getElementById("odontograma-wrapper");
+  if (!el || !window.html2canvas) return "";
+  const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
+  return canvas.toDataURL("image/png");
+}
 
+async function imprimirHistoriaClinica(){
+  // Si quieres obligar a que tenga campos mínimos:
+  // if (!validarCamposObligatorios()) return;
+
+  // 1) Datos del formulario
+  const datos = obtenerDatosHistoriaClinica();
+
+  // 2) Armar odontograma completo (igual a enviarAN8N)
+  const todosLosDientes = [
+    18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
+    48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
+  ];
+  const odontogramaCompleto = {};
+  todosLosDientes.forEach(num => {
+    odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
+  });
+  Object.entries(reporte || {}).forEach(([diente, caras]) => {
+    Object.entries(caras).forEach(([cara, preexistencia]) => {
+      const region = obtenerRegion(diente, cara);
+      if (region) odontogramaCompleto[diente][region] = String(preexistencia || "").toUpperCase();
+    });
+  });
+
+  // 3) (Opcional) capturar odontograma visual
+  const odontogramaImg = await capturarOdontogramaPNG(); // si no instalaste html2canvas, devuelve ""
+
+  // 4) Construir HTML imprimible
+  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+  const cedula   = (document.getElementById("paciente_numdoc")?.value || "").trim();
+  const fechaImp = new Date().toISOString().slice(0,10);
+
+  const html = `
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Historia Clínica - ${escapeHtml(cedula)}</title>
+<style>
+  body{ font-family: system-ui, Segoe UI, Arial; color:#111; padding:18px; }
+  h1{ margin:0 0 8px; font-size:20px; }
+  h2{ margin:18px 0 10px; font-size:16px; }
+  h3{ margin:14px 0 8px; font-size:14px; }
+  .muted{ color:#666; font-size:12px; }
+  .top{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+  .logo{ height:80px; object-fit:contain; }
+  .box{ border:1px solid #ddd; border-radius:10px; padding:12px; margin-top:10px; }
+  .t{ width:100%; border-collapse:collapse; font-size:12px; }
+  .t th,.t td{ border:1px solid #ddd; padding:8px; vertical-align:top; }
+  .t thead th{ background:#f3f6fb; }
+  .kv .k{ width:240px; font-weight:700; background:#fafafa; }
+  img.odon{ width:100%; max-width:900px; border:1px solid #ddd; border-radius:10px; }
+  @media print{
+    body{ padding:0; }
+    .noPrint{ display:none !important; }
+    .box{ break-inside:avoid; }
+    table{ break-inside:auto; }
+    tr{ break-inside:avoid; break-after:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1>Historia Clínica Odontológica</h1>
+    <div class="muted">
+      Paciente: <b>${escapeHtml(paciente)}</b> &nbsp;|&nbsp;
+      Identificación: <b>${escapeHtml(cedula)}</b> &nbsp;|&nbsp;
+      Fecha impresión: <b>${escapeHtml(fechaImp)}</b>
+    </div>
+  </div>
+  <img class="logo" src="${LOGO_CLINICA}" alt="Logo">
+</div>
+
+<div class="box">
+  <h2>Datos básicos</h2>
+  <table class="t kv">
+    <tbody>
+      ${_tableRow("Nombres y apellidos", datos.paciente_nombre)}
+      ${_tableRow("Edad", datos.paciente_edad)}
+      ${_tableRow("Tipo identificación", _siNo(datos.idtipo))}
+      ${_tableRow("No. documento", datos.paciente_numdoc)}
+      ${_tableRow("Lugar expedición", datos.paciente_lugardoc)}
+      ${_tableRow("Fecha nacimiento", datos.paciente_nacimiento)}
+      ${_tableRow("Lugar nacimiento", datos.paciente_lugarnac)}
+      ${_tableRow("Dirección", datos.paciente_direccion)}
+      ${_tableRow("Ciudad residencia", datos.Ciudad_de_Residencia)}
+      ${_tableRow("EPS", datos.EPS_Paciente)}
+      ${_tableRow("Ocupación", datos.paciente_ocupacion)}
+      ${_tableRow("Teléfono", datos.paciente_tel)}
+      ${_tableRow("Celular", datos.paciente_cel)}
+      ${_tableRow("Correo", datos.paciente_email)}
+      ${_tableRow("Estado civil", datos.paciente_estadocivil)}
+      ${_tableRow("Hijos", _siNo(datos.hijos))}
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Acudiente</h2>
+  <table class="t kv">
+    <tbody>
+      ${_tableRow("Nombre padre", datos.padre_nombre)}
+      ${_tableRow("Teléfono padre", datos.padre_tel)}
+      ${_tableRow("EPS padre", datos.padre_eps)}
+      ${_tableRow("Tipo (padre)", datos.padre_tipo)}
+      ${_tableRow("Nombre madre", datos.madre_nombre)}
+      ${_tableRow("Teléfono madre", datos.madre_tel)}
+      ${_tableRow("EPS madre", datos.madre_eps)}
+      ${_tableRow("Tipo (madre)", datos.madre_tipo)}
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Emergencia</h2>
+  <table class="t kv">
+    <tbody>
+      ${_tableRow("Nombre", datos.emergencia_nombre)}
+      ${_tableRow("Parentesco", datos.emergencia_parentesco)}
+      ${_tableRow("Teléfono", datos.emergencia_tel)}
+      ${_tableRow("Celular", datos.emergencia_cel)}
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Historia médica</h2>
+  <table class="t kv">
+    <tbody>
+      ${_tableRow("Enfermedad grave", _siNo(datos.grave))}
+      ${_tableRow("¿Cuál?", datos.grave_cual)}
+      ${_tableRow("Condiciones", _siNo(datos.condiciones))}
+      ${_tableRow("Otra condición ¿Cuál?", datos.otra_cual)}
+      ${_tableRow("Coagulación", _siNo(datos.coagulacion))}
+      ${_tableRow("Anticoagulantes", _siNo(datos.anticoagulantes))}
+      ${_tableRow("Toma medicamentos", _siNo(datos.toma_medicamentos))}
+      ${_tableRow("Medicamentos ¿Cuáles?", datos.medicamentos_cuales)}
+      ${_tableRow("Dosis y frecuencia", datos.med_dosis)}
+      ${_tableRow("Alergia a medicamentos", datos.alergia_meds)}
+      ${_tableRow("Alcohol", _siNo(datos.alcohol))}
+      ${_tableRow("Fuma", _siNo(datos.fuma))}
+      ${_tableRow("Drogas", _siNo(datos.drogas))}
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Historia odontológica</h2>
+  <table class="t kv">
+    <tbody>
+      ${_tableRow("Motivo consulta", datos.motivo_consulta)}
+      ${_tableRow("Dolor", _siNo(datos["dolor[]"]))}
+      ${_tableRow("Tratamientos recibidos", _siNo(datos.tratamientos))}
+    </tbody>
+  </table>
+</div>
+
+<div class="box">
+  <h2>Odontograma</h2>
+  ${odontogramaImg ? `<div style="margin:10px 0;"><img class="odon" src="${odontogramaImg}" alt="Odontograma"></div>` : ""}
+  ${_odontogramaToHTML(odontogramaCompleto)}
+</div>
+
+<div class="box">
+  ${_evolucionesToHTML(evoluciones)}
+</div>
+
+<script>
+(async function(){
+  const imgs = Array.from(document.images || []);
+  const waits = imgs.map(img => img.complete ? Promise.resolve() : new Promise(r => { img.onload=r; img.onerror=r; }));
+  await Promise.all(waits);
+  setTimeout(() => window.print(), 200);
+})();
+<\/script>
+
+</body></html>
+`;
+
+  // 5) Abrir y imprimir
+  const w = window.open("", "_blank");
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+window.imprimirHistoriaClinica = imprimirHistoriaClinica;
+  
 </script>
 </body>
 </html>
