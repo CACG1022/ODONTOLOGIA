@@ -1721,12 +1721,6 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
         <td style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
             data-action="ver" data-id="${escapeHtml(d.id || "")}">Ver</button>
-
-          <button type="button" class="btn btn-agenda" disabled style="padding:8px 10px; width:auto;"
-            data-action="editar" data-id="${escapeHtml(d.id || "")}">Editar</button>
-
-          <button type="button" class="btn btn-buscar" disabled style="padding:8px 10px; width:auto;"
-            data-action="eliminar" data-id="${escapeHtml(d.id || "")}">Eliminar</button>
         </td>
       `;
       tbody.appendChild(tr);
