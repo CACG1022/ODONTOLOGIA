@@ -1957,7 +1957,12 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 <style>
   body{ font-family: system-ui, Segoe UI, Arial; padding:20px; color:#111; }
   .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-  .logo{ height:64px; object-fit:contain; }
+  .logo{
+  height:110px;
+  max-width:220px;
+  object-fit:contain;
+}
+
   .meta{ font-size:13px; line-height:1.5; margin:10px 0 14px; }
   pre{ white-space:pre-wrap; border:1px solid #ddd; border-radius:10px; padding:14px; font-size:13px; }
   .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
@@ -1966,9 +1971,13 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   .nofirma{ opacity:.6; padding:20px 0; text-align:center; }
 
   @media print{
-    body{ padding:0; }
-    .logo{ height:56px; }
+  body{ padding:0; }
+  .logo{
+    height:110px;
+    max-width:220px;
   }
+}
+
 </style>
 </head>
 <body>
