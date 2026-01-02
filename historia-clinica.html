@@ -717,9 +717,28 @@
       </div>
 
       <div class="ctrl full">
-        <label for="evo_detalle">Detalle / Observaciones</label>
-        <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
-      </div>
+  <label for="evo_detalle">Detalle / Observaciones</label>
+
+  <div class="vwrap">
+    <div class="vfield">
+      <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
+    </div>
+
+    <button
+      id="btnDictadoEvoDetalle"
+      type="button"
+      class="vbtn"
+      title="Dictar por voz"
+      aria-label="Dictar por voz"
+      onclick="toggleDictadoEvoDetalle()"
+    >🎤</button>
+  </div>
+
+  <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
+    🎙️ Dictando... habla normal. (Se agregará al final del texto)
+  </div>
+</div>
+
     </div>
 
     <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
