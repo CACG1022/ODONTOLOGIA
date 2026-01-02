@@ -3387,7 +3387,83 @@ async function imprimirHistoriaClinica(){
 }
 
 window.imprimirHistoriaClinica = imprimirHistoriaClinica;
-  
+function _fmt(val){
+  if (val === null || val === undefined) return "";
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
+}
+
+function _siNo(arr){
+  const v = Array.isArray(arr) ? arr.join(", ") : String(arr || "");
+  return v || "";
+}
+
+function _tableRow(k, v){
+  return `<tr><td class="k">${escapeHtml(k)}</td><td>${escapeHtml(_fmt(v))}</td></tr>`;
+}
+
+function _odontogramaToHTML(odontogramaCompleto){
+  let html = `
+    <h3>Odontograma (FDI)</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th>
+          <th>Vestibular</th><th>Lingual</th><th>Palatino</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  Object.entries(odontogramaCompleto || {}).forEach(([diente, r]) => {
+    html += `
+      <tr>
+        <td>${escapeHtml(diente)}</td>
+        <td>${escapeHtml((r.Mesial||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Distal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Oclusal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Vestibular||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Lingual||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Palatino||"").toUpperCase())}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+}
+
+function _evolucionesToHTML(evos){
+  const lista = Array.isArray(evos) ? evos : [];
+  if (!lista.length) return `<h3>Evoluciones</h3><div class="muted">Sin evoluciones registradas.</div>`;
+
+  let html = `
+    <h3>Evoluciones</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Hora</th><th>Profesional</th><th>Procedimiento</th><th>Detalle</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  lista.forEach(e => {
+    const fecha = _soloFechaYYYYMMDD(e.fecha || e.evo_fecha || "");
+    const hora  = _soloHoraHHMM(e.hora || e.evo_hora || "");
+    html += `
+      <tr>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(e.profesional || "").toUpperCase())}</td>
+        <td>${escapeHtml(String(e.procedimiento || e.evo_tipo || "").toUpperCase())}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(e.detalle || "")}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+}
+ 
 </script>
 </body>
 </html>
