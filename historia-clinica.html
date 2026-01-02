@@ -391,10 +391,9 @@
       <div class="ctrl">
         <label for="evo_profesional">Profesional</label>
         <div class="inline" style="gap:10px;">
-          <input id="evo_profesional" type="text" list="profesionales_list" placeholder="Buscar o escribir profesional..." autocomplete="off" style="flex:1;" />
-          <button type="button" onclick="agregarProfesionalDesdeCampo()" class="btn btn-agenda" style="width:auto; padding:10px 14px;" title="Agregar el texto actual al listado">+ Agregar</button>
-        </div>
-        <datalist id="profesionales_list"></datalist>
+          <select id="evo_profesional">
+          <option value="">Seleccione profesional...</option>
+          </select>
       </div>
 
       <div class="ctrl">
@@ -510,7 +509,10 @@
 
       <div class="ctrl">
         <label>Profesional</label>
-        <input id="doc_profesional" type="text" placeholder="Nombre del profesional">
+        <select id="doc_profesional">
+        <option value="">Seleccione profesional...</option>
+        </select>
+
       </div>
 
       <div class="ctrl">
