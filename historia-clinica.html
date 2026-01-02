@@ -373,7 +373,8 @@
     </div>
   </section>
 
-<!-- ==========================
+  
+  <!-- ==========================
        DATOS DEL ACUDIENTE
   ============================== -->
   <section class="card">
@@ -684,8 +685,6 @@
       <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
     </div>
   </section>
-
-  
 
   <!-- ✅ EVOLUCIONES -->
   <section class="card">
@@ -1120,7 +1119,6 @@ Fecha: {{FECHA}}
 <datalist id="procedimientos_list_supabase"></datalist>
 
 <script>
-
   // ==============================
   // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
   // ==============================
@@ -2135,9 +2133,7 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
   // ============================================================
 
   async function cargarDocumentosPacienteDesdeSupabase(cedula){
-    
-    cedula = String(cedula || "").trim();
-documentos = [];
+    documentos = [];
     renderDocumentos();
     if (!cedula) return;
 
@@ -2152,7 +2148,7 @@ documentos = [];
       const { data, error } = await window.supabase
         .from("consentimientos")
         .select("*")
-        .or(`cedula_paciente.eq.${encodeURIComponent(cedula)},cedula.eq.${encodeURIComponent(cedula)},paciente_id.eq.${encodeURIComponent(cedula)}`)
+        .eq("cedula_paciente", cedula)
         .order("creado_en", { ascending: false });
 
       if (error) throw error;
@@ -2526,91 +2522,6 @@ const profesionalNombre = (d.profesional || "").trim();
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
-      // ==============================
-      // ✅ Campos adicionales (acudiente, emergencia, historia médica, mujeres, odontológica)
-      // ==============================
-
-      // Tipos de identificación (checkboxes)
-      let tiposID = [];
-      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
-      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
-
-      // Hijos (checkboxes)
-      let hijos = [];
-      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
-      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
-
-      // Datos del acudiente
-      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
-      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
-      document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
-      document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
-      document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
-      document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
-      document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
-      document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
-
-      // En caso de emergencia avisar a
-      document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
-      document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
-      document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
-      document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
-
-      // Historia médica
-      document.querySelectorAll("input[name='grave']").forEach(c => {
-        const raw = h["Enfermedad grave"] ?? [];
-        c.checked = Array.isArray(raw) ? raw.includes(c.value) : (raw === c.value);
-      });
-      document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
-      document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
-      document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
-      document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
-      document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
-
-      let condiciones = [];
-      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
-      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
-
-      let coagulacion = [];
-      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
-      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
-
-      let anticoagulantes = [];
-      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
-      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
-
-      let toma_medicamentos = [];
-      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
-      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
-
-      // Sólo para mujeres
-      document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
-      document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
-
-      // Historia odontológica (dolor)
-      let dolor = [];
-      try {
-        let raw = h["dolor"];
-        if (Array.isArray(raw)) dolor = raw;
-        else if (typeof raw === "string") {
-          raw = raw.replace(/\\"/g, '"');
-          dolor = JSON.parse(raw);
-        }
-      } catch(e) { dolor = []; }
-
-      document.querySelectorAll("input[name='dolor[]']").forEach(c => {
-        c.checked = dolor.includes(c.value);
-      });
-
-      // Campos de texto odontológicos
-      document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-      document.getElementById("enf_actual").value = h["Enfermedad actual"] ?? "";
-      document.getElementById("ant_pers").value = h["Antecedentes personales"] ?? "";
-      document.getElementById("ant_fam").value = h["Antecedentes familiares"] ?? "";
-      document.getElementById("consulta_prev").value = h["Consulta previa"] ?? "";
-      document.getElementById("trat_prev").value = h["Tratamiento previo"] ?? "";
-      document.getElementById("obs_odont").value = h["Observaciones odontológicas"] ?? "";
-
 
       // odontograma (tu mismo mapping)
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
@@ -2969,175 +2880,15 @@ function probarPlantillaEnDocumento(){
 window.cerrarModalPlantillas = cerrarModalPlantillas;
 window.nuevaPlantillaUI = nuevaPlantillaUI;
 window.editarPlantillaUI = editarPlantillaUI;
-
-
-/* ======================================================
-     🎤 VOZ POR CAMPO – MODO TOGGLE (CLICK ON / CLICK OFF)
-     ✅ FIX: evo_detalle ahora NO sobreescribe, sino que AGREGA
-     ====================================================== */
-  (function () {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) return;
-
-    let rec = null;
-    let escuchando = false;
-    let campoActivo = null;
-    let botonActivo = null;
-
-    const LANG = "es-CO";
-
-    function norm(s) {
-      return String(s || "")
-        .toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-        .trim();
-    }
-
-    function dispatchInput(el) {
-      el.dispatchEvent(new Event("input", { bubbles: true }));
-      el.dispatchEvent(new Event("change", { bubbles: true }));
-    }
-
-    function parseFecha(txt) {
-      txt = norm(txt);
-      if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
-      const m = txt.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-      if (m) return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
-      return null;
-    }
-
-    function insertAtCursor(el, text) {
-      if (!el) return;
-      const start = el.selectionStart ?? el.value.length;
-      const end = el.selectionEnd ?? el.value.length;
-
-      const before = el.value.slice(0, start);
-      const after = el.value.slice(end);
-
-      const needsSpace =
-        before.length > 0 &&
-        !before.endsWith(" ") &&
-        !before.endsWith("\n") &&
-        !text.startsWith(" ");
-
-      const sep = needsSpace ? " " : "";
-      el.value = before + sep + text + after;
-
-      const newPos = (before + sep + text).length;
-      try { el.setSelectionRange(newPos, newPos); } catch(e) {}
-    }
-
-    function escribir(el, texto) {
-      if (!el || el.disabled || el.readOnly) return;
-
-      if (el.id === "evo_detalle") {
-        insertAtCursor(el, texto);
-        dispatchInput(el);
-        return;
-      }
-
-      if (el.type === "date") {
-        el.value = parseFecha(texto) || texto;
-      } else if (el.type === "number") {
-        el.value = texto.replace(/[^\d]/g, "");
-      } else if (el.type === "tel") {
-        el.value = texto.replace(/[^\d+]/g, "");
-      } else if (el.tagName === "SELECT") {
-        const opt = [...el.options].find(o =>
-          norm(o.textContent) === norm(texto) ||
-          norm(o.value) === norm(texto)
-        );
-        if (opt) el.value = opt.value;
-      } else {
-        el.value = texto;
-      }
-
-      dispatchInput(el);
-    }
-
-    function initRec() {
-      const r = new SpeechRecognition();
-      r.lang = LANG;
-      r.continuous = true;
-      r.interimResults = false;
-
-      r.onstart = () => {
-        escuchando = true;
-        if (botonActivo) botonActivo.classList.add("on");
-      };
-
-      r.onend = () => {
-        escuchando = false;
-        if (botonActivo) botonActivo.classList.remove("on");
-        campoActivo = null;
-        botonActivo = null;
-      };
-
-      r.onerror = () => {
-        if (botonActivo) botonActivo.classList.remove("on");
-      };
-
-      r.onresult = (ev) => {
-        const res = ev.results[ev.results.length - 1];
-        const texto = res[0].transcript.trim();
-        if (campoActivo) escribir(campoActivo, texto);
-      };
-
-      return r;
-    }
-
-    function toggleDictado(campo, boton) {
-      if (!rec) rec = initRec();
-
-      if (escuchando && campoActivo === campo) {
-        rec.stop();
-        return;
-      }
-
-      if (escuchando) rec.stop();
-
-      campoActivo = campo;
-      botonActivo = boton;
-
-      campo.focus();
-      campo.scrollIntoView({ behavior: "smooth", block: "center" });
-
-      try { rec.start(); } catch(e) {}
-    }
-
-    function wrapCampos() {
-      const campos = document.querySelectorAll(".container input, .container textarea, .container select");
-
-      campos.forEach(el => {
-        if (el.type === "hidden" || el.type === "checkbox" || el.type === "radio") return;
-        if (el.closest(".vwrap")) return;
-
-        const wrap = document.createElement("div");
-        wrap.className = "vwrap";
-
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "vbtn";
-        btn.textContent = "";
-        btn.title = "Dictar por voz (click para iniciar / detener)";
-        btn.addEventListener("click", () => toggleDictado(el, btn));
-
-        el.parentNode.insertBefore(wrap, el);
-        wrap.appendChild(el);
-        wrap.appendChild(btn);
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", wrapCampos);
-  })()
-
 window.guardarPlantillaSupabase = guardarPlantillaSupabase;
 window.eliminarPlantillaSupabase = eliminarPlantillaSupabase;
 window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
 window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
 window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
 
-
 </script>
 </body>
 </html>
+
+
+
