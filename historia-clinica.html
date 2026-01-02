@@ -391,10 +391,14 @@
       <div class="ctrl">
         <label for="evo_profesional">Profesional</label>
         <div class="inline" style="gap:10px;">
-          <select id="evo_profesional">
-          <option value="">Seleccione profesional...</option>
-          </select>
+       <select id="evo_profesional">
+        <option value="">Seleccione profesional...</option>
+        </select>
+          </div>
       </div>
+
+<div class="ctrl">
+
 
       <div class="ctrl">
         <label for="evo_tipo">Procedimiento</label>
@@ -924,6 +928,52 @@ Fecha: {{FECHA}}
   document.addEventListener("DOMContentLoaded", cargarProcedimientosDesdeSupabase);
 
   // ==============================
+// ✅ PROFESIONALES DESDE SUPABASE
+// ==============================
+async function cargarProfesionalesDesdeSupabase() {
+  // Esperar a que window.supabase exista
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  const selEvo = document.getElementById("evo_profesional");
+  const selDoc = document.getElementById("doc_profesional");
+
+  if (!selEvo && !selDoc) return;
+
+  // placeholders
+  const placeholder = `<option value="">Seleccione profesional...</option>`;
+  if (selEvo) selEvo.innerHTML = placeholder;
+  if (selDoc) selDoc.innerHTML = placeholder;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("profesionales")
+      .select("id, nombre, cedula, activo")
+      .eq("activo", true)
+      .order("nombre", { ascending: true });
+
+    if (error) throw error;
+
+    const options = (data || []).map(p => {
+      const nombre = (p.nombre || "").trim();
+      const cedula = (p.cedula || "").trim();
+      // value = id (mejor para futuro); label muestra nombre + cédula
+      return `<option value="${escapeHtml(p.id)}">${escapeHtml(nombre)}${cedula ? " - " + escapeHtml(cedula) : ""}</option>`;
+    }).join("");
+
+    if (selEvo) selEvo.innerHTML = placeholder + options;
+    if (selDoc) selDoc.innerHTML = placeholder + options;
+
+  } catch (e) {
+    console.warn("⚠️ Error cargando profesionales:", e);
+  }
+}
+
+  // ==============================
   // ✅ EVOLUCIONES
   // ==============================
   let evoluciones = [];
@@ -1086,6 +1136,7 @@ Fecha: {{FECHA}}
   _initCanvasDoc("doc_firmaProfesional");
   nuevoDocumento();
   cargarPlantillasDesdeSupabase(); // ✅ NUEVO
+  cargarProfesionalesDesdeSupabase();
 });
 
 
