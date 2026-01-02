@@ -1908,8 +1908,8 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!_docVistaActual) return;
     const d = _docVistaActual;
 
-    const fp = _normalizarDataURLFirma(d.firma_paciente_path || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
+    const fp = _normalizarDataURLFirma(d.firma_paciente || "");
+    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
 
     const html = `
 <!DOCTYPE html>
