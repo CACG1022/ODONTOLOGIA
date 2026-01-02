@@ -1120,6 +1120,7 @@ Fecha: {{FECHA}}
 <datalist id="procedimientos_list_supabase"></datalist>
 
 <script>
+
   // ==============================
   // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
   // ==============================
@@ -2523,6 +2524,91 @@ const profesionalNombre = (d.profesional || "").trim();
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
       document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+      // ==============================
+      // ✅ Campos adicionales (acudiente, emergencia, historia médica, mujeres, odontológica)
+      // ==============================
+
+      // Tipos de identificación (checkboxes)
+      let tiposID = [];
+      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
+      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+
+      // Hijos (checkboxes)
+      let hijos = [];
+      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
+      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
+
+      // Datos del acudiente
+      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
+      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
+      document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
+      document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
+      document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
+      document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
+      document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
+      document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
+
+      // En caso de emergencia avisar a
+      document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
+      document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
+      document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
+      document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
+
+      // Historia médica
+      document.querySelectorAll("input[name='grave']").forEach(c => {
+        const raw = h["Enfermedad grave"] ?? [];
+        c.checked = Array.isArray(raw) ? raw.includes(c.value) : (raw === c.value);
+      });
+      document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
+      document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
+      document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
+      document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
+      document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
+
+      let condiciones = [];
+      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
+      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
+
+      let coagulacion = [];
+      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
+      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
+
+      let anticoagulantes = [];
+      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
+      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
+
+      let toma_medicamentos = [];
+      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
+      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
+
+      // Sólo para mujeres
+      document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
+      document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
+
+      // Historia odontológica (dolor)
+      let dolor = [];
+      try {
+        let raw = h["dolor"];
+        if (Array.isArray(raw)) dolor = raw;
+        else if (typeof raw === "string") {
+          raw = raw.replace(/\\"/g, '"');
+          dolor = JSON.parse(raw);
+        }
+      } catch(e) { dolor = []; }
+
+      document.querySelectorAll("input[name='dolor[]']").forEach(c => {
+        c.checked = dolor.includes(c.value);
+      });
+
+      // Campos de texto odontológicos
+      document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
+      document.getElementById("enf_actual").value = h["Enfermedad actual"] ?? "";
+      document.getElementById("ant_pers").value = h["Antecedentes personales"] ?? "";
+      document.getElementById("ant_fam").value = h["Antecedentes familiares"] ?? "";
+      document.getElementById("consulta_prev").value = h["Consulta previa"] ?? "";
+      document.getElementById("trat_prev").value = h["Tratamiento previo"] ?? "";
+      document.getElementById("obs_odont").value = h["Observaciones odontológicas"] ?? "";
+
 
       // odontograma (tu mismo mapping)
       document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
@@ -3049,9 +3135,11 @@ window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
 window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
 window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
 
+
 </script>
 </body>
 </html>
+
 
 
 
