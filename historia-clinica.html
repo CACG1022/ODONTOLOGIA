@@ -939,10 +939,8 @@ async function cargarProfesionalesDesdeSupabase() {
 
   const selEvo = document.getElementById("evo_profesional");
   const selDoc = document.getElementById("doc_profesional");
-
   if (!selEvo && !selDoc) return;
 
-  // placeholders
   const placeholder = `<option value="">Seleccione profesional...</option>`;
   if (selEvo) selEvo.innerHTML = placeholder;
   if (selDoc) selDoc.innerHTML = placeholder;
@@ -959,8 +957,13 @@ async function cargarProfesionalesDesdeSupabase() {
     const options = (data || []).map(p => {
       const nombre = (p.nombre || "").trim();
       const cedula = (p.cedula || "").trim();
-      // value = id (mejor para futuro); label muestra nombre + cédula
-      return `<option value="${escapeHtml(p.id)}">${escapeHtml(nombre)}${cedula ? " - " + escapeHtml(cedula) : ""}</option>`;
+
+      // ✅ ESTO ES LO IMPORTANTE:
+      // el value será lo que quieres que quede guardado e impreso
+      const valor = `${cedula} ${nombre}`.trim(); // ejemplo: "1022956631 Camilo Andres..."
+      const label = `${nombre}${cedula ? " - " + cedula : ""}`; // lo que se ve en la lista
+
+      return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
     }).join("");
 
     if (selEvo) selEvo.innerHTML = placeholder + options;
@@ -970,6 +973,7 @@ async function cargarProfesionalesDesdeSupabase() {
     console.warn("⚠️ Error cargando profesionales:", e);
   }
 }
+
 
   // ==============================
   // ✅ EVOLUCIONES
