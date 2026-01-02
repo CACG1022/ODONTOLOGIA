@@ -31,6 +31,133 @@
         window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
       }
     });
+    // ==============================
+// ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
+// ==============================
+let _srEvo = null;
+let _srEvoOn = false;
+
+function _soportaDictado() {
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function _appendEnTextarea(textarea, texto) {
+  if (!textarea) return;
+
+  const actual = textarea.value || "";
+  const add = (texto || "").trim();
+  if (!add) return;
+
+  // Agregar sin reemplazar, con separador inteligente
+  const sep = actual.trim().length ? (actual.endsWith("\n") ? "" : "\n") : "";
+  textarea.value = actual + sep + add;
+
+  // cursor al final
+  textarea.focus();
+  textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
+}
+
+function iniciarDictadoEvoDetalle() {
+  const ta = document.getElementById("evo_detalle");
+  const btn = document.getElementById("btnDictadoEvoDetalle");
+  const hint = document.getElementById("dictadoHintEvo");
+
+  if (!_soportaDictado()) {
+    alert("⚠️ Tu navegador no soporta dictado por voz. Usa Chrome o Edge.");
+    return;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _srEvo = new SR();
+
+  _srEvo.lang = "es-CO";         // puedes cambiar a "es-ES", "es-MX", etc.
+  _srEvo.continuous = true;      // seguir escuchando
+  _srEvo.interimResults = true;  // mostrar parciales (no los agregamos hasta que sean finales)
+
+  let bufferFinal = "";
+
+  _srEvo.onstart = () => {
+    _srEvoOn = true;
+    if (btn) btn.classList.add("on");
+    if (hint) hint.style.display = "block";
+  };
+
+  _srEvo.onresult = (event) => {
+    let textoFinal = "";
+
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const res = event.results[i];
+      const t = (res[0]?.transcript || "").trim();
+      if (!t) continue;
+
+      if (res.isFinal) {
+        textoFinal += (textoFinal ? " " : "") + t;
+      }
+    }
+
+    if (textoFinal) {
+      // lo vamos acumulando y lo insertamos de una vez por cada "final"
+      bufferFinal += (bufferFinal ? " " : "") + textoFinal;
+
+      // ✅ agrega al textarea SIN borrar lo que ya existe
+      _appendEnTextarea(ta, bufferFinal);
+      bufferFinal = "";
+    }
+  };
+
+  _srEvo.onerror = (e) => {
+    console.warn("Dictado error:", e);
+    // Errores típicos: "not-allowed" (sin permiso), "no-speech"
+    if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
+      alert("⚠️ Permiso de micrófono denegado. Habilítalo en el navegador.");
+      detenerDictadoEvoDetalle();
+    }
+  };
+
+  _srEvo.onend = () => {
+    // Si estaba encendido y el navegador lo corta, intentamos reanudar
+    // (útil cuando continuous=true pero Chrome a veces lo detiene)
+    if (_srEvoOn) {
+      try { _srEvo.start(); } catch (err) {}
+      return;
+    }
+    if (btn) btn.classList.remove("on");
+    if (hint) hint.style.display = "none";
+  };
+
+  try {
+    _srEvo.start();
+  } catch (e) {
+    console.warn("No se pudo iniciar dictado:", e);
+  }
+}
+
+function detenerDictadoEvoDetalle() {
+  const btn = document.getElementById("btnDictadoEvoDetalle");
+  const hint = document.getElementById("dictadoHintEvo");
+
+  _srEvoOn = false;
+
+  if (_srEvo) {
+    try { _srEvo.onend = null; } catch(e) {}
+    try { _srEvo.stop(); } catch(e) {}
+    _srEvo = null;
+  }
+
+  if (btn) btn.classList.remove("on");
+  if (hint) hint.style.display = "none";
+}
+
+function toggleDictadoEvoDetalle() {
+  if (_srEvoOn) detenerDictadoEvoDetalle();
+  else iniciarDictadoEvoDetalle();
+}
+
+// opcional: detener dictado si cambias de página o cierras
+window.addEventListener("beforeunload", () => {
+  try { detenerDictadoEvoDetalle(); } catch(e) {}
+});
+
   </script>
 
   <style>
