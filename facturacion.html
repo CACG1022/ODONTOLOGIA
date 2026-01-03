@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facturación - Clínica Odontológica</title>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ 1) Pega aquí los mismos valores que ya usas en tus otros HTML
+    const SUPABASE_URL = "TU_URL";
+    const SUPABASE_ANON_KEY = "TU_ANON_KEY";
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    const state = {
+      session: null,
+      procedimientos: [],
+      profesionales: [],
+      items: [], // items en factura
+      facturaGuardada: null
+    };
+
+    // =============================
+    // Helpers UI
+    // =============================
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 1800);
+    }
+
+    function setStatus(msg){
+      const el = $("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString("es-CO");
+    }
+
+    function num(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function hoyISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function generarNumeroFactura(){
+      // Simple para consultorio (particular): FAC-YYYYMMDD-HHMMSS
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const da = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
+    }
+
+    // =============================
+    // Seguridad sesión
+    // =============================
+    async function proteger(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      state.session = session;
+      $("user-email").textContent = session.user?.email || "Usuario";
+      return true;
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    };
+
+    // =============================
+    // Cargar catálogos
+    // =============================
+    async function cargarProcedimientos(){
+      const { data, error } = await supabase
+        .from("procedimientos_precios")
+        .select("id, procedimiento, valor, codigo_cups, activo")
+        .eq("activo", true)
+        .order("procedimiento", { ascending: true });
+
+      if (error){
+        console.error(error);
+        toast("Error cargando procedimientos: " + error.message, "err");
+        state.procedimientos = [];
+        return;
+      }
+      state.procedimientos = data || [];
+      renderProcedimientosSelect();
+    }
+
+    async function cargarProfesionales(){
+      const { data, error } = await supabase
+        .from("profesionales")
+        .select("id, cedula, nombre, activo")
+        .eq("activo", true)
+        .order("nombre", { ascending: true });
+
+      if (error){
+        console.error(error);
+        toast("Error cargando profesionales: " + error.message, "err");
+        state.profesionales = [];
+        return;
+      }
+      state.profesionales = data || [];
+      renderProfesionales();
+    }
+
+    function renderProcedimientosSelect(){
+      const sel = $("sel-proc");
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+      for (const p of state.procedimientos){
+        const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
+        const opt = document.createElement("option");
+        opt.value = String(p.id);
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    }
+
+    function renderProfesionales(){
+      const sel = $("profesional");
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+      for (const pr of state.profesionales){
+        const opt = document.createElement("option");
+        opt.value = `${pr.cedula || ""} - ${pr.nombre || ""}`.trim();
+        opt.textContent = `${pr.nombre || ""} (${pr.cedula || ""})`.trim();
+        sel.appendChild(opt);
+      }
+    }
+
+    // =============================
+    // Paciente (consultorio)
+    // =============================
+    async function buscarPaciente(){
+      const cedula = ($("paciente_cedula").value || "").trim();
+      if (!cedula){
+        toast("Escribe la cédula", "warn");
+        return;
+      }
+
+      // ✅ Para consultorio: si ya existe en consentimientos, autocompleta nombre
+      // (Tu tabla consentimientos guarda cedula_paciente y paciente_nombre)【consumo visto en tu HC】.
+      setStatus("Buscando paciente...");
+      const { data, error } = await supabase
+        .from("consentimientos")
+        .select("cedula_paciente, paciente_nombre")
+        .eq("cedula_paciente", cedula)
+        .order("creado_en", { ascending: false })
+        .limit(1);
+
+      setStatus("");
+      if (error){
+        console.warn(error);
+        toast("No se pudo buscar en consentimientos (puedes llenar manual).", "warn");
+        return;
+      }
+
+      const row = (data || [])[0];
+      if (row?.paciente_nombre){
+        $("paciente_nombre").value = row.paciente_nombre;
+        toast("Paciente encontrado (desde consentimientos).", "ok");
+      } else {
+        toast("No hay registro previo. Llena el nombre manualmente.", "warn");
+      }
+    }
+
+    // =============================
+    // Items factura
+    // =============================
+    function agregarProcedimiento(){
+      const procId = ($("sel-proc").value || "").trim();
+      if (!procId){
+        toast("Selecciona un procedimiento", "warn");
+        return;
+      }
+      const p = state.procedimientos.find(x => String(x.id) === String(procId));
+      if (!p){
+        toast("Procedimiento no encontrado", "err");
+        return;
+      }
+
+      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
+      const valorU = num(p.valor || 0);
+      const item = {
+        id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        codigo_cups: p.codigo_cups || "",
+        descripcion: p.procedimiento || "",
+        cantidad,
+        valor_unitario: valorU,
+        valor_total: valorU * cantidad
+      };
+      state.items.push(item);
+      renderItems();
+      recalcularTotales();
+      $("sel-proc").value = "";
+      $("cantidad").value = "1";
+      toast("Agregado ✅", "ok");
+    }
+
+    function eliminarItem(id_local){
+      state.items = state.items.filter(x => x.id_local !== id_local);
+      renderItems();
+      recalcularTotales();
+    }
+
+    function renderItems(){
+      const tbody = $("tbody-items");
+      tbody.innerHTML = "";
+
+      if (state.items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        return;
+      }
+
+      for (const it of state.items){
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td>
+            <input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad">
+          </td>
+          <td>
+            <input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario">
+          </td>
+          <td class="mono">$ ${money(it.valor_total)}</td>
+          <td class="actions">
+            <button class="btn danger small" type="button">Quitar</button>
+          </td>
+        `;
+
+        // cambios cantidad / valor
+        tr.querySelectorAll("input").forEach(inp => {
+          inp.addEventListener("input", () => {
+            const k = inp.dataset.k;
+            const v = num(inp.value);
+            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
+            it.valor_total = it.cantidad * it.valor_unitario;
+            renderItems();
+            recalcularTotales();
+          });
+        });
+
+        tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
+        tbody.appendChild(tr);
+      }
+    }
+
+    function recalcularTotales(){
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota = Math.max(0, num($("cuota_moderadora").value));
+      const total = Math.max(0, subtotal - copago - cuota);
+
+      $("subtotal").textContent = money(subtotal);
+      $("total").textContent = money(total);
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // =============================
+    // Guardar factura (Supabase)
+    // =============================
+    async function guardarFactura(){
+      const fecha = ($("fecha").value || "").trim() || hoyISO();
+      const paciente_cedula = ($("paciente_cedula").value || "").trim();
+      const paciente_nombre = ($("paciente_nombre").value || "").trim();
+      const profesional = ($("profesional").value || "").trim();
+
+      if (!paciente_cedula || !paciente_nombre){
+        toast("Paciente: cédula y nombre son obligatorios", "err");
+        return;
+      }
+      if (!profesional){
+        toast("Selecciona el profesional", "err");
+        return;
+      }
+      if (state.items.length === 0){
+        toast("Agrega al menos 1 procedimiento", "err");
+        return;
+      }
+
+      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
+      $("numero_factura").value = numero_factura;
+
+      const eps = ($("eps").value || "").trim() || null;
+      const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
+
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota_moderadora = Math.max(0, num($("cuota_moderadora").value));
+      const valor_total = Math.max(0, subtotal - copago - cuota_moderadora);
+
+      setStatus("Guardando factura...");
+      try{
+        // 1) Insert encabezado
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .insert([{
+            fecha,
+            paciente_cedula,
+            paciente_nombre,
+            tipo_usuario,
+            eps,
+            numero_factura,
+            valor_total,
+            copago,
+            cuota_moderadora,
+            profesional
+          }])
+          .select("*")
+          .single();
+
+        if (e1) throw e1;
+
+        // 2) Insert detalle
+        const detalle = state.items.map(it => ({
+          factura_id: fac.id,
+          codigo_cups: it.codigo_cups || null,
+          descripcion: it.descripcion || "",
+          cantidad: it.cantidad || 1,
+          valor_unitario: it.valor_unitario || 0,
+          valor_total: it.valor_total || 0
+        }));
+
+        const { error: e2 } = await supabase
+          .from("factura_detalle")
+          .insert(detalle);
+
+        if (e2) throw e2;
+
+        state.facturaGuardada = fac;
+        toast("Factura guardada ✅", "ok");
+        setStatus("");
+
+        $("btn-imprimir").disabled = false;
+
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo guardar: " + (err?.message || "Error"), "err");
+      }
+    }
+
+    // =============================
+    // Imprimir
+    // =============================
+    function imprimir(){
+      if (!state.facturaGuardada){
+        toast("Primero guarda la factura", "warn");
+        return;
+      }
+
+      const f = state.facturaGuardada;
+      const rows = state.items.map(it => `
+        <tr>
+          <td>${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td style="text-align:right;">${it.cantidad}</td>
+          <td style="text-align:right;">$ ${money(it.valor_unitario)}</td>
+          <td style="text-align:right;">$ ${money(it.valor_total)}</td>
+        </tr>
+      `).join("");
+
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota = Math.max(0, num($("cuota_moderadora").value));
+      const total = Math.max(0, subtotal - copago - cuota);
+
+      const html = `
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Factura ${escapeHtml(f.numero_factura || "")}</title>
+<style>
+  body{ font-family: Arial, sans-serif; padding: 18px; color:#111; }
+  h2{ margin:0 0 6px; }
+  .muted{ color:#555; font-size:12px; }
+  table{ width:100%; border-collapse: collapse; margin-top:12px; }
+  th,td{ border-bottom:1px solid #ddd; padding:8px; font-size:13px; }
+  th{ text-align:left; background:#fafafa; }
+  .tot{ margin-top:12px; max-width:420px; margin-left:auto; }
+  .tot div{ display:flex; justify-content:space-between; padding:4px 0; }
+</style>
+</head>
+<body>
+  <h2>Factura</h2>
+  <div class="muted">
+    <div><b>No:</b> ${escapeHtml(f.numero_factura || "")}</div>
+    <div><b>Fecha:</b> ${escapeHtml(f.fecha || "")}</div>
+    <div><b>Paciente:</b> ${escapeHtml(f.paciente_cedula || "")} - ${escapeHtml(f.paciente_nombre || "")}</div>
+    <div><b>Profesional:</b> ${escapeHtml(f.profesional || "")}</div>
+    <div><b>Tipo usuario:</b> ${escapeHtml(f.tipo_usuario || "Particular")}</div>
+    <div><b>EPS:</b> ${escapeHtml(f.eps || "—")}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>CUPS</th>
+        <th>Procedimiento</th>
+        <th style="text-align:right;">Cant</th>
+        <th style="text-align:right;">V/Unit</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="tot">
+    <div><span>Subtotal</span><b>$ ${money(subtotal)}</b></div>
+    <div><span>Copago</span><b>$ ${money(copago)}</b></div>
+    <div><span>Cuota moderadora</span><b>$ ${money(cuota)}</b></div>
+    <div style="border-top:1px solid #ddd; margin-top:6px; padding-top:8px;">
+      <span>Total</span><b>$ ${money(total)}</b>
+    </div>
+  </div>
+
+  <script>
+    setTimeout(()=>window.print(), 200);
+  <\/script>
+</body>
+</html>`;
+
+      const w = window.open("", "_blank");
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
+    // =============================
+    // Init
+    // =============================
+    async function init(){
+      $("year").textContent = new Date().getFullYear();
+      $("fecha").value = hoyISO();
+      $("numero_factura").value = generarNumeroFactura();
+
+      const ok = await proteger();
+      if (!ok) return;
+
+      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+      $("btn-buscar").addEventListener("click", buscarPaciente);
+      $("btn-add").addEventListener("click", agregarProcedimiento);
+      $("copago").addEventListener("input", recalcularTotales);
+      $("cuota_moderadora").addEventListener("input", recalcularTotales);
+      $("btn-guardar").addEventListener("click", guardarFactura);
+      $("btn-imprimir").addEventListener("click", imprimir);
+
+      await cargarProfesionales();
+      await cargarProcedimientos();
+
+      renderItems();
+      recalcularTotales();
+    }
+
+    init();
+  </script>
+
+  <style>
+    :root{
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    .topbar{
+      max-width: 1100px;
+      margin: 0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .brand h1{ font-size: 16px; margin:0; }
+    .meta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .chip{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      white-space:nowrap;
+    }
+    .chip b{ color: var(--text); }
+
+    .container{
+      max-width: 1100px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    .header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .header .title{ font-weight:800; font-size: 14px; }
+
+    .section{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .ctrl label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input, select{
+      width:100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background:#fff;
+    }
+
+    .row-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      margin-top:10px;
+      align-items:center;
+    }
+
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding: 8px 10px; font-size: 12px; }
+
+    table{ width:100%; border-collapse: collapse; }
+    th, td{
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    td input{ padding: 8px 10px; }
+    td.actions{ width: 120px; white-space: nowrap; }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .empty{ color: var(--muted); text-align:center; padding: 18px; }
+
+    .totales{
+      display:flex;
+      justify-content:flex-end;
+      padding: 12px 16px;
+      gap: 18px;
+      border-top: 1px solid var(--line);
+      background:#fbfcfd;
+      flex-wrap:wrap;
+    }
+    .totales .box{
+      min-width: 260px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      background:#fff;
+      padding: 12px;
+    }
+    .totales .box div{
+      display:flex;
+      justify-content:space-between;
+      padding: 5px 0;
+      font-size: 13px;
+    }
+
+    .footer{
+      padding: 12px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+    }
+    #toast.show{ opacity: 1; transform: translateY(0); }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación</h1>
+    </div>
+    <div class="meta">
+      <div class="chip">Usuario: <b id="user-email">—</b></div>
+      <button class="btn danger" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div class="title">Nueva factura</div>
+      <div class="row-actions">
+        <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Fecha</label>
+          <input id="fecha" type="date">
+        </div>
+        <div class="ctrl">
+          <label>No. factura</label>
+          <input id="numero_factura" type="text">
+        </div>
+        <div class="ctrl">
+          <label>Tipo usuario</label>
+          <select id="tipo_usuario">
+            <option>Particular</option>
+            <option>Contributivo</option>
+            <option>Subsidiado</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>EPS (si aplica)</label>
+          <input id="eps" type="text" placeholder="Opcional">
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Cédula paciente</label>
+          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        </div>
+        <div class="ctrl">
+          <label>Nombre paciente</label>
+          <input id="paciente_nombre" type="text" placeholder="Nombres y apellidos">
+        </div>
+        <div class="ctrl">
+          <label>Profesional</label>
+          <select id="profesional"></select>
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>Agregar procedimiento</label>
+          <select id="sel-proc"></select>
+        </div>
+        <div class="ctrl">
+          <label>Cantidad</label>
+          <input id="cantidad" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="btn primary" id="btn-add" type="button">➕ Agregar</button>
+        </div>
+      </div>
+
+      <div style="margin-top:12px; overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px;">CUPS</th>
+              <th>Procedimiento</th>
+              <th style="width:110px;">Cant</th>
+              <th style="width:160px;">V/Unit</th>
+              <th style="width:160px;">Total</th>
+              <th style="width:120px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-items"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="totales">
+      <div class="box">
+        <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
+        <div>
+          <span>Copago</span>
+          <b>$ <input id="copago" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+        </div>
+        <div>
+          <span>Cuota moderadora</span>
+          <b>$ <input id="cuota_moderadora" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+        </div>
+        <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
+          <span>Total</span><b>$ <span id="total">0</span></b>
+        </div>
+      </div>
+
+      <div class="box">
+        <div style="gap:10px; flex-wrap:wrap;">
+          <button class="btn primary" id="btn-guardar" type="button">💾 Guardar factura</button>
+          <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
+        </div>
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Nota: Este módulo está listo para consultorio (particular).  
+          Luego agregamos exportación RIPS (AF/US/AP/CT).
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="status" id="status"></div>
+      <div>© <span id="year"></span></div>
+    </div>
+  </div>
+
+  <div id="toast" data-type="ok"></div>
+</body>
+</html>
