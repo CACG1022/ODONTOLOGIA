@@ -193,7 +193,7 @@
       transform: translateY(8px);
       transition: opacity .15s ease, transform .15s ease;
       pointer-events: none;
-      max-width: 320px;
+      max-width: 340px;
       white-space: pre-wrap;
     }
     #toast.show{ opacity: 1; transform: translateY(0); }
@@ -258,8 +258,8 @@
       <div class="grid">
         <div class="ctrl">
           <label>Cédula paciente</label>
-          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números"
-                 oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números">
+          <div style="margin-top:6px; font-size:12px; color:var(--muted);" id="paciente-hint"></div>
         </div>
         <div class="ctrl">
           <label>Nombre paciente</label>
@@ -331,8 +331,7 @@
           <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
         </div>
         <div class="mono" style="margin-top:10px; color:var(--muted);">
-          Nota: Este módulo está listo para consultorio (particular).
-          Luego agregamos exportación RIPS (AF/US/AP/CT).
+          Autocompletado de paciente se hace desde HISTORIAS CLINICAS (por cédula).
         </div>
       </div>
     </div>
@@ -345,11 +344,9 @@
 
   <div id="toast" data-type="ok"></div>
 
-  <!-- ✅ IMPORTANTE: el script va al final para que el DOM exista -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ✅ OJO: sin saltos de línea y con trim()
     const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
 
@@ -358,12 +355,18 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
+    // 👇 nombre EXACTO de tu tabla de historias
+    // En Supabase se ve como "HISTORIAS CLINICAS" (con espacio)
+    const HC_TABLE = "HISTORIAS CLINICAS";
+
     const state = {
       session: null,
       procedimientos: [],
       profesionales: [],
       items: [],
-      facturaGuardada: null
+      facturaGuardada: null,
+      _debounce: null,
+      _lastCedula: ""
     };
 
     const $ = (id) => document.getElementById(id);
@@ -379,6 +382,11 @@
 
     function setStatus(msg){
       const el = $("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function setHint(msg){
+      const el = $("paciente-hint");
       if (el) el.textContent = msg || "";
     }
 
@@ -414,9 +422,7 @@
     }
 
     async function proteger(){
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) console.warn("getSession error:", error);
-
+      const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
         return false;
@@ -436,41 +442,32 @@
     }
 
     async function cargarProcedimientos(){
-      setStatus("Cargando procedimientos...");
       const { data, error } = await supabase
         .from("procedimientos_precios")
         .select("id, procedimiento, valor, codigo_cups, activo")
         .order("procedimiento", { ascending: true });
 
-      setStatus("");
-
       if (error){
-        console.error("procedimientos_precios error:", error);
-        toast("Error procedimientos_precios:\n" + error.message, "err");
+        console.error(error);
+        toast("Error procedimientos:\n" + error.message, "err");
         state.procedimientos = [];
         renderProcedimientosSelect();
         return;
       }
 
-      // Si existe columna activo, filtramos; si no, mostramos todos
       const rows = data || [];
       state.procedimientos = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
-
       renderProcedimientosSelect();
-      console.log("Procedimientos cargados:", state.procedimientos.length);
     }
 
     async function cargarProfesionales(){
-      setStatus("Cargando profesionales...");
       const { data, error } = await supabase
         .from("profesionales")
         .select("id, cedula, nombre, activo")
         .order("nombre", { ascending: true });
 
-      setStatus("");
-
       if (error){
-        console.error("profesionales error:", error);
+        console.error(error);
         toast("Error profesionales:\n" + error.message, "err");
         state.profesionales = [];
         renderProfesionales();
@@ -480,23 +477,11 @@
       const rows = data || [];
       state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
       renderProfesionales();
-      console.log("Profesionales cargados:", state.profesionales.length);
     }
 
     function renderProcedimientosSelect(){
       const sel = $("sel-proc");
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
-
-      if (!sel) return;
-
-      if (state.procedimientos.length === 0){
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "No hay procedimientos (o no hay permisos)";
-        sel.appendChild(opt);
-        return;
-      }
-
       for (const p of state.procedimientos){
         const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
         const opt = document.createElement("option");
@@ -509,17 +494,6 @@
     function renderProfesionales(){
       const sel = $("profesional");
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
-
-      if (!sel) return;
-
-      if (state.profesionales.length === 0){
-        const opt = document.createElement("option");
-        opt.value = "";
-        opt.textContent = "No hay profesionales (o no hay permisos)";
-        sel.appendChild(opt);
-        return;
-      }
-
       for (const pr of state.profesionales){
         const ced = (pr.cedula ?? "").toString().trim();
         const nom = (pr.nombre ?? "").toString().trim();
@@ -531,36 +505,46 @@
       }
     }
 
-    async function buscarPaciente(){
-      const cedula = ($("paciente_cedula").value || "").trim();
-      if (!cedula){
-        toast("Escribe la cédula", "warn");
+    // ✅ AUTOCOMPLETAR DESDE HISTORIAS CLINICAS
+    async function buscarPacienteEnHistoria(){
+      const cedula = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
+      $("paciente_cedula").value = cedula;
+
+      if (cedula.length < 6){
+        setHint("");
         return;
       }
 
-      setStatus("Buscando paciente...");
+      // Evita repetir consultas si la cédula no cambió
+      if (state._lastCedula === cedula) return;
+      state._lastCedula = cedula;
+
+      setHint("Buscando en historias clínicas...");
       const { data, error } = await supabase
-        .from("consentimientos")
-        .select("cedula_paciente, paciente_nombre")
-        .eq("cedula_paciente", cedula)
-        .order("creado_en", { ascending: false })
+        .from(HC_TABLE)
+        .select('"Numero de Identificacion","Nombre y apellido"')
+        .eq("Numero de Identificacion", Number(cedula))
         .limit(1);
 
-      setStatus("");
-
       if (error){
-        console.warn("consentimientos error:", error);
-        toast("No se pudo buscar (consentimientos):\n" + error.message, "warn");
+        console.error("HC error:", error);
+        setHint("No se pudo consultar historias clínicas.");
         return;
       }
 
       const row = (data || [])[0];
-      if (row?.paciente_nombre){
-        $("paciente_nombre").value = row.paciente_nombre;
-        toast("Paciente encontrado ✅", "ok");
+      if (row && row["Nombre y apellido"]){
+        $("paciente_nombre").value = row["Nombre y apellido"];
+        setHint("✅ Encontrado en historias clínicas");
       } else {
-        toast("No hay registro previo. Llena el nombre manualmente.", "warn");
+        setHint("No encontrado (puedes digitar el nombre).");
       }
+    }
+
+    // Debounce para no hacer consultas por cada tecla
+    function onCedulaInput(){
+      clearTimeout(state._debounce);
+      state._debounce = setTimeout(buscarPacienteEnHistoria, 350);
     }
 
     function escapeHtml(str){
@@ -733,7 +717,7 @@
         toast("Factura guardada ✅", "ok");
 
       } catch(err){
-        console.error("guardarFactura error:", err);
+        console.error(err);
         setStatus("");
         toast("No se pudo guardar:\n" + (err?.message || "Error"), "err");
       }
@@ -744,84 +728,7 @@
         toast("Primero guarda la factura", "warn");
         return;
       }
-
-      const f = state.facturaGuardada;
-      const rows = state.items.map(it => `
-        <tr>
-          <td>${escapeHtml(it.codigo_cups || "—")}</td>
-          <td>${escapeHtml(it.descripcion || "")}</td>
-          <td style="text-align:right;">${it.cantidad}</td>
-          <td style="text-align:right;">$ ${money(it.valor_unitario)}</td>
-          <td style="text-align:right;">$ ${money(it.valor_total)}</td>
-        </tr>
-      `).join("");
-
-      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const copago = Math.max(0, num($("copago").value));
-      const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, subtotal - copago - cuota);
-
-      const html = `
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Factura ${escapeHtml(f.numero_factura || "")}</title>
-<style>
-  body{ font-family: Arial, sans-serif; padding: 18px; color:#111; }
-  h2{ margin:0 0 6px; }
-  .muted{ color:#555; font-size:12px; }
-  table{ width:100%; border-collapse: collapse; margin-top:12px; }
-  th,td{ border-bottom:1px solid #ddd; padding:8px; font-size:13px; }
-  th{ text-align:left; background:#fafafa; }
-  .tot{ margin-top:12px; max-width:420px; margin-left:auto; }
-  .tot div{ display:flex; justify-content:space-between; padding:4px 0; }
-</style>
-</head>
-<body>
-  <h2>Factura</h2>
-  <div class="muted">
-    <div><b>No:</b> ${escapeHtml(f.numero_factura || "")}</div>
-    <div><b>Fecha:</b> ${escapeHtml(f.fecha || "")}</div>
-    <div><b>Paciente:</b> ${escapeHtml(f.paciente_cedula || "")} - ${escapeHtml(f.paciente_nombre || "")}</div>
-    <div><b>Profesional:</b> ${escapeHtml(f.profesional || "")}</div>
-    <div><b>Tipo usuario:</b> ${escapeHtml(f.tipo_usuario || "Particular")}</div>
-    <div><b>EPS:</b> ${escapeHtml(f.eps || "—")}</div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>CUPS</th>
-        <th>Procedimiento</th>
-        <th style="text-align:right;">Cant</th>
-        <th style="text-align:right;">V/Unit</th>
-        <th style="text-align:right;">Total</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-
-  <div class="tot">
-    <div><span>Subtotal</span><b>$ ${money(subtotal)}</b></div>
-    <div><span>Copago</span><b>$ ${money(copago)}</b></div>
-    <div><span>Cuota moderadora</span><b>$ ${money(cuota)}</b></div>
-    <div style="border-top:1px solid #ddd; margin-top:6px; padding-top:8px;">
-      <span>Total</span><b>$ ${money(total)}</b>
-    </div>
-  </div>
-
-  <script>
-    setTimeout(()=>window.print(), 200);
-  <\/script>
-</body>
-</html>`;
-
-      const w = window.open("", "_blank");
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
+      window.print();
     }
 
     async function init(){
@@ -830,7 +737,7 @@
       $("numero_factura").value = generarNumeroFactura();
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
-      $("btn-buscar").addEventListener("click", buscarPaciente);
+      $("btn-buscar").addEventListener("click", buscarPacienteEnHistoria);
       $("btn-add").addEventListener("click", agregarProcedimiento);
       $("copago").addEventListener("input", recalcularTotales);
       $("cuota_moderadora").addEventListener("input", recalcularTotales);
@@ -838,17 +745,18 @@
       $("btn-imprimir").addEventListener("click", imprimir);
       $("btn-logout").addEventListener("click", cerrarSesion);
 
+      // ✅ Autocompletar al escribir
+      $("paciente_cedula").addEventListener("input", onCedulaInput);
+
       const ok = await proteger();
       if (!ok) return;
 
       await cargarProfesionales();
       await cargarProcedimientos();
-
       renderItems();
       recalcularTotales();
     }
 
-    // ✅ Asegura que el DOM ya existe
     window.addEventListener("DOMContentLoaded", init);
   </script>
 </body>
