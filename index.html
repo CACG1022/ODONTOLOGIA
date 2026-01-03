@@ -27,7 +27,10 @@
       registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
       precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html",
-      profesionales: "https://cacg1022.github.io/ODONTOLOGIA/profesionales-admin.html"
+      profesionales: "https://cacg1022.github.io/ODONTOLOGIA/profesionales-admin.html",
+
+      // ✅ NUEVO: Facturación (solo admin)
+      facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html"
     };
 
     // ✅ Admin por email
@@ -117,12 +120,15 @@
       // ✅ Permisos admin
       const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
 
-      // ✅ Activar/Desactivar botones restringidos
+      // ✅ Activar/Desactivar botones restringidos (SOLO ADMIN)
       setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
+
+      // ✅ NUEVO: Facturación (SOLO ADMIN)
+      setDisabled(document.getElementById("go-facturacion"), !isAdmin, "Solo administrador");
 
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
@@ -135,6 +141,9 @@
       wireNav("go-usuarios", URLS.usuarios, "href");
       wireNav("go-precios", URLS.precios, "href");
       wireNav("go-profesionales", URLS.profesionales, "href");
+
+      // ✅ NUEVO: Facturación (redirige dentro del sitio)
+      wireNav("go-facturacion", URLS.facturacion, "href");
 
       // Fecha
       const t = document.getElementById("today");
@@ -595,6 +604,21 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <!-- ✅ NUEVO: Facturación (solo admin) -->
+        <a class="tile" href="#" id="go-facturacion">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M7 3h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="ttext"><h3>Facturación</h3><p>Crear y guardar facturas (solo admin).</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+
       </div>
 
       <div class="footer">
@@ -605,7 +629,6 @@
   </div>
 </body>
 </html>
-
 
 
 
