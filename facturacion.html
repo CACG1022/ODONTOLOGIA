@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Facturación - Clínica Odontológica2</title>
+  <title>Facturación - Clínica Odontológica</title>
 
   <style>
     :root{
@@ -331,7 +331,7 @@
           <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
         </div>
         <div class="mono" style="margin-top:10px; color:var(--muted);">
-          Autocompletado de paciente se hace desde HISTORIAS CLINICAS (por cédula).
+          Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
         </div>
       </div>
     </div>
@@ -349,10 +349,14 @@
 
     const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+
     const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // ✅ MISMO WEBHOOK QUE USA TU HISTORIA CLÍNICA
+    const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
     const state = {
       session: null,
@@ -494,43 +498,66 @@
         const nom = (pr.nombre ?? "").toString().trim();
 
         const opt = document.createElement("option");
-        opt.value = `${ced} - ${nom}`.trim();
+        // ✅ guardamos "cedula nombre" (como en tu HC)
+        opt.value = `${ced} ${nom}`.trim();
         opt.textContent = `${nom}${ced ? ` (${ced})` : ""}`.trim();
         sel.appendChild(opt);
       }
     }
 
-    // ✅ AUTOCOMPLETAR (RPC)
+    // ✅ AUTOCOMPLETAR PACIENTE DESDE N8N (igual que Historia Clínica)
     async function buscarPacienteEnHistoria(){
-      const cedula = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
+      const cedula = ($("paciente_cedula").value || "")
+        .trim()
+        .replace(/[^\d]/g, "");
+
       $("paciente_cedula").value = cedula;
 
       if (cedula.length < 6){
         setHint("");
         return;
       }
+
       if (state._lastCedula === cedula) return;
       state._lastCedula = cedula;
 
-      setHint("Buscando en historias clínicas...");
+      setHint("Buscando paciente...");
 
-      const { data, error } = await supabase.rpc("buscar_paciente_hc", { p_cedula: cedula });
+      try{
+        const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}`;
+        const resp = await fetch(url, { method: "GET" });
 
-      if (error){
-        console.error("RPC error:", error);
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+        const data = await resp.json();
+
+        if (!data?.existe){
+          setHint("No encontrado (puedes digitar el nombre).");
+          return;
+        }
+
+        const h = data.historia || {};
+        const nombre = (h["Nombre y apellido"] || "").trim();
+        const epsHC  = (h["EPS_Paciente"] || "").trim();
+
+        if (nombre){
+          $("paciente_nombre").value = nombre;
+
+          // opcional: llenar EPS si viene
+          if ($("eps") && epsHC) $("eps").value = epsHC;
+
+          setHint("✅ Encontrado");
+        } else {
+          setHint("Encontrado, pero sin nombre en historia.");
+        }
+
+      } catch(err){
+        console.error("Error buscando en N8N:", err);
         setHint("Error consultando (mira Console F12).");
-        return;
-      }
-
-      const row = data?.[0];
-      if (row?.nombre){
-        $("paciente_nombre").value = row.nombre;
-        setHint("✅ Encontrado en historia clínica");
-      } else {
-        setHint("No encontrado (puedes digitar el nombre).");
       }
     }
 
+    // Debounce para no hacer consultas por cada tecla
     function onCedulaInput(){
       clearTimeout(state._debounce);
       state._debounce = setTimeout(buscarPacienteEnHistoria, 350);
@@ -734,6 +761,7 @@
       $("btn-imprimir").addEventListener("click", imprimir);
       $("btn-logout").addEventListener("click", cerrarSesion);
 
+      // ✅ Autocompletar al escribir
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
       const ok = await proteger();
