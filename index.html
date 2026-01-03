@@ -26,7 +26,8 @@
       rips: "#",
       registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
-      precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html"
+      precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html",
+      profesionales: "https://cacg1022.github.io/ODONTOLOGIA/profesionales-admin.html"
     };
 
     // ✅ Admin por email
@@ -121,6 +122,7 @@
       setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
 
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
@@ -132,6 +134,7 @@
       wireNav("go-registro", URLS.registro, "href");
       wireNav("go-usuarios", URLS.usuarios, "href");
       wireNav("go-precios", URLS.precios, "href");
+      wireNav("go-profesionales", URLS.profesionales, "href");
 
       // Fecha
       const t = document.getElementById("today");
@@ -574,6 +577,21 @@
               </svg>
             </div>
             <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
+          </div>
+          <div class="arrow">→</div>
+        </a>
+
+        <!-- ✅ NUEVO: Agregar profesionales (solo admin) -->
+        <a class="tile" href="#" id="go-profesionales">
+          <div class="left">
+            <div class="icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M19 8v4M17 10h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="ttext"><h3>Agregar profesionales</h3><p>Crear, editar y eliminar (solo admin).</p></div>
           </div>
           <div class="arrow">→</div>
         </a>
