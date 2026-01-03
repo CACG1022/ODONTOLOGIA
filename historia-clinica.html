@@ -1802,7 +1802,7 @@ async function cargarProfesionalesDesdeSupabase() {
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        if (nombre === "Sano" || nombre === "Ausente") {
+        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
 
