@@ -507,39 +507,43 @@
 
     // ✅ AUTOCOMPLETAR DESDE HISTORIAS CLINICAS
     async function buscarPacienteEnHistoria(){
-      const cedula = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
-      $("paciente_cedula").value = cedula;
+  const cedula = ($("paciente_cedula").value || "")
+    .trim()
+    .replace(/[^\d]/g, "");
 
-      if (cedula.length < 6){
-        setHint("");
-        return;
-      }
+  $("paciente_cedula").value = cedula;
 
-      // Evita repetir consultas si la cédula no cambió
-      if (state._lastCedula === cedula) return;
-      state._lastCedula = cedula;
+  if (cedula.length < 6){
+    setHint("");
+    return;
+  }
 
-      setHint("Buscando en historias clínicas...");
-      const { data, error } = await supabase
-        .from(HC_TABLE)
-        .select('"Numero de Identificacion","Nombre y apellido"')
-        .eq("Numero de Identificacion", Number(cedula))
-        .limit(1);
+  if (state._lastCedula === cedula) return;
+  state._lastCedula = cedula;
 
-      if (error){
-        console.error("HC error:", error);
-        setHint("No se pudo consultar historias clínicas.");
-        return;
-      }
+  setHint("Buscando en historias clínicas...");
 
-      const row = (data || [])[0];
-      if (row && row["Nombre y apellido"]){
-        $("paciente_nombre").value = row["Nombre y apellido"];
-        setHint("✅ Encontrado en historias clínicas");
-      } else {
-        setHint("No encontrado (puedes digitar el nombre).");
-      }
-    }
+  const { data, error } = await supabase
+    .from("HISTORIAS CLINICAS")
+    .select('"Numero de Identificacion","Nombre y apellido"')
+    .filter("Numero de Identificacion", "eq", cedula) // 👈 CLAVE
+    .limit(1);
+
+  if (error){
+    console.error("HC error:", error);
+    setHint("Error consultando historia clínica.");
+    return;
+  }
+
+  const row = data?.[0];
+  if (row && row["Nombre y apellido"]){
+    $("paciente_nombre").value = row["Nombre y apellido"];
+    setHint("✅ Encontrado en historia clínica");
+  } else {
+    setHint("No encontrado (puedes digitar el nombre).");
+  }
+}
+
 
     // Debounce para no hacer consultas por cada tecla
     function onCedulaInput(){
