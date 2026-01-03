@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Administrar Profesionales - Clínica Dra. Leidi Silva</title>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Supabase
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const HOME_URL  = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // ✅ Admin por email (mismo que en index)
+    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+
+    function $(id){ return document.getElementById(id); }
+
+    function setDisabled(el, disabled, reason="No autorizado"){
+      if (!el) return;
+      if (disabled){
+        el.classList.add("disabled");
+        el.setAttribute("aria-disabled","true");
+        el.dataset.disabledReason = reason;
+        el.onclick = (e)=>{ e.preventDefault(); alert("🚫 Acceso restringido: " + reason); };
+      } else {
+        el.classList.remove("disabled");
+        el.removeAttribute("aria-disabled");
+        delete el.dataset.disabledReason;
+        if (el.onclick) el.onclick = null;
+      }
+    }
+
+    // ✅ Lee rol desde profiles
+    async function cargarRolDesdeProfiles(userId) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) return null;
+        return data?.role || null;
+      } catch {
+        return null;
+      }
+    }
+
+    // ✅ Estado UI
+    let currentUser = null;
+    let isAdmin = false;
+    let editingId = null;
+
+    function toast(msg){
+      const el = $("toast");
+      if (!el) return;
+      el.textContent = msg;
+      el.classList.add("show");
+      setTimeout(()=> el.classList.remove("show"), 2600);
+    }
+
+    function setLoading(v){
+      const b = $("btn-guardar");
+      if (b) b.disabled = v;
+      const s = $("spinner");
+      if (s) s.style.display = v ? "inline-block" : "none";
+    }
+
+    function limpiarFormulario(){
+      editingId = null;
+      $("form-title").textContent = "Agregar profesional";
+      $("btn-guardar").textContent = "Guardar";
+      $("btn-cancelar").style.display = "none";
+
+      $("cedula").value = "";
+      $("nombre").value = "";
+      $("profesion").value = "";
+      $("especialidad").value = "";
+      $("activo").checked = true;
+    }
+
+    function setEditMode(row){
+      editingId = row.id;
+      $("form-title").textContent = "Editar profesional";
+      $("btn-guardar").textContent = "Actualizar";
+      $("btn-cancelar").style.display = "inline-flex";
+
+      $("cedula").value = row.cedula ?? "";
+      $("nombre").value = row.nombre ?? "";
+      $("profesion").value = row.profesion ?? "";
+      $("especialidad").value = row.especialidad ?? "";
+      $("activo").checked = !!row.activo;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function renderTabla(rows){
+      const tbody = $("tbody");
+      if (!tbody) return;
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay profesionales registrados.</td></tr>`;
+        return;
+      }
+
+      for (const r of rows){
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(r.cedula)}</td>
+          <td>${escapeHtml(r.nombre)}</td>
+          <td>${escapeHtml(r.profesion)}</td>
+          <td>${escapeHtml(r.especialidad)}</td>
+          <td>
+            <span class="pill ${r.activo ? "on":"off"}">${r.activo ? "Activo" : "Inactivo"}</span>
+          </td>
+          <td class="actions">
+            <button class="btn small" data-action="edit">Editar</button>
+            <button class="btn small danger" data-action="delete">Eliminar</button>
+          </td>
+        `;
+
+        tr.querySelector('[data-action="edit"]').addEventListener("click", ()=>{
+          if (!isAdmin) return toast("Solo administrador.");
+          setEditMode(r);
+        });
+
+        tr.querySelector('[data-action="delete"]').addEventListener("click", async ()=>{
+          if (!isAdmin) return toast("Solo administrador.");
+          const ok = confirm(`¿Eliminar a "${r.nombre}"? Esta acción no se puede deshacer.`);
+          if (!ok) return;
+          await eliminarProfesional(r.id);
+        });
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function cargarProfesionales(){
+      const q = ($("q")?.value || "").trim();
+
+      // Si quieres filtrar por activos desde UI:
+      const onlyActive = $("solo-activos")?.checked || false;
+
+      let query = supabase
+        .from("profesionales")
+        .select("id, cedula, nombre, activo, creado_en, profesion, especialidad")
+        .order("creado_en", { ascending: false });
+
+      if (onlyActive) query = query.eq("activo", true);
+
+      // Búsqueda simple (nombre o cédula)
+      if (q){
+        // ilike para texto, y para cedula (texto) igual funciona
+        query = query.or(`nombre.ilike.%${q}%,cedula.ilike.%${q}%`);
+      }
+
+      const { data, error } = await query;
+
+      if (error){
+        console.error(error);
+        toast("Error cargando profesionales: " + error.message);
+        renderTabla([]);
+        return;
+      }
+      renderTabla(data || []);
+    }
+
+    async function guardarProfesional(){
+      const cedula = ($("cedula").value || "").trim();
+      const nombre = ($("nombre").value || "").trim();
+      const profesion = ($("profesion").value || "").trim();
+      const especialidad = ($("especialidad").value || "").trim();
+      const activo = !!$("activo").checked;
+
+      if (!cedula || !nombre){
+        alert("⚠️ Cédula y nombre son obligatorios.");
+        return;
+      }
+
+      setLoading(true);
+      try{
+        if (!isAdmin){
+          toast("Solo administrador.");
+          return;
+        }
+
+        if (editingId){
+          const { error } = await supabase
+            .from("profesionales")
+            .update({ cedula, nombre, profesion: profesion || null, especialidad: especialidad || null, activo })
+            .eq("id", editingId);
+
+          if (error) throw error;
+          toast("✅ Profesional actualizado");
+        } else {
+          const { error } = await supabase
+            .from("profesionales")
+            .insert([{ cedula, nombre, profesion: profesion || null, especialidad: especialidad || null, activo }]);
+
+          if (error) throw error;
+          toast("✅ Profesional agregado");
+        }
+
+        limpiarFormulario();
+        await cargarProfesionales();
+      } catch(e){
+        console.error(e);
+        alert("❌ No se pudo guardar: " + (e?.message || e));
+      } finally{
+        setLoading(false);
+      }
+    }
+
+    async function eliminarProfesional(id){
+      setLoading(true);
+      try{
+        const { error } = await supabase
+          .from("profesionales")
+          .delete()
+          .eq("id", id);
+
+        if (error) throw error;
+
+        toast("🗑️ Profesional eliminado");
+        if (editingId === id) limpiarFormulario();
+        await cargarProfesionales();
+      } catch(e){
+        console.error(e);
+        alert("❌ No se pudo eliminar: " + (e?.message || e));
+      } finally{
+        setLoading(false);
+      }
+    }
+
+    async function init(){
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      currentUser = session.user;
+
+      const email = (currentUser?.email || "").toLowerCase();
+      $("user-email").textContent = currentUser?.email || "Usuario autenticado";
+
+      const role = await cargarRolDesdeProfiles(currentUser.id);
+      $("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+
+      isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+
+      // UI admin / no admin
+      setDisabled($("btn-guardar"), !isAdmin, "Solo administrador");
+      setDisabled($("btn-limpiar"), !isAdmin, "Solo administrador");
+      setDisabled($("btn-cancelar"), !isAdmin, "Solo administrador");
+
+      if (!isAdmin){
+        $("admin-note").style.display = "block";
+      }
+
+      // Eventos
+      $("form").addEventListener("submit", (e)=>{
+        e.preventDefault();
+        guardarProfesional();
+      });
+
+      $("btn-limpiar").addEventListener("click", (e)=>{
+        e.preventDefault();
+        if (!isAdmin) return toast("Solo administrador.");
+        limpiarFormulario();
+      });
+
+      $("btn-cancelar").addEventListener("click", (e)=>{
+        e.preventDefault();
+        if (!isAdmin) return toast("Solo administrador.");
+        limpiarFormulario();
+      });
+
+      $("btn-volver").addEventListener("click", ()=>{
+        window.location.href = HOME_URL;
+      });
+
+      $("btn-recargar").addEventListener("click", ()=>{
+        cargarProfesionales();
+      });
+
+      $("q").addEventListener("input", ()=>{
+        // debounce simple
+        clearTimeout(window.__t);
+        window.__t = setTimeout(cargarProfesionales, 250);
+      });
+
+      $("solo-activos").addEventListener("change", cargarProfesionales);
+
+      // Inicial
+      limpiarFormulario();
+      await cargarProfesionales();
+    }
+
+    init();
+
+    // Si se expira/cierra, vuelve al login
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    // Logout
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch(e) {}
+      try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    };
+  </script>
+
+  <style>
+    :root{
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #fbfcff;
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --danger: #dc2626;
+      --ok: #16a34a;
+
+      --shadow: 0 20px 45px rgba(15,23,42,.10);
+      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
+        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
+        linear-gradient(180deg, #ffffff, var(--bg));
+      padding: 28px 16px;
+    }
+
+    .wrap{
+      width: min(1100px, 100%);
+      margin: 0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .title{
+      margin:0;
+      font-size: 14px;
+      line-height: 1.35;
+      color: var(--muted);
+    }
+
+    #user-email{ color: var(--text); font-weight: 800; display:inline-block; margin-top:6px; }
+
+    #user-role{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(37,99,235,.06);
+      color: var(--accent-2);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    #user-role::before{
+      content:"";
+      width: 8px; height: 8px;
+      border-radius: 999px;
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    .top-actions{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 800;
+      letter-spacing:.2px;
+      box-shadow: var(--shadow-2);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      text-decoration:none;
+      user-select:none;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(37,99,235,.28);
+      box-shadow: 0 16px 28px rgba(15,23,42,.12);
+    }
+    .btn:active{ transform: translateY(0px); }
+
+    .btn.primary{
+      background: var(--accent);
+      color: #fff;
+      border-color: rgba(37,99,235,.22);
+      box-shadow: 0 12px 18px rgba(37,99,235,.18);
+    }
+    .btn.primary:hover{
+      background: var(--accent-2);
+      border-color: rgba(29,78,216,.35);
+    }
+
+    .btn.danger{
+      background: rgba(220,38,38,.08);
+      border-color: rgba(220,38,38,.25);
+      color: var(--danger);
+    }
+
+    .btn.small{
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      box-shadow:none;
+    }
+    .btn.small:hover{ transform:none; box-shadow:none; }
+
+    .btn.disabled{
+      opacity:.55;
+      cursor:not-allowed;
+      filter: grayscale(.2);
+      transform:none !important;
+    }
+
+    .card{
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 360px 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    h2{
+      margin: 0 0 10px;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+
+    .muted{
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.35;
+      margin: 8px 0 0;
+    }
+
+    form{
+      display:flex;
+      flex-direction:column;
+      gap: 10px;
+    }
+
+    label{
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 700;
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+
+    input[type="text"]{
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      outline:none;
+      font-size: 14px;
+      background:#fff;
+    }
+    input[type="text"]:focus{
+      border-color: rgba(37,99,235,.35);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.10);
+    }
+
+    .row{
+      display:flex;
+      gap: 10px;
+    }
+    .row > * { flex: 1; }
+
+    .check{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-size: 13px;
+      color: var(--text);
+      user-select:none;
+    }
+    .check input{ width: 18px; height: 18px; }
+
+    .form-actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 4px;
+    }
+
+    #spinner{
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,.55);
+      border-top-color: rgba(255,255,255,1);
+      border-radius: 999px;
+      display:none;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .toolbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-bottom: 10px;
+    }
+
+    .search{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    #q{
+      width: min(420px, 100%);
+    }
+
+    table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background:#fff;
+    }
+
+    thead th{
+      text-align:left;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(2,6,23,.02);
+    }
+
+    tbody td{
+      padding: 12px 12px;
+      border-bottom: 1px solid rgba(15,23,42,.06);
+      vertical-align:top;
+      font-size: 13.5px;
+    }
+
+    tbody tr:last-child td{ border-bottom: none; }
+
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12.5px; }
+
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      border: 1px solid var(--border);
+      background: #fff;
+    }
+    .pill.on{
+      color: var(--ok);
+      background: rgba(22,163,74,.08);
+      border-color: rgba(22,163,74,.25);
+    }
+    .pill.off{
+      color: var(--muted);
+      background: rgba(100,116,139,.10);
+      border-color: rgba(100,116,139,.22);
+    }
+
+    .actions{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+    }
+
+    .empty{
+      text-align:center;
+      color: var(--muted);
+      padding: 18px 12px !important;
+    }
+
+    #admin-note{
+      display:none;
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: rgba(220,38,38,.06);
+      border: 1px solid rgba(220,38,38,.20);
+      color: rgba(127,29,29,1);
+      font-weight: 700;
+      font-size: 12.5px;
+    }
+
+    .toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      background: rgba(15,23,42,.92);
+      color:#fff;
+      padding: 10px 12px;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      opacity:0;
+      transform: translateY(10px);
+      transition: opacity .18s ease, transform .18s ease;
+      pointer-events:none;
+      font-weight: 800;
+      letter-spacing:.2px;
+      font-size: 12.5px;
+      max-width: min(420px, calc(100% - 32px));
+    }
+    .toast.show{
+      opacity:1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div>
+        <p class="title" style="margin:0;">
+          Administración<br/>
+          <strong style="color:var(--text);">Profesionales</strong><br/>
+          <span id="user-email"></span><br/>
+          <span id="user-role">Rol: ...</span>
+        </p>
+        <div id="admin-note">🚫 Esta página es solo para usuarios con rol administrativo.</div>
+      </div>
+
+      <div class="top-actions">
+        <button class="btn" id="btn-volver" type="button">← Volver</button>
+        <button class="btn" id="btn-recargar" type="button">⟳ Recargar</button>
+        <button class="btn primary" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <!-- Formulario -->
+      <section class="card">
+        <h2 id="form-title">Agregar profesional</h2>
+
+        <form id="form" autocomplete="off">
+          <label>
+            Cédula (obligatoria)
+            <input type="text" id="cedula" placeholder="Ej: 1022956631" />
+          </label>
+
+          <label>
+            Nombre (obligatorio)
+            <input type="text" id="nombre" placeholder="Ej: Camilo Andres..." />
+          </label>
+
+          <div class="row">
+            <label>
+              Profesión
+              <input type="text" id="profesion" placeholder="Ej: Odontólogo" />
+            </label>
+
+            <label>
+              Especialidad
+              <input type="text" id="especialidad" placeholder="Ej: Ortodoncia" />
+            </label>
+          </div>
+
+          <label class="check">
+            <input type="checkbox" id="activo" checked />
+            Activo
+          </label>
+
+          <div class="form-actions">
+            <button class="btn primary" id="btn-guardar" type="submit">
+              <span id="spinner"></span>
+              Guardar
+            </button>
+            <button class="btn" id="btn-limpiar" type="button">Limpiar</button>
+            <button class="btn" id="btn-cancelar" type="button" style="display:none;">Cancelar edición</button>
+          </div>
+
+          <p class="muted">
+            Aquí puedes crear, editar o eliminar profesionales que se guardan en la tabla <span class="mono">profesionales</span>.
+          </p>
+        </form>
+      </section>
+
+      <!-- Tabla -->
+      <section class="card">
+        <div class="toolbar">
+          <div class="search">
+            <input type="text" id="q" placeholder="Buscar por nombre o cédula..." />
+            <label class="check" style="margin:0;">
+              <input type="checkbox" id="solo-activos" />
+              Solo activos
+            </label>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width:140px;">Cédula</th>
+              <th>Nombre</th>
+              <th style="width:160px;">Profesión</th>
+              <th style="width:160px;">Especialidad</th>
+              <th style="width:110px;">Estado</th>
+              <th style="width:190px;">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbody">
+            <tr><td colspan="6" class="empty">Cargando...</td></tr>
+          </tbody>
+        </table>
+
+        <p class="muted" style="margin-top:10px;">
+          Nota: el acceso visual se restringe por rol, pero para seguridad real debes tener RLS configurado en Supabase.
+        </p>
+      </section>
+    </div>
+  </div>
+
+  <div id="toast" class="toast"></div>
+</body>
+</html>
