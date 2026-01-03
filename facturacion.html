@@ -354,11 +354,6 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // Nombre exacto
-    const HC_TABLE = "HISTORIAS CLINICAS";
-    const HC_COL_ID = "Numero de Identificacion";
-    const HC_COL_NOMBRE = "Nombre y apellido";
-
     const state = {
       session: null,
       procedimientos: [],
@@ -454,6 +449,7 @@
         renderProcedimientosSelect();
         return;
       }
+
       const rows = data || [];
       state.procedimientos = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
       renderProcedimientosSelect();
@@ -472,6 +468,7 @@
         renderProfesionales();
         return;
       }
+
       const rows = data || [];
       state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
       renderProfesionales();
@@ -503,58 +500,31 @@
       }
     }
 
-    // ✅ AUTOCOMPLETAR DESDE HISTORIAS CLINICAS (SIN VIEW)
+    // ✅ AUTOCOMPLETAR (RPC)
     async function buscarPacienteEnHistoria(){
-      const cedulaStr = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
-      $("paciente_cedula").value = cedulaStr;
+      const cedula = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
+      $("paciente_cedula").value = cedula;
 
-      if (cedulaStr.length < 6){
+      if (cedula.length < 6){
         setHint("");
         return;
       }
-
-      if (state._lastCedula === cedulaStr) return;
-      state._lastCedula = cedulaStr;
-
-      const cedulaNum = Number(cedulaStr);
-      if (!Number.isFinite(cedulaNum)){
-        setHint("Cédula inválida.");
-        return;
-      }
+      if (state._lastCedula === cedula) return;
+      state._lastCedula = cedula;
 
       setHint("Buscando en historias clínicas...");
 
-      // Intento #1 (normal)
-      let r = await supabase
-        .from(HC_TABLE)
-        .select("*")
-        .filter(HC_COL_ID, "eq", cedulaNum)
-        .limit(1);
-
-      // Intento #2 (por si el identificador es quoted y PostgREST requiere comillas)
-      if (!r.error && (!r.data || r.data.length === 0)){
-        r = await supabase
-          .from(HC_TABLE)
-          .select("*")
-          .filter(`"${HC_COL_ID}"`, "eq", cedulaNum)
-          .limit(1);
-      }
-
-      const { data, error } = r;
+      const { data, error } = await supabase.rpc("buscar_paciente_hc", { p_cedula: cedula });
 
       if (error){
-        console.error("HC error:", error);
-        setHint("Error consultando historia clínica. Revisa Console (F12).");
+        console.error("RPC error:", error);
+        setHint("Error consultando (mira Console F12).");
         return;
       }
 
-      console.log("HC data:", data);
-
       const row = data?.[0];
-      const nombre = row?.[HC_COL_NOMBRE];
-
-      if (nombre){
-        $("paciente_nombre").value = String(nombre);
+      if (row?.nombre){
+        $("paciente_nombre").value = row.nombre;
         setHint("✅ Encontrado en historia clínica");
       } else {
         setHint("No encontrado (puedes digitar el nombre).");
