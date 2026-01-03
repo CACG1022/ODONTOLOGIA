@@ -154,8 +154,6 @@
 
     async function cargarProfesionales(){
       const q = ($("q")?.value || "").trim();
-
-      // Si quieres filtrar por activos desde UI:
       const onlyActive = $("solo-activos")?.checked || false;
 
       let query = supabase
@@ -165,9 +163,7 @@
 
       if (onlyActive) query = query.eq("activo", true);
 
-      // Búsqueda simple (nombre o cédula)
       if (q){
-        // ilike para texto, y para cedula (texto) igual funciona
         query = query.or(`nombre.ilike.%${q}%,cedula.ilike.%${q}%`);
       }
 
@@ -267,7 +263,6 @@
 
       isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
 
-      // UI admin / no admin
       setDisabled($("btn-guardar"), !isAdmin, "Solo administrador");
       setDisabled($("btn-limpiar"), !isAdmin, "Solo administrador");
       setDisabled($("btn-cancelar"), !isAdmin, "Solo administrador");
@@ -276,7 +271,6 @@
         $("admin-note").style.display = "block";
       }
 
-      // Eventos
       $("form").addEventListener("submit", (e)=>{
         e.preventDefault();
         guardarProfesional();
@@ -303,26 +297,22 @@
       });
 
       $("q").addEventListener("input", ()=>{
-        // debounce simple
         clearTimeout(window.__t);
         window.__t = setTimeout(cargarProfesionales, 250);
       });
 
       $("solo-activos").addEventListener("change", cargarProfesionales);
 
-      // Inicial
       limpiarFormulario();
       await cargarProfesionales();
     }
 
     init();
 
-    // Si se expira/cierra, vuelve al login
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
@@ -533,12 +523,6 @@
       box-shadow: 0 0 0 4px rgba(37,99,235,.10);
     }
 
-    .row{
-      display:flex;
-      gap: 10px;
-    }
-    .row > * { flex: 1; }
-
     .check{
       display:flex;
       align-items:center;
@@ -724,17 +708,16 @@
             <input type="text" id="nombre" placeholder="Ej: Camilo Andres..." />
           </label>
 
-          <div class="row">
-            <label>
-              Profesión
-              <input type="text" id="profesion" placeholder="Ej: Odontólogo" />
-            </label>
+          <!-- ✅ CAMBIO: Profesión y Especialidad en columnas separadas (uno debajo del otro) -->
+          <label>
+            Profesión
+            <input type="text" id="profesion" placeholder="Ej: Odontólogo" />
+          </label>
 
-            <label>
-              Especialidad
-              <input type="text" id="especialidad" placeholder="Ej: Ortodoncia" />
-            </label>
-          </div>
+          <label>
+            Especialidad
+            <input type="text" id="especialidad" placeholder="Ej: Ortodoncia" />
+          </label>
 
           <label class="check">
             <input type="checkbox" id="activo" checked />
@@ -794,3 +777,4 @@
   <div id="toast" class="toast"></div>
 </body>
 </html>
+
