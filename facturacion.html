@@ -5,501 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Facturación - Clínica Odontológica</title>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    // ✅ 1) Pega aquí los mismos valores que ya usas en tus otros HTML
-    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co
-";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-
-    const state = {
-      session: null,
-      procedimientos: [],
-      profesionales: [],
-      items: [], // items en factura
-      facturaGuardada: null
-    };
-
-    // =============================
-    // Helpers UI
-    // =============================
-    const $ = (id) => document.getElementById(id);
-
-    function toast(msg, type="ok"){
-      const el = $("toast");
-      el.textContent = msg;
-      el.dataset.type = type;
-      el.classList.add("show");
-      clearTimeout(window.__t);
-      window.__t = setTimeout(()=> el.classList.remove("show"), 1800);
-    }
-
-    function setStatus(msg){
-      const el = $("status");
-      if (el) el.textContent = msg || "";
-    }
-
-    function money(n){
-      const x = Number(n || 0);
-      return x.toLocaleString("es-CO");
-    }
-
-    function num(v){
-      const raw = String(v ?? "").trim();
-      if (!raw) return 0;
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : 0;
-    }
-
-    function hoyISO(){
-      const d = new Date();
-      const yyyy = d.getFullYear();
-      const mm = String(d.getMonth()+1).padStart(2,"0");
-      const dd = String(d.getDate()).padStart(2,"0");
-      return `${yyyy}-${mm}-${dd}`;
-    }
-
-    function generarNumeroFactura(){
-      // Simple para consultorio (particular): FAC-YYYYMMDD-HHMMSS
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,"0");
-      const da = String(d.getDate()).padStart(2,"0");
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mi = String(d.getMinutes()).padStart(2,"0");
-      const ss = String(d.getSeconds()).padStart(2,"0");
-      return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
-    }
-
-    // =============================
-    // Seguridad sesión
-    // =============================
-    async function proteger(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session){
-        window.location.href = LOGIN_URL;
-        return false;
-      }
-      state.session = session;
-      $("user-email").textContent = session.user?.email || "Usuario";
-      return true;
-    }
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = LOGIN_URL;
-    });
-
-    window.cerrarSesion = async () => {
-      try { await supabase.auth.signOut(); } catch(e) {}
-      window.location.href = LOGIN_URL;
-    };
-
-    // =============================
-    // Cargar catálogos
-    // =============================
-    async function cargarProcedimientos(){
-      const { data, error } = await supabase
-        .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, activo")
-        .eq("activo", true)
-        .order("procedimiento", { ascending: true });
-
-      if (error){
-        console.error(error);
-        toast("Error cargando procedimientos: " + error.message, "err");
-        state.procedimientos = [];
-        return;
-      }
-      state.procedimientos = data || [];
-      renderProcedimientosSelect();
-    }
-
-    async function cargarProfesionales(){
-      const { data, error } = await supabase
-        .from("profesionales")
-        .select("id, cedula, nombre, activo")
-        .eq("activo", true)
-        .order("nombre", { ascending: true });
-
-      if (error){
-        console.error(error);
-        toast("Error cargando profesionales: " + error.message, "err");
-        state.profesionales = [];
-        return;
-      }
-      state.profesionales = data || [];
-      renderProfesionales();
-    }
-
-    function renderProcedimientosSelect(){
-      const sel = $("sel-proc");
-      sel.innerHTML = `<option value="">— Selecciona —</option>`;
-      for (const p of state.procedimientos){
-        const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
-        const opt = document.createElement("option");
-        opt.value = String(p.id);
-        opt.textContent = label;
-        sel.appendChild(opt);
-      }
-    }
-
-    function renderProfesionales(){
-      const sel = $("profesional");
-      sel.innerHTML = `<option value="">— Selecciona —</option>`;
-      for (const pr of state.profesionales){
-        const opt = document.createElement("option");
-        opt.value = `${pr.cedula || ""} - ${pr.nombre || ""}`.trim();
-        opt.textContent = `${pr.nombre || ""} (${pr.cedula || ""})`.trim();
-        sel.appendChild(opt);
-      }
-    }
-
-    // =============================
-    // Paciente (consultorio)
-    // =============================
-    async function buscarPaciente(){
-      const cedula = ($("paciente_cedula").value || "").trim();
-      if (!cedula){
-        toast("Escribe la cédula", "warn");
-        return;
-      }
-
-      // ✅ Para consultorio: si ya existe en consentimientos, autocompleta nombre
-      // (Tu tabla consentimientos guarda cedula_paciente y paciente_nombre)【consumo visto en tu HC】.
-      setStatus("Buscando paciente...");
-      const { data, error } = await supabase
-        .from("consentimientos")
-        .select("cedula_paciente, paciente_nombre")
-        .eq("cedula_paciente", cedula)
-        .order("creado_en", { ascending: false })
-        .limit(1);
-
-      setStatus("");
-      if (error){
-        console.warn(error);
-        toast("No se pudo buscar en consentimientos (puedes llenar manual).", "warn");
-        return;
-      }
-
-      const row = (data || [])[0];
-      if (row?.paciente_nombre){
-        $("paciente_nombre").value = row.paciente_nombre;
-        toast("Paciente encontrado (desde consentimientos).", "ok");
-      } else {
-        toast("No hay registro previo. Llena el nombre manualmente.", "warn");
-      }
-    }
-
-    // =============================
-    // Items factura
-    // =============================
-    function agregarProcedimiento(){
-      const procId = ($("sel-proc").value || "").trim();
-      if (!procId){
-        toast("Selecciona un procedimiento", "warn");
-        return;
-      }
-      const p = state.procedimientos.find(x => String(x.id) === String(procId));
-      if (!p){
-        toast("Procedimiento no encontrado", "err");
-        return;
-      }
-
-      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
-      const valorU = num(p.valor || 0);
-      const item = {
-        id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-        codigo_cups: p.codigo_cups || "",
-        descripcion: p.procedimiento || "",
-        cantidad,
-        valor_unitario: valorU,
-        valor_total: valorU * cantidad
-      };
-      state.items.push(item);
-      renderItems();
-      recalcularTotales();
-      $("sel-proc").value = "";
-      $("cantidad").value = "1";
-      toast("Agregado ✅", "ok");
-    }
-
-    function eliminarItem(id_local){
-      state.items = state.items.filter(x => x.id_local !== id_local);
-      renderItems();
-      recalcularTotales();
-    }
-
-    function renderItems(){
-      const tbody = $("tbody-items");
-      tbody.innerHTML = "";
-
-      if (state.items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no has agregado procedimientos.</td></tr>`;
-        return;
-      }
-
-      for (const it of state.items){
-        const tr = document.createElement("tr");
-
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
-          <td>${escapeHtml(it.descripcion || "")}</td>
-          <td>
-            <input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad">
-          </td>
-          <td>
-            <input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario">
-          </td>
-          <td class="mono">$ ${money(it.valor_total)}</td>
-          <td class="actions">
-            <button class="btn danger small" type="button">Quitar</button>
-          </td>
-        `;
-
-        // cambios cantidad / valor
-        tr.querySelectorAll("input").forEach(inp => {
-          inp.addEventListener("input", () => {
-            const k = inp.dataset.k;
-            const v = num(inp.value);
-            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
-            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
-            it.valor_total = it.cantidad * it.valor_unitario;
-            renderItems();
-            recalcularTotales();
-          });
-        });
-
-        tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
-        tbody.appendChild(tr);
-      }
-    }
-
-    function recalcularTotales(){
-      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const copago = Math.max(0, num($("copago").value));
-      const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, subtotal - copago - cuota);
-
-      $("subtotal").textContent = money(subtotal);
-      $("total").textContent = money(total);
-    }
-
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    // =============================
-    // Guardar factura (Supabase)
-    // =============================
-    async function guardarFactura(){
-      const fecha = ($("fecha").value || "").trim() || hoyISO();
-      const paciente_cedula = ($("paciente_cedula").value || "").trim();
-      const paciente_nombre = ($("paciente_nombre").value || "").trim();
-      const profesional = ($("profesional").value || "").trim();
-
-      if (!paciente_cedula || !paciente_nombre){
-        toast("Paciente: cédula y nombre son obligatorios", "err");
-        return;
-      }
-      if (!profesional){
-        toast("Selecciona el profesional", "err");
-        return;
-      }
-      if (state.items.length === 0){
-        toast("Agrega al menos 1 procedimiento", "err");
-        return;
-      }
-
-      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
-      $("numero_factura").value = numero_factura;
-
-      const eps = ($("eps").value || "").trim() || null;
-      const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
-
-      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const copago = Math.max(0, num($("copago").value));
-      const cuota_moderadora = Math.max(0, num($("cuota_moderadora").value));
-      const valor_total = Math.max(0, subtotal - copago - cuota_moderadora);
-
-      setStatus("Guardando factura...");
-      try{
-        // 1) Insert encabezado
-        const { data: fac, error: e1 } = await supabase
-          .from("facturas")
-          .insert([{
-            fecha,
-            paciente_cedula,
-            paciente_nombre,
-            tipo_usuario,
-            eps,
-            numero_factura,
-            valor_total,
-            copago,
-            cuota_moderadora,
-            profesional
-          }])
-          .select("*")
-          .single();
-
-        if (e1) throw e1;
-
-        // 2) Insert detalle
-        const detalle = state.items.map(it => ({
-          factura_id: fac.id,
-          codigo_cups: it.codigo_cups || null,
-          descripcion: it.descripcion || "",
-          cantidad: it.cantidad || 1,
-          valor_unitario: it.valor_unitario || 0,
-          valor_total: it.valor_total || 0
-        }));
-
-        const { error: e2 } = await supabase
-          .from("factura_detalle")
-          .insert(detalle);
-
-        if (e2) throw e2;
-
-        state.facturaGuardada = fac;
-        toast("Factura guardada ✅", "ok");
-        setStatus("");
-
-        $("btn-imprimir").disabled = false;
-
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo guardar: " + (err?.message || "Error"), "err");
-      }
-    }
-
-    // =============================
-    // Imprimir
-    // =============================
-    function imprimir(){
-      if (!state.facturaGuardada){
-        toast("Primero guarda la factura", "warn");
-        return;
-      }
-
-      const f = state.facturaGuardada;
-      const rows = state.items.map(it => `
-        <tr>
-          <td>${escapeHtml(it.codigo_cups || "—")}</td>
-          <td>${escapeHtml(it.descripcion || "")}</td>
-          <td style="text-align:right;">${it.cantidad}</td>
-          <td style="text-align:right;">$ ${money(it.valor_unitario)}</td>
-          <td style="text-align:right;">$ ${money(it.valor_total)}</td>
-        </tr>
-      `).join("");
-
-      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const copago = Math.max(0, num($("copago").value));
-      const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, subtotal - copago - cuota);
-
-      const html = `
-<!doctype html>
-<html lang="es">
-<head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Factura ${escapeHtml(f.numero_factura || "")}</title>
-<style>
-  body{ font-family: Arial, sans-serif; padding: 18px; color:#111; }
-  h2{ margin:0 0 6px; }
-  .muted{ color:#555; font-size:12px; }
-  table{ width:100%; border-collapse: collapse; margin-top:12px; }
-  th,td{ border-bottom:1px solid #ddd; padding:8px; font-size:13px; }
-  th{ text-align:left; background:#fafafa; }
-  .tot{ margin-top:12px; max-width:420px; margin-left:auto; }
-  .tot div{ display:flex; justify-content:space-between; padding:4px 0; }
-</style>
-</head>
-<body>
-  <h2>Factura</h2>
-  <div class="muted">
-    <div><b>No:</b> ${escapeHtml(f.numero_factura || "")}</div>
-    <div><b>Fecha:</b> ${escapeHtml(f.fecha || "")}</div>
-    <div><b>Paciente:</b> ${escapeHtml(f.paciente_cedula || "")} - ${escapeHtml(f.paciente_nombre || "")}</div>
-    <div><b>Profesional:</b> ${escapeHtml(f.profesional || "")}</div>
-    <div><b>Tipo usuario:</b> ${escapeHtml(f.tipo_usuario || "Particular")}</div>
-    <div><b>EPS:</b> ${escapeHtml(f.eps || "—")}</div>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>CUPS</th>
-        <th>Procedimiento</th>
-        <th style="text-align:right;">Cant</th>
-        <th style="text-align:right;">V/Unit</th>
-        <th style="text-align:right;">Total</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>
-  </table>
-
-  <div class="tot">
-    <div><span>Subtotal</span><b>$ ${money(subtotal)}</b></div>
-    <div><span>Copago</span><b>$ ${money(copago)}</b></div>
-    <div><span>Cuota moderadora</span><b>$ ${money(cuota)}</b></div>
-    <div style="border-top:1px solid #ddd; margin-top:6px; padding-top:8px;">
-      <span>Total</span><b>$ ${money(total)}</b>
-    </div>
-  </div>
-
-  <script>
-    setTimeout(()=>window.print(), 200);
-  <\/script>
-</body>
-</html>`;
-
-      const w = window.open("", "_blank");
-      w.document.open();
-      w.document.write(html);
-      w.document.close();
-    }
-
-    // =============================
-    // Init
-    // =============================
-    async function init(){
-      $("year").textContent = new Date().getFullYear();
-      $("fecha").value = hoyISO();
-      $("numero_factura").value = generarNumeroFactura();
-
-      const ok = await proteger();
-      if (!ok) return;
-
-      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
-      $("btn-buscar").addEventListener("click", buscarPaciente);
-      $("btn-add").addEventListener("click", agregarProcedimiento);
-      $("copago").addEventListener("input", recalcularTotales);
-      $("cuota_moderadora").addEventListener("input", recalcularTotales);
-      $("btn-guardar").addEventListener("click", guardarFactura);
-      $("btn-imprimir").addEventListener("click", imprimir);
-
-      await cargarProfesionales();
-      await cargarProcedimientos();
-
-      renderItems();
-      recalcularTotales();
-    }
-
-    init();
-  </script>
-
   <style>
     :root{
       --bg: #f3f5f7;
@@ -688,6 +193,8 @@
       transform: translateY(8px);
       transition: opacity .15s ease, transform .15s ease;
       pointer-events: none;
+      max-width: 320px;
+      white-space: pre-wrap;
     }
     #toast.show{ opacity: 1; transform: translateY(0); }
     #toast[data-type="ok"]{ border-color: #b7e4c7; }
@@ -710,7 +217,7 @@
     </div>
     <div class="meta">
       <div class="chip">Usuario: <b id="user-email">—</b></div>
-      <button class="btn danger" onclick="cerrarSesion()">Cerrar sesión</button>
+      <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
     </div>
   </div>
 
@@ -751,7 +258,8 @@
       <div class="grid">
         <div class="ctrl">
           <label>Cédula paciente</label>
-          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números"
+                 oninput="this.value=this.value.replace(/[^0-9]/g,'')">
         </div>
         <div class="ctrl">
           <label>Nombre paciente</label>
@@ -823,7 +331,7 @@
           <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
         </div>
         <div class="mono" style="margin-top:10px; color:var(--muted);">
-          Nota: Este módulo está listo para consultorio (particular).  
+          Nota: Este módulo está listo para consultorio (particular).
           Luego agregamos exportación RIPS (AF/US/AP/CT).
         </div>
       </div>
@@ -836,5 +344,513 @@
   </div>
 
   <div id="toast" data-type="ok"></div>
+
+  <!-- ✅ IMPORTANTE: el script va al final para que el DOM exista -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ OJO: sin saltos de línea y con trim()
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    const state = {
+      session: null,
+      procedimientos: [],
+      profesionales: [],
+      items: [],
+      facturaGuardada: null
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2200);
+    }
+
+    function setStatus(msg){
+      const el = $("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString("es-CO");
+    }
+
+    function num(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function hoyISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    function generarNumeroFactura(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const da = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
+    }
+
+    async function proteger(){
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) console.warn("getSession error:", error);
+
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      state.session = session;
+      $("user-email").textContent = session.user?.email || "Usuario";
+      return true;
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    async function cerrarSesion(){
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    }
+
+    async function cargarProcedimientos(){
+      setStatus("Cargando procedimientos...");
+      const { data, error } = await supabase
+        .from("procedimientos_precios")
+        .select("id, procedimiento, valor, codigo_cups, activo")
+        .order("procedimiento", { ascending: true });
+
+      setStatus("");
+
+      if (error){
+        console.error("procedimientos_precios error:", error);
+        toast("Error procedimientos_precios:\n" + error.message, "err");
+        state.procedimientos = [];
+        renderProcedimientosSelect();
+        return;
+      }
+
+      // Si existe columna activo, filtramos; si no, mostramos todos
+      const rows = data || [];
+      state.procedimientos = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
+
+      renderProcedimientosSelect();
+      console.log("Procedimientos cargados:", state.procedimientos.length);
+    }
+
+    async function cargarProfesionales(){
+      setStatus("Cargando profesionales...");
+      const { data, error } = await supabase
+        .from("profesionales")
+        .select("id, cedula, nombre, activo")
+        .order("nombre", { ascending: true });
+
+      setStatus("");
+
+      if (error){
+        console.error("profesionales error:", error);
+        toast("Error profesionales:\n" + error.message, "err");
+        state.profesionales = [];
+        renderProfesionales();
+        return;
+      }
+
+      const rows = data || [];
+      state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
+      renderProfesionales();
+      console.log("Profesionales cargados:", state.profesionales.length);
+    }
+
+    function renderProcedimientosSelect(){
+      const sel = $("sel-proc");
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+
+      if (!sel) return;
+
+      if (state.procedimientos.length === 0){
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No hay procedimientos (o no hay permisos)";
+        sel.appendChild(opt);
+        return;
+      }
+
+      for (const p of state.procedimientos){
+        const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
+        const opt = document.createElement("option");
+        opt.value = String(p.id);
+        opt.textContent = label;
+        sel.appendChild(opt);
+      }
+    }
+
+    function renderProfesionales(){
+      const sel = $("profesional");
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+
+      if (!sel) return;
+
+      if (state.profesionales.length === 0){
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No hay profesionales (o no hay permisos)";
+        sel.appendChild(opt);
+        return;
+      }
+
+      for (const pr of state.profesionales){
+        const ced = (pr.cedula ?? "").toString().trim();
+        const nom = (pr.nombre ?? "").toString().trim();
+
+        const opt = document.createElement("option");
+        opt.value = `${ced} - ${nom}`.trim();
+        opt.textContent = `${nom}${ced ? ` (${ced})` : ""}`.trim();
+        sel.appendChild(opt);
+      }
+    }
+
+    async function buscarPaciente(){
+      const cedula = ($("paciente_cedula").value || "").trim();
+      if (!cedula){
+        toast("Escribe la cédula", "warn");
+        return;
+      }
+
+      setStatus("Buscando paciente...");
+      const { data, error } = await supabase
+        .from("consentimientos")
+        .select("cedula_paciente, paciente_nombre")
+        .eq("cedula_paciente", cedula)
+        .order("creado_en", { ascending: false })
+        .limit(1);
+
+      setStatus("");
+
+      if (error){
+        console.warn("consentimientos error:", error);
+        toast("No se pudo buscar (consentimientos):\n" + error.message, "warn");
+        return;
+      }
+
+      const row = (data || [])[0];
+      if (row?.paciente_nombre){
+        $("paciente_nombre").value = row.paciente_nombre;
+        toast("Paciente encontrado ✅", "ok");
+      } else {
+        toast("No hay registro previo. Llena el nombre manualmente.", "warn");
+      }
+    }
+
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function agregarProcedimiento(){
+      const procId = ($("sel-proc").value || "").trim();
+      if (!procId){
+        toast("Selecciona un procedimiento", "warn");
+        return;
+      }
+
+      const p = state.procedimientos.find(x => String(x.id) === String(procId));
+      if (!p){
+        toast("Procedimiento no encontrado", "err");
+        return;
+      }
+
+      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
+      const valorU = Math.max(0, num(p.valor || 0));
+
+      const item = {
+        id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        codigo_cups: p.codigo_cups || "",
+        descripcion: p.procedimiento || "",
+        cantidad,
+        valor_unitario: valorU,
+        valor_total: valorU * cantidad
+      };
+
+      state.items.push(item);
+      renderItems();
+      recalcularTotales();
+
+      $("sel-proc").value = "";
+      $("cantidad").value = "1";
+      toast("Agregado ✅", "ok");
+    }
+
+    function eliminarItem(id_local){
+      state.items = state.items.filter(x => x.id_local !== id_local);
+      renderItems();
+      recalcularTotales();
+    }
+
+    function renderItems(){
+      const tbody = $("tbody-items");
+      tbody.innerHTML = "";
+
+      if (state.items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        return;
+      }
+
+      for (const it of state.items){
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
+          <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
+          <td class="mono">$ ${money(it.valor_total)}</td>
+          <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
+        `;
+
+        tr.querySelectorAll("input").forEach(inp => {
+          inp.addEventListener("input", () => {
+            const k = inp.dataset.k;
+            const v = num(inp.value);
+            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
+            it.valor_total = it.cantidad * it.valor_unitario;
+            renderItems();
+            recalcularTotales();
+          });
+        });
+
+        tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
+        tbody.appendChild(tr);
+      }
+    }
+
+    function recalcularTotales(){
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota = Math.max(0, num($("cuota_moderadora").value));
+      const total = Math.max(0, subtotal - copago - cuota);
+
+      $("subtotal").textContent = money(subtotal);
+      $("total").textContent = money(total);
+    }
+
+    async function guardarFactura(){
+      const fecha = ($("fecha").value || "").trim() || hoyISO();
+      const paciente_cedula = ($("paciente_cedula").value || "").trim();
+      const paciente_nombre = ($("paciente_nombre").value || "").trim();
+      const profesional = ($("profesional").value || "").trim();
+
+      if (!paciente_cedula || !paciente_nombre){
+        toast("Paciente: cédula y nombre son obligatorios", "err");
+        return;
+      }
+      if (!profesional){
+        toast("Selecciona el profesional", "err");
+        return;
+      }
+      if (state.items.length === 0){
+        toast("Agrega al menos 1 procedimiento", "err");
+        return;
+      }
+
+      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
+      $("numero_factura").value = numero_factura;
+
+      const eps = ($("eps").value || "").trim() || null;
+      const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
+
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota_moderadora = Math.max(0, num($("cuota_moderadora").value));
+      const valor_total = Math.max(0, subtotal - copago - cuota_moderadora);
+
+      setStatus("Guardando factura...");
+
+      try{
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .insert([{
+            fecha,
+            paciente_cedula,
+            paciente_nombre,
+            tipo_usuario,
+            eps,
+            numero_factura,
+            valor_total,
+            copago,
+            cuota_moderadora,
+            profesional
+          }])
+          .select("*")
+          .single();
+
+        if (e1) throw e1;
+
+        const detalle = state.items.map(it => ({
+          factura_id: fac.id,
+          codigo_cups: it.codigo_cups || null,
+          descripcion: it.descripcion || "",
+          cantidad: it.cantidad || 1,
+          valor_unitario: it.valor_unitario || 0,
+          valor_total: it.valor_total || 0
+        }));
+
+        const { error: e2 } = await supabase
+          .from("factura_detalle")
+          .insert(detalle);
+
+        if (e2) throw e2;
+
+        state.facturaGuardada = fac;
+        $("btn-imprimir").disabled = false;
+        setStatus("");
+        toast("Factura guardada ✅", "ok");
+
+      } catch(err){
+        console.error("guardarFactura error:", err);
+        setStatus("");
+        toast("No se pudo guardar:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    function imprimir(){
+      if (!state.facturaGuardada){
+        toast("Primero guarda la factura", "warn");
+        return;
+      }
+
+      const f = state.facturaGuardada;
+      const rows = state.items.map(it => `
+        <tr>
+          <td>${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td style="text-align:right;">${it.cantidad}</td>
+          <td style="text-align:right;">$ ${money(it.valor_unitario)}</td>
+          <td style="text-align:right;">$ ${money(it.valor_total)}</td>
+        </tr>
+      `).join("");
+
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const copago = Math.max(0, num($("copago").value));
+      const cuota = Math.max(0, num($("cuota_moderadora").value));
+      const total = Math.max(0, subtotal - copago - cuota);
+
+      const html = `
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Factura ${escapeHtml(f.numero_factura || "")}</title>
+<style>
+  body{ font-family: Arial, sans-serif; padding: 18px; color:#111; }
+  h2{ margin:0 0 6px; }
+  .muted{ color:#555; font-size:12px; }
+  table{ width:100%; border-collapse: collapse; margin-top:12px; }
+  th,td{ border-bottom:1px solid #ddd; padding:8px; font-size:13px; }
+  th{ text-align:left; background:#fafafa; }
+  .tot{ margin-top:12px; max-width:420px; margin-left:auto; }
+  .tot div{ display:flex; justify-content:space-between; padding:4px 0; }
+</style>
+</head>
+<body>
+  <h2>Factura</h2>
+  <div class="muted">
+    <div><b>No:</b> ${escapeHtml(f.numero_factura || "")}</div>
+    <div><b>Fecha:</b> ${escapeHtml(f.fecha || "")}</div>
+    <div><b>Paciente:</b> ${escapeHtml(f.paciente_cedula || "")} - ${escapeHtml(f.paciente_nombre || "")}</div>
+    <div><b>Profesional:</b> ${escapeHtml(f.profesional || "")}</div>
+    <div><b>Tipo usuario:</b> ${escapeHtml(f.tipo_usuario || "Particular")}</div>
+    <div><b>EPS:</b> ${escapeHtml(f.eps || "—")}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>CUPS</th>
+        <th>Procedimiento</th>
+        <th style="text-align:right;">Cant</th>
+        <th style="text-align:right;">V/Unit</th>
+        <th style="text-align:right;">Total</th>
+      </tr>
+    </thead>
+    <tbody>${rows}</tbody>
+  </table>
+
+  <div class="tot">
+    <div><span>Subtotal</span><b>$ ${money(subtotal)}</b></div>
+    <div><span>Copago</span><b>$ ${money(copago)}</b></div>
+    <div><span>Cuota moderadora</span><b>$ ${money(cuota)}</b></div>
+    <div style="border-top:1px solid #ddd; margin-top:6px; padding-top:8px;">
+      <span>Total</span><b>$ ${money(total)}</b>
+    </div>
+  </div>
+
+  <script>
+    setTimeout(()=>window.print(), 200);
+  <\/script>
+</body>
+</html>`;
+
+      const w = window.open("", "_blank");
+      w.document.open();
+      w.document.write(html);
+      w.document.close();
+    }
+
+    async function init(){
+      $("year").textContent = new Date().getFullYear();
+      $("fecha").value = hoyISO();
+      $("numero_factura").value = generarNumeroFactura();
+
+      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+      $("btn-buscar").addEventListener("click", buscarPaciente);
+      $("btn-add").addEventListener("click", agregarProcedimiento);
+      $("copago").addEventListener("input", recalcularTotales);
+      $("cuota_moderadora").addEventListener("input", recalcularTotales);
+      $("btn-guardar").addEventListener("click", guardarFactura);
+      $("btn-imprimir").addEventListener("click", imprimir);
+      $("btn-logout").addEventListener("click", cerrarSesion);
+
+      const ok = await proteger();
+      if (!ok) return;
+
+      await cargarProfesionales();
+      await cargarProcedimientos();
+
+      renderItems();
+      recalcularTotales();
+    }
+
+    // ✅ Asegura que el DOM ya existe
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
 </body>
 </html>
+
