@@ -1695,7 +1695,8 @@ async function cargarProfesionalesDesdeSupabase() {
   // ==============================
   const preexistencias = {
     Caries: 'red',
-    Corona: 'blue',
+    Corona_adaptada: 'blue',
+    Corona_desadaptada: '#C299F7',
     Endodoncia: '#005E94',
     Obturación: 'green',
     Fractura: 'orange',
@@ -1802,7 +1803,7 @@ async function cargarProfesionalesDesdeSupabase() {
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona") {
+        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona_adaptada"|| nombre === "Corona_desadaptada") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
 
