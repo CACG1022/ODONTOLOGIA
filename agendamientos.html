@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -25,6 +24,17 @@
     // ✅ Tablas en español
     const TABLA_CITAS = "citas";
     const TABLA_PROFESIONALES = "profesionales";
+
+    // ✅ Lista de especialidades del procedimiento
+    const ESPECIALIDADES = [
+      "Odontologia General",
+      "Rehabilitacion Oral",
+      "Endodoncia",
+      "Periodoncia",
+      "Ortodoncia",
+      "Cirugia",
+      "Odontopediatría"
+    ];
 
     // =========================
     // Helpers UI
@@ -70,6 +80,35 @@
       if (s === "atendida") return "#16a34a";
       if (s === "cancelada") return "#ef4444";
       return "#f59e0b"; // programada
+    }
+
+    function escapeHtml(str){
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function pad2(n){ return String(n).padStart(2,"0"); }
+
+    function formatHoraLocal(dateObj){
+      return `${pad2(dateObj.getHours())}:${pad2(dateObj.getMinutes())}`;
+    }
+
+    function duracionMinutos(startISO, endISO){
+      const s = new Date(startISO);
+      const e = new Date(endISO);
+      const ms = e - s;
+      return Math.max(0, Math.round(ms / 60000));
+    }
+
+    function formatoDuracion(mins){
+      if (mins < 60) return `${mins} min`;
+      const h = Math.floor(mins/60);
+      const m = mins % 60;
+      return m === 0 ? `${h} h` : `${h} h ${m} min`;
     }
 
     // =========================
@@ -146,7 +185,7 @@
       sel.innerHTML = `<option value="">-- Selecciona --</option>` +
         profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
 
-      // llenar filtro por profesional (opcional)
+      // llenar filtro por profesional
       const filt = $("filterProfessional");
       filt.innerHTML = `<option value="">Todos</option>` +
         profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
@@ -156,13 +195,41 @@
       return profesionalesCache.find(p => p.id === id)?.nombre || "";
     }
 
-    function escapeHtml(str){
-      return String(str || "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
+    // =========================
+    // Especialidades (cargar select)
+    // =========================
+    function cargarEspecialidades(){
+      const sel = $("especialidad");
+      sel.innerHTML =
+        `<option value="">-- Selecciona --</option>` +
+        ESPECIALIDADES.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join("");
+
+      const filt = $("filterEspecialidad");
+      filt.innerHTML =
+        `<option value="todos">Todas</option>` +
+        ESPECIALIDADES.map(e => `<option value="${escapeHtml(e)}">${escapeHtml(e)}</option>`).join("");
+    }
+
+    // =========================
+    // Título automático (formato solicitado)
+    // 1) Rango de hora, Duración
+    // 2) Nombre del Paciente, Cédula
+    // 3) Especialidad
+    // =========================
+    function construirTituloAutomatico({ inicioISO, finISO, nombrePaciente, cedulaPaciente, especialidad }){
+      const s = new Date(inicioISO);
+      const e = new Date(finISO);
+      const rango = `${formatHoraLocal(s)} - ${formatHoraLocal(e)}`;
+      const mins = duracionMinutos(inicioISO, finISO);
+      const dur = formatoDuracion(mins);
+
+      const np = normalizeText(nombrePaciente) || "Paciente";
+      const cc = normalizeText(cedulaPaciente) || "Sin cédula";
+      const esp = normalizeText(especialidad) || "Sin especialidad";
+
+      // FullCalendar dibuja el title como una línea; soporta saltos de línea en lista,
+      // y en timeGrid a veces se recorta. Igual lo ponemos como pidió.
+      return `${rango}, ${dur}\n${np}, ${cc}\n${esp}`;
     }
 
     // =========================
@@ -174,9 +241,16 @@
 
       const estado = row.estado || "programada";
 
+      // Si por alguna razón titulo está vacío, lo regeneramos con el formato requerido
       const titulo = normalizeText(row.titulo)
         ? row.titulo
-        : `${row.nombre_paciente || "Paciente"} · ${row.nombre_profesional || "Profesional"}`;
+        : construirTituloAutomatico({
+            inicioISO: row.inicio,
+            finISO: row.fin,
+            nombrePaciente: row.nombre_paciente,
+            cedulaPaciente: row.documento_paciente,
+            especialidad: row.especialidad
+          });
 
       return {
         id: row.id,
@@ -191,6 +265,7 @@
           telefono_paciente: row.telefono_paciente || "",
           profesional_id: row.profesional_id || "",
           nombre_profesional: row.nombre_profesional || "",
+          especialidad: row.especialidad || "",
           estado: estado,
           notas: row.notas || "",
           inicio_local: toLocalInputValue(start),
@@ -199,7 +274,7 @@
       };
     }
 
-    async function fetchCitas(rangeStartISO, rangeEndISO, profesionalIdFiltro, estadoFiltro){
+    async function fetchCitas(rangeStartISO, rangeEndISO, profesionalIdFiltro, estadoFiltro, especialidadFiltro){
       let q = supabase
         .from(TABLA_CITAS)
         .select("*")
@@ -211,6 +286,10 @@
 
       if (estadoFiltro && estadoFiltro !== "todos") {
         q = q.eq("estado", estadoFiltro);
+      }
+
+      if (especialidadFiltro && especialidadFiltro !== "todos") {
+        q = q.eq("especialidad", especialidadFiltro);
       }
 
       const { data, error } = await q;
@@ -260,15 +339,35 @@
       $("modalTitle").textContent = mode === "edit" ? "Editar cita" : "Nueva cita";
 
       $("citaId").value = payload?.id || "";
+
+      // En este flujo el título es automático. Igual dejamos un input visible SOLO lectura
+      // para que el usuario vea cómo va quedando.
       $("titulo").value = payload?.titulo || "";
+
       $("nombre_paciente").value = payload?.nombre_paciente || "";
       $("documento_paciente").value = payload?.documento_paciente || "";
       $("telefono_paciente").value = payload?.telefono_paciente || "";
       $("profesional_id").value = payload?.profesional_id || "";
+      $("especialidad").value = payload?.especialidad || "";
       $("estado").value = payload?.estado || "programada";
       $("notas").value = payload?.notas || "";
       $("inicio").value = payload?.inicio_local || "";
       $("fin").value = payload?.fin_local || "";
+
+      // Si viene sin título, lo calculamos
+      if (!normalizeText($("titulo").value) && payload?.inicio_local && payload?.fin_local){
+        const inicioISO = toISOFromLocalInput(payload.inicio_local);
+        const finISO = toISOFromLocalInput(payload.fin_local);
+        if (inicioISO && finISO){
+          $("titulo").value = construirTituloAutomatico({
+            inicioISO,
+            finISO,
+            nombrePaciente: $("nombre_paciente").value,
+            cedulaPaciente: $("documento_paciente").value,
+            especialidad: $("especialidad").value
+          });
+        }
+      }
 
       $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
       $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
@@ -277,6 +376,24 @@
     function closeModal(){
       $("modal").classList.remove("open");
       $("modal").setAttribute("aria-hidden","true");
+    }
+
+    function actualizarPreviewTitulo(){
+      const inicioLocal = $("inicio").value;
+      const finLocal = $("fin").value;
+      if (!inicioLocal || !finLocal) return;
+
+      const inicioISO = toISOFromLocalInput(inicioLocal);
+      const finISO = toISOFromLocalInput(finLocal);
+      if (!inicioISO || !finISO) return;
+
+      $("titulo").value = construirTituloAutomatico({
+        inicioISO,
+        finISO,
+        nombrePaciente: $("nombre_paciente").value,
+        cedulaPaciente: $("documento_paciente").value,
+        especialidad: $("especialidad").value
+      });
     }
 
     // =========================
@@ -288,7 +405,8 @@
     function getFilters(){
       return {
         profesional_id: $("filterProfessional").value || "",
-        estado: $("filterStatus").value || "todos"
+        estado: $("filterStatus").value || "todos",
+        especialidad: $("filterEspecialidad").value || "todos"
       };
     }
 
@@ -300,9 +418,9 @@
         const rangeStart = view.activeStart.toISOString();
         const rangeEnd   = view.activeEnd.toISOString();
 
-        const { profesional_id, estado } = getFilters();
+        const { profesional_id, estado, especialidad } = getFilters();
 
-        const rows = await fetchCitas(rangeStart, rangeEnd, profesional_id, estado);
+        const rows = await fetchCitas(rangeStart, rangeEnd, profesional_id, estado, especialidad);
         const events = rows.map(rowToEvent);
 
         calendar.removeAllEvents();
@@ -360,6 +478,7 @@
             documento_paciente: ev.extendedProps.documento_paciente,
             telefono_paciente: ev.extendedProps.telefono_paciente,
             profesional_id: ev.extendedProps.profesional_id,
+            especialidad: ev.extendedProps.especialidad,
             estado: ev.extendedProps.estado,
             notas: ev.extendedProps.notas,
             inicio_local: ev.extendedProps.inicio_local || toLocalInputValue(ev.start),
@@ -371,12 +490,28 @@
           try{
             setLoading(true);
             const id = info.event.id;
+
+            const inicioISO = info.event.start.toISOString();
+            const finISO = info.event.end.toISOString();
+
+            // Recalcular título automático con los props existentes
+            const nuevoTitulo = construirTituloAutomatico({
+              inicioISO,
+              finISO,
+              nombrePaciente: info.event.extendedProps.nombre_paciente,
+              cedulaPaciente: info.event.extendedProps.documento_paciente,
+              especialidad: info.event.extendedProps.especialidad
+            });
+
             const row = {
-              inicio: info.event.start.toISOString(),
-              fin: info.event.end.toISOString()
+              inicio: inicioISO,
+              fin: finISO,
+              titulo: nuevoTitulo
             };
+
             await actualizarCita(id, row);
 
+            info.event.setProp("title", nuevoTitulo);
             info.event.setExtendedProp("inicio_local", toLocalInputValue(info.event.start));
             info.event.setExtendedProp("fin_local", toLocalInputValue(info.event.end));
 
@@ -394,12 +529,27 @@
           try{
             setLoading(true);
             const id = info.event.id;
+
+            const inicioISO = info.event.start.toISOString();
+            const finISO = info.event.end.toISOString();
+
+            const nuevoTitulo = construirTituloAutomatico({
+              inicioISO,
+              finISO,
+              nombrePaciente: info.event.extendedProps.nombre_paciente,
+              cedulaPaciente: info.event.extendedProps.documento_paciente,
+              especialidad: info.event.extendedProps.especialidad
+            });
+
             const row = {
-              inicio: info.event.start.toISOString(),
-              fin: info.event.end.toISOString()
+              inicio: inicioISO,
+              fin: finISO,
+              titulo: nuevoTitulo
             };
+
             await actualizarCita(id, row);
 
+            info.event.setProp("title", nuevoTitulo);
             info.event.setExtendedProp("inicio_local", toLocalInputValue(info.event.start));
             info.event.setExtendedProp("fin_local", toLocalInputValue(info.event.end));
 
@@ -436,6 +586,7 @@
 
       $("filterProfessional").addEventListener("change", ()=> reloadCalendarEvents());
       $("filterStatus").addEventListener("change", ()=> reloadCalendarEvents());
+      $("filterEspecialidad").addEventListener("change", ()=> reloadCalendarEvents());
 
       $("btnNew").addEventListener("click", () => {
         const start = new Date();
@@ -458,19 +609,12 @@
 
       $("btnSave").addEventListener("click", onSave);
       $("btnDelete").addEventListener("click", onDelete);
-    }
 
-    function buildTituloSiVacio(fields){
-      const t = normalizeText(fields.titulo);
-      if (t) return t;
-      const np = normalizeText(fields.nombre_paciente);
-      const dp = normalizeText(fields.documento_paciente);
-      const profName = getNombreProfesionalPorId(fields.profesional_id);
-      let s = "";
-      if (np) s += np;
-      if (dp) s += (s ? " · " : "") + dp;
-      if (profName) s += (s ? " · " : "") + profName;
-      return s || "Cita";
+      // Recalcular título en vivo
+      ["nombre_paciente","documento_paciente","especialidad","inicio","fin"].forEach(id=>{
+        $(id).addEventListener("input", actualizarPreviewTitulo);
+        $(id).addEventListener("change", actualizarPreviewTitulo);
+      });
     }
 
     async function onSave(){
@@ -479,30 +623,29 @@
 
         const id = $("citaId").value.trim();
 
-        const payload = {
-          titulo: $("titulo").value,
-          nombre_paciente: $("nombre_paciente").value,
-          documento_paciente: $("documento_paciente").value,
-          telefono_paciente: $("telefono_paciente").value,
-          profesional_id: $("profesional_id").value,
-          estado: $("estado").value,
-          notas: $("notas").value,
-          inicio_local: $("inicio").value,
-          fin_local: $("fin").value,
-        };
+        const profesionalId = $("profesional_id").value;
+        const especialidad = $("especialidad").value;
 
-        if (!payload.profesional_id){
+        const inicioLocal = $("inicio").value;
+        const finLocal = $("fin").value;
+
+        if (!profesionalId){
           toast("Selecciona un profesional.", "warn");
           return;
         }
 
-        if (!payload.inicio_local || !payload.fin_local){
+        if (!especialidad){
+          toast("Selecciona la especialidad del procedimiento.", "warn");
+          return;
+        }
+
+        if (!inicioLocal || !finLocal){
           toast("Selecciona inicio y fin.", "warn");
           return;
         }
 
-        const inicioISO = toISOFromLocalInput(payload.inicio_local);
-        const finISO = toISOFromLocalInput(payload.fin_local);
+        const inicioISO = toISOFromLocalInput(inicioLocal);
+        const finISO = toISOFromLocalInput(finLocal);
 
         if (!inicioISO || !finISO){
           toast("Fecha/hora inválida.", "warn");
@@ -516,22 +659,37 @@
           return;
         }
 
-        payload.titulo = buildTituloSiVacio(payload);
+        // Título automático requerido (siempre)
+        const tituloAuto = construirTituloAutomatico({
+          inicioISO,
+          finISO,
+          nombrePaciente: $("nombre_paciente").value,
+          cedulaPaciente: $("documento_paciente").value,
+          especialidad: especialidad
+        });
+
+        $("titulo").value = tituloAuto;
 
         const row = {
           usuario_id: currentSession.user.id,
-          profesional_id: payload.profesional_id,
-          nombre_paciente: normalizeText(payload.nombre_paciente),
-          documento_paciente: normalizeText(payload.documento_paciente),
-          telefono_paciente: normalizeText(payload.telefono_paciente),
-          titulo: normalizeText(payload.titulo) || "Cita",
-          estado: payload.estado || "programada",
-          notas: normalizeText(payload.notas),
+          profesional_id: profesionalId,
+
+          nombre_paciente: normalizeText($("nombre_paciente").value),
+          documento_paciente: normalizeText($("documento_paciente").value),
+          telefono_paciente: normalizeText($("telefono_paciente").value),
+
+          especialidad: normalizeText(especialidad),
+
+          titulo: tituloAuto,
+
+          estado: $("estado").value || "programada",
+          notas: normalizeText($("notas").value),
+
           inicio: inicioISO,
           fin: finISO,
 
-          // opcional: cache (aunque el trigger lo llena, lo mandamos también)
-          nombre_profesional: getNombreProfesionalPorId(payload.profesional_id)
+          // cache (el trigger lo llena, lo enviamos también)
+          nombre_profesional: getNombreProfesionalPorId(profesionalId)
         };
 
         if (id){
@@ -547,8 +705,6 @@
 
       } catch(e){
         console.error(e);
-        // Si hay choque, Postgres lanza error por constraint
-        // Te mostramos el mensaje igualmente.
         toast("Error guardando: " + e.message, "error");
       } finally {
         setLoading(false);
@@ -590,6 +746,7 @@
       });
 
       wireButtons();
+      cargarEspecialidades();
       await cargarProfesionales();
       await initCalendar();
     })();
@@ -836,7 +993,7 @@
 
     .modalCard{
       position: relative;
-      width: min(760px, 100%);
+      width: min(820px, 100%);
       background: var(--surface);
       border: 1px solid rgba(255,255,255,.15);
       border-radius: 18px;
@@ -918,6 +1075,7 @@
       z-index: 70;
       max-width: min(720px, 92vw);
       text-align:center;
+      white-space: pre-line; /* para que el toast soporte saltos de línea */
     }
     .toast.show{
       opacity: 1;
@@ -937,6 +1095,18 @@
       box-shadow: var(--shadow-2);
     }
     .blocked strong{ color:#7f1d1d; }
+
+    /* Preview del título en el modal */
+    .previewTitulo{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 11px;
+      background: var(--surface-2);
+      font-size: 13px;
+      color: var(--text);
+      white-space: pre-line;
+      line-height: 1.35;
+    }
   </style>
 </head>
 
@@ -968,7 +1138,7 @@
       <!-- Sidebar -->
       <div class="panel">
         <h2>Filtros</h2>
-        <div class="muted">Filtra por profesional y estado.</div>
+        <div class="muted">Filtra por profesional, estado y especialidad.</div>
 
         <div class="field">
           <label for="filterProfessional">Profesional</label>
@@ -985,6 +1155,13 @@
             <option value="confirmada">Confirmada</option>
             <option value="atendida">Atendida</option>
             <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="filterEspecialidad">Especialidad</label>
+          <select id="filterEspecialidad">
+            <option value="todos">Cargando...</option>
           </select>
         </div>
 
@@ -1009,11 +1186,10 @@
 
         <div class="field">
           <div class="muted">
-            <b>Tips:</b><br/>
-            • Selecciona un rango para crear cita.<br/>
-            • Click sobre cita para editar.<br/>
-            • Arrastra/estira para reprogramar.<br/>
-            • Choques bloqueados por BD.
+            <b>Formato del título (automático):</b><br/>
+            • Rango de hora, Duración<br/>
+            • Nombre del paciente, Cédula<br/>
+            • Especialidad
           </div>
         </div>
       </div>
@@ -1044,7 +1220,7 @@
         </div>
 
         <div class="field">
-          <label for="documento_paciente">Documento</label>
+          <label for="documento_paciente">Cédula / Documento</label>
           <input id="documento_paciente" type="text" placeholder="CC / TI / CE" />
         </div>
 
@@ -1056,6 +1232,13 @@
         <div class="field">
           <label for="profesional_id">Profesional</label>
           <select id="profesional_id">
+            <option value="">Cargando...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="especialidad">Especialidad del procedimiento</label>
+          <select id="especialidad">
             <option value="">Cargando...</option>
           </select>
         </div>
@@ -1081,8 +1264,10 @@
         </div>
 
         <div class="field" style="grid-column: 1 / -1;">
-          <label for="titulo">Título (opcional)</label>
-          <input id="titulo" type="text" placeholder="Si lo dejas vacío, se genera automáticamente" />
+          <label>Título (automático)</label>
+          <div id="titulo_preview" class="previewTitulo"></div>
+          <!-- input oculto para guardar -->
+          <input id="titulo" type="hidden" />
         </div>
 
         <div class="field" style="grid-column: 1 / -1;">
@@ -1106,5 +1291,11 @@
 
   <!-- Toast -->
   <div id="toast" class="toast">Listo</div>
+
+  <script>
+    // Este script NO toca Supabase; solo UI rápida para el preview del título
+    // (El cálculo real está en el module script de arriba)
+  </script>
 </body>
 </html>
+
