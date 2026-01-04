@@ -903,6 +903,21 @@
       }
     }
 
+    function resolveProfesionalLabel(v){
+  const raw = String(v ?? "").trim();
+  if (!raw) return "—";
+
+  // Si el valor parece una cédula (solo números), buscamos el nombre
+  const onlyDigits = /^[0-9]+$/.test(raw);
+  if (onlyDigits){
+    const pr = (state.profesionales || []).find(x => String(x.cedula ?? "").trim() === raw);
+    if (pr && pr.nombre) return String(pr.nombre).trim();
+  }
+
+  // Si ya es nombre (o no coincide), lo devolvemos tal cual
+  return raw;
+}
+
     // ✅ IMPRESIÓN MEJORADA + LOGO + MÁRGENES/BORDES + CORREO PACIENTE
     function buildInvoiceHTML({ fac, detalle, totals }){
       const rows = (detalle || []).map(it => `
@@ -917,7 +932,7 @@
 
       const eps = fac?.eps ? escapeHtml(fac.eps) : "—";
       const tipo = fac?.tipo_usuario ? escapeHtml(fac.tipo_usuario) : "—";
-      const profesional = fac?.profesional ? escapeHtml(fac.profesional) : "—";
+      const profesional = escapeHtml(resolveProfesionalLabel(fac?.profesional));
       const mp = fac?.metodo_pago ? escapeHtml(fac.metodo_pago) : "—";
       const obs = fac?.observacion ? escapeHtml(fac.observacion) : "—";
       const correoPac = fac?.paciente_correo ? escapeHtml(fac.paciente_correo) : "—";
