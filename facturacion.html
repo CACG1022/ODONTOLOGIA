@@ -666,9 +666,15 @@
       return true;
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = LOGIN_URL;
-    });
+    supabase.auth.onAuthStateChange((event, session) => {
+  console.log("AUTH EVENT:", event, "SESSION:", !!session);
+
+  // Solo redirige si realmente se cerró sesión
+  if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+    window.location.href = LOGIN_URL;
+  }
+});
+
 
     async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e) {}
