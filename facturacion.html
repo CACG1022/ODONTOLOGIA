@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Facturación - Clínica Odontológica</title>
 
-  <!-- ✅ NUEVO: Librería para exportar Excel (SheetJS) -->
+  <!-- ✅ Librería para exportar Excel (SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
@@ -51,6 +51,22 @@
       white-space:nowrap;
     }
     .chip b{ color: var(--text); }
+
+    /* ✅ NUEVO: Chip en dos líneas (usuario + rol) */
+    .chip-user{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      line-height:1.15;
+      white-space:normal;
+    }
+    .chip-sub{
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .chip-sub b{
+      color: var(--text);
+    }
 
     .container{
       max-width: 1100px;
@@ -280,7 +296,7 @@
       border-radius: 12px;
     }
 
-    /* ✅ NUEVO: resumen total facturado */
+    /* ✅ resumen total facturado */
     .modal-summary{
       margin-top: 10px;
       display:flex;
@@ -318,7 +334,12 @@
       <h1>CLÍNICA ODONTOLÓGICA — Facturación6</h1>
     </div>
     <div class="meta">
-      <div class="chip">Usuario: <b id="user-email">—</b></div>
+      <!-- ✅ Ajustado: debajo del usuario se muestra el rol -->
+      <div class="chip chip-user">
+        <div>Usuario: <b id="user-email">—</b></div>
+        <div class="chip-sub">Rol: <b id="user-role">—</b></div>
+      </div>
+
       <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
     </div>
   </div>
@@ -506,7 +527,6 @@
       <div class="modal-head">
         <div class="title">Facturas generadas</div>
         <div style="display:flex; gap:10px; align-items:center;">
-          <!-- ✅ NUEVO: Exportar Excel -->
           <button class="btn" id="btn-export-excel" type="button">⬇ Excel</button>
           <button class="btn" id="btn-refresh-facturas" type="button">🔄 Actualizar</button>
           <button class="btn danger" id="btn-cerrar-modal" type="button">✖ Cerrar</button>
@@ -519,7 +539,6 @@
             <input id="buscar_facturas" type="text" placeholder="Ej: FAC-2026... o 123456789">
           </div>
 
-          <!-- ✅ NUEVO: Filtro por fecha (rango) -->
           <div class="ctrl">
             <label>Fecha desde</label>
             <input id="fecha_desde" type="date">
@@ -561,7 +580,6 @@
           </table>
         </div>
 
-        <!-- ✅ NUEVO: Total facturado del resultado filtrado -->
         <div class="modal-summary">
           <div class="summary-chip">
             Total facturado (filtro): <b>$ <span id="total_facturado">0</span></b>
@@ -592,6 +610,13 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
+    /* ✅ CONFIG: tabla donde guardas roles (si tu tabla tiene otro nombre, cámbialo aquí)
+       En tu UI de "Administrar usuarios y roles" normalmente hay columnas: email y rol
+       Ejemplos de roles: user, doctor, auxiliar, admin
+    */
+    const ROLE_TABLE_PRIMARY = "usuarios_roles"; // <--- si tu tabla se llama distinto, cámbialo aquí
+    const ROLE_COLUMN_PRIMARY = "rol";          // <--- si tu columna se llama "role", cámbialo aquí
+
     const state = {
       session: null,
       procedimientos: [],
@@ -600,7 +625,8 @@
       facturaGuardada: null,
       _debounce: null,
       _lastCedula: "",
-      facturas: []
+      facturas: [],
+      userRole: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -655,26 +681,77 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
+    /* ✅ NUEVO: obtener rol por email
+       - Primero intenta ROLE_TABLE_PRIMARY/ROLE_COLUMN_PRIMARY
+       - Si no existe o no trae, prueba con tablas/columnas comunes
+    */
+    async function cargarRolUsuario(email){
+      const tablasPosibles = [
+        { table: ROLE_TABLE_PRIMARY, cols: [ROLE_COLUMN_PRIMARY, "role"] },
+        { table: "usuarios_roles", cols: ["rol", "role"] },
+        { table: "users_roles", cols: ["rol", "role"] },
+        { table: "user_roles", cols: ["rol", "role"] },
+        { table: "usuarios", cols: ["rol", "role"] },
+        { table: "roles_usuarios", cols: ["rol", "role"] }
+      ];
+
+      for (const t of tablasPosibles){
+        for (const col of t.cols){
+          try{
+            const { data, error } = await supabase
+              .from(t.table)
+              .select(`${col}, email`)
+              .eq("email", email)
+              .maybeSingle();
+
+            if (!error && data){
+              const rol = (data[col] ?? "").toString().trim();
+              if (rol) return rol;
+            }
+          } catch(e){
+            // intenta siguiente
+          }
+        }
+      }
+
+      return "user"; // fallback
+    }
+
     async function proteger(){
       const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
         return false;
       }
+
       state.session = session;
-      $("user-email").textContent = session.user?.email || "Usuario";
+
+      const email = session.user?.email || "Usuario";
+      $("user-email").textContent = email;
+
+      // ✅ Pintar rol
+      try{
+        const rol = await cargarRolUsuario(email);
+        state.userRole = rol;
+        const elRol = $("user-role");
+        if (elRol) elRol.textContent = rol;
+      } catch(e){
+        state.userRole = "user";
+        const elRol = $("user-role");
+        if (elRol) elRol.textContent = "user";
+      }
+
       return true;
     }
 
+    // ✅ Ajustado: NO redirigir en el arranque si session existe.
     supabase.auth.onAuthStateChange((event, session) => {
-  console.log("AUTH EVENT:", event, "SESSION:", !!session);
+      console.log("AUTH EVENT:", event, "SESSION:", !!session);
 
-  // Solo redirige si realmente se cerró sesión
-  if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
-    window.location.href = LOGIN_URL;
-  }
-});
-
+      if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+        window.location.href = LOGIN_URL;
+      }
+    });
 
     async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e) {}
@@ -1362,7 +1439,6 @@
       updateResumenFacturas(rows);
     }
 
-    // ✅ helper: arma rango fecha para gte/lte (sirve si tu columna es DATE o TIMESTAMP)
     function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
     function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
@@ -1370,7 +1446,6 @@
       const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
       const q = ($("buscar_facturas").value || "").trim();
 
-      // ✅ NUEVO: fechas
       const desde = ($("fecha_desde")?.value || "").trim();
       const hasta = ($("fecha_hasta")?.value || "").trim();
 
@@ -1383,9 +1458,7 @@
           .order("fecha", { ascending: false })
           .limit(limit);
 
-        // ✅ NUEVO: aplicar filtro por fecha (rango)
         if (desde){
-          // usamos el start del día (si tu campo es date igual funciona por comparación de string)
           query = query.gte("fecha", dateStartISO(desde));
         }
         if (hasta){
@@ -1550,7 +1623,6 @@
       }
     }
 
-    // ✅ NUEVO: exportar reporte Excel con el resultado filtrado actual
     function exportarExcel(){
       try{
         const rows = state.facturas || [];
@@ -1579,24 +1651,20 @@
 
         const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
 
-        // Hoja principal
         const ws = XLSX.utils.json_to_sheet(data);
 
-        // Agregar una fila de total al final
         const lastRow = data.length + 2;
         XLSX.utils.sheet_add_aoa(ws, [
           [],
           ["TOTAL FACTURADO", totalFacturado]
         ], { origin: `A${lastRow}` });
 
-        // Auto ancho simple (aprox)
         const colWidths = [
           { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 26 },
           { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 12 }, { wch: 16 }
         ];
         ws["!cols"] = colWidths;
 
-        // Hoja de parámetros
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
           ["Generado:", new Date().toLocaleString("es-CO")],
@@ -1646,14 +1714,9 @@
 
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
-      // ✅ Mantiene: al hacer click en "Ver facturas", filtra por cédula automáticamente
       $("btn-ver-facturas").addEventListener("click", async () => {
         const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
         $("buscar_facturas").value = ced || "";
-
-        // ✅ NUEVO: si quieres que por defecto sea "hoy", descomenta las 2 líneas:
-        // $("fecha_desde").value = hoyISO();
-        // $("fecha_hasta").value = hoyISO();
 
         openModal();
         await listarFacturas();
@@ -1668,7 +1731,6 @@
       $("btn-buscar-facturas").addEventListener("click", listarFacturas);
       $("limite_facturas").addEventListener("change", listarFacturas);
 
-      // ✅ NUEVO: refresca al cambiar fechas (opcional, cómodo)
       $("fecha_desde").addEventListener("change", listarFacturas);
       $("fecha_hasta").addEventListener("change", listarFacturas);
 
@@ -1676,7 +1738,6 @@
         if (e.key === "Enter") listarFacturas();
       });
 
-      // ✅ NUEVO: exportar excel
       $("btn-export-excel").addEventListener("click", exportarExcel);
 
       const ok = await proteger();
@@ -1694,10 +1755,3 @@
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
