@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Agendamiento Avanzado - Clínica Odontológica</title>
+
+  <!-- ✅ FullCalendar (Gratis) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+
+  <!-- ✅ Supabase -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Supabase (igual que tu index.html)
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    // ✅ Ajusta si quieres tu ruta exacta
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const HOME_URL  = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // ✅ Nombre de tabla en Supabase
+    // Crea una tabla llamada: appointments
+    // Columnas sugeridas (mínimas):
+    // id (uuid, default gen_random_uuid, PK)
+    // user_id (uuid)
+    // title (text)
+    // patient_name (text)
+    // patient_doc (text)
+    // professional (text)
+    // status (text)  // programada|confirmada|atendida|cancelada
+    // notes (text)
+    // start_time (timestamptz)
+    // end_time (timestamptz)
+    // created_at (timestamptz, default now())
+    //
+    // ⚠️ Si tu tabla tiene otros nombres, cambia los campos en mapEventToRow / mapRowToEvent.
+
+    // =========================
+    // Helpers UI
+    // =========================
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="info"){
+      const el = $("toast");
+      if(!el) return alert(msg);
+      el.textContent = msg;
+      el.className = "toast show " + type;
+      clearTimeout(window.__toastT);
+      window.__toastT = setTimeout(()=> el.className = "toast", 2600);
+    }
+
+    function setLoading(isLoading){
+      const b = $("loading");
+      if(!b) return;
+      b.style.display = isLoading ? "flex" : "none";
+    }
+
+    function openModal(mode, payload){
+      // mode: create | edit
+      $("modal").classList.add("open");
+      $("modal").setAttribute("aria-hidden","false");
+      $("modalTitle").textContent = mode === "edit" ? "Editar cita" : "Nueva cita";
+
+      // limpiar
+      $("apptId").value = payload?.id || "";
+      $("title").value = payload?.title || "";
+      $("patient_name").value = payload?.patient_name || "";
+      $("patient_doc").value = payload?.patient_doc || "";
+      $("professional").value = payload?.professional || "";
+      $("status").value = payload?.status || "programada";
+      $("notes").value = payload?.notes || "";
+
+      // datetime-local necesita formato local sin Z
+      $("start_time").value = payload?.start_local || "";
+      $("end_time").value = payload?.end_local || "";
+
+      // botones
+      $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
+      $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
+    }
+
+    function closeModal(){
+      $("modal").classList.remove("open");
+      $("modal").setAttribute("aria-hidden","true");
+    }
+
+    function toLocalInputValue(dateObj){
+      const pad = (n)=> String(n).padStart(2,"0");
+      const y = dateObj.getFullYear();
+      const m = pad(dateObj.getMonth()+1);
+      const d = pad(dateObj.getDate());
+      const hh = pad(dateObj.getHours());
+      const mm = pad(dateObj.getMinutes());
+      return `${y}-${m}-${d}T${hh}:${mm}`;
+    }
+
+    function toISOFromLocalInput(val){
+      // val: "YYYY-MM-DDTHH:mm" interpretado como local -> ISO
+      // new Date(val) toma local y lo convierte
+      const d = new Date(val);
+      if (isNaN(d.getTime())) return null;
+      return d.toISOString();
+    }
+
+    function normalizeProfessional(p){
+      return (p || "").trim();
+    }
+
+    function normalizeDoc(d){
+      return (d || "").trim();
+    }
+
+    function normalizeText(t){
+      return (t || "").trim();
+    }
+
+    function statusColor(status){
+      const s = String(status || "").toLowerCase();
+      if (s === "confirmada") return "#2563eb";
+      if (s === "atendida") return "#16a34a";
+      if (s === "cancelada") return "#ef4444";
+      return "#f59e0b"; // programada
+    }
+
+    // =========================
+    // Auth + Roles (admin/auxiliar)
+    // =========================
+    async function cargarRolDesdeProfiles(userId){
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) return null;
+        return data?.role || null;
+      } catch {
+        return null;
+      }
+    }
+
+    async function verificarSesionYPermisos(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return { ok:false };
+      }
+
+      // Mostrar usuario y rol
+      $("user-email").textContent = session.user?.email || "Usuario autenticado";
+
+      const role = await cargarRolDesdeProfiles(session.user.id);
+      $("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+
+      const r = String(role || "").toLowerCase().trim();
+      const allowed = (r === "admin" || r === "auxiliar");
+
+      if (!allowed){
+        $("blocked").style.display = "block";
+        $("app").style.display = "none";
+        return { ok:false, session, role };
+      }
+
+      $("blocked").style.display = "none";
+      $("app").style.display = "grid";
+
+      return { ok:true, session, role };
+    }
+
+    // Si se expira/cierra, vuelve al login
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    // Logout
+    window.cerrarSesion = async () => {
+      try { await supabase.auth.signOut(); } catch(e) {}
+      try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    };
+
+    // =========================
+    // Supabase CRUD
+    // =========================
+    function mapRowToEvent(row){
+      const start = new Date(row.start_time);
+      const end   = new Date(row.end_time);
+
+      const prof = row.professional || "";
+      const patient = row.patient_name || "";
+      const doc = row.patient_doc || "";
+      const st = row.status || "programada";
+
+      const title = row.title?.trim()
+        ? row.title.trim()
+        : `${patient}${patient ? " · " : ""}${prof}`;
+
+      return {
+        id: row.id,
+        title,
+        start: row.start_time,
+        end: row.end_time,
+        backgroundColor: statusColor(st),
+        borderColor: statusColor(st),
+        extendedProps: {
+          patient_name: patient,
+          patient_doc: doc,
+          professional: prof,
+          status: st,
+          notes: row.notes || "",
+          // guardamos strings local para precargar el form
+          start_local: toLocalInputValue(start),
+          end_local: toLocalInputValue(end),
+        }
+      };
+    }
+
+    function mapEventToRow(payload, userId){
+      // payload viene del modal
+      return {
+        // id opcional para update
+        user_id: userId,
+        title: normalizeText(payload.title),
+        patient_name: normalizeText(payload.patient_name),
+        patient_doc: normalizeDoc(payload.patient_doc),
+        professional: normalizeProfessional(payload.professional),
+        status: normalizeText(payload.status) || "programada",
+        notes: normalizeText(payload.notes),
+        start_time: payload.start_iso,
+        end_time: payload.end_iso
+      };
+    }
+
+    async function fetchAppointments(rangeStartISO, rangeEndISO){
+      // trae todas las citas dentro del rango
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("*")
+        .gte("start_time", rangeStartISO)
+        .lt("start_time", rangeEndISO)
+        .order("start_time", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      return data || [];
+    }
+
+    async function hasConflict({ idToIgnore=null, professional, startISO, endISO }){
+      // Conflicto: misma profesional, se solapan intervalos
+      // solapamiento: start < end2 AND end > start2
+      // Usamos dos filtros aproximados y validamos en cliente si hace falta
+      const prof = normalizeProfessional(professional);
+      if (!prof) return false; // si no hay profesional, no validamos choque
+
+      const { data, error } = await supabase
+        .from("appointments")
+        .select("id, start_time, end_time, professional")
+        .eq("professional", prof)
+        .lt("start_time", endISO)
+        .gt("end_time", startISO);
+
+      if (error) throw new Error(error.message);
+
+      const rows = (data || []).filter(r => !idToIgnore || r.id !== idToIgnore);
+      return rows.length > 0;
+    }
+
+    async function createAppointment(row){
+      const { data, error } = await supabase
+        .from("appointments")
+        .insert(row)
+        .select("*")
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    async function updateAppointment(id, row){
+      const { data, error } = await supabase
+        .from("appointments")
+        .update(row)
+        .eq("id", id)
+        .select("*")
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
+    }
+
+    async function deleteAppointment(id){
+      const { error } = await supabase
+        .from("appointments")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw new Error(error.message);
+      return true;
+    }
+
+    // =========================
+    // FullCalendar App
+    // =========================
+    let calendar;
+    let currentSession = null;
+
+    function getFilters(){
+      return {
+        professional: normalizeProfessional($("filterProfessional").value),
+        status: $("filterStatus").value
+      };
+    }
+
+    function applyClientFilters(events){
+      const { professional, status } = getFilters();
+
+      return events.filter(ev => {
+        const p = (ev.extendedProps?.professional || "").trim();
+        const st = String(ev.extendedProps?.status || "").toLowerCase();
+        const stFilter = String(status || "").toLowerCase();
+
+        if (professional && p.toLowerCase() !== professional.toLowerCase()) return false;
+        if (stFilter && stFilter !== "todos" && st !== stFilter) return false;
+        return true;
+      });
+    }
+
+    async function reloadCalendarEvents(){
+      if (!calendar) return;
+      setLoading(true);
+      try{
+        const view = calendar.view;
+        const rangeStart = view.activeStart.toISOString();
+        const rangeEnd   = view.activeEnd.toISOString();
+
+        const rows = await fetchAppointments(rangeStart, rangeEnd);
+        const events = rows.map(mapRowToEvent);
+
+        calendar.removeAllEvents();
+        applyClientFilters(events).forEach(e => calendar.addEvent(e));
+
+        $("rangeLabel").textContent =
+          view.title || new Date().toLocaleDateString("es-CO");
+      } catch(e){
+        console.error(e);
+        toast("Error cargando agenda: " + e.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function buildTitleFromFields(fields){
+      const patient = normalizeText(fields.patient_name);
+      const prof = normalizeProfessional(fields.professional);
+      const doc = normalizeDoc(fields.patient_doc);
+
+      // Si el usuario no puso título, generamos uno legible
+      if (normalizeText(fields.title)) return normalizeText(fields.title);
+
+      let t = "";
+      if (patient) t += patient;
+      if (doc) t += (t ? " · " : "") + doc;
+      if (prof) t += (t ? " · " : "") + prof;
+      return t || "Cita";
+    }
+
+    async function initCalendar(){
+      const calendarEl = $("calendar");
+
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: "es",
+        timeZone: "local",
+        initialView: "timeGridWeek",
+        nowIndicator: true,
+        selectable: true,
+        editable: true,
+        eventResizableFromStart: true,
+        dayMaxEvents: true,
+        allDaySlot: false,
+        slotMinTime: "07:00:00",
+        slotMaxTime: "20:00:00",
+        slotDuration: "00:15:00",
+        snapDuration: "00:05:00",
+        headerToolbar: false,
+
+        views: {
+          timeGridDay:  { titleFormat: { year:"numeric", month:"long", day:"2-digit" } },
+          timeGridWeek: { titleFormat: { year:"numeric", month:"long" } },
+          dayGridMonth: { titleFormat: { year:"numeric", month:"long" } },
+        },
+
+        select: (info) => {
+          // crear con rango seleccionado
+          const startLocal = toLocalInputValue(info.start);
+          const endLocal   = toLocalInputValue(info.end);
+
+          openModal("create", {
+            start_local: startLocal,
+            end_local: endLocal,
+            status: "programada"
+          });
+        },
+
+        dateClick: (info) => {
+          // click simple -> 30 min por defecto
+          const start = info.date;
+          const end = new Date(start.getTime() + 30*60*1000);
+
+          openModal("create", {
+            start_local: toLocalInputValue(start),
+            end_local: toLocalInputValue(end),
+            status: "programada"
+          });
+        },
+
+        eventClick: (info) => {
+          const ev = info.event;
+          openModal("edit", {
+            id: ev.id,
+            title: ev.title,
+            patient_name: ev.extendedProps.patient_name,
+            patient_doc: ev.extendedProps.patient_doc,
+            professional: ev.extendedProps.professional,
+            status: ev.extendedProps.status,
+            notes: ev.extendedProps.notes,
+            start_local: ev.extendedProps.start_local || toLocalInputValue(ev.start),
+            end_local: ev.extendedProps.end_local || toLocalInputValue(ev.end),
+          });
+        },
+
+        eventDrop: async (info) => {
+          // arrastrar cita
+          try{
+            setLoading(true);
+
+            const id = info.event.id;
+            const professional = info.event.extendedProps.professional || "";
+            const startISO = info.event.start.toISOString();
+            const endISO   = info.event.end.toISOString();
+
+            const conflict = await hasConflict({
+              idToIgnore: id,
+              professional,
+              startISO,
+              endISO
+            });
+
+            if (conflict){
+              info.revert();
+              toast("Choque de horario para ese profesional.", "warn");
+              return;
+            }
+
+            const row = {
+              start_time: startISO,
+              end_time: endISO
+            };
+
+            await updateAppointment(id, row);
+
+            // actualiza locals
+            info.event.setExtendedProp("start_local", toLocalInputValue(info.event.start));
+            info.event.setExtendedProp("end_local", toLocalInputValue(info.event.end));
+
+            toast("Cita reprogramada.", "ok");
+          } catch(e){
+            console.error(e);
+            info.revert();
+            toast("Error al mover: " + e.message, "error");
+          } finally {
+            setLoading(false);
+          }
+        },
+
+        eventResize: async (info) => {
+          // cambiar duración
+          try{
+            setLoading(true);
+
+            const id = info.event.id;
+            const professional = info.event.extendedProps.professional || "";
+            const startISO = info.event.start.toISOString();
+            const endISO   = info.event.end.toISOString();
+
+            const conflict = await hasConflict({
+              idToIgnore: id,
+              professional,
+              startISO,
+              endISO
+            });
+
+            if (conflict){
+              info.revert();
+              toast("Choque de horario para ese profesional.", "warn");
+              return;
+            }
+
+            const row = {
+              start_time: startISO,
+              end_time: endISO
+            };
+
+            await updateAppointment(id, row);
+
+            info.event.setExtendedProp("start_local", toLocalInputValue(info.event.start));
+            info.event.setExtendedProp("end_local", toLocalInputValue(info.event.end));
+
+            toast("Duración actualizada.", "ok");
+          } catch(e){
+            console.error(e);
+            info.revert();
+            toast("Error al redimensionar: " + e.message, "error");
+          } finally {
+            setLoading(false);
+          }
+        },
+
+        datesSet: async () => {
+          // cada cambio de vista o navegación
+          await reloadCalendarEvents();
+        }
+      });
+
+      calendar.render();
+      await reloadCalendarEvents();
+    }
+
+    // =========================
+    // UI Wiring
+    // =========================
+    function wireButtons(){
+      $("btnDay").addEventListener("click", ()=> calendar.changeView("timeGridDay"));
+      $("btnWeek").addEventListener("click", ()=> calendar.changeView("timeGridWeek"));
+      $("btnMonth").addEventListener("click", ()=> calendar.changeView("dayGridMonth"));
+      $("btnToday").addEventListener("click", ()=> calendar.today());
+      $("btnPrev").addEventListener("click", ()=> calendar.prev());
+      $("btnNext").addEventListener("click", ()=> calendar.next());
+      $("btnHome").addEventListener("click", ()=> window.location.href = HOME_URL);
+
+      $("filterProfessional").addEventListener("input", ()=> reloadCalendarEvents());
+      $("filterStatus").addEventListener("change", ()=> reloadCalendarEvents());
+
+      $("btnNew").addEventListener("click", () => {
+        const start = new Date();
+        // redondear a 15 min
+        start.setSeconds(0,0);
+        const m = start.getMinutes();
+        const rounded = Math.ceil(m/15)*15;
+        start.setMinutes(rounded);
+        const end = new Date(start.getTime() + 30*60*1000);
+
+        openModal("create", {
+          start_local: toLocalInputValue(start),
+          end_local: toLocalInputValue(end),
+          status: "programada"
+        });
+      });
+
+      $("btnClose").addEventListener("click", closeModal);
+      $("modalBackdrop").addEventListener("click", closeModal);
+      window.addEventListener("keydown", (e)=> {
+        if (e.key === "Escape") closeModal();
+      });
+
+      $("btnSave").addEventListener("click", onSave);
+      $("btnDelete").addEventListener("click", onDelete);
+    }
+
+    async function onSave(){
+      try{
+        setLoading(true);
+
+        const id = $("apptId").value.trim();
+        const payload = {
+          title: $("title").value,
+          patient_name: $("patient_name").value,
+          patient_doc: $("patient_doc").value,
+          professional: $("professional").value,
+          status: $("status").value,
+          notes: $("notes").value,
+          start_local: $("start_time").value,
+          end_local: $("end_time").value,
+        };
+
+        if (!payload.start_local || !payload.end_local){
+          toast("Selecciona inicio y fin.", "warn");
+          return;
+        }
+
+        const startISO = toISOFromLocalInput(payload.start_local);
+        const endISO   = toISOFromLocalInput(payload.end_local);
+
+        if (!startISO || !endISO){
+          toast("Fecha/hora inválida.", "warn");
+          return;
+        }
+
+        const startD = new Date(startISO);
+        const endD = new Date(endISO);
+
+        if (endD <= startD){
+          toast("La hora final debe ser mayor que la inicial.", "warn");
+          return;
+        }
+
+        payload.start_iso = startISO;
+        payload.end_iso = endISO;
+
+        // auto title
+        payload.title = buildTitleFromFields(payload);
+
+        // choque por profesional
+        const conflict = await hasConflict({
+          idToIgnore: id || null,
+          professional: payload.professional,
+          startISO,
+          endISO
+        });
+
+        if (conflict){
+          toast("🚫 Choque de horario para ese profesional.", "warn");
+          return;
+        }
+
+        // Guardar
+        const row = mapEventToRow(payload, currentSession.user.id);
+
+        let saved;
+        if (id){
+          saved = await updateAppointment(id, row);
+          toast("Cita actualizada.", "ok");
+        } else {
+          saved = await createAppointment(row);
+          toast("Cita creada.", "ok");
+        }
+
+        closeModal();
+        await reloadCalendarEvents();
+
+        // ubicar a la cita (opcional)
+        if (saved?.start_time){
+          calendar.gotoDate(new Date(saved.start_time));
+          await reloadCalendarEvents();
+        }
+
+      } catch(e){
+        console.error(e);
+        toast("Error guardando: " + e.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function onDelete(){
+      const id = $("apptId").value.trim();
+      if (!id) return;
+
+      const ok = confirm("¿Eliminar esta cita definitivamente?");
+      if (!ok) return;
+
+      try{
+        setLoading(true);
+        await deleteAppointment(id);
+        closeModal();
+        toast("Cita eliminada.", "ok");
+        await reloadCalendarEvents();
+      } catch(e){
+        console.error(e);
+        toast("Error eliminando: " + e.message, "error");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // =========================
+    // Init
+    // =========================
+    (async function main(){
+      const res = await verificarSesionYPermisos();
+      if (!res.ok) return;
+
+      currentSession = res.session;
+
+      // Fecha en header
+      $("today").textContent = new Date().toLocaleDateString("es-CO", {
+        year:"numeric", month:"long", day:"2-digit"
+      });
+
+      wireButtons();
+      await initCalendar();
+    })();
+  </script>
+
+  <style>
+    :root{
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #fbfcff;
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --ok: #16a34a;
+      --warn: #f59e0b;
+      --err: #ef4444;
+
+      --shadow: 0 20px 45px rgba(15,23,42,.10);
+      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
+        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
+        linear-gradient(180deg, #ffffff, var(--bg));
+      padding: 22px 14px;
+    }
+
+    .shell{
+      width: min(1200px, 100%);
+      margin: 0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .topbar{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-2);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap: 3px;
+    }
+
+    .brand h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing: .2px;
+    }
+
+    .brand .sub{
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .userbox{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap: 2px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
+
+    .userbox strong{ color: var(--text); font-weight: 700; }
+
+    .actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .btn{
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 650;
+      font-size: 13px;
+      box-shadow: 0 6px 14px rgba(15,23,42,.06);
+      transition: transform .08s ease, background .12s ease, border-color .12s ease;
+      user-select:none;
+    }
+
+    .btn:hover{
+      transform: translateY(-1px);
+      border-color: rgba(37,99,235,.35);
+      background: #fff;
+    }
+
+    .btn.primary{
+      background: var(--accent);
+      border-color: rgba(37,99,235,.4);
+      color:#fff;
+    }
+    .btn.primary:hover{ background: var(--accent-2); }
+
+    .btn.danger{
+      background: rgba(239,68,68,.08);
+      border-color: rgba(239,68,68,.25);
+      color: #991b1b;
+    }
+
+    .btn.link{
+      background: transparent;
+      box-shadow: none;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+
+    @media (max-width: 980px){
+      .grid{ grid-template-columns: 1fr; }
+      .userbox{ align-items:flex-start; }
+      .actions{ justify-content:flex-start; }
+    }
+
+    .panel{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-2);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .panel h2{
+      margin:0 0 10px 0;
+      font-size: 14px;
+      letter-spacing: .2px;
+    }
+
+    .muted{
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.45;
+    }
+
+    .field{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    label{
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 650;
+    }
+
+    input, select, textarea{
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 11px;
+      font-size: 13.5px;
+      outline: none;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea{ min-height: 86px; resize: vertical; }
+
+    .toolbarRow{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .toolbarLeft, .toolbarRight{
+      display:flex;
+      gap: 8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+
+    .range{
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 650;
+      padding: 8px 10px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--surface-2);
+    }
+
+    /* Calendar box */
+    .calendarWrap{
+      background: var(--surface);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 12px;
+      overflow:hidden;
+    }
+
+    #calendar{
+      background: #fff;
+      border-radius: 12px;
+      padding: 6px;
+    }
+
+    /* Modal */
+    .modal{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 50;
+    }
+
+    .modal.open{ display:flex; }
+
+    .backdrop{
+      position:absolute;
+      inset:0;
+      background: rgba(2,6,23,.55);
+    }
+
+    .modalCard{
+      position: relative;
+      width: min(760px, 100%);
+      background: var(--surface);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 18px;
+      box-shadow: 0 30px 90px rgba(0,0,0,.35);
+      padding: 14px;
+      z-index: 2;
+    }
+
+    .modalHead{
+      display:flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 4px 10px 4px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+
+    .modalHead h3{
+      margin:0;
+      font-size: 15px;
+      letter-spacing: .2px;
+    }
+
+    .modalGrid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 780px){
+      .modalGrid{ grid-template-columns: 1fr; }
+    }
+
+    .modalFoot{
+      display:flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    /* Loading */
+    .loading{
+      position: fixed;
+      inset: 0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background: rgba(255,255,255,.55);
+      backdrop-filter: blur(4px);
+      z-index: 60;
+    }
+    .spinner{
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 4px solid rgba(37,99,235,.20);
+      border-top-color: rgba(37,99,235,.95);
+      animation: spin 0.9s linear infinite;
+    }
+    @keyframes spin{ to{ transform: rotate(360deg);} }
+
+    /* Toast */
+    .toast{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 18px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #0f172a;
+      color: #fff;
+      font-weight: 650;
+      font-size: 13px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .15s ease, transform .15s ease;
+      z-index: 70;
+      max-width: min(720px, 92vw);
+      text-align:center;
+    }
+    .toast.show{
+      opacity: 1;
+      transform: translateX(-50%) translateY(-4px);
+    }
+    .toast.ok{ background: rgba(22,163,74,.95); }
+    .toast.warn{ background: rgba(245,158,11,.95); color:#111827; }
+    .toast.error{ background: rgba(239,68,68,.95); }
+
+    /* Blocked */
+    .blocked{
+      display:none;
+      background: rgba(239,68,68,.08);
+      border: 1px solid rgba(239,68,68,.20);
+      border-radius: var(--radius);
+      padding: 16px;
+      color: #991b1b;
+      box-shadow: var(--shadow-2);
+    }
+    .blocked strong{ color:#7f1d1d; }
+  </style>
+</head>
+
+<body>
+  <div class="shell">
+
+    <div class="topbar">
+      <div class="brand">
+        <h1>Agendamiento Avanzado</h1>
+        <div class="sub">Hoy: <span id="today"></span> · Arrastra para mover · Estira para cambiar duración</div>
+      </div>
+
+      <div class="actions">
+        <button class="btn link" id="btnHome" type="button">🏠 Inicio</button>
+        <button class="btn" id="btnNew" type="button">➕ Nueva cita</button>
+        <button class="btn danger" onclick="cerrarSesion()" type="button">Cerrar sesión</button>
+        <div class="userbox">
+          <div><strong id="user-email">usuario</strong></div>
+          <div id="user-role">Rol: ...</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="blocked" class="blocked">
+      <strong>Acceso restringido.</strong> Esta página solo puede ser usada por roles <b>admin</b> y <b>auxiliar</b>.
+    </div>
+
+    <div id="app" class="grid" style="display:none;">
+      <!-- Sidebar -->
+      <div class="panel">
+        <h2>Filtros</h2>
+        <div class="muted">Filtra por profesional o por estado. (Los filtros son del lado del cliente.)</div>
+
+        <div class="field">
+          <label for="filterProfessional">Profesional</label>
+          <input id="filterProfessional" type="text" placeholder="Ej: Dra. Leidi / Auxiliar 1" />
+        </div>
+
+        <div class="field">
+          <label for="filterStatus">Estado</label>
+          <select id="filterStatus">
+            <option value="todos">Todos</option>
+            <option value="programada">Programada</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="atendida">Atendida</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+
+        <div class="toolbarRow">
+          <div class="toolbarLeft">
+            <div class="range" id="rangeLabel">Agenda</div>
+          </div>
+          <div class="toolbarRight">
+            <button class="btn" id="btnPrev" type="button">◀</button>
+            <button class="btn" id="btnToday" type="button">Hoy</button>
+            <button class="btn" id="btnNext" type="button">▶</button>
+          </div>
+        </div>
+
+        <div class="toolbarRow">
+          <div class="toolbarLeft">
+            <button class="btn" id="btnDay" type="button">Día</button>
+            <button class="btn" id="btnWeek" type="button">Semana</button>
+            <button class="btn" id="btnMonth" type="button">Mes</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <div class="muted">
+            <b>Tips:</b><br/>
+            • Selecciona un rango para crear cita.<br/>
+            • Click sobre cita para editar.<br/>
+            • Arrastra/estira para reprogramar.<br/>
+            • Bloquea choques por <b>profesional</b>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div class="calendarWrap">
+        <div id="calendar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div id="modalBackdrop" class="backdrop"></div>
+
+    <div class="modalCard" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <div class="modalHead">
+        <h3 id="modalTitle">Nueva cita</h3>
+        <button class="btn" id="btnClose" type="button">✕</button>
+      </div>
+
+      <input type="hidden" id="apptId" />
+
+      <div class="modalGrid">
+        <div class="field">
+          <label for="patient_name">Paciente (Nombre)</label>
+          <input id="patient_name" type="text" placeholder="Nombre del paciente" />
+        </div>
+
+        <div class="field">
+          <label for="patient_doc">Documento</label>
+          <input id="patient_doc" type="text" placeholder="CC / TI / CE" />
+        </div>
+
+        <div class="field">
+          <label for="professional">Profesional</label>
+          <input id="professional" type="text" placeholder="Ej: Dra. Leidi Silva" />
+        </div>
+
+        <div class="field">
+          <label for="status">Estado</label>
+          <select id="status">
+            <option value="programada">Programada</option>
+            <option value="confirmada">Confirmada</option>
+            <option value="atendida">Atendida</option>
+            <option value="cancelada">Cancelada</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="start_time">Inicio</label>
+          <input id="start_time" type="datetime-local" />
+        </div>
+
+        <div class="field">
+          <label for="end_time">Fin</label>
+          <input id="end_time" type="datetime-local" />
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label for="title">Título (opcional)</label>
+          <input id="title" type="text" placeholder="Si lo dejas vacío, se genera automáticamente" />
+        </div>
+
+        <div class="field" style="grid-column: 1 / -1;">
+          <label for="notes">Notas</label>
+          <textarea id="notes" placeholder="Observaciones, motivo, procedimientos, etc."></textarea>
+        </div>
+      </div>
+
+      <div class="modalFoot">
+        <button class="btn danger" id="btnDelete" type="button" style="display:none;">Eliminar</button>
+        <button class="btn" type="button" onclick="document.getElementById('modal').classList.remove('open')">Cancelar</button>
+        <button class="btn primary" id="btnSave" type="button">Crear cita</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div id="loading" class="loading" aria-hidden="true">
+    <div class="spinner" aria-label="Cargando"></div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast">Listo</div>
+</body>
+</html>
