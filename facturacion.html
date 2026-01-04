@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Facturación - Clínica Odontológica</title>
 
+  <!-- ✅ NUEVO: Librería para exportar Excel (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg: #f3f5f7;
@@ -170,7 +173,6 @@
       align-items:center;
     }
 
-    /* ✅ NUEVO: Barra inferior de acciones (Guardar / Imprimir abajo) */
     .actions-bottom{
       padding: 12px 16px;
       border-top: 1px solid var(--line);
@@ -278,6 +280,27 @@
       border-radius: 12px;
     }
 
+    /* ✅ NUEVO: resumen total facturado */
+    .modal-summary{
+      margin-top: 10px;
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .summary-chip{
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      font-size: 12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .summary-chip b{ color: var(--text); }
+
     @media (max-width: 900px){
       .grid{ grid-template-columns: repeat(2, 1fr); }
     }
@@ -354,7 +377,6 @@
           <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
         </div>
 
-        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) -->
         <div class="ctrl" style="grid-column: span 2;">
           <label>Correo paciente</label>
           <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
@@ -454,7 +476,6 @@
         </div>
       </div>
 
-      <!-- ✅ Se deja la caja informativa (sin quitar el texto configurado) -->
       <div class="box">
         <div class="mono" style="color:var(--muted);">
           Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
@@ -462,7 +483,6 @@
       </div>
     </div>
 
-    <!-- ✅ NUEVO: Guardar/Imprimir al final (abajo de la página) -->
     <div class="actions-bottom">
       <div class="left-note mono">
         Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
@@ -486,6 +506,8 @@
       <div class="modal-head">
         <div class="title">Facturas generadas</div>
         <div style="display:flex; gap:10px; align-items:center;">
+          <!-- ✅ NUEVO: Exportar Excel -->
+          <button class="btn" id="btn-export-excel" type="button">⬇ Excel</button>
           <button class="btn" id="btn-refresh-facturas" type="button">🔄 Actualizar</button>
           <button class="btn danger" id="btn-cerrar-modal" type="button">✖ Cerrar</button>
         </div>
@@ -496,6 +518,17 @@
             <label>Buscar (N° factura o cédula)</label>
             <input id="buscar_facturas" type="text" placeholder="Ej: FAC-2026... o 123456789">
           </div>
+
+          <!-- ✅ NUEVO: Filtro por fecha (rango) -->
+          <div class="ctrl">
+            <label>Fecha desde</label>
+            <input id="fecha_desde" type="date">
+          </div>
+          <div class="ctrl">
+            <label>Fecha hasta</label>
+            <input id="fecha_hasta" type="date">
+          </div>
+
           <div class="ctrl">
             <label>Mostrar</label>
             <select id="limite_facturas">
@@ -528,6 +561,16 @@
           </table>
         </div>
 
+        <!-- ✅ NUEVO: Total facturado del resultado filtrado -->
+        <div class="modal-summary">
+          <div class="summary-chip">
+            Total facturado (filtro): <b>$ <span id="total_facturado">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Cantidad: <b><span id="count_facturas">0</span></b>
+          </div>
+        </div>
+
         <div class="mono" style="margin-top:10px; color:var(--muted);">
           Tip: Puedes imprimir una factura desde “🖨 Imprimir” en acciones.
         </div>
@@ -546,10 +589,7 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // ✅ LOGO (en impresión)
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
-
-    // ✅ MISMO WEBHOOK QUE USA TU HISTORIA CLÍNICA
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
     const state = {
@@ -694,12 +734,8 @@
         const nom = (pr.nombre ?? "").toString().trim();
 
         const opt = document.createElement("option");
-
-        // ✅ El value sigue teniendo la cédula (por trazabilidad)
-        opt.value = ced ? `${ced}` : nom;
-
-        // ✅ SOLO se muestra el nombre al usuario
-        opt.textContent = nom;
+        opt.value = ced ? `${ced}` : nom;   // value sigue siendo cédula
+        opt.textContent = nom;             // se muestra solo el nombre
 
         sel.appendChild(opt);
       }
@@ -739,7 +775,6 @@
         const nombre = (h["Nombre y apellido"] || "").trim();
         const epsHC  = (h["EPS_Paciente"] || "").trim();
 
-        // ✅ NUEVO: intentar traer correo si existe en HC (sin romper si no existe)
         const correo =
           (h["paciente_email"] || h["CORREO"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
 
@@ -906,18 +941,14 @@
       const raw = String(v ?? "").trim();
       if (!raw) return "—";
 
-      // Si el valor parece una cédula (solo números), buscamos el nombre
       const onlyDigits = /^[0-9]+$/.test(raw);
       if (onlyDigits){
         const pr = (state.profesionales || []).find(x => String(x.cedula ?? "").trim() === raw);
         if (pr && pr.nombre) return String(pr.nombre).trim();
       }
-
-      // Si ya es nombre (o no coincide), lo devolvemos tal cual
       return raw;
     }
 
-    // ✅ IMPRESIÓN MEJORADA + LOGO + MÁRGENES/BORDES + CORREO PACIENTE
     function buildInvoiceHTML({ fac, detalle, totals }){
       const rows = (detalle || []).map(it => `
         <tr>
@@ -1086,7 +1117,7 @@
       const fecha = ($("fecha").value || "").trim() || hoyISO();
       const paciente_cedula = ($("paciente_cedula").value || "").trim();
       const paciente_nombre = ($("paciente_nombre").value || "").trim();
-      const paciente_correo = ($("paciente_correo")?.value || "").trim() || null; // ✅ NUEVO
+      const paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
       const profesional = ($("profesional").value || "").trim();
 
       if (!paciente_cedula || !paciente_nombre){
@@ -1120,7 +1151,7 @@
           fecha,
           paciente_cedula,
           paciente_nombre,
-          paciente_correo, // ✅ NUEVO
+          paciente_correo,
           tipo_usuario,
           eps,
           numero_factura,
@@ -1152,7 +1183,6 @@
 
           if (!isColumnMissing) throw e1;
 
-          // ✅ Reintento SIN campos extra si faltan columnas
           const payloadBase = {
             fecha,
             paciente_cedula,
@@ -1175,7 +1205,6 @@
           if (e1b) throw e1b;
           fac = fac2;
 
-          // Mantener en memoria para impresión aunque DB no tenga columnas
           fac.metodo_pago = metodo_pago;
           fac.observacion = observacion;
           fac.paciente_correo = paciente_correo;
@@ -1275,12 +1304,19 @@
       $("modal-facturas").setAttribute("aria-hidden", "true");
     }
 
+    function updateResumenFacturas(rows){
+      const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+      $("total_facturado").textContent = money(total);
+      $("count_facturas").textContent = String((rows || []).length);
+    }
+
     function renderFacturasTabla(rows){
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
 
       if (!rows || rows.length === 0){
         tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay facturas para mostrar.</td></tr>`;
+        updateResumenFacturas([]);
         return;
       }
 
@@ -1316,11 +1352,21 @@
 
         tbody.appendChild(tr);
       }
+
+      updateResumenFacturas(rows);
     }
+
+    // ✅ helper: arma rango fecha para gte/lte (sirve si tu columna es DATE o TIMESTAMP)
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
     async function listarFacturas(){
       const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
       const q = ($("buscar_facturas").value || "").trim();
+
+      // ✅ NUEVO: fechas
+      const desde = ($("fecha_desde")?.value || "").trim();
+      const hasta = ($("fecha_hasta")?.value || "").trim();
 
       try{
         $("tbody-facturas").innerHTML = `<tr><td colspan="6" class="empty">Cargando...</td></tr>`;
@@ -1330,6 +1376,15 @@
           .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal")
           .order("fecha", { ascending: false })
           .limit(limit);
+
+        // ✅ NUEVO: aplicar filtro por fecha (rango)
+        if (desde){
+          // usamos el start del día (si tu campo es date igual funciona por comparación de string)
+          query = query.gte("fecha", dateStartISO(desde));
+        }
+        if (hasta){
+          query = query.lte("fecha", dateEndISO(hasta));
+        }
 
         if (q){
           const isNum = /^[0-9]+$/.test(q);
@@ -1380,7 +1435,6 @@
         $("paciente_nombre").value = fac.paciente_nombre || "";
         $("profesional").value = fac.profesional || "";
 
-        // ✅ NUEVO: correo paciente al cargar
         if ($("paciente_correo")) $("paciente_correo").value = fac.paciente_correo || "";
 
         if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
@@ -1490,6 +1544,79 @@
       }
     }
 
+    // ✅ NUEVO: exportar reporte Excel con el resultado filtrado actual
+    function exportarExcel(){
+      try{
+        const rows = state.facturas || [];
+        if (!rows.length){
+          toast("No hay facturas para exportar con ese filtro.", "warn");
+          return;
+        }
+
+        const desde = ($("fecha_desde")?.value || "").trim();
+        const hasta = ($("fecha_hasta")?.value || "").trim();
+        const q = ($("buscar_facturas")?.value || "").trim();
+
+        const data = rows.map(f => ({
+          "Fecha": formatFechaHuman(f.fecha),
+          "N° Factura": f.numero_factura || "",
+          "Paciente": f.paciente_nombre || "",
+          "Cédula": f.paciente_cedula || "",
+          "Correo": f.paciente_correo || "",
+          "Tipo usuario": f.tipo_usuario || "",
+          "EPS": f.eps || "",
+          "Profesional (valor guardado)": f.profesional || "",
+          "Total": Number(f.valor_total || 0),
+          "Copago": Number(f.copago || 0),
+          "Cuota moderadora": Number(f.cuota_moderadora || 0),
+        }));
+
+        const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+
+        // Hoja principal
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        // Agregar una fila de total al final
+        const lastRow = data.length + 2;
+        XLSX.utils.sheet_add_aoa(ws, [
+          [],
+          ["TOTAL FACTURADO", totalFacturado]
+        ], { origin: `A${lastRow}` });
+
+        // Auto ancho simple (aprox)
+        const colWidths = [
+          { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 26 },
+          { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 12 }, { wch: 16 }
+        ];
+        ws["!cols"] = colWidths;
+
+        // Hoja de parámetros
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Facturas"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Filtro búsqueda (N° factura o cédula):", q || "(vacío)"],
+          ["Fecha desde:", desde || "(vacío)"],
+          ["Fecha hasta:", hasta || "(vacío)"],
+          ["Cantidad:", rows.length],
+          ["Total facturado:", totalFacturado]
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+
+        const slugDesde = desde || "NA";
+        const slugHasta = hasta || "NA";
+        const filename = `reporte_facturas_${slugDesde}_a_${slugHasta}.xlsx`;
+
+        XLSX.writeFile(wb, filename);
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
     async function init(){
       $("year").textContent = new Date().getFullYear();
       $("fecha").value = hoyISO();
@@ -1513,28 +1640,38 @@
 
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
-      // ✅ AJUSTE: al hacer click en "Ver facturas", filtra automáticamente por la cédula del paciente del formulario
+      // ✅ Mantiene: al hacer click en "Ver facturas", filtra por cédula automáticamente
       $("btn-ver-facturas").addEventListener("click", async () => {
         const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
-        if (ced){
-          $("buscar_facturas").value = ced;   // setea el buscador del modal
-        } else {
-          $("buscar_facturas").value = "";    // si no hay cédula, muestra todas
-        }
+        $("buscar_facturas").value = ced || "";
+
+        // ✅ NUEVO: si quieres que por defecto sea "hoy", descomenta las 2 líneas:
+        // $("fecha_desde").value = hoyISO();
+        // $("fecha_hasta").value = hoyISO();
+
         openModal();
-        await listarFacturas();               // carga ya filtrado
+        await listarFacturas();
       });
 
       $("btn-cerrar-modal").addEventListener("click", closeModal);
       $("modal-facturas").addEventListener("click", (e) => {
         if (e.target === $("modal-facturas")) closeModal();
       });
+
       $("btn-refresh-facturas").addEventListener("click", listarFacturas);
       $("btn-buscar-facturas").addEventListener("click", listarFacturas);
       $("limite_facturas").addEventListener("change", listarFacturas);
+
+      // ✅ NUEVO: refresca al cambiar fechas (opcional, cómodo)
+      $("fecha_desde").addEventListener("change", listarFacturas);
+      $("fecha_hasta").addEventListener("change", listarFacturas);
+
       $("buscar_facturas").addEventListener("keydown", (e) => {
         if (e.key === "Enter") listarFacturas();
       });
+
+      // ✅ NUEVO: exportar excel
+      $("btn-export-excel").addEventListener("click", exportarExcel);
 
       const ok = await proteger();
       if (!ok) return;
@@ -1551,6 +1688,7 @@
   </script>
 </body>
 </html>
+
 
 
 
