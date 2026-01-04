@@ -602,6 +602,9 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
+    // ✅ NUEVO: roles permitidos para entrar a Facturación
+    const ALLOWED_ROLES = ["admin", "auxiliar"];
+
     const state = {
       session: null,
       role: null,
@@ -666,11 +669,7 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
-    /* ✅ OBTENER ROL REAL DESDE public.profiles
-       - Busca por email (lowercase + trim)
-       - Si hay varios registros, toma el más reciente por created_at
-       - Si no encuentra o hay error, deja "user" como fallback
-    */
+    /* ✅ OBTENER ROL REAL DESDE public.profiles */
     async function cargarRolActual(){
       const email = (state.session?.user?.email || "").trim().toLowerCase();
       const elRole = $("user-role");
@@ -697,7 +696,6 @@
         state.role = finalRole;
         if (elRole) elRole.textContent = finalRole;
 
-        // Debug útil
         console.log("ROLE LOOKUP => email:", email, "db:", data, "finalRole:", finalRole);
 
         return finalRole;
@@ -707,6 +705,21 @@
         if (elRole) elRole.textContent = "user";
         return "user";
       }
+    }
+
+    // ✅ NUEVO: validación de acceso por rol (admin/auxiliar)
+    async function validarAccesoPorRol(){
+      const role = (state.role || "user").toString().trim().toLowerCase();
+      const ok = ALLOWED_ROLES.includes(role);
+
+      if (!ok){
+        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
+        // opcional: cerrar sesión para evitar que vuelva con back
+        try { await supabase.auth.signOut(); } catch(e) {}
+        window.location.href = INDEX_URL;
+        return false;
+      }
+      return true;
     }
 
     async function proteger(){
@@ -722,6 +735,10 @@
 
       // ✅ Cargar rol real desde profiles
       await cargarRolActual();
+
+      // ✅ Validar acceso (solo admin/auxiliar)
+      const okRole = await validarAccesoPorRol();
+      if (!okRole) return false;
 
       return true;
     }
@@ -739,7 +756,7 @@
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
-        cargarRolActual();
+        cargarRolActual().then(()=> validarAccesoPorRol());
       }
     });
 
@@ -807,8 +824,8 @@
         const nom = (pr.nombre ?? "").toString().trim();
 
         const opt = document.createElement("option");
-        opt.value = ced ? `${ced}` : nom;   // value sigue siendo cédula
-        opt.textContent = nom;             // se muestra solo el nombre
+        opt.value = ced ? `${ced}` : nom;
+        opt.textContent = nom;
 
         sel.appendChild(opt);
       }
@@ -1745,4 +1762,5 @@
   </script>
 </body>
 </html>
+
 
