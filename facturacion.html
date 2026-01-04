@@ -265,7 +265,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Facturación2</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación3</h1>
     </div>
     <div class="meta">
       <div class="chip">Usuario: <b id="user-email">—</b></div>
@@ -278,7 +278,6 @@
       <div class="title">Nueva factura</div>
       <div class="row-actions" style="margin-top:0;">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
-        <!-- ✅ NUEVO: Ver facturas -->
         <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
       </div>
     </div>
@@ -330,6 +329,27 @@
       </div>
     </div>
 
+    <!-- ✅ NUEVO: MÉTODO DE PAGO (NO rompe nada, solo agrega campos) -->
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Método de pago</label>
+          <select id="metodo_pago">
+            <option value="Efectivo" selected>Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Daviplata">Daviplata</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Observación (opcional)</label>
+          <input id="observacion" type="text" placeholder="Ej: referencia/nota/observación...">
+        </div>
+      </div>
+    </div>
+
     <div class="section">
       <div class="grid">
         <div class="ctrl" style="grid-column: span 2;">
@@ -367,7 +387,18 @@
       <div class="box">
         <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
 
-        <!-- ✅ NUEVO: IVA -->
+        <!-- ✅ NUEVO: ¿APLICA IVA? -->
+        <div>
+          <span>¿Aplica IVA?</span>
+          <b>
+            <select id="iva_aplica" style="width:140px;">
+              <option value="no">No</option>
+              <option value="si" selected>Sí</option>
+            </select>
+          </b>
+        </div>
+
+        <!-- ✅ IVA (porcentaje + valor) -->
         <div style="align-items:flex-start;">
           <span>IVA</span>
           <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
@@ -622,7 +653,6 @@
         const nom = (pr.nombre ?? "").toString().trim();
 
         const opt = document.createElement("option");
-        // ✅ guardamos "cedula nombre" (como en tu HC)
         opt.value = `${ced} ${nom}`.trim();
         opt.textContent = `${nom}${ced ? ` (${ced})` : ""}`.trim();
         sel.appendChild(opt);
@@ -630,7 +660,8 @@
     }
 
     // ✅ AUTOCOMPLETAR PACIENTE DESDE N8N (igual que Historia Clínica)
-    async function buscarPacienteEnHistoria(){
+    // ✅ FIX: si presionas el botón varias veces con la misma cédula, ahora también busca (force=true)
+    async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
         .trim()
         .replace(/[^\d]/g, "");
@@ -642,7 +673,7 @@
         return;
       }
 
-      if (state._lastCedula === cedula) return;
+      if (!force && state._lastCedula === cedula) return;
       state._lastCedula = cedula;
 
       setHint("Buscando paciente...");
@@ -666,10 +697,7 @@
 
         if (nombre){
           $("paciente_nombre").value = nombre;
-
-          // opcional: llenar EPS si viene
           if ($("eps") && epsHC) $("eps").value = epsHC;
-
           setHint("✅ Encontrado");
         } else {
           setHint("Encontrado, pero sin nombre en historia.");
@@ -684,7 +712,7 @@
     // Debounce para no hacer consultas por cada tecla
     function onCedulaInput(){
       clearTimeout(state._debounce);
-      state._debounce = setTimeout(buscarPacienteEnHistoria, 350);
+      state._debounce = setTimeout(()=> buscarPacienteEnHistoria(false), 350);
     }
 
     function escapeHtml(str){
@@ -774,17 +802,34 @@
       }
     }
 
+    function ivaAplica(){
+      return (String($("iva_aplica")?.value || "si").toLowerCase() === "si");
+    }
+
+    function syncIVAUI(){
+      const aplica = ivaAplica();
+      const inp = $("iva_porcentaje");
+      if (inp){
+        inp.disabled = !aplica;
+        inp.style.opacity = aplica ? "1" : ".6";
+      }
+      recalcularTotales();
+    }
+
     function calcularTotalesObj(){
       const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const iva_pct = Math.max(0, num($("iva_porcentaje")?.value));
-      const iva_valor = Math.max(0, subtotal * (iva_pct / 100));
+
+      const aplica = ivaAplica();
+      const iva_pct = aplica ? Math.max(0, num($("iva_porcentaje")?.value)) : 0;
+      const iva_valor = aplica ? Math.max(0, subtotal * (iva_pct / 100)) : 0;
+
       const copago = Math.max(0, num($("copago").value));
       const cuota = Math.max(0, num($("cuota_moderadora").value));
 
       // ✅ Total = subtotal + IVA - copago - cuota
       const total = Math.max(0, (subtotal + iva_valor) - copago - cuota);
 
-      return { subtotal, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
+      return { subtotal, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
     }
 
     function recalcularTotales(){
@@ -796,11 +841,9 @@
 
     function formatFechaHuman(iso){
       if (!iso) return "—";
-      // intenta manejar 'YYYY-MM-DD' o timestamp
       try{
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())){
-          // probablemente 'YYYY-MM-DD'
           const [y,m,dd] = String(iso).split("-");
           if (y && m && dd) return `${dd}/${m}/${y}`;
           return String(iso);
@@ -825,6 +868,9 @@
       const eps = fac?.eps ? escapeHtml(fac.eps) : "—";
       const tipo = fac?.tipo_usuario ? escapeHtml(fac.tipo_usuario) : "—";
       const profesional = fac?.profesional ? escapeHtml(fac.profesional) : "—";
+
+      const mp = fac?.metodo_pago ? escapeHtml(fac.metodo_pago) : "—";
+      const obs = fac?.observacion ? escapeHtml(fac.observacion) : "—";
 
       return `
 <!DOCTYPE html>
@@ -881,7 +927,9 @@
         <div class="kv">Profesional<b>${profesional}</b></div>
         <div class="kv">Tipo usuario<b>${tipo}</b></div>
         <div class="kv">EPS<b>${eps}</b></div>
-        <div class="kv">Observación<b>—</b></div>
+        <div class="kv">Método de pago<b>${mp}</b></div>
+        <div class="kv">Observación<b>${obs}</b></div>
+        <div class="kv">¿Aplica IVA?<b>${totals.iva_aplica ? "Sí" : "No"}</b></div>
       </div>
 
       <table>
@@ -948,13 +996,16 @@
       const eps = ($("eps").value || "").trim() || null;
       const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
 
+      const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
+      const observacion = ($("observacion")?.value || "").trim() || null;
+
       const totals = calcularTotalesObj();
 
       setStatus("Guardando factura...");
 
       try{
-        // ✅ Intento 1: guardando IVA si existen columnas (si no, reintenta sin IVA)
-        const payloadConIVA = {
+        // ✅ Intento 1: guardando extras (si no existen columnas, reintenta sin extras)
+        const payloadConExtras = {
           fecha,
           paciente_cedula,
           paciente_nombre,
@@ -966,17 +1017,20 @@
           cuota_moderadora: totals.cuota_moderadora,
           profesional,
 
-          // Campos opcionales (solo si existen en tu tabla)
+          // extras (opcionales en DB)
           subtotal: totals.subtotal,
+          iva_aplica: totals.iva_aplica,
           iva_porcentaje: totals.iva_pct,
-          iva_valor: totals.iva_valor
+          iva_valor: totals.iva_valor,
+          metodo_pago,
+          observacion
         };
 
         let fac = null;
 
         const { data: fac1, error: e1 } = await supabase
           .from("facturas")
-          .insert([payloadConIVA])
+          .insert([payloadConExtras])
           .select("*")
           .single();
 
@@ -987,8 +1041,8 @@
 
           if (!isColumnMissing) throw e1;
 
-          // ✅ Reintento SIN los campos IVA (para no romper si no has creado columnas)
-          const payloadSinIVA = {
+          // ✅ Reintento SIN extras (para no romper si no has creado columnas)
+          const payloadBase = {
             fecha,
             paciente_cedula,
             paciente_nombre,
@@ -1003,12 +1057,16 @@
 
           const { data: fac2, error: e1b } = await supabase
             .from("facturas")
-            .insert([payloadSinIVA])
+            .insert([payloadBase])
             .select("*")
             .single();
 
           if (e1b) throw e1b;
           fac = fac2;
+
+          // guardamos extras en memoria para imprimir aunque no haya columnas
+          fac.metodo_pago = metodo_pago;
+          fac.observacion = observacion;
         } else {
           fac = fac1;
         }
@@ -1029,7 +1087,10 @@
         if (e2) throw e2;
 
         state.facturaGuardada = fac;
+
+        // ✅ habilitar imprimir al guardar
         $("btn-imprimir").disabled = false;
+
         setStatus("");
         toast("Factura guardada ✅", "ok");
 
@@ -1049,7 +1110,6 @@
       try{
         setStatus("Preparando impresión...");
 
-        // ✅ trae detalle real desde DB para asegurar que imprime lo guardado
         const { data: det, error } = await supabase
           .from("factura_detalle")
           .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
@@ -1058,9 +1118,12 @@
 
         if (error) throw error;
 
-        // Totales usando lo que hay en pantalla (IVA, copago, cuota) + items actuales
-        // (Si quieres forzar a lo guardado, necesitarías columnas de IVA/subtotal en facturas)
+        // Totales desde UI
         const totals = calcularTotalesObj();
+
+        // Inyecta en la factura (para que salga en impresión incluso sin columnas)
+        state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
+        state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
 
         const html = buildInvoiceHTML({
           fac: state.facturaGuardada,
@@ -1078,7 +1141,6 @@
         w.document.write(html);
         w.document.close();
 
-        // imprimir cuando cargue
         w.onload = () => {
           try { w.focus(); w.print(); } catch(e) {}
         };
@@ -1153,14 +1215,11 @@
 
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal")
           .order("fecha", { ascending: false })
           .limit(limit);
 
-        // Si hay búsqueda, filtramos por numero_factura o cedula (sin OR avanzado para evitar líos)
-        // Intentamos primero por numero_factura; si no hay, intentamos por cedula.
         if (q){
-          // si parece número, busca por cédula exacta o parcial
           const isNum = /^[0-9]+$/.test(q);
           if (isNum){
             query = query.ilike("paciente_cedula", `%${q}%`);
@@ -1201,7 +1260,6 @@
 
         if (e2) throw e2;
 
-        // llena cabecera
         $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
         $("numero_factura").value = fac.numero_factura || "";
         $("tipo_usuario").value = fac.tipo_usuario || "Particular";
@@ -1210,7 +1268,22 @@
         $("paciente_nombre").value = fac.paciente_nombre || "";
         $("profesional").value = fac.profesional || "";
 
-        // detalle
+        // método/obs si existen
+        if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
+        if ($("observacion")) $("observacion").value = fac.observacion || "";
+
+        // IVA si existen
+        if ($("iva_aplica")){
+          if (fac.iva_aplica === true) $("iva_aplica").value = "si";
+          if (fac.iva_aplica === false) $("iva_aplica").value = "no";
+        }
+        if ($("iva_porcentaje")){
+          const ivaPctDB = fac.iva_porcentaje ?? fac.iva_pct ?? null;
+          if (ivaPctDB !== null && ivaPctDB !== undefined && String(ivaPctDB).trim() !== ""){
+            $("iva_porcentaje").value = Number(ivaPctDB) || 0;
+          }
+        }
+
         state.items = (det || []).map(it => ({
           id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
           codigo_cups: it.codigo_cups || "",
@@ -1220,22 +1293,16 @@
           valor_total: Number(it.valor_total || 0)
         }));
 
-        // IVA: si existe en DB lo usamos, si no, dejamos lo del input actual
-        if ($("iva_porcentaje")){
-          const ivaPctDB = fac.iva_porcentaje ?? fac.iva_pct ?? null;
-          if (ivaPctDB !== null && ivaPctDB !== undefined && String(ivaPctDB).trim() !== ""){
-            $("iva_porcentaje").value = Number(ivaPctDB) || 0;
-          }
-        }
-
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
 
         state.facturaGuardada = fac;
+
+        // ✅ habilitar imprimir al cargar
         $("btn-imprimir").disabled = false;
 
         renderItems();
-        recalcularTotales();
+        syncIVAUI();
         setStatus("");
         toast("Factura cargada ✅", "ok");
       } catch(err){
@@ -1264,12 +1331,11 @@
 
         if (e2) throw e2;
 
-        // Totales:
-        // - Si tu tabla facturas tiene subtotal/iva_valor/iva_porcentaje, los usamos.
-        // - Si no, recalculamos desde el detalle + IVA% (si existe) y restamos copago/cuota.
         const subtotal = (fac.subtotal !== undefined && fac.subtotal !== null)
           ? Number(fac.subtotal || 0)
           : (det || []).reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+
+        const aplica = (fac.iva_aplica === true);
 
         const iva_pct = (fac.iva_porcentaje !== undefined && fac.iva_porcentaje !== null)
           ? Number(fac.iva_porcentaje || 0)
@@ -1277,10 +1343,11 @@
 
         const iva_valor = (fac.iva_valor !== undefined && fac.iva_valor !== null)
           ? Number(fac.iva_valor || 0)
-          : Math.max(0, subtotal * (Math.max(0, iva_pct) / 100));
+          : (aplica ? Math.max(0, subtotal * (Math.max(0, iva_pct) / 100)) : 0);
 
         const copago = Number(fac.copago || 0);
         const cuota = Number(fac.cuota_moderadora || 0);
+
         const total = (fac.valor_total !== undefined && fac.valor_total !== null)
           ? Number(fac.valor_total || 0)
           : Math.max(0, (subtotal + iva_valor) - copago - cuota);
@@ -1288,7 +1355,7 @@
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total }
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total }
         });
 
         const w = window.open("", "_blank", "width=900,height=700");
@@ -1318,23 +1385,23 @@
       $("numero_factura").value = generarNumeroFactura();
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
-      $("btn-buscar").addEventListener("click", buscarPacienteEnHistoria);
+
+      // ✅ FIX: botón siempre fuerza búsqueda aunque sea la misma cédula
+      $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
+
       $("btn-add").addEventListener("click", agregarProcedimiento);
 
       $("copago").addEventListener("input", recalcularTotales);
       $("cuota_moderadora").addEventListener("input", recalcularTotales);
 
-      // ✅ NUEVO: IVA recalcula
       $("iva_porcentaje").addEventListener("input", recalcularTotales);
+      $("iva_aplica").addEventListener("change", syncIVAUI);
 
       $("btn-guardar").addEventListener("click", guardarFactura);
-
-      // ✅ FIX: imprimir real (abre ventana con factura y manda a imprimir)
       $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
 
       $("btn-logout").addEventListener("click", cerrarSesion);
 
-      // ✅ Autocompletar al escribir
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
       // ✅ Modal facturas
@@ -1359,6 +1426,9 @@
       await cargarProfesionales();
       await cargarProcedimientos();
       renderItems();
+
+      // ✅ Estado inicial IVA
+      syncIVAUI();
       recalcularTotales();
     }
 
@@ -1366,6 +1436,7 @@
   </script>
 </body>
 </html>
+
 
 
 
