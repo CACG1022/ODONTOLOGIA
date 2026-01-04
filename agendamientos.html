@@ -25,6 +25,14 @@
     const TABLA_CITAS = "citas";
     const TABLA_PROFESIONALES = "profesionales";
 
+    // ✅ HISTORIAS CLÍNICAS (AJUSTABLE SI TU TABLA/CAMPOS SE LLAMAN DISTINTO)
+    // Cambia solo estas constantes si aplica:
+    const TABLA_HISTORIAS = "historias_clinicas";  // Ej: "historia_clinica" o "historiasclinicas"
+    const HIST_COL_DOCUMENTO = "documento";        // Ej: "cedula" o "numero_identificacion"
+    const HIST_COL_NOMBRE = "nombre";              // Ej: "nombre_paciente"
+    const HIST_COL_TELEFONO = "telefono";          // Ej: "celular"
+    const HIST_COL_CORREO = "correo";              // Ej: "correo_electronico" o "email"
+
     // ✅ Lista de especialidades del procedimiento
     const ESPECIALIDADES = [
       "Odontologia General",
@@ -211,6 +219,82 @@
     }
 
     // =========================
+    // ✅ NUEVO: Autocompletar paciente desde HISTORIAS CLÍNICAS por documento
+    // =========================
+    let __lookupTimer = null;
+
+    async function buscarPacienteEnHistorias(documento){
+      const doc = normalizeText(documento);
+      if (!doc) return { found: false };
+
+      // Traemos solo lo necesario
+      const cols = `${HIST_COL_NOMBRE},${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
+
+      const { data, error } = await supabase
+        .from(TABLA_HISTORIAS)
+        .select(cols)
+        .eq(HIST_COL_DOCUMENTO, doc)
+        .maybeSingle();
+
+      if (error){
+        // No bloqueamos el flujo; solo informamos
+        console.error(error);
+        toast("No se pudo consultar historias clínicas (revisa nombre de tabla/campos).", "warn");
+        return { found: false, error };
+      }
+
+      if (!data) return { found: false };
+
+      return {
+        found: true,
+        nombre: data?.[HIST_COL_NOMBRE] ?? "",
+        telefono: data?.[HIST_COL_TELEFONO] ?? "",
+        correo: data?.[HIST_COL_CORREO] ?? ""
+      };
+    }
+
+    async function autocompletarPacientePorDocumento({ showToast = false } = {}){
+      const doc = normalizeText($("documento_paciente").value);
+      if (!doc) return;
+
+      // Evitar repetición si el mismo doc ya se consultó y no cambió
+      const last = $("documento_paciente").dataset.lastLookup || "";
+      if (last === doc) return;
+
+      $("documento_paciente").dataset.lastLookup = doc;
+
+      try{
+        setLoading(true);
+
+        const res = await buscarPacienteEnHistorias(doc);
+
+        if (res.found){
+          // Autollenar (pero se deja editable)
+          if (!normalizeText($("nombre_paciente").value)) $("nombre_paciente").value = res.nombre || "";
+          if (!normalizeText($("telefono_paciente").value)) $("telefono_paciente").value = res.telefono || "";
+          if (!normalizeText($("correo_paciente").value)) $("correo_paciente").value = res.correo || "";
+
+          $("documento_paciente").dataset.patientFound = "true";
+          if (showToast) toast("Paciente encontrado: datos autocompletados.", "ok");
+        } else {
+          $("documento_paciente").dataset.patientFound = "false";
+          if (showToast) toast("Paciente no encontrado. Diligencia los datos manualmente.", "warn");
+          // No borramos nada para no molestar al usuario.
+        }
+
+        // Actualizar título preview si ya hay horas
+        actualizarPreviewTitulo();
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function autocompletarPacienteDebounced(){
+      clearTimeout(__lookupTimer);
+      __lookupTimer = setTimeout(() => autocompletarPacientePorDocumento({ showToast: false }), 450);
+    }
+
+    // =========================
     // Título automático (formato solicitado)
     // 1) Rango de hora, Duración
     // 2) Nombre del Paciente, Cédula
@@ -227,8 +311,6 @@
       const cc = normalizeText(cedulaPaciente) || "Sin cédula";
       const esp = normalizeText(especialidad) || "Sin especialidad";
 
-      // FullCalendar dibuja el title como una línea; soporta saltos de línea en lista,
-      // y en timeGrid a veces se recorta. Igual lo ponemos como pidió.
       return `${rango}, ${dur}\n${np}, ${cc}\n${esp}`;
     }
 
@@ -241,7 +323,6 @@
 
       const estado = row.estado || "programada";
 
-      // Si por alguna razón titulo está vacío, lo regeneramos con el formato requerido
       const titulo = normalizeText(row.titulo)
         ? row.titulo
         : construirTituloAutomatico({
@@ -263,6 +344,7 @@
           nombre_paciente: row.nombre_paciente || "",
           documento_paciente: row.documento_paciente || "",
           telefono_paciente: row.telefono_paciente || "",
+          correo_paciente: row.correo_paciente || "",            // ✅ NUEVO
           profesional_id: row.profesional_id || "",
           nombre_profesional: row.nombre_profesional || "",
           especialidad: row.especialidad || "",
@@ -340,19 +422,25 @@
 
       $("citaId").value = payload?.id || "";
 
-      // En este flujo el título es automático. Igual dejamos un input visible SOLO lectura
-      // para que el usuario vea cómo va quedando.
+      // input oculto del título (se guarda)
       $("titulo").value = payload?.titulo || "";
 
-      $("nombre_paciente").value = payload?.nombre_paciente || "";
+      // ✅ Nuevo flujo: el documento se diligencia primero
       $("documento_paciente").value = payload?.documento_paciente || "";
+      $("nombre_paciente").value = payload?.nombre_paciente || "";
       $("telefono_paciente").value = payload?.telefono_paciente || "";
+      $("correo_paciente").value = payload?.correo_paciente || ""; // ✅ NUEVO
+
       $("profesional_id").value = payload?.profesional_id || "";
       $("especialidad").value = payload?.especialidad || "";
       $("estado").value = payload?.estado || "programada";
       $("notas").value = payload?.notas || "";
       $("inicio").value = payload?.inicio_local || "";
       $("fin").value = payload?.fin_local || "";
+
+      // Reset dataset control
+      $("documento_paciente").dataset.lastLookup = "";
+      $("documento_paciente").dataset.patientFound = "";
 
       // Si viene sin título, lo calculamos
       if (!normalizeText($("titulo").value) && payload?.inicio_local && payload?.fin_local){
@@ -369,8 +457,18 @@
         }
       }
 
+      // Mostrar preview
+      $("titulo_preview").textContent = $("titulo").value || "";
+
       $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
       $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
+
+      // Si es creación y el usuario ya escribió documento, autocompletar (sin toast)
+      if (mode !== "edit" && normalizeText($("documento_paciente").value)){
+        autocompletarPacientePorDocumento({ showToast: false });
+      } else {
+        actualizarPreviewTitulo();
+      }
     }
 
     function closeModal(){
@@ -387,13 +485,16 @@
       const finISO = toISOFromLocalInput(finLocal);
       if (!inicioISO || !finISO) return;
 
-      $("titulo").value = construirTituloAutomatico({
+      const titulo = construirTituloAutomatico({
         inicioISO,
         finISO,
         nombrePaciente: $("nombre_paciente").value,
         cedulaPaciente: $("documento_paciente").value,
         especialidad: $("especialidad").value
       });
+
+      $("titulo").value = titulo;
+      $("titulo_preview").textContent = titulo;
     }
 
     // =========================
@@ -477,6 +578,7 @@
             nombre_paciente: ev.extendedProps.nombre_paciente,
             documento_paciente: ev.extendedProps.documento_paciente,
             telefono_paciente: ev.extendedProps.telefono_paciente,
+            correo_paciente: ev.extendedProps.correo_paciente, // ✅ NUEVO
             profesional_id: ev.extendedProps.profesional_id,
             especialidad: ev.extendedProps.especialidad,
             estado: ev.extendedProps.estado,
@@ -494,7 +596,6 @@
             const inicioISO = info.event.start.toISOString();
             const finISO = info.event.end.toISOString();
 
-            // Recalcular título automático con los props existentes
             const nuevoTitulo = construirTituloAutomatico({
               inicioISO,
               finISO,
@@ -615,6 +716,21 @@
         $(id).addEventListener("input", actualizarPreviewTitulo);
         $(id).addEventListener("change", actualizarPreviewTitulo);
       });
+
+      // ✅ NUEVO: Autocomplete por documento
+      // - Debounced mientras escribe
+      // - Búsqueda final al salir del campo
+      $("documento_paciente").addEventListener("input", autocompletarPacienteDebounced);
+      $("documento_paciente").addEventListener("blur", () => autocompletarPacientePorDocumento({ showToast: true }));
+
+      // Si autocompleta nombre/telefono/correo, actualizar título preview
+      ["nombre_paciente","telefono_paciente","correo_paciente"].forEach(id=>{
+        $(id).addEventListener("input", actualizarPreviewTitulo);
+        $(id).addEventListener("change", actualizarPreviewTitulo);
+      });
+
+      // Preview también si cambia correo (aunque no esté en el título)
+      $("correo_paciente").addEventListener("input", ()=>{ /* no-op */ });
     }
 
     async function onSave(){
@@ -659,7 +775,7 @@
           return;
         }
 
-        // Título automático requerido (siempre)
+        // ✅ Mantener: Título automático requerido (siempre)
         const tituloAuto = construirTituloAutomatico({
           inicioISO,
           finISO,
@@ -669,6 +785,7 @@
         });
 
         $("titulo").value = tituloAuto;
+        $("titulo_preview").textContent = tituloAuto;
 
         const row = {
           usuario_id: currentSession.user.id,
@@ -677,6 +794,7 @@
           nombre_paciente: normalizeText($("nombre_paciente").value),
           documento_paciente: normalizeText($("documento_paciente").value),
           telefono_paciente: normalizeText($("telefono_paciente").value),
+          correo_paciente: normalizeText($("correo_paciente").value), // ✅ NUEVO
 
           especialidad: normalizeText(especialidad),
 
@@ -1075,7 +1193,7 @@
       z-index: 70;
       max-width: min(720px, 92vw);
       text-align:center;
-      white-space: pre-line; /* para que el toast soporte saltos de línea */
+      white-space: pre-line;
     }
     .toast.show{
       opacity: 1;
@@ -1214,19 +1332,27 @@
       <input type="hidden" id="citaId" />
 
       <div class="modalGrid">
+
+        <!-- ✅ Documento primero -->
+        <div class="field">
+          <label for="documento_paciente">Cédula / Documento</label>
+          <input id="documento_paciente" type="text" placeholder="Digite la identificación (autocompleta si existe)" />
+        </div>
+
         <div class="field">
           <label for="nombre_paciente">Paciente (Nombre)</label>
           <input id="nombre_paciente" type="text" placeholder="Nombre del paciente" />
         </div>
 
         <div class="field">
-          <label for="documento_paciente">Cédula / Documento</label>
-          <input id="documento_paciente" type="text" placeholder="CC / TI / CE" />
-        </div>
-
-        <div class="field">
           <label for="telefono_paciente">Teléfono</label>
           <input id="telefono_paciente" type="text" placeholder="Teléfono del paciente" />
+        </div>
+
+        <!-- ✅ NUEVO: correo -->
+        <div class="field">
+          <label for="correo_paciente">Correo electrónico</label>
+          <input id="correo_paciente" type="email" placeholder="correo@ejemplo.com" />
         </div>
 
         <div class="field">
@@ -1291,11 +1417,7 @@
 
   <!-- Toast -->
   <div id="toast" class="toast">Listo</div>
-
-  <script>
-    // Este script NO toca Supabase; solo UI rápida para el preview del título
-    // (El cálculo real está en el module script de arriba)
-  </script>
 </body>
 </html>
+
 
