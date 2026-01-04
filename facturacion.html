@@ -655,15 +655,55 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
+    // ✅✅✅ NUEVO: Protección por roles (admin y doctor)
+    // Soporta 2 formas típicas de guardar rol:
+    // 1) En user_metadata: session.user.user_metadata.role
+    // 2) En tabla "profiles" con columna "role" y PK user_id
     async function proteger(){
       const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
         return false;
       }
+
       state.session = session;
       $("user-email").textContent = session.user?.email || "Usuario";
-      return true;
+
+      const allowedRoles = ["admin", "doctor"];
+
+      // 1) Intentar desde user_metadata
+      const roleMeta = (session.user?.user_metadata?.role || session.user?.app_metadata?.role || "").toString().toLowerCase().trim();
+      if (roleMeta && allowedRoles.includes(roleMeta)){
+        return true;
+      }
+
+      // 2) Intentar desde tabla profiles (si existe)
+      try{
+        const { data: prof, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (error){
+          // Si la tabla no existe o RLS bloquea, seguimos al fallback de bloqueo
+          console.warn("No se pudo leer profiles.role:", error.message);
+        } else {
+          const roleDb = (prof?.role || "").toString().toLowerCase().trim();
+          if (roleDb && allowedRoles.includes(roleDb)){
+            return true;
+          }
+        }
+      } catch(e){
+        console.warn("Error consultando profiles:", e);
+      }
+
+      // ❌ No autorizado
+      toast("Acceso denegado: solo Admin o Doctor.", "err");
+      // Cierra sesión para evitar que navegue con token
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+      return false;
     }
 
     supabase.auth.onAuthStateChange((_event, session) => {
@@ -1379,7 +1419,6 @@
 
         // ✅ NUEVO: aplicar filtro por fecha (rango)
         if (desde){
-          // usamos el start del día (si tu campo es date igual funciona por comparación de string)
           query = query.gte("fecha", dateStartISO(desde));
         }
         if (hasta){
@@ -1640,14 +1679,9 @@
 
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
-      // ✅ Mantiene: al hacer click en "Ver facturas", filtra por cédula automáticamente
       $("btn-ver-facturas").addEventListener("click", async () => {
         const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
         $("buscar_facturas").value = ced || "";
-
-        // ✅ NUEVO: si quieres que por defecto sea "hoy", descomenta las 2 líneas:
-        // $("fecha_desde").value = hoyISO();
-        // $("fecha_hasta").value = hoyISO();
 
         openModal();
         await listarFacturas();
@@ -1662,7 +1696,6 @@
       $("btn-buscar-facturas").addEventListener("click", listarFacturas);
       $("limite_facturas").addEventListener("change", listarFacturas);
 
-      // ✅ NUEVO: refresca al cambiar fechas (opcional, cómodo)
       $("fecha_desde").addEventListener("change", listarFacturas);
       $("fecha_hasta").addEventListener("change", listarFacturas);
 
@@ -1670,9 +1703,9 @@
         if (e.key === "Enter") listarFacturas();
       });
 
-      // ✅ NUEVO: exportar excel
       $("btn-export-excel").addEventListener("click", exportarExcel);
 
+      // ✅ IMPORTANTE: primero valida sesión + rol
       const ok = await proteger();
       if (!ok) return;
 
