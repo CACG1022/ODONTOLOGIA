@@ -686,18 +686,25 @@
     }
 
     function renderProfesionales(){
-      const sel = $("profesional");
-      sel.innerHTML = `<option value="">— Selecciona —</option>`;
-      for (const pr of state.profesionales){
-        const ced = (pr.cedula ?? "").toString().trim();
-        const nom = (pr.nombre ?? "").toString().trim();
+  const sel = $("profesional");
+  sel.innerHTML = `<option value="">— Selecciona —</option>`;
 
-        const opt = document.createElement("option");
-        opt.value = `${ced} ${nom}`.trim();
-        opt.textContent = `${nom}${ced ? ` (${ced})` : ""}`.trim();
-        sel.appendChild(opt);
-      }
-    }
+  for (const pr of state.profesionales){
+    const ced = (pr.cedula ?? "").toString().trim();
+    const nom = (pr.nombre ?? "").toString().trim();
+
+    const opt = document.createElement("option");
+
+    // ✅ El value sigue teniendo la cédula (por trazabilidad)
+    opt.value = ced ? `${ced}` : nom;
+
+    // ✅ SOLO se muestra el nombre al usuario
+    opt.textContent = nom;
+
+    sel.appendChild(opt);
+  }
+}
+
 
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
