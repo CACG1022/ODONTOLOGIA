@@ -17,55 +17,26 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // ✅ Posibles nombres reales expuestos por la API (por diferencias de quoted identifiers)
+    // ✅ Candidatos (por si la API expone variaciones)
     const TABLE_CANDIDATES = [
-      "HISTORIAS CLINICAS",   // como se ve en el panel
-      "HISTORIAS_CLINICAS",   // forma común
-      "historias_clinicas",   // forma minúscula típica PostgREST
-      "Historias Clinicas"    // variante
+      "HISTORIAS CLINICAS",
+      "HISTORIAS_CLINICAS",
+      "historias_clinicas",
+      "Historias Clinicas"
     ];
     let TABLE = null;
 
-    // ✅ Campos (según tu captura)
+    // ✅ Columnas EXACTAS (según tu captura)
+    const COL_ID      = "id";
     const COL_CEDULA  = "Numero de Identificacion";
     const COL_NOMBRE  = "Nombre y apellido";
     const COL_EDAD    = "Edad";
     const COL_TIPO    = "Tipo identificacion";
     const COL_LUGAR   = "Lugar exp";
-    const COL_NAC     = "Fecha de nacimiento";
+    const COL_NAC     = "Fecha de nac";
     const COL_CREATED = "created_at";
 
     function $(id){ return document.getElementById(id); }
-
-    // ✅ Detecta la tabla que realmente responde por la API
-    async function detectarTablaConDatos() {
-      for (const t of TABLE_CANDIDATES) {
-        const { count, error } = await supabase
-          .from(t)
-          .select("id", { count: "exact", head: true });
-
-        if (!error) {
-          // Si hay conteo > 0, confirmada con datos
-          if ((count ?? 0) > 0) return t;
-          // Si no retorna count pero no hay error, igual la aceptamos como válida
-          return t;
-        }
-      }
-      return null;
-    }
-
-    async function verificarSesion() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = LOGIN_URL;
-        return null;
-      }
-      return session;
-    }
-
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = LOGIN_URL;
-    });
 
     function setLoading(isLoading) {
       const btn = $("btn-buscar");
@@ -77,6 +48,48 @@
     function setError(msg) {
       const el = $("error");
       if (el) el.textContent = msg || "";
+    }
+
+    function setInfo(msg) {
+      const el = $("info");
+      if (el) el.textContent = msg || "";
+    }
+
+    async function verificarSesion() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) console.warn("getSession error:", error);
+
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+      return session;
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    // ✅ Detecta la tabla REAL (y muestra el motivo si falla)
+    async function detectarTabla() {
+      let lastErr = null;
+
+      for (const t of TABLE_CANDIDATES) {
+        const { error } = await supabase
+          .from(t)
+          .select(COL_ID, { head: true, count: "exact" })
+          .limit(1);
+
+        if (!error) return t;
+        lastErr = { table: t, error };
+      }
+
+      if (lastErr) {
+        const e = lastErr.error;
+        setError(`No pude acceder a la tabla. Último intento: "${lastErr.table}". Error: ${e.code || ""} ${e.message || ""}`);
+        console.error("❌ detectarTabla último error:", lastErr);
+      }
+      return null;
     }
 
     function renderTable(rows) {
@@ -99,7 +112,10 @@
         const cedula = r[COL_CEDULA] ?? "";
         const nombre = r[COL_NOMBRE] ?? "";
         const edad   = r[COL_EDAD] ?? "";
+
+        // Tipo identificacion a veces llega como array ["CC"]
         const tipo   = Array.isArray(r[COL_TIPO]) ? r[COL_TIPO].join(", ") : (r[COL_TIPO] ?? "");
+
         const lugar  = r[COL_LUGAR] ?? "";
         const nac    = r[COL_NAC] ?? "";
         const creado = r[COL_CREATED] ? new Date(r[COL_CREATED]).toLocaleString("es-CO") : "";
@@ -119,6 +135,7 @@
 
     async function buscarPacientes() {
       setError("");
+      setInfo("");
       setLoading(true);
 
       try {
@@ -131,7 +148,7 @@
           return;
         }
 
-        // ✅ Query base (select explícito por columnas con espacios)
+        // ✅ SELECT explícito (recomendado con columnas con espacios)
         let q = supabase
           .from(TABLE)
           .select(`
@@ -157,7 +174,7 @@
           q = q.eq(COL_CEDULA, cedulaNum);
         }
 
-        // ✅ Filtro por nombre (texto, búsqueda parcial)
+        // ✅ Filtro por nombre (búsqueda parcial)
         if (nombreRaw) {
           q = q.ilike(COL_NOMBRE, `%${nombreRaw}%`);
         }
@@ -165,16 +182,18 @@
         const { data, error } = await q;
 
         if (error) {
-          console.error(error);
-          setError("No se pudo cargar el reporte. Revisa permisos/RLS o nombres de tabla/columnas.");
+          // ✅ MOSTRAR ERROR REAL
+          console.error("❌ Error Supabase:", error);
+          setError(`Error Supabase: ${error.code || ""} ${error.message || ""}`);
           renderTable([]);
           return;
         }
 
+        setInfo(`Tabla: ${TABLE} | Registros cargados: ${data?.length || 0}`);
         renderTable(data || []);
       } catch (e) {
-        console.error(e);
-        setError("Ocurrió un error inesperado consultando los pacientes.");
+        console.error("❌ Excepción:", e);
+        setError(`Error inesperado: ${String(e?.message || e)}`);
         renderTable([]);
       } finally {
         setLoading(false);
@@ -185,20 +204,16 @@
       const session = await verificarSesion();
       if (!session) return;
 
-      // ✅ Detectar tabla real
-      TABLE = await detectarTablaConDatos();
-
-      if (!TABLE) {
-        setError("No pude detectar la tabla de pacientes. Revisa RLS o el nombre real expuesto por Supabase.");
-        return;
-      }
-
-      // (opcional) confirmar en consola
-      console.log("✅ Tabla detectada:", TABLE);
-
       // Mostrar usuario
       const u = $("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
+
+      // ✅ Detectar tabla
+      TABLE = await detectarTabla();
+      if (!TABLE) return;
+
+      console.log("✅ Tabla detectada:", TABLE);
+      setInfo(`Tabla detectada: ${TABLE}`);
 
       // Buscar inicialmente
       await buscarPacientes();
@@ -368,6 +383,7 @@
     }
     #status{ color: var(--muted); font-weight: 800; }
     #error{ color: #b91c1c; font-weight: 900; }
+    #info{ color: #0f172a; font-weight: 800; }
 
     .table-wrap{
       overflow:auto;
@@ -438,6 +454,7 @@
 
       <div class="meta">
         <span id="status"></span>
+        <span id="info"></span>
         <span id="error"></span>
       </div>
     </div>
@@ -464,4 +481,5 @@
   </div>
 </body>
 </html>
+
 
