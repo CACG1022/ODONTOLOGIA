@@ -40,6 +40,8 @@
     .brand{ display:flex; align-items:center; gap:10px; }
     .brand h1{ font-size: 16px; margin:0; }
     .meta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+
+    /* ✅ Chip multi-línea para Usuario + Rol */
     .chip{
       background: #fff;
       border: 1px solid var(--line);
@@ -49,24 +51,15 @@
       color: var(--muted);
       box-shadow: 0 3px 10px rgba(0,0,0,.03);
       white-space:nowrap;
-    }
-    .chip b{ color: var(--text); }
-
-    /* ✅ NUEVO: Chip en dos líneas (usuario + rol) */
-    .chip-user{
       display:flex;
       flex-direction:column;
       gap:4px;
-      line-height:1.15;
-      white-space:normal;
+      line-height:1.2;
     }
-    .chip-sub{
-      font-size: 11px;
-      color: var(--muted);
-    }
-    .chip-sub b{
-      color: var(--text);
-    }
+    .chip b{ color: var(--text); }
+    .chip .line{ display:flex; gap:6px; align-items:baseline; }
+    .chip .line span{ color: var(--muted); }
+    .chip .line small{ color: var(--muted); font-weight:700; }
 
     .container{
       max-width: 1100px;
@@ -334,12 +327,11 @@
       <h1>CLÍNICA ODONTOLÓGICA — Facturación6</h1>
     </div>
     <div class="meta">
-      <!-- ✅ Ajustado: debajo del usuario se muestra el rol -->
-      <div class="chip chip-user">
-        <div>Usuario: <b id="user-email">—</b></div>
-        <div class="chip-sub">Rol: <b id="user-role">—</b></div>
+      <!-- ✅ Usuario + Rol (debajo) -->
+      <div class="chip">
+        <div class="line"><span>Usuario:</span> <b id="user-email">—</b></div>
+        <div class="line"><small>Rol:</small> <b id="user-role">—</b></div>
       </div>
-
       <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
     </div>
   </div>
@@ -610,23 +602,16 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-    /* ✅ CONFIG: tabla donde guardas roles (si tu tabla tiene otro nombre, cámbialo aquí)
-       En tu UI de "Administrar usuarios y roles" normalmente hay columnas: email y rol
-       Ejemplos de roles: user, doctor, auxiliar, admin
-    */
-    const ROLE_TABLE_PRIMARY = "usuarios_roles"; // <--- si tu tabla se llama distinto, cámbialo aquí
-    const ROLE_COLUMN_PRIMARY = "rol";          // <--- si tu columna se llama "role", cámbialo aquí
-
     const state = {
       session: null,
+      role: null,
       procedimientos: [],
       profesionales: [],
       items: [],
       facturaGuardada: null,
       _debounce: null,
       _lastCedula: "",
-      facturas: [],
-      userRole: null
+      facturas: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -681,40 +666,47 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
-    /* ✅ NUEVO: obtener rol por email
-       - Primero intenta ROLE_TABLE_PRIMARY/ROLE_COLUMN_PRIMARY
-       - Si no existe o no trae, prueba con tablas/columnas comunes
+    /* ✅ OBTENER ROL REAL DESDE public.profiles
+       - Busca por email (lowercase + trim)
+       - Si hay varios registros, toma el más reciente por created_at
+       - Si no encuentra o hay error, deja "user" como fallback
     */
-    async function cargarRolUsuario(email){
-      const tablasPosibles = [
-        { table: ROLE_TABLE_PRIMARY, cols: [ROLE_COLUMN_PRIMARY, "role"] },
-        { table: "usuarios_roles", cols: ["rol", "role"] },
-        { table: "users_roles", cols: ["rol", "role"] },
-        { table: "user_roles", cols: ["rol", "role"] },
-        { table: "usuarios", cols: ["rol", "role"] },
-        { table: "roles_usuarios", cols: ["rol", "role"] }
-      ];
-
-      for (const t of tablasPosibles){
-        for (const col of t.cols){
-          try{
-            const { data, error } = await supabase
-              .from(t.table)
-              .select(`${col}, email`)
-              .eq("email", email)
-              .maybeSingle();
-
-            if (!error && data){
-              const rol = (data[col] ?? "").toString().trim();
-              if (rol) return rol;
-            }
-          } catch(e){
-            // intenta siguiente
-          }
-        }
+    async function cargarRolActual(){
+      const email = (state.session?.user?.email || "").trim().toLowerCase();
+      const elRole = $("user-role");
+      if (!email){
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
       }
 
-      return "user"; // fallback
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role, created_at, email")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        const finalRole = role || "user";
+
+        state.role = finalRole;
+        if (elRole) elRole.textContent = finalRole;
+
+        // Debug útil
+        console.log("ROLE LOOKUP => email:", email, "db:", data, "finalRole:", finalRole);
+
+        return finalRole;
+      } catch(err){
+        console.error("No se pudo leer rol en profiles (posible RLS o no existe fila):", err);
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
     }
 
     async function proteger(){
@@ -723,33 +715,31 @@
         window.location.href = LOGIN_URL;
         return false;
       }
-
       state.session = session;
 
-      const email = session.user?.email || "Usuario";
+      const email = (session.user?.email || "Usuario").toString();
       $("user-email").textContent = email;
 
-      // ✅ Pintar rol
-      try{
-        const rol = await cargarRolUsuario(email);
-        state.userRole = rol;
-        const elRol = $("user-role");
-        if (elRol) elRol.textContent = rol;
-      } catch(e){
-        state.userRole = "user";
-        const elRol = $("user-role");
-        if (elRol) elRol.textContent = "user";
-      }
+      // ✅ Cargar rol real desde profiles
+      await cargarRolActual();
 
       return true;
     }
 
-    // ✅ Ajustado: NO redirigir en el arranque si session existe.
+    // ✅ Evita redirecciones en el arranque (INITIAL_SESSION)
     supabase.auth.onAuthStateChange((event, session) => {
       console.log("AUTH EVENT:", event, "SESSION:", !!session);
 
+      // Solo redirige si realmente se cerró sesión
       if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
         window.location.href = LOGIN_URL;
+      }
+
+      // Si el usuario inicia sesión en otra pestaña, refresca rol
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+        state.session = session;
+        $("user-email").textContent = session.user?.email || "Usuario";
+        cargarRolActual();
       }
     });
 
@@ -1755,3 +1745,4 @@
   </script>
 </body>
 </html>
+
