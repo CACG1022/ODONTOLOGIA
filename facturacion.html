@@ -660,51 +660,102 @@
     // 1) En user_metadata: session.user.user_metadata.role
     // 2) En tabla "profiles" con columna "role" y PK user_id
     async function proteger(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if(!session){
-        window.location.href = LOGIN_URL;
-        return false;
-      }
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.href = LOGIN_URL;
+    return false;
+  }
 
-      state.session = session;
-      $("user-email").textContent = session.user?.email || "Usuario";
+  state.session = session;
+  $("user-email").textContent = session.user?.email || "Usuario";
 
-      const allowedRoles = ["admin", "doctor"];
+  const allowedRoles = ["admin", "doctor"];
 
-      // 1) Intentar desde user_metadata
-      const roleMeta = (session.user?.user_metadata?.role || session.user?.app_metadata?.role || "").toString().toLowerCase().trim();
-      if (roleMeta && allowedRoles.includes(roleMeta)){
-        return true;
-      }
+  // Helper normaliza
+  const norm = (v) => (v ?? "").toString().trim().toLowerCase();
 
-      // 2) Intentar desde tabla profiles (si existe)
-      try{
-        const { data: prof, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("user_id", session.user.id)
-          .maybeSingle();
+  // 1) Intentar desde metadata
+  const meta = session.user?.user_metadata || {};
+  const appm = session.user?.app_metadata || {};
 
-        if (error){
-          // Si la tabla no existe o RLS bloquea, seguimos al fallback de bloqueo
-          console.warn("No se pudo leer profiles.role:", error.message);
-        } else {
-          const roleDb = (prof?.role || "").toString().toLowerCase().trim();
-          if (roleDb && allowedRoles.includes(roleDb)){
-            return true;
-          }
-        }
-      } catch(e){
-        console.warn("Error consultando profiles:", e);
-      }
+  const roleMeta =
+    norm(meta.role) ||
+    norm(meta.rol) ||
+    norm(meta.user_role) ||
+    norm(appm.role) ||
+    norm(appm.rol) ||
+    norm(appm.user_role);
 
-      // ❌ No autorizado
-      toast("Acceso denegado: solo Admin o Doctor.", "err");
-      // Cierra sesión para evitar que navegue con token
-      try { await supabase.auth.signOut(); } catch(e) {}
-      window.location.href = LOGIN_URL;
-      return false;
+  // 2) Intentar desde JWT (por si el rol viene como claim personalizado)
+  let roleJwt = "";
+  try{
+    const token = session.access_token || "";
+    const payload = token.split(".")[1];
+    if (payload){
+      const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
+      roleJwt =
+        norm(json.role) ||
+        norm(json.rol) ||
+        norm(json.user_role) ||
+        norm(json.user_role_name);
     }
+  } catch(e){ /* ignore */ }
+
+  // 3) Intentar desde profiles (probando id y user_id)
+  let roleDb = "";
+  try{
+    // a) profiles.user_id
+    const r1 = await supabase
+      .from("profiles")
+      .select("role, rol, user_role")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+
+    if (!r1.error && r1.data){
+      roleDb = norm(r1.data.role) || norm(r1.data.rol) || norm(r1.data.user_role);
+    } else {
+      // b) profiles.id (MUY común)
+      const r2 = await supabase
+        .from("profiles")
+        .select("role, rol, user_role")
+        .eq("id", session.user.id)
+        .maybeSingle();
+
+      if (!r2.error && r2.data){
+        roleDb = norm(r2.data.role) || norm(r2.data.rol) || norm(r2.data.user_role);
+      } else {
+        // Si hay error, puede ser RLS bloqueando el SELECT
+        if (r1.error) console.warn("profiles(user_id) error:", r1.error.message);
+        if (r2.error) console.warn("profiles(id) error:", r2.error.message);
+      }
+    }
+  } catch(e){
+    console.warn("Error consultando profiles:", e);
+  }
+
+  const finalRole = roleMeta || roleJwt || roleDb;
+
+  console.log("DEBUG ROLE =>", {
+    email: session.user?.email,
+    roleMeta,
+    roleJwt,
+    roleDb,
+    finalRole,
+    user_metadata: meta,
+    app_metadata: appm
+  });
+
+  if (allowedRoles.includes(finalRole)){
+    return true;
+  }
+
+  // ❌ No autorizado
+  toast("Acceso denegado: solo Admin o Doctor.", "err");
+  try { await supabase.auth.signOut(); } catch(e) {}
+  window.location.href = LOGIN_URL;
+  return false;
+}
+
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
