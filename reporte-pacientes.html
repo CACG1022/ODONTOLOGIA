@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reporte de Pacientes - Clínica Dra. Leidi Silva</title>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Supabase (MISMAS credenciales que tu index)
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // OJO: tu tabla se llama con espacio: "HISTORIAS CLINICAS"
+    const TABLE = "HISTORIAS CLINICAS";
+
+    // Campos (según tu captura)
+    const COL_CEDULA = "Numero de Identificacion";
+    const COL_NOMBRE = "Nombre y apellido";
+    const COL_EDAD = "Edad";
+    const COL_TIPO = "Tipo identificacion";
+    const COL_LUGAR = "Lugar exp";
+    const COL_NAC = "Fecha de nac";
+    const COL_CREATED = "created_at";
+
+    function $(id){ return document.getElementById(id); }
+
+    async function verificarSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+      return session;
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    function setLoading(isLoading) {
+      const btn = $("btn-buscar");
+      const sp = $("status");
+      if (btn) btn.disabled = isLoading;
+      if (sp) sp.textContent = isLoading ? "Cargando..." : "";
+    }
+
+    function setError(msg) {
+      const el = $("error");
+      if (el) el.textContent = msg || "";
+    }
+
+    function renderTable(rows) {
+      const tbody = $("tbody");
+      const empty = $("empty");
+      if (!tbody) return;
+
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0) {
+        if (empty) empty.style.display = "block";
+        return;
+      } else {
+        if (empty) empty.style.display = "none";
+      }
+
+      for (const r of rows) {
+        const tr = document.createElement("tr");
+
+        const cedula = r[COL_CEDULA] ?? "";
+        const nombre = r[COL_NOMBRE] ?? "";
+        const edad = r[COL_EDAD] ?? "";
+        const tipo = Array.isArray(r[COL_TIPO]) ? r[COL_TIPO].join(", ") : (r[COL_TIPO] ?? "");
+        const lugar = r[COL_LUGAR] ?? "";
+        const nac = r[COL_NAC] ?? "";
+        const creado = r[COL_CREATED] ? new Date(r[COL_CREATED]).toLocaleString("es-CO") : "";
+
+        tr.innerHTML = `
+          <td>${cedula}</td>
+          <td>${nombre}</td>
+          <td>${edad}</td>
+          <td>${tipo}</td>
+          <td>${lugar}</td>
+          <td>${nac}</td>
+          <td>${creado}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function buscarPacientes() {
+      setError("");
+      setLoading(true);
+
+      try {
+        const cedulaRaw = ($("q-cedula")?.value || "").trim();
+        const nombreRaw = ($("q-nombre")?.value || "").trim();
+
+        // Base query
+        let q = supabase
+          .from(TABLE)
+          .select("*")
+          .order(COL_CREATED, { ascending: false })
+          .limit(200);
+
+        // Filtro por cédula (int)
+        if (cedulaRaw) {
+          const cedulaNum = Number(cedulaRaw);
+          if (Number.isNaN(cedulaNum)) {
+            setLoading(false);
+            setError("La cédula debe ser numérica.");
+            return;
+          }
+          q = q.eq(COL_CEDULA, cedulaNum);
+        }
+
+        // Filtro por nombre (texto, búsqueda parcial)
+        if (nombreRaw) {
+          q = q.ilike(COL_NOMBRE, `%${nombreRaw}%`);
+        }
+
+        const { data, error } = await q;
+
+        if (error) {
+          console.error(error);
+          setError("No se pudo cargar el reporte. Revisa permisos/RLS o el nombre de la tabla/columnas.");
+          renderTable([]);
+          setLoading(false);
+          return;
+        }
+
+        renderTable(data || []);
+      } catch (e) {
+        console.error(e);
+        setError("Ocurrió un error inesperado consultando los pacientes.");
+        renderTable([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    async function init() {
+      const session = await verificarSesion();
+      if (!session) return;
+
+      // Mostrar usuario
+      const u = $("user-email");
+      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+
+      // Buscar inicialmente
+      await buscarPacientes();
+
+      // Eventos
+      $("btn-buscar")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        buscarPacientes();
+      });
+
+      $("btn-limpiar")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        $("q-cedula").value = "";
+        $("q-nombre").value = "";
+        buscarPacientes();
+      });
+
+      // Enter para buscar
+      ["q-cedula", "q-nombre"].forEach(id => {
+        $(id)?.addEventListener("keydown", (ev) => {
+          if (ev.key === "Enter") {
+            ev.preventDefault();
+            buscarPacientes();
+          }
+        });
+      });
+
+      // Volver
+      $("btn-volver")?.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = INDEX_URL;
+      });
+    }
+
+    init();
+  </script>
+
+  <style>
+    :root{
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --shadow: 0 20px 45px rgba(15,23,42,.10);
+      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
+      --radius: 18px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      min-height:100vh;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
+        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
+        linear-gradient(180deg, #ffffff, var(--bg));
+      padding: 22px 14px;
+    }
+    .wrap{
+      width:min(1100px, 100%);
+      margin:0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+    header{
+      background: linear-gradient(180deg, var(--surface), #fbfcff);
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      border-radius: var(--radius);
+      padding: 16px;
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .title{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      min-width: 240px;
+    }
+    .title h1{
+      margin:0;
+      font-size: 18px;
+      letter-spacing:.2px;
+    }
+    .title small{
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .btn{
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      cursor:pointer;
+      font-weight: 800;
+      letter-spacing:.2px;
+      box-shadow: var(--shadow-2);
+      transition: transform .12s ease, border-color .12s ease;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(37,99,235,.28); }
+    .btn.primary{
+      background: var(--accent);
+      border-color: rgba(37,99,235,.35);
+      color:#fff;
+      box-shadow: 0 12px 18px rgba(37,99,235,.18);
+    }
+    .btn.primary:hover{ background: var(--accent-2); }
+    .panel{
+      background:#fff;
+      border:1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px;
+    }
+    form{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+      align-items:end;
+    }
+    label{
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+      color: var(--muted);
+      font-weight: 800;
+      font-size: 12px;
+    }
+    input{
+      border:1px solid var(--border);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline:none;
+      font-weight: 700;
+    }
+    input:focus{ border-color: rgba(37,99,235,.35); }
+    .col-4{ grid-column: span 4; }
+    .col-5{ grid-column: span 5; }
+    .col-3{ grid-column: span 3; }
+    @media (max-width: 900px){
+      .col-4,.col-5,.col-3{ grid-column: span 12; }
+      .actions{ width:100%; justify-content:stretch; }
+      .actions .btn{ flex:1; }
+    }
+    .meta{
+      display:flex;
+      gap: 12px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 10px;
+    }
+    #status{ color: var(--muted); font-weight: 800; }
+    #error{ color: #b91c1c; font-weight: 900; }
+
+    .table-wrap{
+      overflow:auto;
+      border-radius: 14px;
+      border:1px solid var(--border);
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width: 920px;
+      background:#fff;
+    }
+    th, td{
+      padding: 10px 12px;
+      border-bottom:1px solid rgba(15,23,42,.08);
+      text-align:left;
+      font-size: 13px;
+      white-space:nowrap;
+    }
+    th{
+      position:sticky;
+      top:0;
+      background: #fbfcff;
+      z-index: 1;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing:.2px;
+    }
+    tr:hover td{ background: rgba(37,99,235,.04); }
+    #empty{
+      display:none;
+      color: var(--muted);
+      font-weight: 800;
+      padding: 12px 4px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="title">
+        <h1>Reporte de Pacientes</h1>
+        <small>Usuario: <span id="user-email"></span></small>
+      </div>
+      <div class="actions">
+        <button class="btn" id="btn-volver" type="button">← Volver al inicio</button>
+      </div>
+    </header>
+
+    <div class="panel">
+      <form>
+        <label class="col-4">
+          Buscar por cédula
+          <input id="q-cedula" inputmode="numeric" placeholder="Ej: 1022956631" />
+        </label>
+
+        <label class="col-5">
+          Buscar por nombre
+          <input id="q-nombre" placeholder="Ej: Leidi, Edward, Camilo..." />
+        </label>
+
+        <div class="col-3" style="display:flex; gap:10px;">
+          <button class="btn primary" id="btn-buscar" type="button">Buscar</button>
+          <button class="btn" id="btn-limpiar" type="button">Limpiar</button>
+        </div>
+      </form>
+
+      <div class="meta">
+        <span id="status"></span>
+        <span id="error"></span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Cédula</th>
+              <th>Nombre y apellido</th>
+              <th>Edad</th>
+              <th>Tipo ID</th>
+              <th>Lugar exp</th>
+              <th>Fecha nac</th>
+              <th>Creado</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+      <div id="empty">No se encontraron pacientes con esos filtros.</div>
+    </div>
+  </div>
+</body>
+</html>
