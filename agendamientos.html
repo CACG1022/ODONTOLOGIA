@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -5,40 +6,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agendamiento Avanzado - Clínica Odontológica</title>
 
-  <!-- ✅ FullCalendar (Gratis) -->
+  <!-- ✅ FullCalendar -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
   <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
 
-  <!-- ✅ Supabase -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ✅ Supabase (igual que tu index.html)
+    // ✅ Supabase (tus credenciales)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
 
-    // ✅ Ajusta si quieres tu ruta exacta
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const HOME_URL  = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // ✅ Nombre de tabla en Supabase
-    // Crea una tabla llamada: appointments
-    // Columnas sugeridas (mínimas):
-    // id (uuid, default gen_random_uuid, PK)
-    // user_id (uuid)
-    // title (text)
-    // patient_name (text)
-    // patient_doc (text)
-    // professional (text)
-    // status (text)  // programada|confirmada|atendida|cancelada
-    // notes (text)
-    // start_time (timestamptz)
-    // end_time (timestamptz)
-    // created_at (timestamptz, default now())
-    //
-    // ⚠️ Si tu tabla tiene otros nombres, cambia los campos en mapEventToRow / mapRowToEvent.
+    // ✅ Tablas en español
+    const TABLA_CITAS = "citas";
+    const TABLA_PROFESIONALES = "profesionales";
 
     // =========================
     // Helpers UI
@@ -60,35 +46,6 @@
       b.style.display = isLoading ? "flex" : "none";
     }
 
-    function openModal(mode, payload){
-      // mode: create | edit
-      $("modal").classList.add("open");
-      $("modal").setAttribute("aria-hidden","false");
-      $("modalTitle").textContent = mode === "edit" ? "Editar cita" : "Nueva cita";
-
-      // limpiar
-      $("apptId").value = payload?.id || "";
-      $("title").value = payload?.title || "";
-      $("patient_name").value = payload?.patient_name || "";
-      $("patient_doc").value = payload?.patient_doc || "";
-      $("professional").value = payload?.professional || "";
-      $("status").value = payload?.status || "programada";
-      $("notes").value = payload?.notes || "";
-
-      // datetime-local necesita formato local sin Z
-      $("start_time").value = payload?.start_local || "";
-      $("end_time").value = payload?.end_local || "";
-
-      // botones
-      $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
-      $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
-    }
-
-    function closeModal(){
-      $("modal").classList.remove("open");
-      $("modal").setAttribute("aria-hidden","true");
-    }
-
     function toLocalInputValue(dateObj){
       const pad = (n)=> String(n).padStart(2,"0");
       const y = dateObj.getFullYear();
@@ -100,27 +57,15 @@
     }
 
     function toISOFromLocalInput(val){
-      // val: "YYYY-MM-DDTHH:mm" interpretado como local -> ISO
-      // new Date(val) toma local y lo convierte
       const d = new Date(val);
       if (isNaN(d.getTime())) return null;
       return d.toISOString();
     }
 
-    function normalizeProfessional(p){
-      return (p || "").trim();
-    }
+    function normalizeText(t){ return (t || "").trim(); }
 
-    function normalizeDoc(d){
-      return (d || "").trim();
-    }
-
-    function normalizeText(t){
-      return (t || "").trim();
-    }
-
-    function statusColor(status){
-      const s = String(status || "").toLowerCase();
+    function colorPorEstado(estado){
+      const s = String(estado || "").toLowerCase();
       if (s === "confirmada") return "#2563eb";
       if (s === "atendida") return "#16a34a";
       if (s === "cancelada") return "#ef4444";
@@ -128,7 +73,7 @@
     }
 
     // =========================
-    // Auth + Roles (admin/auxiliar)
+    // Auth + Roles
     // =========================
     async function cargarRolDesdeProfiles(userId){
       try {
@@ -152,7 +97,6 @@
         return { ok:false };
       }
 
-      // Mostrar usuario y rol
       $("user-email").textContent = session.user?.email || "Usuario autenticado";
 
       const role = await cargarRolDesdeProfiles(session.user.id);
@@ -173,12 +117,10 @@
       return { ok:true, session, role };
     }
 
-    // Si se expira/cierra, vuelve al login
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
@@ -186,93 +128,99 @@
     };
 
     // =========================
-    // Supabase CRUD
+    // Profesionales (cargar select)
     // =========================
-    function mapRowToEvent(row){
-      const start = new Date(row.start_time);
-      const end   = new Date(row.end_time);
+    let profesionalesCache = []; // [{id, nombre, activo, especialidad, profesion}]
+    async function cargarProfesionales(){
+      const { data, error } = await supabase
+        .from(TABLA_PROFESIONALES)
+        .select("id, nombre, activo, profesion, especialidad")
+        .order("nombre", { ascending: true });
 
-      const prof = row.professional || "";
-      const patient = row.patient_name || "";
-      const doc = row.patient_doc || "";
-      const st = row.status || "programada";
+      if (error) throw new Error(error.message);
 
-      const title = row.title?.trim()
-        ? row.title.trim()
-        : `${patient}${patient ? " · " : ""}${prof}`;
+      profesionalesCache = (data || []).filter(p => p.activo === true);
+
+      // llenar select del modal
+      const sel = $("profesional_id");
+      sel.innerHTML = `<option value="">-- Selecciona --</option>` +
+        profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
+
+      // llenar filtro por profesional (opcional)
+      const filt = $("filterProfessional");
+      filt.innerHTML = `<option value="">Todos</option>` +
+        profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
+    }
+
+    function getNombreProfesionalPorId(id){
+      return profesionalesCache.find(p => p.id === id)?.nombre || "";
+    }
+
+    function escapeHtml(str){
+      return String(str || "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    // =========================
+    // CRUD Supabase (citas)
+    // =========================
+    function rowToEvent(row){
+      const start = new Date(row.inicio);
+      const end   = new Date(row.fin);
+
+      const estado = row.estado || "programada";
+
+      const titulo = normalizeText(row.titulo)
+        ? row.titulo
+        : `${row.nombre_paciente || "Paciente"} · ${row.nombre_profesional || "Profesional"}`;
 
       return {
         id: row.id,
-        title,
-        start: row.start_time,
-        end: row.end_time,
-        backgroundColor: statusColor(st),
-        borderColor: statusColor(st),
+        title: titulo,
+        start: row.inicio,
+        end: row.fin,
+        backgroundColor: colorPorEstado(estado),
+        borderColor: colorPorEstado(estado),
         extendedProps: {
-          patient_name: patient,
-          patient_doc: doc,
-          professional: prof,
-          status: st,
-          notes: row.notes || "",
-          // guardamos strings local para precargar el form
-          start_local: toLocalInputValue(start),
-          end_local: toLocalInputValue(end),
+          nombre_paciente: row.nombre_paciente || "",
+          documento_paciente: row.documento_paciente || "",
+          telefono_paciente: row.telefono_paciente || "",
+          profesional_id: row.profesional_id || "",
+          nombre_profesional: row.nombre_profesional || "",
+          estado: estado,
+          notas: row.notas || "",
+          inicio_local: toLocalInputValue(start),
+          fin_local: toLocalInputValue(end),
         }
       };
     }
 
-    function mapEventToRow(payload, userId){
-      // payload viene del modal
-      return {
-        // id opcional para update
-        user_id: userId,
-        title: normalizeText(payload.title),
-        patient_name: normalizeText(payload.patient_name),
-        patient_doc: normalizeDoc(payload.patient_doc),
-        professional: normalizeProfessional(payload.professional),
-        status: normalizeText(payload.status) || "programada",
-        notes: normalizeText(payload.notes),
-        start_time: payload.start_iso,
-        end_time: payload.end_iso
-      };
-    }
-
-    async function fetchAppointments(rangeStartISO, rangeEndISO){
-      // trae todas las citas dentro del rango
-      const { data, error } = await supabase
-        .from("appointments")
+    async function fetchCitas(rangeStartISO, rangeEndISO, profesionalIdFiltro, estadoFiltro){
+      let q = supabase
+        .from(TABLA_CITAS)
         .select("*")
-        .gte("start_time", rangeStartISO)
-        .lt("start_time", rangeEndISO)
-        .order("start_time", { ascending: true });
+        .gte("inicio", rangeStartISO)
+        .lt("inicio", rangeEndISO)
+        .order("inicio", { ascending: true });
 
+      if (profesionalIdFiltro) q = q.eq("profesional_id", profesionalIdFiltro);
+
+      if (estadoFiltro && estadoFiltro !== "todos") {
+        q = q.eq("estado", estadoFiltro);
+      }
+
+      const { data, error } = await q;
       if (error) throw new Error(error.message);
       return data || [];
     }
 
-    async function hasConflict({ idToIgnore=null, professional, startISO, endISO }){
-      // Conflicto: misma profesional, se solapan intervalos
-      // solapamiento: start < end2 AND end > start2
-      // Usamos dos filtros aproximados y validamos en cliente si hace falta
-      const prof = normalizeProfessional(professional);
-      if (!prof) return false; // si no hay profesional, no validamos choque
-
+    async function crearCita(row){
       const { data, error } = await supabase
-        .from("appointments")
-        .select("id, start_time, end_time, professional")
-        .eq("professional", prof)
-        .lt("start_time", endISO)
-        .gt("end_time", startISO);
-
-      if (error) throw new Error(error.message);
-
-      const rows = (data || []).filter(r => !idToIgnore || r.id !== idToIgnore);
-      return rows.length > 0;
-    }
-
-    async function createAppointment(row){
-      const { data, error } = await supabase
-        .from("appointments")
+        .from(TABLA_CITAS)
         .insert(row)
         .select("*")
         .single();
@@ -281,9 +229,9 @@
       return data;
     }
 
-    async function updateAppointment(id, row){
+    async function actualizarCita(id, row){
       const { data, error } = await supabase
-        .from("appointments")
+        .from(TABLA_CITAS)
         .update(row)
         .eq("id", id)
         .select("*")
@@ -293,9 +241,9 @@
       return data;
     }
 
-    async function deleteAppointment(id){
+    async function eliminarCita(id){
       const { error } = await supabase
-        .from("appointments")
+        .from(TABLA_CITAS)
         .delete()
         .eq("id", id);
 
@@ -304,30 +252,44 @@
     }
 
     // =========================
-    // FullCalendar App
+    // Modal
+    // =========================
+    function openModal(mode, payload){
+      $("modal").classList.add("open");
+      $("modal").setAttribute("aria-hidden","false");
+      $("modalTitle").textContent = mode === "edit" ? "Editar cita" : "Nueva cita";
+
+      $("citaId").value = payload?.id || "";
+      $("titulo").value = payload?.titulo || "";
+      $("nombre_paciente").value = payload?.nombre_paciente || "";
+      $("documento_paciente").value = payload?.documento_paciente || "";
+      $("telefono_paciente").value = payload?.telefono_paciente || "";
+      $("profesional_id").value = payload?.profesional_id || "";
+      $("estado").value = payload?.estado || "programada";
+      $("notas").value = payload?.notas || "";
+      $("inicio").value = payload?.inicio_local || "";
+      $("fin").value = payload?.fin_local || "";
+
+      $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
+      $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
+    }
+
+    function closeModal(){
+      $("modal").classList.remove("open");
+      $("modal").setAttribute("aria-hidden","true");
+    }
+
+    // =========================
+    // FullCalendar
     // =========================
     let calendar;
     let currentSession = null;
 
     function getFilters(){
       return {
-        professional: normalizeProfessional($("filterProfessional").value),
-        status: $("filterStatus").value
+        profesional_id: $("filterProfessional").value || "",
+        estado: $("filterStatus").value || "todos"
       };
-    }
-
-    function applyClientFilters(events){
-      const { professional, status } = getFilters();
-
-      return events.filter(ev => {
-        const p = (ev.extendedProps?.professional || "").trim();
-        const st = String(ev.extendedProps?.status || "").toLowerCase();
-        const stFilter = String(status || "").toLowerCase();
-
-        if (professional && p.toLowerCase() !== professional.toLowerCase()) return false;
-        if (stFilter && stFilter !== "todos" && st !== stFilter) return false;
-        return true;
-      });
     }
 
     async function reloadCalendarEvents(){
@@ -338,14 +300,15 @@
         const rangeStart = view.activeStart.toISOString();
         const rangeEnd   = view.activeEnd.toISOString();
 
-        const rows = await fetchAppointments(rangeStart, rangeEnd);
-        const events = rows.map(mapRowToEvent);
+        const { profesional_id, estado } = getFilters();
+
+        const rows = await fetchCitas(rangeStart, rangeEnd, profesional_id, estado);
+        const events = rows.map(rowToEvent);
 
         calendar.removeAllEvents();
-        applyClientFilters(events).forEach(e => calendar.addEvent(e));
+        events.forEach(e => calendar.addEvent(e));
 
-        $("rangeLabel").textContent =
-          view.title || new Date().toLocaleDateString("es-CO");
+        $("rangeLabel").textContent = view.title || new Date().toLocaleDateString("es-CO");
       } catch(e){
         console.error(e);
         toast("Error cargando agenda: " + e.message, "error");
@@ -354,25 +317,8 @@
       }
     }
 
-    function buildTitleFromFields(fields){
-      const patient = normalizeText(fields.patient_name);
-      const prof = normalizeProfessional(fields.professional);
-      const doc = normalizeDoc(fields.patient_doc);
-
-      // Si el usuario no puso título, generamos uno legible
-      if (normalizeText(fields.title)) return normalizeText(fields.title);
-
-      let t = "";
-      if (patient) t += patient;
-      if (doc) t += (t ? " · " : "") + doc;
-      if (prof) t += (t ? " · " : "") + prof;
-      return t || "Cita";
-    }
-
     async function initCalendar(){
-      const calendarEl = $("calendar");
-
-      calendar = new FullCalendar.Calendar(calendarEl, {
+      calendar = new FullCalendar.Calendar($("calendar"), {
         locale: "es",
         timeZone: "local",
         initialView: "timeGridWeek",
@@ -385,36 +331,23 @@
         slotMinTime: "07:00:00",
         slotMaxTime: "20:00:00",
         slotDuration: "00:15:00",
-        snapDuration: "00:05:00",
         headerToolbar: false,
 
-        views: {
-          timeGridDay:  { titleFormat: { year:"numeric", month:"long", day:"2-digit" } },
-          timeGridWeek: { titleFormat: { year:"numeric", month:"long" } },
-          dayGridMonth: { titleFormat: { year:"numeric", month:"long" } },
-        },
-
         select: (info) => {
-          // crear con rango seleccionado
-          const startLocal = toLocalInputValue(info.start);
-          const endLocal   = toLocalInputValue(info.end);
-
           openModal("create", {
-            start_local: startLocal,
-            end_local: endLocal,
-            status: "programada"
+            inicio_local: toLocalInputValue(info.start),
+            fin_local: toLocalInputValue(info.end),
+            estado: "programada"
           });
         },
 
         dateClick: (info) => {
-          // click simple -> 30 min por defecto
           const start = info.date;
           const end = new Date(start.getTime() + 30*60*1000);
-
           openModal("create", {
-            start_local: toLocalInputValue(start),
-            end_local: toLocalInputValue(end),
-            status: "programada"
+            inicio_local: toLocalInputValue(start),
+            fin_local: toLocalInputValue(end),
+            estado: "programada"
           });
         },
 
@@ -422,50 +355,30 @@
           const ev = info.event;
           openModal("edit", {
             id: ev.id,
-            title: ev.title,
-            patient_name: ev.extendedProps.patient_name,
-            patient_doc: ev.extendedProps.patient_doc,
-            professional: ev.extendedProps.professional,
-            status: ev.extendedProps.status,
-            notes: ev.extendedProps.notes,
-            start_local: ev.extendedProps.start_local || toLocalInputValue(ev.start),
-            end_local: ev.extendedProps.end_local || toLocalInputValue(ev.end),
+            titulo: ev.title,
+            nombre_paciente: ev.extendedProps.nombre_paciente,
+            documento_paciente: ev.extendedProps.documento_paciente,
+            telefono_paciente: ev.extendedProps.telefono_paciente,
+            profesional_id: ev.extendedProps.profesional_id,
+            estado: ev.extendedProps.estado,
+            notas: ev.extendedProps.notas,
+            inicio_local: ev.extendedProps.inicio_local || toLocalInputValue(ev.start),
+            fin_local: ev.extendedProps.fin_local || toLocalInputValue(ev.end),
           });
         },
 
         eventDrop: async (info) => {
-          // arrastrar cita
           try{
             setLoading(true);
-
             const id = info.event.id;
-            const professional = info.event.extendedProps.professional || "";
-            const startISO = info.event.start.toISOString();
-            const endISO   = info.event.end.toISOString();
-
-            const conflict = await hasConflict({
-              idToIgnore: id,
-              professional,
-              startISO,
-              endISO
-            });
-
-            if (conflict){
-              info.revert();
-              toast("Choque de horario para ese profesional.", "warn");
-              return;
-            }
-
             const row = {
-              start_time: startISO,
-              end_time: endISO
+              inicio: info.event.start.toISOString(),
+              fin: info.event.end.toISOString()
             };
+            await actualizarCita(id, row);
 
-            await updateAppointment(id, row);
-
-            // actualiza locals
-            info.event.setExtendedProp("start_local", toLocalInputValue(info.event.start));
-            info.event.setExtendedProp("end_local", toLocalInputValue(info.event.end));
+            info.event.setExtendedProp("inicio_local", toLocalInputValue(info.event.start));
+            info.event.setExtendedProp("fin_local", toLocalInputValue(info.event.end));
 
             toast("Cita reprogramada.", "ok");
           } catch(e){
@@ -478,37 +391,17 @@
         },
 
         eventResize: async (info) => {
-          // cambiar duración
           try{
             setLoading(true);
-
             const id = info.event.id;
-            const professional = info.event.extendedProps.professional || "";
-            const startISO = info.event.start.toISOString();
-            const endISO   = info.event.end.toISOString();
-
-            const conflict = await hasConflict({
-              idToIgnore: id,
-              professional,
-              startISO,
-              endISO
-            });
-
-            if (conflict){
-              info.revert();
-              toast("Choque de horario para ese profesional.", "warn");
-              return;
-            }
-
             const row = {
-              start_time: startISO,
-              end_time: endISO
+              inicio: info.event.start.toISOString(),
+              fin: info.event.end.toISOString()
             };
+            await actualizarCita(id, row);
 
-            await updateAppointment(id, row);
-
-            info.event.setExtendedProp("start_local", toLocalInputValue(info.event.start));
-            info.event.setExtendedProp("end_local", toLocalInputValue(info.event.end));
+            info.event.setExtendedProp("inicio_local", toLocalInputValue(info.event.start));
+            info.event.setExtendedProp("fin_local", toLocalInputValue(info.event.end));
 
             toast("Duración actualizada.", "ok");
           } catch(e){
@@ -521,7 +414,6 @@
         },
 
         datesSet: async () => {
-          // cada cambio de vista o navegación
           await reloadCalendarEvents();
         }
       });
@@ -531,7 +423,7 @@
     }
 
     // =========================
-    // UI Wiring
+    // UI
     // =========================
     function wireButtons(){
       $("btnDay").addEventListener("click", ()=> calendar.changeView("timeGridDay"));
@@ -542,12 +434,11 @@
       $("btnNext").addEventListener("click", ()=> calendar.next());
       $("btnHome").addEventListener("click", ()=> window.location.href = HOME_URL);
 
-      $("filterProfessional").addEventListener("input", ()=> reloadCalendarEvents());
+      $("filterProfessional").addEventListener("change", ()=> reloadCalendarEvents());
       $("filterStatus").addEventListener("change", ()=> reloadCalendarEvents());
 
       $("btnNew").addEventListener("click", () => {
         const start = new Date();
-        // redondear a 15 min
         start.setSeconds(0,0);
         const m = start.getMinutes();
         const rounded = Math.ceil(m/15)*15;
@@ -555,101 +446,109 @@
         const end = new Date(start.getTime() + 30*60*1000);
 
         openModal("create", {
-          start_local: toLocalInputValue(start),
-          end_local: toLocalInputValue(end),
-          status: "programada"
+          inicio_local: toLocalInputValue(start),
+          fin_local: toLocalInputValue(end),
+          estado: "programada"
         });
       });
 
       $("btnClose").addEventListener("click", closeModal);
       $("modalBackdrop").addEventListener("click", closeModal);
-      window.addEventListener("keydown", (e)=> {
-        if (e.key === "Escape") closeModal();
-      });
+      window.addEventListener("keydown", (e)=> { if (e.key === "Escape") closeModal(); });
 
       $("btnSave").addEventListener("click", onSave);
       $("btnDelete").addEventListener("click", onDelete);
+    }
+
+    function buildTituloSiVacio(fields){
+      const t = normalizeText(fields.titulo);
+      if (t) return t;
+      const np = normalizeText(fields.nombre_paciente);
+      const dp = normalizeText(fields.documento_paciente);
+      const profName = getNombreProfesionalPorId(fields.profesional_id);
+      let s = "";
+      if (np) s += np;
+      if (dp) s += (s ? " · " : "") + dp;
+      if (profName) s += (s ? " · " : "") + profName;
+      return s || "Cita";
     }
 
     async function onSave(){
       try{
         setLoading(true);
 
-        const id = $("apptId").value.trim();
+        const id = $("citaId").value.trim();
+
         const payload = {
-          title: $("title").value,
-          patient_name: $("patient_name").value,
-          patient_doc: $("patient_doc").value,
-          professional: $("professional").value,
-          status: $("status").value,
-          notes: $("notes").value,
-          start_local: $("start_time").value,
-          end_local: $("end_time").value,
+          titulo: $("titulo").value,
+          nombre_paciente: $("nombre_paciente").value,
+          documento_paciente: $("documento_paciente").value,
+          telefono_paciente: $("telefono_paciente").value,
+          profesional_id: $("profesional_id").value,
+          estado: $("estado").value,
+          notas: $("notas").value,
+          inicio_local: $("inicio").value,
+          fin_local: $("fin").value,
         };
 
-        if (!payload.start_local || !payload.end_local){
+        if (!payload.profesional_id){
+          toast("Selecciona un profesional.", "warn");
+          return;
+        }
+
+        if (!payload.inicio_local || !payload.fin_local){
           toast("Selecciona inicio y fin.", "warn");
           return;
         }
 
-        const startISO = toISOFromLocalInput(payload.start_local);
-        const endISO   = toISOFromLocalInput(payload.end_local);
+        const inicioISO = toISOFromLocalInput(payload.inicio_local);
+        const finISO = toISOFromLocalInput(payload.fin_local);
 
-        if (!startISO || !endISO){
+        if (!inicioISO || !finISO){
           toast("Fecha/hora inválida.", "warn");
           return;
         }
 
-        const startD = new Date(startISO);
-        const endD = new Date(endISO);
-
-        if (endD <= startD){
+        const inicioD = new Date(inicioISO);
+        const finD = new Date(finISO);
+        if (finD <= inicioD){
           toast("La hora final debe ser mayor que la inicial.", "warn");
           return;
         }
 
-        payload.start_iso = startISO;
-        payload.end_iso = endISO;
+        payload.titulo = buildTituloSiVacio(payload);
 
-        // auto title
-        payload.title = buildTitleFromFields(payload);
+        const row = {
+          usuario_id: currentSession.user.id,
+          profesional_id: payload.profesional_id,
+          nombre_paciente: normalizeText(payload.nombre_paciente),
+          documento_paciente: normalizeText(payload.documento_paciente),
+          telefono_paciente: normalizeText(payload.telefono_paciente),
+          titulo: normalizeText(payload.titulo) || "Cita",
+          estado: payload.estado || "programada",
+          notas: normalizeText(payload.notas),
+          inicio: inicioISO,
+          fin: finISO,
 
-        // choque por profesional
-        const conflict = await hasConflict({
-          idToIgnore: id || null,
-          professional: payload.professional,
-          startISO,
-          endISO
-        });
+          // opcional: cache (aunque el trigger lo llena, lo mandamos también)
+          nombre_profesional: getNombreProfesionalPorId(payload.profesional_id)
+        };
 
-        if (conflict){
-          toast("🚫 Choque de horario para ese profesional.", "warn");
-          return;
-        }
-
-        // Guardar
-        const row = mapEventToRow(payload, currentSession.user.id);
-
-        let saved;
         if (id){
-          saved = await updateAppointment(id, row);
+          await actualizarCita(id, row);
           toast("Cita actualizada.", "ok");
         } else {
-          saved = await createAppointment(row);
+          await crearCita(row);
           toast("Cita creada.", "ok");
         }
 
         closeModal();
         await reloadCalendarEvents();
 
-        // ubicar a la cita (opcional)
-        if (saved?.start_time){
-          calendar.gotoDate(new Date(saved.start_time));
-          await reloadCalendarEvents();
-        }
-
       } catch(e){
         console.error(e);
+        // Si hay choque, Postgres lanza error por constraint
+        // Te mostramos el mensaje igualmente.
         toast("Error guardando: " + e.message, "error");
       } finally {
         setLoading(false);
@@ -657,7 +556,7 @@
     }
 
     async function onDelete(){
-      const id = $("apptId").value.trim();
+      const id = $("citaId").value.trim();
       if (!id) return;
 
       const ok = confirm("¿Eliminar esta cita definitivamente?");
@@ -665,7 +564,7 @@
 
       try{
         setLoading(true);
-        await deleteAppointment(id);
+        await eliminarCita(id);
         closeModal();
         toast("Cita eliminada.", "ok");
         await reloadCalendarEvents();
@@ -686,12 +585,12 @@
 
       currentSession = res.session;
 
-      // Fecha en header
       $("today").textContent = new Date().toLocaleDateString("es-CO", {
         year:"numeric", month:"long", day:"2-digit"
       });
 
       wireButtons();
+      await cargarProfesionales();
       await initCalendar();
     })();
   </script>
@@ -706,10 +605,6 @@
       --muted: #64748b;
       --accent: #2563eb;
       --accent-2: #1d4ed8;
-      --ok: #16a34a;
-      --warn: #f59e0b;
-      --err: #ef4444;
-
       --shadow: 0 20px 45px rgba(15,23,42,.10);
       --shadow-2: 0 10px 20px rgba(15,23,42,.08);
       --radius: 18px;
@@ -907,7 +802,6 @@
       background: var(--surface-2);
     }
 
-    /* Calendar box */
     .calendarWrap{
       background: var(--surface);
       border: 1px solid var(--border);
@@ -923,7 +817,6 @@
       padding: 6px;
     }
 
-    /* Modal */
     .modal{
       position: fixed;
       inset: 0;
@@ -933,7 +826,6 @@
       padding: 18px;
       z-index: 50;
     }
-
     .modal.open{ display:flex; }
 
     .backdrop{
@@ -989,7 +881,6 @@
       flex-wrap: wrap;
     }
 
-    /* Loading */
     .loading{
       position: fixed;
       inset: 0;
@@ -1010,7 +901,6 @@
     }
     @keyframes spin{ to{ transform: rotate(360deg);} }
 
-    /* Toast */
     .toast{
       position: fixed;
       left: 50%;
@@ -1037,7 +927,6 @@
     .toast.warn{ background: rgba(245,158,11,.95); color:#111827; }
     .toast.error{ background: rgba(239,68,68,.95); }
 
-    /* Blocked */
     .blocked{
       display:none;
       background: rgba(239,68,68,.08);
@@ -1079,11 +968,13 @@
       <!-- Sidebar -->
       <div class="panel">
         <h2>Filtros</h2>
-        <div class="muted">Filtra por profesional o por estado. (Los filtros son del lado del cliente.)</div>
+        <div class="muted">Filtra por profesional y estado.</div>
 
         <div class="field">
           <label for="filterProfessional">Profesional</label>
-          <input id="filterProfessional" type="text" placeholder="Ej: Dra. Leidi / Auxiliar 1" />
+          <select id="filterProfessional">
+            <option value="">Cargando...</option>
+          </select>
         </div>
 
         <div class="field">
@@ -1122,7 +1013,7 @@
             • Selecciona un rango para crear cita.<br/>
             • Click sobre cita para editar.<br/>
             • Arrastra/estira para reprogramar.<br/>
-            • Bloquea choques por <b>profesional</b>.
+            • Choques bloqueados por BD.
           </div>
         </div>
       </div>
@@ -1144,27 +1035,34 @@
         <button class="btn" id="btnClose" type="button">✕</button>
       </div>
 
-      <input type="hidden" id="apptId" />
+      <input type="hidden" id="citaId" />
 
       <div class="modalGrid">
         <div class="field">
-          <label for="patient_name">Paciente (Nombre)</label>
-          <input id="patient_name" type="text" placeholder="Nombre del paciente" />
+          <label for="nombre_paciente">Paciente (Nombre)</label>
+          <input id="nombre_paciente" type="text" placeholder="Nombre del paciente" />
         </div>
 
         <div class="field">
-          <label for="patient_doc">Documento</label>
-          <input id="patient_doc" type="text" placeholder="CC / TI / CE" />
+          <label for="documento_paciente">Documento</label>
+          <input id="documento_paciente" type="text" placeholder="CC / TI / CE" />
         </div>
 
         <div class="field">
-          <label for="professional">Profesional</label>
-          <input id="professional" type="text" placeholder="Ej: Dra. Leidi Silva" />
+          <label for="telefono_paciente">Teléfono</label>
+          <input id="telefono_paciente" type="text" placeholder="Teléfono del paciente" />
         </div>
 
         <div class="field">
-          <label for="status">Estado</label>
-          <select id="status">
+          <label for="profesional_id">Profesional</label>
+          <select id="profesional_id">
+            <option value="">Cargando...</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="estado">Estado</label>
+          <select id="estado">
             <option value="programada">Programada</option>
             <option value="confirmada">Confirmada</option>
             <option value="atendida">Atendida</option>
@@ -1173,23 +1071,23 @@
         </div>
 
         <div class="field">
-          <label for="start_time">Inicio</label>
-          <input id="start_time" type="datetime-local" />
+          <label for="inicio">Inicio</label>
+          <input id="inicio" type="datetime-local" />
         </div>
 
         <div class="field">
-          <label for="end_time">Fin</label>
-          <input id="end_time" type="datetime-local" />
+          <label for="fin">Fin</label>
+          <input id="fin" type="datetime-local" />
         </div>
 
         <div class="field" style="grid-column: 1 / -1;">
-          <label for="title">Título (opcional)</label>
-          <input id="title" type="text" placeholder="Si lo dejas vacío, se genera automáticamente" />
+          <label for="titulo">Título (opcional)</label>
+          <input id="titulo" type="text" placeholder="Si lo dejas vacío, se genera automáticamente" />
         </div>
 
         <div class="field" style="grid-column: 1 / -1;">
-          <label for="notes">Notas</label>
-          <textarea id="notes" placeholder="Observaciones, motivo, procedimientos, etc."></textarea>
+          <label for="notas">Notas</label>
+          <textarea id="notas" placeholder="Observaciones, motivo, procedimientos, etc."></textarea>
         </div>
       </div>
 
