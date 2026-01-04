@@ -170,6 +170,31 @@
       align-items:center;
     }
 
+    /* ✅ NUEVO: Barra inferior de acciones (Guardar / Imprimir abajo) */
+    .actions-bottom{
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+      background:#fff;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+    .actions-bottom .left-note{
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+      flex: 1 1 380px;
+    }
+    .actions-bottom .btns{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
     .footer{
       padding: 12px 16px;
       display:flex;
@@ -258,6 +283,8 @@
     }
     @media (max-width: 520px){
       .grid{ grid-template-columns: 1fr; }
+      .actions-bottom{ justify-content:flex-start; }
+      .actions-bottom .btns{ width:100%; justify-content:flex-start; }
     }
   </style>
 </head>
@@ -265,7 +292,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Facturación</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación4</h1>
     </div>
     <div class="meta">
       <div class="chip">Usuario: <b id="user-email">—</b></div>
@@ -325,6 +352,12 @@
         <div class="ctrl">
           <label>&nbsp;</label>
           <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
+        </div>
+
+        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) -->
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>Correo paciente</label>
+          <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
         </div>
       </div>
     </div>
@@ -421,14 +454,22 @@
         </div>
       </div>
 
+      <!-- ✅ Se deja la caja informativa (sin quitar el texto configurado) -->
       <div class="box">
-        <div style="gap:10px; flex-wrap:wrap;">
-          <button class="btn primary" id="btn-guardar" type="button">💾 Guardar factura</button>
-          <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
-        </div>
-        <div class="mono" style="margin-top:10px; color:var(--muted);">
+        <div class="mono" style="color:var(--muted);">
           Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
         </div>
+      </div>
+    </div>
+
+    <!-- ✅ NUEVO: Guardar/Imprimir al final (abajo de la página) -->
+    <div class="actions-bottom">
+      <div class="left-note mono">
+        Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
+      </div>
+      <div class="btns">
+        <button class="btn primary" id="btn-guardar" type="button">💾 Guardar factura</button>
+        <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
       </div>
     </div>
 
@@ -692,11 +733,17 @@
         const nombre = (h["Nombre y apellido"] || "").trim();
         const epsHC  = (h["EPS_Paciente"] || "").trim();
 
+        // ✅ NUEVO: intentar traer correo si existe en HC (sin romper si no existe)
+        const correo =
+          (h["Correo"] || h["CORREO"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
+
         if (nombre){
           $("paciente_nombre").value = nombre;
           if ($("eps") && epsHC) $("eps").value = epsHC;
+          if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
           setHint("✅ Encontrado");
         } else {
+          if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
           setHint("Encontrado, pero sin nombre en historia.");
         }
 
@@ -849,7 +896,7 @@
       }
     }
 
-    // ✅ IMPRESIÓN MEJORADA + LOGO + MÁRGENES/BORDES
+    // ✅ IMPRESIÓN MEJORADA + LOGO + MÁRGENES/BORDES + CORREO PACIENTE
     function buildInvoiceHTML({ fac, detalle, totals }){
       const rows = (detalle || []).map(it => `
         <tr>
@@ -866,6 +913,7 @@
       const profesional = fac?.profesional ? escapeHtml(fac.profesional) : "—";
       const mp = fac?.metodo_pago ? escapeHtml(fac.metodo_pago) : "—";
       const obs = fac?.observacion ? escapeHtml(fac.observacion) : "—";
+      const correoPac = fac?.paciente_correo ? escapeHtml(fac.paciente_correo) : "—";
 
       return `
 <!DOCTYPE html>
@@ -879,142 +927,55 @@
   *{ box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   html, body{ height:100%; }
   body{ margin:0; font-family: Arial, sans-serif; color: var(--text); background:#fff; }
-
-  /* ✅ Márgenes reales de impresión para que no se “corten” bordes */
   @page { size: A4; margin: 10mm; }
-
-  /* ✅ En pantalla se ve con un marco suave; en impresión usa todo el ancho */
-  .page{
-    max-width: 210mm;
-    margin: 0 auto;
-    padding: 0;
-  }
-
-  .sheet{
-    background:#fff;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    overflow: hidden;
-  }
-
+  .page{ max-width: 210mm; margin: 0 auto; padding: 0; }
+  .sheet{ background:#fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
   .pad{ padding: 14px 14px; }
-
   .head{
-    display:flex;
-    justify-content:space-between;
-    gap:12px;
-    align-items:flex-start;
-    border-bottom: 2px solid var(--line);
-    padding: 14px 14px;
+    display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+    border-bottom: 2px solid var(--line); padding: 14px 14px;
   }
   .brandbox{ display:flex; gap:12px; align-items:flex-start; }
   .logo{
-    width: 58px;
-    height: 58px;
-    border-radius: 12px;
-    border: 1px solid var(--line);
-    object-fit: contain;
-    background:#fff;
-    padding: 6px;
+    width: 58px; height: 58px; border-radius: 12px; border: 1px solid var(--line);
+    object-fit: contain; background:#fff; padding: 6px;
   }
   .h1{ font-weight:900; font-size:16px; margin:0; letter-spacing:.2px; }
   .muted{ color: var(--muted); font-size:12px; line-height:1.35; }
   .right{ text-align:right; }
-
   .grid{
     display:grid;
     grid-template-columns: repeat(4, minmax(0,1fr));
     gap: 10px;
     margin-top: 10px;
   }
-  .kv{
-    border:1px solid var(--line);
-    border-radius: 12px;
-    padding: 10px;
-    min-height: 54px;
-  }
+  .kv{ border:1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 54px; }
   .kv .k{ font-size: 11.5px; color: var(--muted); font-weight: 700; }
-  .kv .v{ margin-top: 4px; font-size: 12.5px; font-weight: 800; }
-
+  .kv .v{ margin-top: 4px; font-size: 12.5px; font-weight: 800; word-break: break-word; }
   table{ width:100%; border-collapse: collapse; margin-top: 12px; }
   thead th{
-    background: #f9fafb;
-    color: var(--muted);
-    font-size: 12px;
-    text-align:left;
-    padding: 10px;
-    border-bottom: 1px solid var(--line);
+    background: #f9fafb; color: var(--muted); font-size: 12px; text-align:left;
+    padding: 10px; border-bottom: 1px solid var(--line);
   }
-  tbody td{
-    padding: 10px;
-    border-bottom: 1px solid var(--line);
-    font-size: 12.5px;
-  }
+  tbody td{ padding: 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
   .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
   .tr{ text-align:right; }
-
-  .bottom{
-    display:flex;
-    gap: 12px;
-    justify-content:space-between;
-    align-items:flex-start;
-    margin-top: 12px;
-    flex-wrap: wrap;
-  }
-
-  .note{
-    flex: 1 1 320px;
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    padding: 10px;
-    min-height: 72px;
-  }
+  .bottom{ display:flex; gap: 12px; justify-content:space-between; align-items:flex-start; margin-top: 12px; flex-wrap: wrap; }
+  .note{ flex: 1 1 320px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 72px; }
   .note .k{ font-size: 11.5px; color: var(--muted); font-weight: 700; }
   .note .v{ margin-top: 4px; font-size: 12.5px; font-weight: 800; }
-
-  .totbox{
-    flex: 0 0 320px;
-    border:1px solid var(--line);
-    border-radius: 12px;
-    padding: 10px;
-  }
-  .line{
-    display:flex; justify-content:space-between;
-    padding: 6px 0;
-    font-size: 13px;
-    border-bottom: 1px dashed rgba(17,24,39,.10);
-  }
+  .totbox{ flex: 0 0 320px; border:1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .line{ display:flex; justify-content:space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed rgba(17,24,39,.10); }
   .line:last-child{ border-bottom:none; }
-  .grand{
-    margin-top: 8px;
-    padding-top: 10px;
-    border-top: 1px solid var(--line);
-    font-weight: 900;
-  }
-
+  .grand{ margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 900; }
   .foot{
-    padding: 10px 14px;
-    border-top: 1px solid var(--line);
-    display:flex;
-    justify-content:space-between;
-    gap: 10px;
-    align-items:center;
-    color: var(--muted);
-    font-size: 11.5px;
+    padding: 10px 14px; border-top: 1px solid var(--line);
+    display:flex; justify-content:space-between; gap: 10px; align-items:center;
+    color: var(--muted); font-size: 11.5px;
   }
-
   .no-print{ display:flex; gap:10px; flex-wrap:wrap; }
-  .btnp{
-    border:1px solid var(--line);
-    background:#fff;
-    padding:10px 12px;
-    border-radius:10px;
-    font-weight:800;
-    cursor:pointer;
-  }
+  .btnp{ border:1px solid var(--line); background:#fff; padding:10px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
   .btnp.primary{ background: var(--brand); border-color: var(--brand); color:#fff; }
-
-  /* ✅ En impresión: sin sombras, sin margen extra, bordes alineados */
   @media print{
     body{ background:#fff; }
     .page{ max-width: none; margin:0; }
@@ -1047,13 +1008,13 @@
         <div class="grid">
           <div class="kv"><div class="k">Paciente</div><div class="v">${escapeHtml(fac?.paciente_nombre || "—")}</div></div>
           <div class="kv"><div class="k">Cédula</div><div class="v">${escapeHtml(fac?.paciente_cedula || "—")}</div></div>
+          <div class="kv"><div class="k">Correo</div><div class="v">${correoPac}</div></div>
           <div class="kv"><div class="k">Profesional</div><div class="v">${profesional}</div></div>
-          <div class="kv"><div class="k">Método de pago</div><div class="v">${mp}</div></div>
 
           <div class="kv"><div class="k">Tipo usuario</div><div class="v">${tipo}</div></div>
           <div class="kv"><div class="k">EPS</div><div class="v">${eps}</div></div>
+          <div class="kv"><div class="k">Método de pago</div><div class="v">${mp}</div></div>
           <div class="kv"><div class="k">¿Aplica IVA?</div><div class="v">${totals.iva_aplica ? "Sí" : "No"}</div></div>
-          <div class="kv"><div class="k">IVA %</div><div class="v">${Number(totals.iva_pct||0)}%</div></div>
         </div>
 
         <table>
@@ -1104,6 +1065,7 @@
       const fecha = ($("fecha").value || "").trim() || hoyISO();
       const paciente_cedula = ($("paciente_cedula").value || "").trim();
       const paciente_nombre = ($("paciente_nombre").value || "").trim();
+      const paciente_correo = ($("paciente_correo")?.value || "").trim() || null; // ✅ NUEVO
       const profesional = ($("profesional").value || "").trim();
 
       if (!paciente_cedula || !paciente_nombre){
@@ -1137,6 +1099,7 @@
           fecha,
           paciente_cedula,
           paciente_nombre,
+          paciente_correo, // ✅ NUEVO
           tipo_usuario,
           eps,
           numero_factura,
@@ -1168,6 +1131,7 @@
 
           if (!isColumnMissing) throw e1;
 
+          // ✅ Reintento SIN campos extra si faltan columnas
           const payloadBase = {
             fecha,
             paciente_cedula,
@@ -1190,8 +1154,14 @@
           if (e1b) throw e1b;
           fac = fac2;
 
+          // Mantener en memoria para impresión aunque DB no tenga columnas
           fac.metodo_pago = metodo_pago;
           fac.observacion = observacion;
+          fac.paciente_correo = paciente_correo;
+          fac.iva_aplica = totals.iva_aplica;
+          fac.iva_porcentaje = totals.iva_pct;
+          fac.iva_valor = totals.iva_valor;
+          fac.subtotal = totals.subtotal;
         } else {
           fac = fac1;
         }
@@ -1245,6 +1215,7 @@
 
         state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
         state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
+        state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
 
         const html = buildInvoiceHTML({
           fac: state.facturaGuardada,
@@ -1335,7 +1306,7 @@
 
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal")
           .order("fecha", { ascending: false })
           .limit(limit);
 
@@ -1387,6 +1358,9 @@
         $("paciente_cedula").value = fac.paciente_cedula || "";
         $("paciente_nombre").value = fac.paciente_nombre || "";
         $("profesional").value = fac.profesional || "";
+
+        // ✅ NUEVO: correo paciente al cargar
+        if ($("paciente_correo")) $("paciente_correo").value = fac.paciente_correo || "";
 
         if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
         if ($("observacion")) $("observacion").value = fac.observacion || "";
@@ -1548,6 +1522,7 @@
   </script>
 </body>
 </html>
+
 
 
 
