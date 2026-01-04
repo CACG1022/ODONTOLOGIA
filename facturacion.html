@@ -36,7 +36,7 @@
     }
     .brand{ display:flex; align-items:center; gap:10px; }
     .brand h1{ font-size: 16px; margin:0; }
-    .meta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; }
+    .meta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
     .chip{
       background: #fff;
       border: 1px solid var(--line);
@@ -123,6 +123,7 @@
     .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
     .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
     .btn.small{ padding: 8px 10px; font-size: 12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
 
     table{ width:100%; border-collapse: collapse; }
     th, td{
@@ -165,6 +166,8 @@
       justify-content:space-between;
       padding: 5px 0;
       font-size: 13px;
+      gap: 10px;
+      align-items:center;
     }
 
     .footer{
@@ -201,6 +204,55 @@
     #toast[data-type="err"]{ border-color: #f2c6c6; }
     #toast[data-type="warn"]{ border-color: #ffe7b3; }
 
+    /* ✅ MODAL FACTURAS */
+    .modal{
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .modal.show{ display:flex; }
+    .modal-card{
+      width: min(1100px, 100%);
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .modal-head{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      background:#fff;
+    }
+    .modal-head .title{ font-weight: 900; }
+    .modal-body{
+      padding: 12px 14px;
+      background:#fff;
+    }
+    .modal-tools{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      margin-bottom: 10px;
+    }
+    .modal-tools .ctrl{ min-width: 220px; }
+    .modal-table{
+      max-height: 60vh;
+      overflow:auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
     @media (max-width: 900px){
       .grid{ grid-template-columns: repeat(2, 1fr); }
     }
@@ -224,8 +276,10 @@
   <div class="container">
     <div class="header">
       <div class="title">Nueva factura</div>
-      <div class="row-actions">
+      <div class="row-actions" style="margin-top:0;">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+        <!-- ✅ NUEVO: Ver facturas -->
+        <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
       </div>
     </div>
 
@@ -312,6 +366,19 @@
     <div class="totales">
       <div class="box">
         <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
+
+        <!-- ✅ NUEVO: IVA -->
+        <div style="align-items:flex-start;">
+          <span>IVA</span>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="color:var(--muted); font-weight:700;">%</span>
+              <input id="iva_porcentaje" type="number" min="0" step="0.01" value="19" style="width:140px; text-align:right;">
+            </div>
+            <div class="mono" style="color:var(--muted);">IVA: $ <span id="iva_valor">0</span></div>
+          </div>
+        </div>
+
         <div>
           <span>Copago</span>
           <b>$ <input id="copago" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
@@ -320,6 +387,7 @@
           <span>Cuota moderadora</span>
           <b>$ <input id="cuota_moderadora" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
         </div>
+
         <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
           <span>Total</span><b>$ <span id="total">0</span></b>
         </div>
@@ -344,6 +412,61 @@
 
   <div id="toast" data-type="ok"></div>
 
+  <!-- ✅ MODAL: Ver facturas generadas -->
+  <div class="modal" id="modal-facturas" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="title">Facturas generadas</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" id="btn-refresh-facturas" type="button">🔄 Actualizar</button>
+          <button class="btn danger" id="btn-cerrar-modal" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tools">
+          <div class="ctrl">
+            <label>Buscar (N° factura o cédula)</label>
+            <input id="buscar_facturas" type="text" placeholder="Ej: FAC-2026... o 123456789">
+          </div>
+          <div class="ctrl">
+            <label>Mostrar</label>
+            <select id="limite_facturas">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btn-buscar-facturas" type="button">🔎 Buscar</button>
+          </div>
+        </div>
+
+        <div class="modal-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Fecha</th>
+                <th style="width:220px;">N° Factura</th>
+                <th>Paciente</th>
+                <th style="width:160px;">Cédula</th>
+                <th style="width:160px;">Total</th>
+                <th style="width:220px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-facturas">
+              <tr><td colspan="6" class="empty">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Tip: Puedes imprimir una factura desde “🖨 Imprimir” en acciones.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -365,7 +488,8 @@
       items: [],
       facturaGuardada: null,
       _debounce: null,
-      _lastCedula: ""
+      _lastCedula: "",
+      facturas: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -650,14 +774,153 @@
       }
     }
 
-    function recalcularTotales(){
+    function calcularTotalesObj(){
       const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const iva_pct = Math.max(0, num($("iva_porcentaje")?.value));
+      const iva_valor = Math.max(0, subtotal * (iva_pct / 100));
       const copago = Math.max(0, num($("copago").value));
       const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, subtotal - copago - cuota);
 
-      $("subtotal").textContent = money(subtotal);
-      $("total").textContent = money(total);
+      // ✅ Total = subtotal + IVA - copago - cuota
+      const total = Math.max(0, (subtotal + iva_valor) - copago - cuota);
+
+      return { subtotal, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
+    }
+
+    function recalcularTotales(){
+      const t = calcularTotalesObj();
+      $("subtotal").textContent = money(t.subtotal);
+      $("iva_valor").textContent = money(t.iva_valor);
+      $("total").textContent = money(t.total);
+    }
+
+    function formatFechaHuman(iso){
+      if (!iso) return "—";
+      // intenta manejar 'YYYY-MM-DD' o timestamp
+      try{
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())){
+          // probablemente 'YYYY-MM-DD'
+          const [y,m,dd] = String(iso).split("-");
+          if (y && m && dd) return `${dd}/${m}/${y}`;
+          return String(iso);
+        }
+        return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
+      } catch(e){
+        return String(iso);
+      }
+    }
+
+    function buildInvoiceHTML({ fac, detalle, totals }){
+      const rows = (detalle || []).map(it => `
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #e5e7eb;font-family:ui-monospace,monospace;font-size:12px;">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td style="padding:10px;border-bottom:1px solid #e5e7eb;">${escapeHtml(it.descripcion || "")}</td>
+          <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:right;">${Number(it.cantidad||0)}</td>
+          <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:right;">$ ${money(it.valor_unitario || 0)}</td>
+          <td style="padding:10px;border-bottom:1px solid #e5e7eb;text-align:right;font-family:ui-monospace,monospace;font-size:12px;">$ ${money(it.valor_total || 0)}</td>
+        </tr>
+      `).join("");
+
+      const eps = fac?.eps ? escapeHtml(fac.eps) : "—";
+      const tipo = fac?.tipo_usuario ? escapeHtml(fac.tipo_usuario) : "—";
+      const profesional = fac?.profesional ? escapeHtml(fac.profesional) : "—";
+
+      return `
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Factura ${escapeHtml(fac?.numero_factura || "")}</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Arial, sans-serif;color:#111827;background:#fff}
+  .wrap{padding:22px}
+  .head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;border-bottom:2px solid #e5e7eb;padding-bottom:12px;margin-bottom:14px}
+  .h1{font-weight:900;font-size:16px;margin:0}
+  .muted{color:#6b7280;font-size:12px;line-height:1.35}
+  .box{border:1px solid #e5e7eb;border-radius:12px;padding:12px;margin-top:12px}
+  .grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+  .kv{font-size:12px;color:#6b7280}
+  .kv b{display:block;color:#111827;font-size:13px;margin-top:4px}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th{background:#f9fafb;color:#6b7280;font-size:12px;text-align:left;padding:10px;border-bottom:1px solid #e5e7eb}
+  .tot{display:flex;justify-content:flex-end;margin-top:12px}
+  .totbox{min-width:320px;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .line{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+  .line b{font-family:ui-monospace,monospace;font-size:12px}
+  .grand{border-top:1px solid #e5e7eb;margin-top:8px;padding-top:10px;font-weight:900}
+  @media print{
+    .no-print{display:none !important}
+    body{background:#fff}
+    .wrap{padding:0}
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="head">
+      <div>
+        <p class="h1">CLÍNICA ODONTOLÓGICA — FACTURA</p>
+        <div class="muted">
+          N° Factura: <b style="color:#111827">${escapeHtml(fac?.numero_factura || "—")}</b><br/>
+          Fecha: <b style="color:#111827">${escapeHtml(formatFechaHuman(fac?.fecha))}</b>
+        </div>
+      </div>
+      <div class="muted" style="text-align:right">
+        Impreso: <b style="color:#111827">${new Date().toLocaleString("es-CO")}</b><br/>
+        Usuario: <b style="color:#111827">${escapeHtml(state.session?.user?.email || "—")}</b>
+      </div>
+    </div>
+
+    <div class="box">
+      <div class="grid">
+        <div class="kv">Paciente<b>${escapeHtml(fac?.paciente_nombre || "—")}</b></div>
+        <div class="kv">Cédula<b>${escapeHtml(fac?.paciente_cedula || "—")}</b></div>
+        <div class="kv">Profesional<b>${profesional}</b></div>
+        <div class="kv">Tipo usuario<b>${tipo}</b></div>
+        <div class="kv">EPS<b>${eps}</b></div>
+        <div class="kv">Observación<b>—</b></div>
+      </div>
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width:140px;">CUPS</th>
+            <th>Procedimiento</th>
+            <th style="width:80px;text-align:right;">Cant</th>
+            <th style="width:140px;text-align:right;">V/Unit</th>
+            <th style="width:160px;text-align:right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows || `<tr><td colspan="5" style="padding:14px;color:#6b7280;text-align:center;">Sin detalle</td></tr>`}
+        </tbody>
+      </table>
+
+      <div class="tot">
+        <div class="totbox">
+          <div class="line"><span>Subtotal</span><b>$ ${money(totals.subtotal)}</b></div>
+          <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b>$ ${money(totals.iva_valor)}</b></div>
+          <div class="line"><span>Copago</span><b>$ ${money(totals.copago)}</b></div>
+          <div class="line"><span>Cuota moderadora</span><b>$ ${money(totals.cuota_moderadora)}</b></div>
+          <div class="line grand"><span>TOTAL</span><b>$ ${money(totals.total)}</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="muted" style="margin-top:12px">
+      Este documento es una representación de factura generada por el sistema.
+    </div>
+
+    <div class="no-print" style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button onclick="window.print()" style="border:1px solid #e5e7eb;background:#1f6aa5;color:#fff;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer;">🖨 Imprimir</button>
+      <button onclick="window.close()" style="border:1px solid #e5e7eb;background:#fff;padding:10px 12px;border-radius:10px;font-weight:800;cursor:pointer;">Cerrar</button>
+    </div>
+  </div>
+</body>
+</html>`;
     }
 
     async function guardarFactura(){
@@ -685,32 +948,70 @@
       const eps = ($("eps").value || "").trim() || null;
       const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
 
-      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-      const copago = Math.max(0, num($("copago").value));
-      const cuota_moderadora = Math.max(0, num($("cuota_moderadora").value));
-      const valor_total = Math.max(0, subtotal - copago - cuota_moderadora);
+      const totals = calcularTotalesObj();
 
       setStatus("Guardando factura...");
 
       try{
-        const { data: fac, error: e1 } = await supabase
+        // ✅ Intento 1: guardando IVA si existen columnas (si no, reintenta sin IVA)
+        const payloadConIVA = {
+          fecha,
+          paciente_cedula,
+          paciente_nombre,
+          tipo_usuario,
+          eps,
+          numero_factura,
+          valor_total: totals.total,
+          copago: totals.copago,
+          cuota_moderadora: totals.cuota_moderadora,
+          profesional,
+
+          // Campos opcionales (solo si existen en tu tabla)
+          subtotal: totals.subtotal,
+          iva_porcentaje: totals.iva_pct,
+          iva_valor: totals.iva_valor
+        };
+
+        let fac = null;
+
+        const { data: fac1, error: e1 } = await supabase
           .from("facturas")
-          .insert([{
+          .insert([payloadConIVA])
+          .select("*")
+          .single();
+
+        if (e1){
+          const msg = String(e1.message || "").toLowerCase();
+          const isColumnMissing =
+            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+
+          if (!isColumnMissing) throw e1;
+
+          // ✅ Reintento SIN los campos IVA (para no romper si no has creado columnas)
+          const payloadSinIVA = {
             fecha,
             paciente_cedula,
             paciente_nombre,
             tipo_usuario,
             eps,
             numero_factura,
-            valor_total,
-            copago,
-            cuota_moderadora,
+            valor_total: totals.total,
+            copago: totals.copago,
+            cuota_moderadora: totals.cuota_moderadora,
             profesional
-          }])
-          .select("*")
-          .single();
+          };
 
-        if (e1) throw e1;
+          const { data: fac2, error: e1b } = await supabase
+            .from("facturas")
+            .insert([payloadSinIVA])
+            .select("*")
+            .single();
+
+          if (e1b) throw e1b;
+          fac = fac2;
+        } else {
+          fac = fac1;
+        }
 
         const detalle = state.items.map(it => ({
           factura_id: fac.id,
@@ -739,12 +1040,276 @@
       }
     }
 
-    function imprimir(){
+    async function imprimirFacturaGuardada(){
       if (!state.facturaGuardada){
         toast("Primero guarda la factura", "warn");
         return;
       }
-      window.print();
+
+      try{
+        setStatus("Preparando impresión...");
+
+        // ✅ trae detalle real desde DB para asegurar que imprime lo guardado
+        const { data: det, error } = await supabase
+          .from("factura_detalle")
+          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", state.facturaGuardada.id)
+          .order("id", { ascending: true });
+
+        if (error) throw error;
+
+        // Totales usando lo que hay en pantalla (IVA, copago, cuota) + items actuales
+        // (Si quieres forzar a lo guardado, necesitarías columnas de IVA/subtotal en facturas)
+        const totals = calcularTotalesObj();
+
+        const html = buildInvoiceHTML({
+          fac: state.facturaGuardada,
+          detalle: det || [],
+          totals
+        });
+
+        const w = window.open("", "_blank", "width=900,height=700");
+        if (!w){
+          setStatus("");
+          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
+          return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+
+        // imprimir cuando cargue
+        w.onload = () => {
+          try { w.focus(); w.print(); } catch(e) {}
+        };
+
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    /* ✅ MODAL: VER FACTURAS */
+    function openModal(){
+      $("modal-facturas").classList.add("show");
+      $("modal-facturas").setAttribute("aria-hidden", "false");
+    }
+    function closeModal(){
+      $("modal-facturas").classList.remove("show");
+      $("modal-facturas").setAttribute("aria-hidden", "true");
+    }
+
+    function renderFacturasTabla(rows){
+      const tbody = $("tbody-facturas");
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay facturas para mostrar.</td></tr>`;
+        return;
+      }
+
+      for (const f of rows){
+        const tr = document.createElement("tr");
+
+        const fecha = formatFechaHuman(f.fecha);
+        const numf = f.numero_factura || "—";
+        const nom = f.paciente_nombre || "—";
+        const ced = f.paciente_cedula || "—";
+        const total = money(f.valor_total || 0);
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">${escapeHtml(numf)}</td>
+          <td>${escapeHtml(nom)}</td>
+          <td class="mono">${escapeHtml(ced)}</td>
+          <td class="mono">$ ${escapeHtml(total)}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn small" data-act="cargar">↩ Cargar</button>
+            <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
+          </td>
+        `;
+
+        tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
+          await cargarFacturaEnFormulario(f.id);
+          closeModal();
+        });
+
+        tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
+          await imprimirFacturaPorId(f.id);
+        });
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function listarFacturas(){
+      const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
+      const q = ($("buscar_facturas").value || "").trim();
+
+      try{
+        $("tbody-facturas").innerHTML = `<tr><td colspan="6" class="empty">Cargando...</td></tr>`;
+
+        let query = supabase
+          .from("facturas")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional")
+          .order("fecha", { ascending: false })
+          .limit(limit);
+
+        // Si hay búsqueda, filtramos por numero_factura o cedula (sin OR avanzado para evitar líos)
+        // Intentamos primero por numero_factura; si no hay, intentamos por cedula.
+        if (q){
+          // si parece número, busca por cédula exacta o parcial
+          const isNum = /^[0-9]+$/.test(q);
+          if (isNum){
+            query = query.ilike("paciente_cedula", `%${q}%`);
+          } else {
+            query = query.ilike("numero_factura", `%${q}%`);
+          }
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        state.facturas = data || [];
+        renderFacturasTabla(state.facturas);
+
+      } catch(err){
+        console.error(err);
+        renderFacturasTabla([]);
+        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function cargarFacturaEnFormulario(facturaId){
+      try{
+        setStatus("Cargando factura...");
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", facturaId)
+          .single();
+
+        if (e1) throw e1;
+
+        const { data: det, error: e2 } = await supabase
+          .from("factura_detalle")
+          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId)
+          .order("id", { ascending: true });
+
+        if (e2) throw e2;
+
+        // llena cabecera
+        $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
+        $("numero_factura").value = fac.numero_factura || "";
+        $("tipo_usuario").value = fac.tipo_usuario || "Particular";
+        $("eps").value = fac.eps || "";
+        $("paciente_cedula").value = fac.paciente_cedula || "";
+        $("paciente_nombre").value = fac.paciente_nombre || "";
+        $("profesional").value = fac.profesional || "";
+
+        // detalle
+        state.items = (det || []).map(it => ({
+          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          codigo_cups: it.codigo_cups || "",
+          descripcion: it.descripcion || "",
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(it.valor_unitario || 0),
+          valor_total: Number(it.valor_total || 0)
+        }));
+
+        // IVA: si existe en DB lo usamos, si no, dejamos lo del input actual
+        if ($("iva_porcentaje")){
+          const ivaPctDB = fac.iva_porcentaje ?? fac.iva_pct ?? null;
+          if (ivaPctDB !== null && ivaPctDB !== undefined && String(ivaPctDB).trim() !== ""){
+            $("iva_porcentaje").value = Number(ivaPctDB) || 0;
+          }
+        }
+
+        $("copago").value = Number(fac.copago || 0);
+        $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
+
+        state.facturaGuardada = fac;
+        $("btn-imprimir").disabled = false;
+
+        renderItems();
+        recalcularTotales();
+        setStatus("");
+        toast("Factura cargada ✅", "ok");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo cargar:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function imprimirFacturaPorId(facturaId){
+      try{
+        setStatus("Preparando impresión...");
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", facturaId)
+          .single();
+
+        if (e1) throw e1;
+
+        const { data: det, error: e2 } = await supabase
+          .from("factura_detalle")
+          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId)
+          .order("id", { ascending: true });
+
+        if (e2) throw e2;
+
+        // Totales:
+        // - Si tu tabla facturas tiene subtotal/iva_valor/iva_porcentaje, los usamos.
+        // - Si no, recalculamos desde el detalle + IVA% (si existe) y restamos copago/cuota.
+        const subtotal = (fac.subtotal !== undefined && fac.subtotal !== null)
+          ? Number(fac.subtotal || 0)
+          : (det || []).reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+
+        const iva_pct = (fac.iva_porcentaje !== undefined && fac.iva_porcentaje !== null)
+          ? Number(fac.iva_porcentaje || 0)
+          : ((fac.iva_pct !== undefined && fac.iva_pct !== null) ? Number(fac.iva_pct || 0) : 0);
+
+        const iva_valor = (fac.iva_valor !== undefined && fac.iva_valor !== null)
+          ? Number(fac.iva_valor || 0)
+          : Math.max(0, subtotal * (Math.max(0, iva_pct) / 100));
+
+        const copago = Number(fac.copago || 0);
+        const cuota = Number(fac.cuota_moderadora || 0);
+        const total = (fac.valor_total !== undefined && fac.valor_total !== null)
+          ? Number(fac.valor_total || 0)
+          : Math.max(0, (subtotal + iva_valor) - copago - cuota);
+
+        const html = buildInvoiceHTML({
+          fac,
+          detalle: det || [],
+          totals: { subtotal, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total }
+        });
+
+        const w = window.open("", "_blank", "width=900,height=700");
+        if (!w){
+          setStatus("");
+          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
+          return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        w.onload = () => {
+          try { w.focus(); w.print(); } catch(e) {}
+        };
+
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
+      }
     }
 
     async function init(){
@@ -755,14 +1320,38 @@
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
       $("btn-buscar").addEventListener("click", buscarPacienteEnHistoria);
       $("btn-add").addEventListener("click", agregarProcedimiento);
+
       $("copago").addEventListener("input", recalcularTotales);
       $("cuota_moderadora").addEventListener("input", recalcularTotales);
+
+      // ✅ NUEVO: IVA recalcula
+      $("iva_porcentaje").addEventListener("input", recalcularTotales);
+
       $("btn-guardar").addEventListener("click", guardarFactura);
-      $("btn-imprimir").addEventListener("click", imprimir);
+
+      // ✅ FIX: imprimir real (abre ventana con factura y manda a imprimir)
+      $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
+
       $("btn-logout").addEventListener("click", cerrarSesion);
 
       // ✅ Autocompletar al escribir
       $("paciente_cedula").addEventListener("input", onCedulaInput);
+
+      // ✅ Modal facturas
+      $("btn-ver-facturas").addEventListener("click", async () => {
+        openModal();
+        await listarFacturas();
+      });
+      $("btn-cerrar-modal").addEventListener("click", closeModal);
+      $("modal-facturas").addEventListener("click", (e) => {
+        if (e.target === $("modal-facturas")) closeModal();
+      });
+      $("btn-refresh-facturas").addEventListener("click", listarFacturas);
+      $("btn-buscar-facturas").addEventListener("click", listarFacturas);
+      $("limite_facturas").addEventListener("change", listarFacturas);
+      $("buscar_facturas").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") listarFacturas();
+      });
 
       const ok = await proteger();
       if (!ok) return;
