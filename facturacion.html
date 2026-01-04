@@ -292,7 +292,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Facturación5</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación6</h1>
     </div>
     <div class="meta">
       <div class="chip">Usuario: <b id="user-email">—</b></div>
@@ -350,15 +350,15 @@
           <select id="profesional"></select>
         </div>
         <div class="ctrl">
-          <label>Correo paciente</label>
-          <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
+          <label>&nbsp;</label>
+          <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
         </div>
 
-        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) 
+        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) -->
         <div class="ctrl" style="grid-column: span 2;">
           <label>Correo paciente</label>
           <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
-        </div>-->
+        </div>
       </div>
     </div>
 
@@ -454,13 +454,13 @@
         </div>
       </div>
 
-      <!-- ✅ Se deja la caja informativa (sin quitar el texto configurado) 
+      <!-- ✅ Se deja la caja informativa (sin quitar el texto configurado) -->
       <div class="box">
         <div class="mono" style="color:var(--muted);">
           Autocompletado de paciente se hace desde N8N (mismo webhook de Historia Clínica).
         </div>
       </div>
-    </div>-->
+    </div>
 
     <!-- ✅ NUEVO: Guardar/Imprimir al final (abajo de la página) -->
     <div class="actions-bottom">
@@ -735,7 +735,7 @@
 
         // ✅ NUEVO: intentar traer correo si existe en HC (sin romper si no existe)
         const correo =
-          (h["Correo"] || h["paciente_email"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
+          (h["paciente_email"] || h["CORREO"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
 
         if (nombre){
           $("paciente_nombre").value = nombre;
@@ -1522,6 +1522,7 @@
   </script>
 </body>
 </html>
+
 
 
 
