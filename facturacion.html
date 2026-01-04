@@ -659,7 +659,8 @@
     // Soporta 2 formas típicas de guardar rol:
     // 1) En user_metadata: session.user.user_metadata.role
     // 2) En tabla "profiles" con columna "role" y PK user_id
-    async function proteger(){
+    // ✅✅✅ Protección por roles (admin y doctor)
+async function proteger(){
   const { data: { session } } = await supabase.auth.getSession();
   if(!session){
     window.location.href = LOGIN_URL;
@@ -670,8 +671,6 @@
   $("user-email").textContent = session.user?.email || "Usuario";
 
   const allowedRoles = ["admin", "doctor"];
-
-  // Helper normaliza
   const norm = (v) => (v ?? "").toString().trim().toLowerCase();
 
   // 1) Intentar desde metadata
@@ -686,7 +685,7 @@
     norm(appm.rol) ||
     norm(appm.user_role);
 
-  // 2) Intentar desde JWT (por si el rol viene como claim personalizado)
+  // 2) Intentar desde JWT
   let roleJwt = "";
   try{
     const token = session.access_token || "";
@@ -696,15 +695,34 @@
       roleJwt =
         norm(json.role) ||
         norm(json.rol) ||
-        norm(json.user_role) ||
-        norm(json.user_role_name);
+        norm(json.user_role);
     }
-  } catch(e){ /* ignore */ }
+  } catch(e){}
 
-  // 3) Intentar desde profiles (probando id y user_id)
+  // 3) ✅✅✅ Intentar desde la tabla REAL donde tú guardas roles por email
+  let roleEmailTable = "";
+  try{
+    const ROLES_TABLE = "usuarios_roles"; // 👈 CAMBIA ESTO por el nombre real de tu tabla
+    const email = (session.user?.email || "").toLowerCase();
+
+    const r = await supabase
+      .from(ROLES_TABLE)
+      .select("rol, role, user_role")
+      .eq("email", email)
+      .maybeSingle();
+
+    if (!r.error && r.data){
+      roleEmailTable = norm(r.data.rol) || norm(r.data.role) || norm(r.data.user_role);
+    } else if (r.error){
+      console.warn("Error leyendo tabla roles:", r.error.message);
+    }
+  } catch(e){
+    console.warn("Excepción leyendo tabla roles:", e);
+  }
+
+  // 4) Intentar desde profiles (por si lo usas también)
   let roleDb = "";
   try{
-    // a) profiles.user_id
     const r1 = await supabase
       .from("profiles")
       .select("role, rol, user_role")
@@ -714,7 +732,6 @@
     if (!r1.error && r1.data){
       roleDb = norm(r1.data.role) || norm(r1.data.rol) || norm(r1.data.user_role);
     } else {
-      // b) profiles.id (MUY común)
       const r2 = await supabase
         .from("profiles")
         .select("role, rol, user_role")
@@ -723,38 +740,31 @@
 
       if (!r2.error && r2.data){
         roleDb = norm(r2.data.role) || norm(r2.data.rol) || norm(r2.data.user_role);
-      } else {
-        // Si hay error, puede ser RLS bloqueando el SELECT
-        if (r1.error) console.warn("profiles(user_id) error:", r1.error.message);
-        if (r2.error) console.warn("profiles(id) error:", r2.error.message);
       }
     }
-  } catch(e){
-    console.warn("Error consultando profiles:", e);
-  }
+  } catch(e){}
 
-  const finalRole = roleMeta || roleJwt || roleDb;
+  const finalRole = roleMeta || roleJwt || roleEmailTable || roleDb;
 
   console.log("DEBUG ROLE =>", {
     email: session.user?.email,
     roleMeta,
     roleJwt,
+    roleEmailTable,
     roleDb,
-    finalRole,
-    user_metadata: meta,
-    app_metadata: appm
+    finalRole
   });
 
   if (allowedRoles.includes(finalRole)){
     return true;
   }
 
-  // ❌ No autorizado
   toast("Acceso denegado: solo Admin o Doctor.", "err");
   try { await supabase.auth.signOut(); } catch(e) {}
   window.location.href = LOGIN_URL;
   return false;
 }
+
 
 
     supabase.auth.onAuthStateChange((_event, session) => {
