@@ -655,117 +655,16 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
-    // ✅✅✅ NUEVO: Protección por roles (admin y doctor)
-    // Soporta 2 formas típicas de guardar rol:
-    // 1) En user_metadata: session.user.user_metadata.role
-    // 2) En tabla "profiles" con columna "role" y PK user_id
-    // ✅✅✅ Protección por roles (admin y doctor)
-async function proteger(){
-  const { data: { session } } = await supabase.auth.getSession();
-  if(!session){
-    window.location.href = LOGIN_URL;
-    return false;
-  }
-
-  state.session = session;
-  $("user-email").textContent = session.user?.email || "Usuario";
-
-  const allowedRoles = ["admin", "doctor"];
-  const norm = (v) => (v ?? "").toString().trim().toLowerCase();
-
-  // 1) Intentar desde metadata
-  const meta = session.user?.user_metadata || {};
-  const appm = session.user?.app_metadata || {};
-
-  const roleMeta =
-    norm(meta.role) ||
-    norm(meta.rol) ||
-    norm(meta.user_role) ||
-    norm(appm.role) ||
-    norm(appm.rol) ||
-    norm(appm.user_role);
-
-  // 2) Intentar desde JWT
-  let roleJwt = "";
-  try{
-    const token = session.access_token || "";
-    const payload = token.split(".")[1];
-    if (payload){
-      const json = JSON.parse(atob(payload.replace(/-/g, "+").replace(/_/g, "/")));
-      roleJwt =
-        norm(json.role) ||
-        norm(json.rol) ||
-        norm(json.user_role);
-    }
-  } catch(e){}
-
-  // 3) ✅✅✅ Intentar desde la tabla REAL donde tú guardas roles por email
-  let roleEmailTable = "";
-  try{
-    const ROLES_TABLE = "usuarios_roles"; // 👈 CAMBIA ESTO por el nombre real de tu tabla
-    const email = (session.user?.email || "").toLowerCase();
-
-    const r = await supabase
-      .from(ROLES_TABLE)
-      .select("rol, role, user_role")
-      .eq("email", email)
-      .maybeSingle();
-
-    if (!r.error && r.data){
-      roleEmailTable = norm(r.data.rol) || norm(r.data.role) || norm(r.data.user_role);
-    } else if (r.error){
-      console.warn("Error leyendo tabla roles:", r.error.message);
-    }
-  } catch(e){
-    console.warn("Excepción leyendo tabla roles:", e);
-  }
-
-  // 4) Intentar desde profiles (por si lo usas también)
-  let roleDb = "";
-  try{
-    const r1 = await supabase
-      .from("profiles")
-      .select("role, rol, user_role")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-
-    if (!r1.error && r1.data){
-      roleDb = norm(r1.data.role) || norm(r1.data.rol) || norm(r1.data.user_role);
-    } else {
-      const r2 = await supabase
-        .from("profiles")
-        .select("role, rol, user_role")
-        .eq("id", session.user.id)
-        .maybeSingle();
-
-      if (!r2.error && r2.data){
-        roleDb = norm(r2.data.role) || norm(r2.data.rol) || norm(r2.data.user_role);
+    async function proteger(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return false;
       }
+      state.session = session;
+      $("user-email").textContent = session.user?.email || "Usuario";
+      return true;
     }
-  } catch(e){}
-
-  const finalRole = roleMeta || roleJwt || roleEmailTable || roleDb;
-
-  console.log("DEBUG ROLE =>", {
-    email: session.user?.email,
-    roleMeta,
-    roleJwt,
-    roleEmailTable,
-    roleDb,
-    finalRole
-  });
-
-  if (allowedRoles.includes(finalRole)){
-    return true;
-  }
-
-  toast("Acceso denegado: solo Admin o Doctor.", "err");
-  try { await supabase.auth.signOut(); } catch(e) {}
-  window.location.href = LOGIN_URL;
-  return false;
-}
-
-
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
@@ -1480,6 +1379,7 @@ async function proteger(){
 
         // ✅ NUEVO: aplicar filtro por fecha (rango)
         if (desde){
+          // usamos el start del día (si tu campo es date igual funciona por comparación de string)
           query = query.gte("fecha", dateStartISO(desde));
         }
         if (hasta){
@@ -1740,9 +1640,14 @@ async function proteger(){
 
       $("paciente_cedula").addEventListener("input", onCedulaInput);
 
+      // ✅ Mantiene: al hacer click en "Ver facturas", filtra por cédula automáticamente
       $("btn-ver-facturas").addEventListener("click", async () => {
         const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
         $("buscar_facturas").value = ced || "";
+
+        // ✅ NUEVO: si quieres que por defecto sea "hoy", descomenta las 2 líneas:
+        // $("fecha_desde").value = hoyISO();
+        // $("fecha_hasta").value = hoyISO();
 
         openModal();
         await listarFacturas();
@@ -1757,6 +1662,7 @@ async function proteger(){
       $("btn-buscar-facturas").addEventListener("click", listarFacturas);
       $("limite_facturas").addEventListener("change", listarFacturas);
 
+      // ✅ NUEVO: refresca al cambiar fechas (opcional, cómodo)
       $("fecha_desde").addEventListener("change", listarFacturas);
       $("fecha_hasta").addEventListener("change", listarFacturas);
 
@@ -1764,9 +1670,9 @@ async function proteger(){
         if (e.key === "Enter") listarFacturas();
       });
 
+      // ✅ NUEVO: exportar excel
       $("btn-export-excel").addEventListener("click", exportarExcel);
 
-      // ✅ IMPORTANTE: primero valida sesión + rol
       const ok = await proteger();
       if (!ok) return;
 
@@ -1782,6 +1688,7 @@ async function proteger(){
   </script>
 </body>
 </html>
+
 
 
 
