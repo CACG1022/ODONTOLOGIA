@@ -33,8 +33,11 @@
     const COL_EDAD    = "Edad";
     const COL_TIPO    = "Tipo identificacion";
     const COL_LUGAR   = "Lugar exp";
-    const COL_NAC     = "Fecha de nacimiento";
+    const COL_NAC     = "Fecha de nac";      // ✅ IMPORTANTE: así está en tu tabla
     const COL_CREATED = "created_at";
+
+    // ✅ Admin por email (igual que tu index)
+    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
 
     function $(id){ return document.getElementById(id); }
 
@@ -70,7 +73,50 @@
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // ✅ Detecta la tabla REAL (y muestra el motivo si falla)
+    // ✅ Lee role desde profiles (igual que index)
+    async function cargarRolDesdeProfiles(userId) {
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) {
+          console.warn("No se pudo leer profiles.role:", error.message);
+          return null;
+        }
+        return data?.role || null;
+      } catch (e) {
+        console.warn("Error leyendo role:", e);
+        return null;
+      }
+    }
+
+    // ✅ Solo admin puede ver esta página
+    async function exigirAdmin(session) {
+      const email = (session.user?.email || "").toLowerCase();
+      const role = await cargarRolDesdeProfiles(session.user.id);
+
+      // Mostrar usuario y rol en pantalla
+      const u = $("user-email");
+      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+
+      const r = $("user-role");
+      if (r) r.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+
+      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+
+      if (!isAdmin) {
+        alert("🚫 Acceso restringido: Solo administrador.");
+        window.location.href = INDEX_URL;
+        return { isAdmin: false, role };
+      }
+
+      return { isAdmin: true, role };
+    }
+
+    // ✅ Detecta la tabla REAL
     async function detectarTabla() {
       let lastErr = null;
 
@@ -112,10 +158,7 @@
         const cedula = r[COL_CEDULA] ?? "";
         const nombre = r[COL_NOMBRE] ?? "";
         const edad   = r[COL_EDAD] ?? "";
-
-        // Tipo identificacion a veces llega como array ["CC"]
         const tipo   = Array.isArray(r[COL_TIPO]) ? r[COL_TIPO].join(", ") : (r[COL_TIPO] ?? "");
-
         const lugar  = r[COL_LUGAR] ?? "";
         const nac    = r[COL_NAC] ?? "";
         const creado = r[COL_CREATED] ? new Date(r[COL_CREATED]).toLocaleString("es-CO") : "";
@@ -148,7 +191,7 @@
           return;
         }
 
-        // ✅ SELECT explícito (recomendado con columnas con espacios)
+        // ✅ SELECT explícito (columnas con espacios)
         let q = supabase
           .from(TABLE)
           .select(`
@@ -157,13 +200,13 @@
             "Edad",
             "Tipo identificacion",
             "Lugar exp",
-            "Fecha de nacimiento",
+            "Fecha de nac",
             created_at
           `)
           .order("created_at", { ascending: false })
           .limit(200);
 
-        // ✅ Filtro por cédula (int)
+        // Filtro por cédula (int)
         if (cedulaRaw) {
           const cedulaNum = Number(cedulaRaw);
           if (Number.isNaN(cedulaNum)) {
@@ -174,7 +217,7 @@
           q = q.eq(COL_CEDULA, cedulaNum);
         }
 
-        // ✅ Filtro por nombre (búsqueda parcial)
+        // Filtro por nombre (búsqueda parcial)
         if (nombreRaw) {
           q = q.ilike(COL_NOMBRE, `%${nombreRaw}%`);
         }
@@ -182,7 +225,6 @@
         const { data, error } = await q;
 
         if (error) {
-          // ✅ MOSTRAR ERROR REAL
           console.error("❌ Error Supabase:", error);
           setError(`Error Supabase: ${error.code || ""} ${error.message || ""}`);
           renderTable([]);
@@ -204,9 +246,9 @@
       const session = await verificarSesion();
       if (!session) return;
 
-      // Mostrar usuario
-      const u = $("user-email");
-      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+      // ✅ Exigir Admin y mostrar Rol
+      const { isAdmin } = await exigirAdmin(session);
+      if (!isAdmin) return;
 
       // ✅ Detectar tabla
       TABLE = await detectarTabla();
@@ -309,6 +351,8 @@
     .title small{
       color: var(--muted);
       font-weight: 700;
+      display:block;
+      line-height: 1.35;
     }
     .actions{
       display:flex;
@@ -428,6 +472,7 @@
       <div class="title">
         <h1>Reporte de Pacientes</h1>
         <small>Usuario: <span id="user-email"></span></small>
+        <small><span id="user-role">Rol: ...</span></small>
       </div>
       <div class="actions">
         <button class="btn" id="btn-volver" type="button">← Volver al inicio</button>
@@ -438,7 +483,7 @@
       <form>
         <label class="col-4">
           Buscar por cédula
-          <input id="q-cedula" inputmode="numeric" placeholder="Ej: 1022956631" />
+          <input id="q-cedula" inputmode="numeric" placeholder="Ej: 1022956666" />
         </label>
 
         <label class="col-5">
@@ -481,5 +526,4 @@
   </div>
 </body>
 </html>
-
 
