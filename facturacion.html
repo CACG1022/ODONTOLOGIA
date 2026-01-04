@@ -292,7 +292,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Facturación4</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación5</h1>
     </div>
     <div class="meta">
       <div class="chip">Usuario: <b id="user-email">—</b></div>
@@ -350,15 +350,15 @@
           <select id="profesional"></select>
         </div>
         <div class="ctrl">
-          <label>&nbsp;</label>
-          <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
-        </div>
-
-        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) -->
-        <div class="ctrl" style="grid-column: span 2;">
           <label>Correo paciente</label>
           <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
         </div>
+
+        <!-- ✅ NUEVO: Correo del paciente (se agrega sin quitar lo anterior) 
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>Correo paciente</label>
+          <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
+        </div>-->
       </div>
     </div>
 
@@ -735,7 +735,7 @@
 
         // ✅ NUEVO: intentar traer correo si existe en HC (sin romper si no existe)
         const correo =
-          (h["Correo"] || h["CORREO"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
+          (h["Correo"] || h["paciente_email"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
 
         if (nombre){
           $("paciente_nombre").value = nombre;
