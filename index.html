@@ -32,6 +32,8 @@
       // ✅ NUEVO: Facturación (solo admin)
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html"
     };
+    reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
+
 
     // ✅ Admin por email
     const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
@@ -144,6 +146,8 @@
 
       // ✅ NUEVO: Facturación (redirige dentro del sitio)
       wireNav("go-facturacion", URLS.facturacion, "href");
+      wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
+
 
       // Fecha
       const t = document.getElementById("today");
@@ -503,6 +507,20 @@
           </div>
           <div class="arrow">→</div>
         </a>
+
+        <a class="tile" href="#" id="go-reporte-pacientes">
+  <div class="left">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 4h16v16H4V4Z" stroke="currentColor" stroke-width="2"/>
+        <path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="ttext"><h3>Reporte de pacientes</h3><p>Buscar por cédula o nombre.</p></div>
+  </div>
+  <div class="arrow">→</div>
+</a>
+
 
         <a class="tile" href="#" id="go-plan">
           <div class="left">
