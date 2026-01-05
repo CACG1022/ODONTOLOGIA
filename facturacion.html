@@ -410,7 +410,23 @@
             <option value="Otro">Otro</option>
           </select>
         </div>
-        <div class="ctrl" style="grid-column: span 3;">
+
+        <!-- ✅ NUEVO: estado de pago -->
+        <div class="ctrl">
+          <label>Estado de pago</label>
+          <select id="pagada">
+            <option value="si" selected>Pagada</option>
+            <option value="no">Pendiente</option>
+          </select>
+        </div>
+
+        <!-- ✅ NUEVO: referencia -->
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>Referencia / Comprobante (opcional)</label>
+          <input id="referencia_pago" type="text" placeholder="Ej: #transferencia, voucher, último 4 dígitos, etc.">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 4;">
           <label>Observación (opcional)</label>
           <input id="observacion" type="text" placeholder="Ej: referencia/nota/observación...">
         </div>
@@ -562,12 +578,13 @@
                 <th style="width:220px;">N° Factura</th>
                 <th>Paciente</th>
                 <th style="width:160px;">Cédula</th>
+                <th style="width:140px;">Pago</th>
                 <th style="width:160px;">Total</th>
-                <th style="width:220px;">Acciones</th>
+                <th style="width:260px;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tbody-facturas">
-              <tr><td colspan="6" class="empty">Cargando...</td></tr>
+              <tr><td colspan="7" class="empty">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -714,7 +731,6 @@
 
       if (!ok){
         toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
-        // opcional: cerrar sesión para evitar que vuelva con back
         try { await supabase.auth.signOut(); } catch(e) {}
         window.location.href = INDEX_URL;
         return false;
@@ -733,26 +749,21 @@
       const email = (session.user?.email || "Usuario").toString();
       $("user-email").textContent = email;
 
-      // ✅ Cargar rol real desde profiles
       await cargarRolActual();
 
-      // ✅ Validar acceso (solo admin/auxiliar)
       const okRole = await validarAccesoPorRol();
       if (!okRole) return false;
 
       return true;
     }
 
-    // ✅ Evita redirecciones en el arranque (INITIAL_SESSION)
     supabase.auth.onAuthStateChange((event, session) => {
       console.log("AUTH EVENT:", event, "SESSION:", !!session);
 
-      // Solo redirige si realmente se cerró sesión
       if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
         window.location.href = LOGIN_URL;
       }
 
-      // Si el usuario inicia sesión en otra pestaña, refresca rol
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
@@ -1039,6 +1050,12 @@
       return raw;
     }
 
+    function pagoLabel(pagada){
+      if (pagada === true) return "Pagada";
+      if (pagada === false) return "Pendiente";
+      return "—";
+    }
+
     function buildInvoiceHTML({ fac, detalle, totals }){
       const rows = (detalle || []).map(it => `
         <tr>
@@ -1056,6 +1073,9 @@
       const mp = fac?.metodo_pago ? escapeHtml(fac.metodo_pago) : "—";
       const obs = fac?.observacion ? escapeHtml(fac.observacion) : "—";
       const correoPac = fac?.paciente_correo ? escapeHtml(fac.paciente_correo) : "—";
+
+      const pagadaTxt = pagoLabel(fac?.pagada);
+      const refPago = fac?.referencia_pago ? escapeHtml(fac.referencia_pago) : "—";
 
       return `
 <!DOCTYPE html>
@@ -1156,7 +1176,11 @@
           <div class="kv"><div class="k">Tipo usuario</div><div class="v">${tipo}</div></div>
           <div class="kv"><div class="k">EPS</div><div class="v">${eps}</div></div>
           <div class="kv"><div class="k">Método de pago</div><div class="v">${mp}</div></div>
+          <div class="kv"><div class="k">Estado de pago</div><div class="v">${escapeHtml(pagadaTxt)}</div></div>
+
+          <div class="kv" style="grid-column: span 2;"><div class="k">Referencia</div><div class="v">${refPago}</div></div>
           <div class="kv"><div class="k">¿Aplica IVA?</div><div class="v">${totals.iva_aplica ? "Sí" : "No"}</div></div>
+          <div class="kv"><div class="k">IVA %</div><div class="v">${totals.iva_aplica ? String(Number(totals.iva_pct||0)) : "0"}</div></div>
         </div>
 
         <table>
@@ -1232,6 +1256,11 @@
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
       const observacion = ($("observacion")?.value || "").trim() || null;
 
+      // ✅ NUEVO: estado pago + referencia
+      const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
+      const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
+      const fecha_pago = pagada ? new Date().toISOString() : null; // si prefieres date-only: hoyISO()
+
       const totals = calcularTotalesObj();
 
       setStatus("Guardando factura...");
@@ -1255,7 +1284,12 @@
           iva_porcentaje: totals.iva_pct,
           iva_valor: totals.iva_valor,
           metodo_pago,
-          observacion
+          observacion,
+
+          // ✅ NUEVO
+          pagada,
+          fecha_pago,
+          referencia_pago
         };
 
         let fac = null;
@@ -1295,6 +1329,7 @@
           if (e1b) throw e1b;
           fac = fac2;
 
+          // “simulamos” en memoria para impresión aunque no exista columna en DB aún
           fac.metodo_pago = metodo_pago;
           fac.observacion = observacion;
           fac.paciente_correo = paciente_correo;
@@ -1302,6 +1337,11 @@
           fac.iva_porcentaje = totals.iva_pct;
           fac.iva_valor = totals.iva_valor;
           fac.subtotal = totals.subtotal;
+
+          fac.pagada = pagada;
+          fac.fecha_pago = fecha_pago;
+          fac.referencia_pago = referencia_pago;
+
         } else {
           fac = fac1;
         }
@@ -1357,6 +1397,10 @@
         state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
         state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
 
+        // ✅ NUEVO: refrescar estado pago desde UI
+        state.facturaGuardada.pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
+        state.facturaGuardada.referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
+
         const html = buildInvoiceHTML({
           fac: state.facturaGuardada,
           detalle: det || [],
@@ -1400,12 +1444,53 @@
       $("count_facturas").textContent = String((rows || []).length);
     }
 
+    async function togglePagadaFactura(f){
+      try{
+        const actual = (f.pagada === true);
+        const nuevo = !actual;
+
+        setStatus("Actualizando pago...");
+
+        // si no existe columna en DB, esto fallará: lo manejamos
+        const { error } = await supabase
+          .from("facturas")
+          .update({
+            pagada: nuevo,
+            fecha_pago: nuevo ? new Date().toISOString() : null
+          })
+          .eq("id", f.id);
+
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const isColumnMissing =
+            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+
+          setStatus("");
+
+          if (isColumnMissing){
+            toast("En Supabase falta crear columna 'pagada'/'fecha_pago' en facturas.", "warn");
+            return;
+          }
+
+          throw error;
+        }
+
+        setStatus("");
+        toast(nuevo ? "Marcada como Pagada ✅" : "Marcada como Pendiente ⚠️", "ok");
+        await listarFacturas();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo actualizar pago:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
     function renderFacturasTabla(rows){
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
 
       if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay facturas para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">No hay facturas para mostrar.</td></tr>`;
         updateResumenFacturas([]);
         return;
       }
@@ -1419,15 +1504,19 @@
         const ced = f.paciente_cedula || "—";
         const total = money(f.valor_total || 0);
 
+        const pago = pagoLabel(f.pagada);
+
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
           <td class="mono">${escapeHtml(numf)}</td>
           <td>${escapeHtml(nom)}</td>
           <td class="mono">${escapeHtml(ced)}</td>
+          <td class="mono">${escapeHtml(pago)}</td>
           <td class="mono">$ ${escapeHtml(total)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
+            <button class="btn small" data-act="toggle">${(f.pagada===true) ? "↘ Pendiente" : "✅ Pagada"}</button>
           </td>
         `;
 
@@ -1438,6 +1527,10 @@
 
         tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
           await imprimirFacturaPorId(f.id);
+        });
+
+        tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
+          await togglePagadaFactura(f);
         });
 
         tbody.appendChild(tr);
@@ -1457,11 +1550,11 @@
       const hasta = ($("fecha_hasta")?.value || "").trim();
 
       try{
-        $("tbody-facturas").innerHTML = `<tr><td colspan="6" class="empty">Cargando...</td></tr>`;
+        $("tbody-facturas").innerHTML = `<tr><td colspan="7" class="empty">Cargando...</td></tr>`;
 
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, fecha_pago, referencia_pago")
           .order("fecha", { ascending: false })
           .limit(limit);
 
@@ -1525,6 +1618,14 @@
 
         if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
         if ($("observacion")) $("observacion").value = fac.observacion || "";
+
+        // ✅ NUEVO
+        if ($("pagada")){
+          $("pagada").value = (fac.pagada === false) ? "no" : "si";
+        }
+        if ($("referencia_pago")){
+          $("referencia_pago").value = fac.referencia_pago || "";
+        }
 
         if ($("iva_aplica")){
           if (fac.iva_aplica === true) $("iva_aplica").value = "si";
@@ -1651,6 +1752,8 @@
           "Tipo usuario": f.tipo_usuario || "",
           "EPS": f.eps || "",
           "Profesional (valor guardado)": f.profesional || "",
+          "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
+          "Referencia pago": f.referencia_pago || "",
           "Total": Number(f.valor_total || 0),
           "Copago": Number(f.copago || 0),
           "Cuota moderadora": Number(f.cuota_moderadora || 0),
@@ -1665,12 +1768,6 @@
           [],
           ["TOTAL FACTURADO", totalFacturado]
         ], { origin: `A${lastRow}` });
-
-        const colWidths = [
-          { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 26 },
-          { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 14 }, { wch: 12 }, { wch: 16 }
-        ];
-        ws["!cols"] = colWidths;
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
@@ -1702,6 +1799,10 @@
       $("year").textContent = new Date().getFullYear();
       $("fecha").value = hoyISO();
       $("numero_factura").value = generarNumeroFactura();
+
+      // ✅ defaults pago
+      if ($("pagada")) $("pagada").value = "si";
+      if ($("referencia_pago")) $("referencia_pago").value = "";
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
       $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
