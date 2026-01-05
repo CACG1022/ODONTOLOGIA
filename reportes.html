@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reportes de Ventas - Clínica Odontológica</title>
 
+  <!-- ✅ Supabase (UMD) - EVITA PROBLEMAS DEL import type="module" -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
   <!-- ✅ Chart.js (gráficas) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
@@ -237,7 +240,7 @@
       transform: translateY(8px);
       transition: opacity .15s ease, transform .15s ease;
       pointer-events: none;
-      max-width: 380px;
+      max-width: 420px;
       white-space: pre-wrap;
       z-index: 99;
     }
@@ -321,7 +324,7 @@
       </div>
 
       <div style="margin-top:10px; color:var(--muted); font-size:12px;" class="mono">
-        Tip: el “Total facturado mes actual” se calcula siempre con el mes actual (aunque filtres otro rango).
+        Tip: el “Total facturado (mes actual)” se calcula siempre con el mes actual (aunque filtres otro rango).
       </div>
     </div>
 
@@ -418,7 +421,7 @@
           </div>
 
           <div class="mono" style="margin-top:10px; color:var(--muted);">
-            Nota: “Procedimiento más vendido” se calcula sumando cantidades en <b>factura_detalle</b> para las facturas del filtro.
+            Nota: “procedimiento más vendido” se calcula sumando cantidades en <b>factura_detalle</b> para las facturas del filtro.
           </div>
         </div>
       </div>
@@ -432,18 +435,43 @@
 
   <div id="toast" data-type="ok"></div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <script>
+    // =========================
+    // ✅ DEBUG GLOBAL (para que NO “se muera” silencioso)
+    // =========================
+    window.addEventListener("error", (e) => {
+      console.error("JS ERROR:", e?.error || e?.message || e);
+      try{
+        const el = document.getElementById("toast");
+        if (el){
+          el.textContent = "Error JS: revisa consola (F12)\n" + (e?.message || "Error");
+          el.dataset.type = "err";
+          el.classList.add("show");
+          clearTimeout(window.__t);
+          window.__t = setTimeout(()=> el.classList.remove("show"), 4500);
+        }
+      }catch(_){}
+    });
 
-    // ✅ Tus mismas credenciales
+    // =========================
+    // ✅ SUPABASE CLIENT (UMD)
+    // =========================
     const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    if (!window.supabase){
+      console.error("Supabase UMD no cargó (CDN bloqueado?)");
+    }
+
+    const supabase = window.supabase?.createClient
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // =========================
+    // ✅ CONFIG
+    // =========================
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-
-    // ✅ Roles permitidos (igual que Facturación)
     const ALLOWED_ROLES = ["admin", "auxiliar"];
 
     const state = {
@@ -452,13 +480,8 @@
       profesionales: [],
       facturasFiltro: [],
       detalleFiltro: [],
-      _view: "all", // all | pending | paid
-      charts: {
-        line: null,
-        donut: null,
-        bar: null,
-        pie: null
-      }
+      _view: "all",
+      charts: { line:null, donut:null, bar:null, pie:null }
     };
 
     const $ = (id) => document.getElementById(id);
@@ -469,22 +492,15 @@
       el.dataset.type = type;
       el.classList.add("show");
       clearTimeout(window.__t);
-      window.__t = setTimeout(()=> el.classList.remove("show"), 2400);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
     }
     function setStatus(msg){
       const el = $("status");
       if (el) el.textContent = msg || "";
     }
-
     function money(n){
       const x = Number(n || 0);
       return x.toLocaleString("es-CO");
-    }
-    function num(v){
-      const raw = String(v ?? "").trim();
-      if (!raw) return 0;
-      const n = Number(raw);
-      return Number.isFinite(n) ? n : 0;
     }
     function escapeHtml(str){
       return String(str ?? "")
@@ -494,18 +510,17 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-
     function hoyISO(){
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
-      return \`\${yyyy}-\${mm}-\${dd}\`;
+      return `${yyyy}-${mm}-${dd}`;
     }
     function firstDayOfMonthISO(d = new Date()){
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
-      return \`\${yyyy}-\${mm}-01\`;
+      return `${yyyy}-${mm}-01`;
     }
     function lastDayOfMonthISO(d = new Date()){
       const yyyy = d.getFullYear();
@@ -513,24 +528,26 @@
       const last = new Date(yyyy, mm+1, 0);
       const m = String(last.getMonth()+1).padStart(2,"0");
       const dd = String(last.getDate()).padStart(2,"0");
-      return \`\${yyyy}-\${m}-\${dd}\`;
+      return `${yyyy}-${m}-${dd}`;
     }
     function formatFechaHuman(iso){
       if (!iso) return "—";
       try{
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())){
-          const [y,m,dd] = String(iso).split("-");
-          if (y && m && dd) return \`\${dd}/\${m}/\${y}\`;
-          return String(iso);
-        }
+        const s = String(iso);
+        const cut = s.includes("T") ? s.slice(0,10) : s.slice(0,10);
+        const d = new Date(cut + "T00:00:00");
+        if (Number.isNaN(d.getTime())) return cut || s;
         return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
       } catch(e){
         return String(iso);
       }
     }
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
-    /* ✅ OBTENER ROL REAL DESDE public.profiles */
+    // =========================
+    // ✅ AUTH + ROLE
+    // =========================
     async function cargarRolActual(){
       const email = (state.session?.user?.email || "").trim().toLowerCase();
       const elRole = $("user-role");
@@ -553,7 +570,6 @@
 
         const role = (data?.role || "").toString().trim().toLowerCase();
         const finalRole = role || "user";
-
         state.role = finalRole;
         if (elRole) elRole.textContent = finalRole;
 
@@ -579,13 +595,23 @@
     }
 
     async function proteger(){
-      const { data: { session } } = await supabase.auth.getSession();
+      if (!supabase){
+        toast("No cargó Supabase (CDN). Revisa tu conexión o bloqueadores.", "err");
+        return false;
+      }
+
+      const { data, error } = await supabase.auth.getSession();
+      if (error){
+        console.error("getSession error:", error);
+      }
+
+      const session = data?.session;
       if(!session){
         window.location.href = LOGIN_URL;
         return false;
       }
-      state.session = session;
 
+      state.session = session;
       $("user-email").textContent = (session.user?.email || "Usuario").toString();
 
       await cargarRolActual();
@@ -595,22 +621,28 @@
       return true;
     }
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
-        window.location.href = LOGIN_URL;
-      }
-      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
-        state.session = session;
-        $("user-email").textContent = session.user?.email || "Usuario";
-        cargarRolActual().then(()=> validarAccesoPorRol());
-      }
-    });
+    function bindAuthListener(){
+      if (!supabase) return;
+      supabase.auth.onAuthStateChange((event, session) => {
+        if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+          window.location.href = LOGIN_URL;
+        }
+        if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+          state.session = session;
+          $("user-email").textContent = session.user?.email || "Usuario";
+          cargarRolActual().then(()=> validarAccesoPorRol());
+        }
+      });
+    }
 
     async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e) {}
       window.location.href = LOGIN_URL;
     }
 
+    // =========================
+    // ✅ DATA LOADERS
+    // =========================
     async function cargarProfesionales(){
       const { data, error } = await supabase
         .from("profesionales")
@@ -643,11 +675,6 @@
       }
     }
 
-    // 🔎 Helpers fechas para query
-    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
-    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
-
-    // ✅ Cargar facturas del filtro
     async function cargarFacturasFiltro(){
       const desde = ($("fecha_desde").value || "").trim();
       const hasta = ($("fecha_hasta").value || "").trim();
@@ -670,17 +697,15 @@
         if (error) throw error;
 
         state.facturasFiltro = data || [];
-
         setStatus("");
       } catch(err){
-        console.error(err);
+        console.error("cargarFacturasFiltro:", err);
         setStatus("");
-        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
+        toast("No se pudieron cargar facturas (posible RLS o columnas faltantes):\n" + (err?.message || "Error"), "err");
         state.facturasFiltro = [];
       }
     }
 
-    // ✅ Cargar detalle del filtro (solo para facturas del filtro)
     async function cargarDetalleFiltro(){
       setStatus("Cargando detalle (procedimientos)...");
       try{
@@ -691,7 +716,6 @@
           return;
         }
 
-        // Nota: IN tiene límite, pero en reportes usualmente el rango no es gigante.
         const { data, error } = await supabase
           .from("factura_detalle")
           .select("factura_id, descripcion, cantidad, valor_total, valor_unitario, codigo_cups")
@@ -702,14 +726,13 @@
         state.detalleFiltro = data || [];
         setStatus("");
       } catch(err){
-        console.error(err);
+        console.error("cargarDetalleFiltro:", err);
         setStatus("");
-        toast("No se pudo cargar detalle:\n" + (err?.message || "Error"), "err");
+        toast("No se pudo cargar detalle (posible RLS):\n" + (err?.message || "Error"), "err");
         state.detalleFiltro = [];
       }
     }
 
-    // ✅ Total mes actual (independiente del filtro)
     async function cargarTotalMesActual(){
       const d = new Date();
       const desde = firstDayOfMonthISO(d);
@@ -725,16 +748,18 @@
         if (error) throw error;
 
         const total = (data || []).reduce((acc, r) => acc + (Number(r.valor_total) || 0), 0);
-
         $("k_total_mes").textContent = money(total);
         $("k_total_mes_s").textContent = `Mes: ${formatFechaHuman(desde)} → ${formatFechaHuman(hasta)}`;
       } catch(err){
-        console.error(err);
+        console.error("cargarTotalMesActual:", err);
         $("k_total_mes").textContent = "0";
-        $("k_total_mes_s").textContent = "No disponible";
+        $("k_total_mes_s").textContent = "No disponible (RLS?)";
       }
     }
 
+    // =========================
+    // ✅ RENDER
+    // =========================
     function pagoPill(pagada){
       if (pagada === true) return `<span class="pill ok">✅ Pagada</span>`;
       if (pagada === false) return `<span class="pill warn">⚠️ Pendiente</span>`;
@@ -746,7 +771,6 @@
       tbody.innerHTML = "";
 
       let rows = [...(state.facturasFiltro || [])];
-
       if (state._view === "pending") rows = rows.filter(f => f.pagada === false);
       if (state._view === "paid") rows = rows.filter(f => f.pagada === true);
 
@@ -778,17 +802,17 @@
       const pagadas = rows.filter(f => f.pagada === true).length;
 
       $("k_total_filtro").textContent = money(totalFiltro);
-
       const desde = ($("fecha_desde").value || "").trim();
       const hasta = ($("fecha_hasta").value || "").trim();
-      $("k_total_filtro_s").textContent = (desde || hasta) ? `Rango: ${formatFechaHuman(desde)} → ${formatFechaHuman(hasta)}` : "Rango: (sin filtro)";
+      $("k_total_filtro_s").textContent =
+        (desde || hasta) ? `Rango: ${formatFechaHuman(desde)} → ${formatFechaHuman(hasta)}` : "Rango: (sin filtro)";
 
       $("k_pendientes").textContent = String(pendientes);
       $("k_pagadas").textContent = String(pagadas);
 
-      // Top procedimiento (por unidades) + ingreso
+      // Top procedimiento
       const det = state.detalleFiltro || [];
-      const map = new Map(); // key => { desc, qty, rev }
+      const map = new Map(); // desc => { desc, qty, rev }
       for (const it of det){
         const desc = (it.descripcion || "—").toString().trim() || "—";
         const qty = Number(it.cantidad || 0);
@@ -799,8 +823,8 @@
         map.set(desc, cur);
       }
       const arr = Array.from(map.values()).sort((a,b)=> b.qty - a.qty);
-
       const top = arr[0] || null;
+
       if (!top){
         $("k_top_proc").textContent = "—";
         $("k_top_proc_qty").textContent = "0";
@@ -816,15 +840,15 @@
 
     function groupRevenueByDay(){
       const rows = state.facturasFiltro || [];
-      const map = new Map(); // yyyy-mm-dd -> total
+      const map = new Map();
       for (const f of rows){
-        const iso = (f.fecha && String(f.fecha).includes("T")) ? String(f.fecha).slice(0,10) : String(f.fecha || "").slice(0,10);
+        const s = String(f.fecha || "");
+        const iso = s.includes("T") ? s.slice(0,10) : s.slice(0,10);
         if (!iso) continue;
-        const cur = map.get(iso) || 0;
-        map.set(iso, cur + (Number(f.valor_total) || 0));
+        map.set(iso, (map.get(iso)||0) + (Number(f.valor_total)||0));
       }
-      const keys = Array.from(map.keys()).sort();
-      return { labels: keys, values: keys.map(k => map.get(k) || 0) };
+      const labels = Array.from(map.keys()).sort();
+      return { labels, values: labels.map(k => map.get(k) || 0) };
     }
 
     function groupMetodoPago(){
@@ -843,7 +867,12 @@
     }
 
     function renderCharts(kpi){
-      // Line: ingresos por día
+      // Si Chart.js no cargó, no romper
+      if (!window.Chart){
+        console.error("Chart.js no cargó");
+        return;
+      }
+
       const line = groupRevenueByDay();
       $("sub_line").textContent = `${line.labels.length} día(s)`;
 
@@ -852,71 +881,51 @@
         type: "line",
         data: {
           labels: line.labels,
-          datasets: [{
-            label: "Total por día",
-            data: line.values
-          }]
+          datasets: [{ label: "Total por día", data: line.values }]
         },
         options: {
           responsive: true,
           plugins: { legend: { display: true } },
-          scales: {
-            y: { ticks: { callback: (v)=> "$ " + money(v) } }
-          }
+          scales: { y: { ticks: { callback: (v)=> "$ " + money(v) } } }
         }
       });
 
-      // Donut: pagadas vs pendientes
       $("sub_donut").textContent = `Pagadas: ${kpi.pagadas} • Pendientes: ${kpi.pendientes}`;
-
       destroyChart(state.charts.donut);
       state.charts.donut = new Chart($("chart_donut"), {
         type: "doughnut",
         data: {
           labels: ["Pagadas", "Pendientes"],
-          datasets: [{
-            data: [kpi.pagadas, kpi.pendientes]
-          }]
+          datasets: [{ data: [kpi.pagadas, kpi.pendientes] }]
         },
         options: { responsive: true, plugins: { legend: { display: true } } }
       });
 
-      // Bar: Top 10 procedimientos
       const top10 = (kpi.topProcArr || []).slice(0, 10);
       $("sub_top_proc").textContent = `${top10.length} item(s)`;
-
       destroyChart(state.charts.bar);
       state.charts.bar = new Chart($("chart_bar"), {
         type: "bar",
         data: {
           labels: top10.map(x => x.desc.length > 28 ? (x.desc.slice(0,28) + "…") : x.desc),
-          datasets: [{
-            label: "Unidades",
-            data: top10.map(x => x.qty)
-          }]
+          datasets: [{ label: "Unidades", data: top10.map(x => x.qty) }]
         },
-        options: {
-          responsive: true,
-          plugins: { legend: { display: true } },
-          scales: { y: { beginAtZero: true } }
-        }
+        options: { responsive: true, plugins: { legend: { display: true } }, scales: { y: { beginAtZero: true } } }
       });
 
-      // Pie: métodos de pago
       const pie = groupMetodoPago();
       $("sub_pie").textContent = `${pie.labels.length} método(s)`;
-
       destroyChart(state.charts.pie);
       state.charts.pie = new Chart($("chart_pie"), {
         type: "pie",
-        data: {
-          labels: pie.labels,
-          datasets: [{ data: pie.values }]
-        },
+        data: { labels: pie.labels, datasets: [{ data: pie.values }] },
         options: { responsive: true, plugins: { legend: { display: true } } }
       });
     }
 
+    // =========================
+    // ✅ EXPORT EXCEL
+    // =========================
     function exportarExcel(){
       try{
         const rows = state.facturasFiltro || [];
@@ -944,12 +953,8 @@
         const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
 
         const ws = XLSX.utils.json_to_sheet(data);
-
         const lastRow = data.length + 2;
-        XLSX.utils.sheet_add_aoa(ws, [
-          [],
-          ["TOTAL FACTURADO (FILTRO)", totalFacturado]
-        ], { origin: `A${lastRow}` });
+        XLSX.utils.sheet_add_aoa(ws, [[], ["TOTAL FACTURADO (FILTRO)", totalFacturado]], { origin: `A${lastRow}` });
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Ventas - Facturas (Filtro)"],
@@ -968,7 +973,6 @@
 
         const filename = `reporte_ventas_${(desde||"NA")}_a_${(hasta||"NA")}.xlsx`;
         XLSX.writeFile(wb, filename);
-
         toast("Excel descargado ✅", "ok");
       } catch(err){
         console.error(err);
@@ -976,6 +980,9 @@
       }
     }
 
+    // =========================
+    // ✅ DASHBOARD
+    // =========================
     async function refrescarDashboard(){
       await cargarFacturasFiltro();
       await cargarDetalleFiltro();
@@ -984,6 +991,13 @@
       const kpi = calcKPIs();
       renderTablaFacturas();
       renderCharts(kpi);
+
+      if ((state.facturasFiltro || []).length === 0){
+        // para que sea claro si no hay data o si hay bloqueo
+        setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
+      } else {
+        setStatus("");
+      }
     }
 
     function setRangeMesActual(){
@@ -997,20 +1011,17 @@
       $("fecha_hasta").value = h;
     }
 
+    // =========================
+    // ✅ INIT
+    // =========================
     async function init(){
       $("year").textContent = new Date().getFullYear();
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
       $("btn-logout").addEventListener("click", cerrarSesion);
 
-      $("btn-this-month").addEventListener("click", async () => {
-        setRangeMesActual();
-        await refrescarDashboard();
-      });
-      $("btn-today").addEventListener("click", async () => {
-        setRangeHoy();
-        await refrescarDashboard();
-      });
+      $("btn-this-month").addEventListener("click", async () => { setRangeMesActual(); await refrescarDashboard(); });
+      $("btn-today").addEventListener("click", async () => { setRangeHoy(); await refrescarDashboard(); });
 
       $("btn-refresh").addEventListener("click", refrescarDashboard);
       $("btn-export").addEventListener("click", exportarExcel);
@@ -1024,18 +1035,29 @@
       $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
       $("btn-show-paid").addEventListener("click", ()=>{ state._view="paid"; renderTablaFacturas(); });
 
-      // ✅ Seguridad y carga base
+      bindAuthListener();
+
+      // default: mes actual
+      setRangeMesActual();
+
+      // ✅ Proteger y cargar
       const ok = await proteger();
       if (!ok) return;
 
       await cargarProfesionales();
-
-      // default: mes actual
-      setRangeMesActual();
       await refrescarDashboard();
     }
 
-    window.addEventListener("DOMContentLoaded", init);
+    window.addEventListener("DOMContentLoaded", () => {
+      // Si el DOM carga y aun así no corre, al menos avisamos
+      try{
+        init();
+      }catch(err){
+        console.error("INIT FAILED:", err);
+        toast("Falló init: revisa consola (F12)\n" + (err?.message || "Error"), "err");
+      }
+    });
   </script>
 </body>
 </html>
+
