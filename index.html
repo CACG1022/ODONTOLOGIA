@@ -32,6 +32,8 @@
       // ✅ NUEVO: Facturación (solo admin)
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html",
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
+      reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
+
     };
     
 
@@ -129,6 +131,8 @@
       setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
       setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
+      setDisabled(document.getElementById("go-reporte-ventas"), !isAdmin, "Solo administrador");
+
 
       // ✅ NUEVO: Facturación (SOLO ADMIN)
       setDisabled(document.getElementById("go-facturacion"), !isAdmin, "Solo administrador");
@@ -148,7 +152,7 @@
       // ✅ NUEVO: Facturación (redirige dentro del sitio)
       wireNav("go-facturacion", URLS.facturacion, "href");
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
-
+      wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
 
       // Fecha
       const t = document.getElementById("today");
@@ -465,6 +469,24 @@
       </div>
 
       <div class="grid">
+        <a class="tile" href="#" id="go-reporte-ventas">
+  <div class="left">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="none">
+        <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M10 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M16 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        <path d="M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="ttext">
+      <h3>Reporte ventas</h3>
+      <p>Visualizar reportes de ventas.</p>
+    </div>
+  </div>
+  <div class="arrow">→</div>
+</a>
+
         <a class="tile" href="#" id="go-agendar">
           <div class="left">
             <div class="icon">
