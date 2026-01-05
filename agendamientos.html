@@ -219,62 +219,56 @@
     }
 
     // =========================
-    // ✅ NUEVO: Autocompletar paciente desde HISTORIAS CLÍNICAS por documento
+    // ✅ Autocompletar paciente desde HISTORIAS CLÍNICAS por documento
     // =========================
     let __lookupTimer = null;
 
     async function buscarPacienteEnHistorias(documento){
-  const docTxt = normalizeText(documento);
-  if (!docTxt) return { found: false };
+      const docTxt = normalizeText(documento).replace(/[^\d]/g, "");
+      if (!docTxt) return { found: false };
 
-  // Tu columna es int4 → convertimos a número
-  const docNum = Number(docTxt);
-  if (!Number.isFinite(docNum)) return { found: false };
+      const docNum = Number(docTxt);
+      if (!Number.isFinite(docNum)) return { found: false };
 
-  // ✅ En PostgREST, para columnas con espacios conviene usar comillas dobles en el select
-  // (y dejar los nombres EXACTOS como aparecen en tu tabla)
-  const selectCols = `"Nombre y apellido",paciente_cel,paciente_email`;
+      const selectCols = `"${HIST_COL_NOMBRE}",${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
 
-  const { data, error } = await supabase
-    .from("HISTORIAS CLINICAS")
-    .select(selectCols)
-    .eq("Numero de Identificacion", docNum)
-    .maybeSingle();
+      const { data, error } = await supabase
+        .from(TABLA_HISTORIAS)
+        .select(selectCols)
+        .eq(HIST_COL_DOCUMENTO, docNum)
+        .maybeSingle();
 
-  if (error){
-    console.error("Error HISTORIAS:", error);
-    toast(`Error consultando historias: ${error.message}`, "error");
-    return { found: false, error };
-  }
+      if (error){
+        console.error("Error HISTORIAS:", error);
+        toast(`Error consultando historias: ${error.message}`, "error");
+        return { found: false, error };
+      }
 
-  if (!data) return { found: false };
+      if (!data) return { found: false };
 
-  return {
-    found: true,
-    nombre: data["Nombre y apellido"] ?? "",
-    telefono: data["paciente_cel"] ?? "",
-    correo: data["paciente_email"] ?? ""
-  };
-}
-
+      return {
+        found: true,
+        nombre: data[HIST_COL_NOMBRE] ?? data["Nombre y apellido"] ?? "",
+        telefono: data[HIST_COL_TELEFONO] ?? data["paciente_cel"] ?? "",
+        correo: data[HIST_COL_CORREO] ?? data["paciente_email"] ?? ""
+      };
+    }
 
     async function autocompletarPacientePorDocumento({ showToast = false } = {}){
       const doc = normalizeText($("documento_paciente").value);
       if (!doc) return;
 
-      // Evitar repetición si el mismo doc ya se consultó y no cambió
       const last = $("documento_paciente").dataset.lastLookup || "";
       if (last === doc) return;
 
       $("documento_paciente").dataset.lastLookup = doc;
 
       try{
-        setLoading(true);
+        if (showToast) setLoading(true);
 
         const res = await buscarPacienteEnHistorias(doc);
 
         if (res.found){
-          // Autollenar (pero se deja editable)
           if (!normalizeText($("nombre_paciente").value)) $("nombre_paciente").value = res.nombre || "";
           if (!normalizeText($("telefono_paciente").value)) $("telefono_paciente").value = res.telefono || "";
           if (!normalizeText($("correo_paciente").value)) $("correo_paciente").value = res.correo || "";
@@ -284,26 +278,29 @@
         } else {
           $("documento_paciente").dataset.patientFound = "false";
           if (showToast) toast("Paciente no encontrado. Diligencia los datos manualmente.", "warn");
-          // No borramos nada para no molestar al usuario.
         }
 
-        // Actualizar título preview si ya hay horas
         actualizarPreviewTitulo();
       } finally {
-        setLoading(false);
+        if (showToast) setLoading(false);
       }
     }
 
     function autocompletarPacienteDebounced(){
+      // ✅ Si el usuario cambia el documento, limpiamos datos SOLO si ya venían autocompletados
+      if ($("documento_paciente").dataset.patientFound === "true"){
+        $("nombre_paciente").value = "";
+        $("telefono_paciente").value = "";
+        $("correo_paciente").value = "";
+        $("documento_paciente").dataset.patientFound = "";
+      }
+
       clearTimeout(__lookupTimer);
       __lookupTimer = setTimeout(() => autocompletarPacientePorDocumento({ showToast: false }), 450);
     }
 
     // =========================
     // Título automático (formato solicitado)
-    // 1) Rango de hora, Duración
-    // 2) Nombre del Paciente, Cédula
-    // 3) Especialidad
     // =========================
     function construirTituloAutomatico({ inicioISO, finISO, nombrePaciente, cedulaPaciente, especialidad }){
       const s = new Date(inicioISO);
@@ -349,7 +346,7 @@
           nombre_paciente: row.nombre_paciente || "",
           documento_paciente: row.documento_paciente || "",
           telefono_paciente: row.telefono_paciente || "",
-          correo_paciente: row.correo_paciente || "",            // ✅ NUEVO
+          correo_paciente: row.correo_paciente || "",
           profesional_id: row.profesional_id || "",
           nombre_profesional: row.nombre_profesional || "",
           especialidad: row.especialidad || "",
@@ -371,13 +368,9 @@
 
       if (profesionalIdFiltro) q = q.eq("profesional_id", profesionalIdFiltro);
 
-      if (estadoFiltro && estadoFiltro !== "todos") {
-        q = q.eq("estado", estadoFiltro);
-      }
+      if (estadoFiltro && estadoFiltro !== "todos") q = q.eq("estado", estadoFiltro);
 
-      if (especialidadFiltro && especialidadFiltro !== "todos") {
-        q = q.eq("especialidad", especialidadFiltro);
-      }
+      if (especialidadFiltro && especialidadFiltro !== "todos") q = q.eq("especialidad", especialidadFiltro);
 
       const { data, error } = await q;
       if (error) throw new Error(error.message);
@@ -426,15 +419,12 @@
       $("modalTitle").textContent = mode === "edit" ? "Editar cita" : "Nueva cita";
 
       $("citaId").value = payload?.id || "";
-
-      // input oculto del título (se guarda)
       $("titulo").value = payload?.titulo || "";
 
-      // ✅ Nuevo flujo: el documento se diligencia primero
       $("documento_paciente").value = payload?.documento_paciente || "";
       $("nombre_paciente").value = payload?.nombre_paciente || "";
       $("telefono_paciente").value = payload?.telefono_paciente || "";
-      $("correo_paciente").value = payload?.correo_paciente || ""; // ✅ NUEVO
+      $("correo_paciente").value = payload?.correo_paciente || "";
 
       $("profesional_id").value = payload?.profesional_id || "";
       $("especialidad").value = payload?.especialidad || "";
@@ -443,11 +433,9 @@
       $("inicio").value = payload?.inicio_local || "";
       $("fin").value = payload?.fin_local || "";
 
-      // Reset dataset control
       $("documento_paciente").dataset.lastLookup = "";
       $("documento_paciente").dataset.patientFound = "";
 
-      // Si viene sin título, lo calculamos
       if (!normalizeText($("titulo").value) && payload?.inicio_local && payload?.fin_local){
         const inicioISO = toISOFromLocalInput(payload.inicio_local);
         const finISO = toISOFromLocalInput(payload.fin_local);
@@ -462,18 +450,17 @@
         }
       }
 
-      // Mostrar preview
       $("titulo_preview").textContent = $("titulo").value || "";
 
       $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
       $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
 
-      // Si es creación y el usuario ya escribió documento, autocompletar (sin toast)
       if (mode !== "edit" && normalizeText($("documento_paciente").value)){
         autocompletarPacientePorDocumento({ showToast: false });
-      } else {
-        actualizarPreviewTitulo();
       }
+
+      // ✅ asegurar preview siempre consistente
+      actualizarPreviewTitulo();
     }
 
     function closeModal(){
@@ -484,7 +471,10 @@
     function actualizarPreviewTitulo(){
       const inicioLocal = $("inicio").value;
       const finLocal = $("fin").value;
-      if (!inicioLocal || !finLocal) return;
+      if (!inicioLocal || !finLocal) {
+        $("titulo_preview").textContent = $("titulo").value || "";
+        return;
+      }
 
       const inicioISO = toISOFromLocalInput(inicioLocal);
       const finISO = toISOFromLocalInput(finLocal);
@@ -583,7 +573,7 @@
             nombre_paciente: ev.extendedProps.nombre_paciente,
             documento_paciente: ev.extendedProps.documento_paciente,
             telefono_paciente: ev.extendedProps.telefono_paciente,
-            correo_paciente: ev.extendedProps.correo_paciente, // ✅ NUEVO
+            correo_paciente: ev.extendedProps.correo_paciente,
             profesional_id: ev.extendedProps.profesional_id,
             especialidad: ev.extendedProps.especialidad,
             estado: ev.extendedProps.estado,
@@ -609,11 +599,7 @@
               especialidad: info.event.extendedProps.especialidad
             });
 
-            const row = {
-              inicio: inicioISO,
-              fin: finISO,
-              titulo: nuevoTitulo
-            };
+            const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
 
             await actualizarCita(id, row);
 
@@ -647,11 +633,7 @@
               especialidad: info.event.extendedProps.especialidad
             });
 
-            const row = {
-              inicio: inicioISO,
-              fin: finISO,
-              titulo: nuevoTitulo
-            };
+            const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
 
             await actualizarCita(id, row);
 
@@ -716,26 +698,18 @@
       $("btnSave").addEventListener("click", onSave);
       $("btnDelete").addEventListener("click", onDelete);
 
-      // Recalcular título en vivo
       ["nombre_paciente","documento_paciente","especialidad","inicio","fin"].forEach(id=>{
         $(id).addEventListener("input", actualizarPreviewTitulo);
         $(id).addEventListener("change", actualizarPreviewTitulo);
       });
 
-      // ✅ NUEVO: Autocomplete por documento
-      // - Debounced mientras escribe
-      // - Búsqueda final al salir del campo
       $("documento_paciente").addEventListener("input", autocompletarPacienteDebounced);
       $("documento_paciente").addEventListener("blur", () => autocompletarPacientePorDocumento({ showToast: true }));
 
-      // Si autocompleta nombre/telefono/correo, actualizar título preview
       ["nombre_paciente","telefono_paciente","correo_paciente"].forEach(id=>{
         $(id).addEventListener("input", actualizarPreviewTitulo);
         $(id).addEventListener("change", actualizarPreviewTitulo);
       });
-
-      // Preview también si cambia correo (aunque no esté en el título)
-      $("correo_paciente").addEventListener("input", ()=>{ /* no-op */ });
     }
 
     async function onSave(){
@@ -743,44 +717,25 @@
         setLoading(true);
 
         const id = $("citaId").value.trim();
-
         const profesionalId = $("profesional_id").value;
         const especialidad = $("especialidad").value;
 
         const inicioLocal = $("inicio").value;
         const finLocal = $("fin").value;
 
-        if (!profesionalId){
-          toast("Selecciona un profesional.", "warn");
-          return;
-        }
-
-        if (!especialidad){
-          toast("Selecciona la especialidad del procedimiento.", "warn");
-          return;
-        }
-
-        if (!inicioLocal || !finLocal){
-          toast("Selecciona inicio y fin.", "warn");
-          return;
-        }
+        if (!profesionalId){ toast("Selecciona un profesional.", "warn"); return; }
+        if (!especialidad){ toast("Selecciona la especialidad del procedimiento.", "warn"); return; }
+        if (!inicioLocal || !finLocal){ toast("Selecciona inicio y fin.", "warn"); return; }
 
         const inicioISO = toISOFromLocalInput(inicioLocal);
         const finISO = toISOFromLocalInput(finLocal);
 
-        if (!inicioISO || !finISO){
-          toast("Fecha/hora inválida.", "warn");
-          return;
-        }
+        if (!inicioISO || !finISO){ toast("Fecha/hora inválida.", "warn"); return; }
 
         const inicioD = new Date(inicioISO);
         const finD = new Date(finISO);
-        if (finD <= inicioD){
-          toast("La hora final debe ser mayor que la inicial.", "warn");
-          return;
-        }
+        if (finD <= inicioD){ toast("La hora final debe ser mayor que la inicial.", "warn"); return; }
 
-        // ✅ Mantener: Título automático requerido (siempre)
         const tituloAuto = construirTituloAutomatico({
           inicioISO,
           finISO,
@@ -799,7 +754,7 @@
           nombre_paciente: normalizeText($("nombre_paciente").value),
           documento_paciente: normalizeText($("documento_paciente").value),
           telefono_paciente: normalizeText($("telefono_paciente").value),
-          correo_paciente: normalizeText($("correo_paciente").value), // ✅ NUEVO
+          correo_paciente: normalizeText($("correo_paciente").value),
 
           especialidad: normalizeText(especialidad),
 
@@ -811,7 +766,6 @@
           inicio: inicioISO,
           fin: finISO,
 
-          // cache (el trigger lo llena, lo enviamos también)
           nombre_profesional: getNombreProfesionalPorId(profesionalId)
         };
 
@@ -1114,6 +1068,7 @@
       background: rgba(2,6,23,.55);
     }
 
+    /* ✅ MEJORA: modal con alto máximo, body scrolleable y footer fijo */
     .modalCard{
       position: relative;
       width: min(820px, 100%);
@@ -1121,8 +1076,12 @@
       border: 1px solid rgba(255,255,255,.15);
       border-radius: 18px;
       box-shadow: 0 30px 90px rgba(0,0,0,.35);
-      padding: 14px;
+      padding: 0;
       z-index: 2;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
     }
 
     .modalHead{
@@ -1130,15 +1089,20 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      padding: 6px 4px 10px 4px;
+      padding: 14px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 12px;
+      margin-bottom: 0;
     }
 
     .modalHead h3{
       margin:0;
       font-size: 15px;
       letter-spacing: .2px;
+    }
+
+    .modalBody{
+      padding: 14px;
+      overflow: auto;
     }
 
     .modalGrid{
@@ -1155,10 +1119,19 @@
       display:flex;
       gap: 10px;
       justify-content: flex-end;
-      margin-top: 12px;
-      padding-top: 12px;
+      padding: 12px 14px;
       border-top: 1px solid var(--border);
       flex-wrap: wrap;
+      position: sticky;
+      bottom: 0;
+      background: var(--surface);
+    }
+
+    @media (max-width: 520px){
+      .modal{ padding: 10px; }
+      .modalHead{ padding: 12px; }
+      .modalBody{ padding: 12px; }
+      .modalFoot{ padding: 10px 12px; }
     }
 
     .loading{
@@ -1219,7 +1192,6 @@
     }
     .blocked strong{ color:#7f1d1d; }
 
-    /* Preview del título en el modal */
     .previewTitulo{
       border: 1px solid var(--border);
       border-radius: 12px;
@@ -1334,79 +1306,79 @@
         <button class="btn" id="btnClose" type="button">✕</button>
       </div>
 
-      <input type="hidden" id="citaId" />
+      <!-- ✅ NUEVO contenedor: body scrolleable -->
+      <div class="modalBody">
+        <input type="hidden" id="citaId" />
 
-      <div class="modalGrid">
+        <div class="modalGrid">
+          <div class="field">
+            <label for="documento_paciente">Cédula / Documento</label>
+            <input id="documento_paciente" type="text" placeholder="Digite la identificación (autocompleta si existe)" />
+          </div>
 
-        <!-- ✅ Documento primero -->
-        <div class="field">
-          <label for="documento_paciente">Cédula / Documento</label>
-          <input id="documento_paciente" type="text" placeholder="Digite la identificación (autocompleta si existe)" />
-        </div>
+          <div class="field">
+            <label for="nombre_paciente">Paciente (Nombre)</label>
+            <input id="nombre_paciente" type="text" placeholder="Nombre del paciente" />
+          </div>
 
-        <div class="field">
-          <label for="nombre_paciente">Paciente (Nombre)</label>
-          <input id="nombre_paciente" type="text" placeholder="Nombre del paciente" />
-        </div>
+          <div class="field">
+            <label for="telefono_paciente">Teléfono</label>
+            <input id="telefono_paciente" type="text" placeholder="Teléfono del paciente" />
+          </div>
 
-        <div class="field">
-          <label for="telefono_paciente">Teléfono</label>
-          <input id="telefono_paciente" type="text" placeholder="Teléfono del paciente" />
-        </div>
+          <div class="field">
+            <label for="correo_paciente">Correo electrónico</label>
+            <input id="correo_paciente" type="email" placeholder="correo@ejemplo.com" />
+          </div>
 
-        <!-- ✅ NUEVO: correo -->
-        <div class="field">
-          <label for="correo_paciente">Correo electrónico</label>
-          <input id="correo_paciente" type="email" placeholder="correo@ejemplo.com" />
-        </div>
+          <div class="field">
+            <label for="profesional_id">Profesional</label>
+            <select id="profesional_id">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label for="profesional_id">Profesional</label>
-          <select id="profesional_id">
-            <option value="">Cargando...</option>
-          </select>
-        </div>
+          <div class="field">
+            <label for="especialidad">Especialidad del procedimiento</label>
+            <select id="especialidad">
+              <option value="">Cargando...</option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label for="especialidad">Especialidad del procedimiento</label>
-          <select id="especialidad">
-            <option value="">Cargando...</option>
-          </select>
-        </div>
+          <div class="field">
+            <label for="estado">Estado</label>
+            <select id="estado">
+              <option value="programada">Programada</option>
+              <option value="confirmada">Confirmada</option>
+              <option value="atendida">Atendida</option>
+              <option value="cancelada">Cancelada</option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label for="estado">Estado</label>
-          <select id="estado">
-            <option value="programada">Programada</option>
-            <option value="confirmada">Confirmada</option>
-            <option value="atendida">Atendida</option>
-            <option value="cancelada">Cancelada</option>
-          </select>
-        </div>
+          <div class="field">
+            <label for="inicio">Inicio</label>
+            <input id="inicio" type="datetime-local" />
+          </div>
 
-        <div class="field">
-          <label for="inicio">Inicio</label>
-          <input id="inicio" type="datetime-local" />
-        </div>
+          <div class="field">
+            <label for="fin">Fin</label>
+            <input id="fin" type="datetime-local" />
+          </div>
 
-        <div class="field">
-          <label for="fin">Fin</label>
-          <input id="fin" type="datetime-local" />
-        </div>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label>Título (automático)</label>
+            <div id="titulo_preview" class="previewTitulo"></div>
+            <input id="titulo" type="hidden" />
+          </div>
 
-        <div class="field" style="grid-column: 1 / -1;">
-          <label>Título (automático)</label>
-          <div id="titulo_preview" class="previewTitulo"></div>
-          <!-- input oculto para guardar -->
-          <input id="titulo" type="hidden" />
-        </div>
-
-        <div class="field" style="grid-column: 1 / -1;">
-          <label for="notas">Notas</label>
-          <textarea id="notas" placeholder="Observaciones, motivo, procedimientos, etc."></textarea>
+          <div class="field" style="grid-column: 1 / -1;">
+            <label for="notas">Notas</label>
+            <textarea id="notas" placeholder="Observaciones, motivo, procedimientos, etc."></textarea>
+          </div>
         </div>
       </div>
 
+      <!-- ✅ Footer fijo (siempre visible) -->
       <div class="modalFoot">
         <button class="btn danger" id="btnDelete" type="button" style="display:none;">Eliminar</button>
         <button class="btn" type="button" onclick="document.getElementById('modal').classList.remove('open')">Cancelar</button>
@@ -1424,5 +1396,6 @@
   <div id="toast" class="toast">Listo</div>
 </body>
 </html>
+
 
 
