@@ -26,12 +26,11 @@
     const TABLA_PROFESIONALES = "profesionales";
 
     // ✅ HISTORIAS CLÍNICAS (AJUSTABLE SI TU TABLA/CAMPOS SE LLAMAN DISTINTO)
-    // Cambia solo estas constantes si aplica:
-    const TABLA_HISTORIAS = "HISTORIAS CLINICAS";  // Ej: "historia_clinica" o "historiasclinicas"
-    const HIST_COL_DOCUMENTO = "Numero de Identificacion";        // Ej: "cedula" o "numero_identificacion"
-    const HIST_COL_NOMBRE = "Nombre y apellido";              // Ej: "nombre_paciente"
-    const HIST_COL_TELEFONO = "paciente_cel";          // Ej: "celular"
-    const HIST_COL_CORREO = "paciente_email";              // Ej: "correo_electronico" o "email"
+    const TABLA_HISTORIAS = "HISTORIAS CLINICAS";
+    const HIST_COL_DOCUMENTO = "Numero de Identificacion";
+    const HIST_COL_NOMBRE = "Nombre y apellido";
+    const HIST_COL_TELEFONO = "paciente_cel";
+    const HIST_COL_CORREO = "paciente_email";
 
     // ✅ Lista de especialidades del procedimiento
     const ESPECIALIDADES = [
@@ -100,7 +99,6 @@
     }
 
     function pad2(n){ return String(n).padStart(2,"0"); }
-
     function formatHoraLocal(dateObj){
       return `${pad2(dateObj.getHours())}:${pad2(dateObj.getMinutes())}`;
     }
@@ -177,7 +175,7 @@
     // =========================
     // Profesionales (cargar select)
     // =========================
-    let profesionalesCache = []; // [{id, nombre, activo, especialidad, profesion}]
+    let profesionalesCache = [];
     async function cargarProfesionales(){
       const { data, error } = await supabase
         .from(TABLA_PROFESIONALES)
@@ -188,12 +186,10 @@
 
       profesionalesCache = (data || []).filter(p => p.activo === true);
 
-      // llenar select del modal
       const sel = $("profesional_id");
       sel.innerHTML = `<option value="">-- Selecciona --</option>` +
         profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
 
-      // llenar filtro por profesional
       const filt = $("filterProfessional");
       filt.innerHTML = `<option value="">Todos</option>` +
         profesionalesCache.map(p => `<option value="${p.id}">${escapeHtml(p.nombre)}</option>`).join("");
@@ -219,23 +215,23 @@
     }
 
     // =========================
-    // ✅ Autocompletar paciente desde HISTORIAS CLÍNICAS por documento
+    // Autocompletar paciente desde HISTORIAS CLÍNICAS
     // =========================
     let __lookupTimer = null;
 
     async function buscarPacienteEnHistorias(documento){
-      const docTxt = normalizeText(documento).replace(/[^\d]/g, "");
+      const docTxt = normalizeText(documento);
       if (!docTxt) return { found: false };
 
       const docNum = Number(docTxt);
       if (!Number.isFinite(docNum)) return { found: false };
 
-      const selectCols = `"${HIST_COL_NOMBRE}",${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
+      const selectCols = `"Nombre y apellido",paciente_cel,paciente_email`;
 
       const { data, error } = await supabase
-        .from(TABLA_HISTORIAS)
+        .from("HISTORIAS CLINICAS")
         .select(selectCols)
-        .eq(HIST_COL_DOCUMENTO, docNum)
+        .eq("Numero de Identificacion", docNum)
         .maybeSingle();
 
       if (error){
@@ -248,9 +244,9 @@
 
       return {
         found: true,
-        nombre: data[HIST_COL_NOMBRE] ?? data["Nombre y apellido"] ?? "",
-        telefono: data[HIST_COL_TELEFONO] ?? data["paciente_cel"] ?? "",
-        correo: data[HIST_COL_CORREO] ?? data["paciente_email"] ?? ""
+        nombre: data["Nombre y apellido"] ?? "",
+        telefono: data["paciente_cel"] ?? "",
+        correo: data["paciente_email"] ?? ""
       };
     }
 
@@ -264,7 +260,7 @@
       $("documento_paciente").dataset.lastLookup = doc;
 
       try{
-        if (showToast) setLoading(true);
+        setLoading(true);
 
         const res = await buscarPacienteEnHistorias(doc);
 
@@ -282,25 +278,17 @@
 
         actualizarPreviewTitulo();
       } finally {
-        if (showToast) setLoading(false);
+        setLoading(false);
       }
     }
 
     function autocompletarPacienteDebounced(){
-      // ✅ Si el usuario cambia el documento, limpiamos datos SOLO si ya venían autocompletados
-      if ($("documento_paciente").dataset.patientFound === "true"){
-        $("nombre_paciente").value = "";
-        $("telefono_paciente").value = "";
-        $("correo_paciente").value = "";
-        $("documento_paciente").dataset.patientFound = "";
-      }
-
       clearTimeout(__lookupTimer);
       __lookupTimer = setTimeout(() => autocompletarPacientePorDocumento({ showToast: false }), 450);
     }
 
     // =========================
-    // Título automático (formato solicitado)
+    // Título automático
     // =========================
     function construirTituloAutomatico({ inicioISO, finISO, nombrePaciente, cedulaPaciente, especialidad }){
       const s = new Date(inicioISO);
@@ -346,7 +334,7 @@
           nombre_paciente: row.nombre_paciente || "",
           documento_paciente: row.documento_paciente || "",
           telefono_paciente: row.telefono_paciente || "",
-          correo_paciente: row.correo_paciente || "",
+          correo_paciente: row.correo_paciente || "",  // ✅ ahora sí
           profesional_id: row.profesional_id || "",
           nombre_profesional: row.nombre_profesional || "",
           especialidad: row.especialidad || "",
@@ -367,14 +355,23 @@
         .order("inicio", { ascending: true });
 
       if (profesionalIdFiltro) q = q.eq("profesional_id", profesionalIdFiltro);
-
       if (estadoFiltro && estadoFiltro !== "todos") q = q.eq("estado", estadoFiltro);
-
       if (especialidadFiltro && especialidadFiltro !== "todos") q = q.eq("especialidad", especialidadFiltro);
 
       const { data, error } = await q;
       if (error) throw new Error(error.message);
       return data || [];
+    }
+
+    async function getCitaById(id){
+      const { data, error } = await supabase
+        .from(TABLA_CITAS)
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw new Error(error.message);
+      return data;
     }
 
     async function crearCita(row){
@@ -451,16 +448,18 @@
       }
 
       $("titulo_preview").textContent = $("titulo").value || "";
-
       $("btnDelete").style.display = mode === "edit" ? "inline-flex" : "none";
       $("btnSave").textContent = mode === "edit" ? "Guardar cambios" : "Crear cita";
 
+      // En móvil: al abrir, mandamos scroll del cuerpo arriba
+      const body = $("modalBody");
+      if (body) body.scrollTop = 0;
+
       if (mode !== "edit" && normalizeText($("documento_paciente").value)){
         autocompletarPacientePorDocumento({ showToast: false });
+      } else {
+        actualizarPreviewTitulo();
       }
-
-      // ✅ asegurar preview siempre consistente
-      actualizarPreviewTitulo();
     }
 
     function closeModal(){
@@ -471,10 +470,7 @@
     function actualizarPreviewTitulo(){
       const inicioLocal = $("inicio").value;
       const finLocal = $("fin").value;
-      if (!inicioLocal || !finLocal) {
-        $("titulo_preview").textContent = $("titulo").value || "";
-        return;
-      }
+      if (!inicioLocal || !finLocal) return;
 
       const inicioISO = toISOFromLocalInput(inicioLocal);
       const finISO = toISOFromLocalInput(finLocal);
@@ -515,7 +511,6 @@
         const rangeEnd   = view.activeEnd.toISOString();
 
         const { profesional_id, estado, especialidad } = getFilters();
-
         const rows = await fetchCitas(rangeStart, rangeEnd, profesional_id, estado, especialidad);
         const events = rows.map(rowToEvent);
 
@@ -565,22 +560,35 @@
           });
         },
 
-        eventClick: (info) => {
-          const ev = info.event;
-          openModal("edit", {
-            id: ev.id,
-            titulo: ev.title,
-            nombre_paciente: ev.extendedProps.nombre_paciente,
-            documento_paciente: ev.extendedProps.documento_paciente,
-            telefono_paciente: ev.extendedProps.telefono_paciente,
-            correo_paciente: ev.extendedProps.correo_paciente,
-            profesional_id: ev.extendedProps.profesional_id,
-            especialidad: ev.extendedProps.especialidad,
-            estado: ev.extendedProps.estado,
-            notas: ev.extendedProps.notas,
-            inicio_local: ev.extendedProps.inicio_local || toLocalInputValue(ev.start),
-            fin_local: ev.extendedProps.fin_local || toLocalInputValue(ev.end),
-          });
+        // ✅ MEJORA CLAVE: al hacer click, consultamos la cita REAL en Supabase por id
+        eventClick: async (info) => {
+          try{
+            setLoading(true);
+
+            const ev = info.event;
+            const row = await getCitaById(ev.id);
+
+            openModal("edit", {
+              id: row.id,
+              titulo: row.titulo,
+              nombre_paciente: row.nombre_paciente,
+              documento_paciente: row.documento_paciente,
+              telefono_paciente: row.telefono_paciente,
+              correo_paciente: row.correo_paciente, // ✅ ahora sí siempre
+              profesional_id: row.profesional_id,
+              especialidad: row.especialidad,
+              estado: row.estado,
+              notas: row.notas,
+              inicio_local: toLocalInputValue(new Date(row.inicio)),
+              fin_local: toLocalInputValue(new Date(row.fin)),
+            });
+
+          } catch(e){
+            console.error(e);
+            toast("No se pudo abrir la cita: " + e.message, "error");
+          } finally {
+            setLoading(false);
+          }
         },
 
         eventDrop: async (info) => {
@@ -600,7 +608,6 @@
             });
 
             const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
-
             await actualizarCita(id, row);
 
             info.event.setProp("title", nuevoTitulo);
@@ -634,7 +641,6 @@
             });
 
             const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
-
             await actualizarCita(id, row);
 
             info.event.setProp("title", nuevoTitulo);
@@ -695,6 +701,8 @@
       $("modalBackdrop").addEventListener("click", closeModal);
       window.addEventListener("keydown", (e)=> { if (e.key === "Escape") closeModal(); });
 
+      $("btnCancel").addEventListener("click", closeModal);
+
       $("btnSave").addEventListener("click", onSave);
       $("btnDelete").addEventListener("click", onDelete);
 
@@ -719,7 +727,6 @@
         const id = $("citaId").value.trim();
         const profesionalId = $("profesional_id").value;
         const especialidad = $("especialidad").value;
-
         const inicioLocal = $("inicio").value;
         const finLocal = $("fin").value;
 
@@ -729,7 +736,6 @@
 
         const inicioISO = toISOFromLocalInput(inicioLocal);
         const finISO = toISOFromLocalInput(finLocal);
-
         if (!inicioISO || !finISO){ toast("Fecha/hora inválida.", "warn"); return; }
 
         const inicioD = new Date(inicioISO);
@@ -757,9 +763,7 @@
           correo_paciente: normalizeText($("correo_paciente").value),
 
           especialidad: normalizeText(especialidad),
-
           titulo: tituloAuto,
-
           estado: $("estado").value || "programada",
           notas: normalizeText($("notas").value),
 
@@ -1051,13 +1055,14 @@
       padding: 6px;
     }
 
+    /* ✅ MODAL RESPONSIVE: scroll interno + footer sticky */
     .modal{
       position: fixed;
       inset: 0;
       display: none;
       align-items: center;
       justify-content: center;
-      padding: 18px;
+      padding: 14px;
       z-index: 50;
     }
     .modal.open{ display:flex; }
@@ -1068,20 +1073,19 @@
       background: rgba(2,6,23,.55);
     }
 
-    /* ✅ MEJORA: modal con alto máximo, body scrolleable y footer fijo */
     .modalCard{
       position: relative;
-      width: min(820px, 100%);
+      width: min(860px, 100%);
+      max-height: calc(100vh - 24px);
       background: var(--surface);
       border: 1px solid rgba(255,255,255,.15);
       border-radius: 18px;
       box-shadow: 0 30px 90px rgba(0,0,0,.35);
-      padding: 0;
       z-index: 2;
-      max-height: 90vh;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
+
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
     }
 
     .modalHead{
@@ -1089,9 +1093,10 @@
       justify-content: space-between;
       align-items: center;
       gap: 10px;
-      padding: 14px;
+      padding: 14px 14px 12px 14px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 0;
+      background: var(--surface);
+      flex: 0 0 auto;
     }
 
     .modalHead h3{
@@ -1101,8 +1106,10 @@
     }
 
     .modalBody{
-      padding: 14px;
-      overflow: auto;
+      padding: 12px 14px 14px 14px;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      flex: 1 1 auto;
     }
 
     .modalGrid{
@@ -1121,17 +1128,9 @@
       justify-content: flex-end;
       padding: 12px 14px;
       border-top: 1px solid var(--border);
-      flex-wrap: wrap;
-      position: sticky;
-      bottom: 0;
       background: var(--surface);
-    }
-
-    @media (max-width: 520px){
-      .modal{ padding: 10px; }
-      .modalHead{ padding: 12px; }
-      .modalBody{ padding: 12px; }
-      .modalFoot{ padding: 10px 12px; }
+      flex: 0 0 auto;
+      flex-wrap: wrap;
     }
 
     .loading{
@@ -1230,7 +1229,6 @@
     </div>
 
     <div id="app" class="grid" style="display:none;">
-      <!-- Sidebar -->
       <div class="panel">
         <h2>Filtros</h2>
         <div class="muted">Filtra por profesional, estado y especialidad.</div>
@@ -1289,7 +1287,6 @@
         </div>
       </div>
 
-      <!-- Calendar -->
       <div class="calendarWrap">
         <div id="calendar"></div>
       </div>
@@ -1306,8 +1303,7 @@
         <button class="btn" id="btnClose" type="button">✕</button>
       </div>
 
-      <!-- ✅ NUEVO contenedor: body scrolleable -->
-      <div class="modalBody">
+      <div id="modalBody" class="modalBody">
         <input type="hidden" id="citaId" />
 
         <div class="modalGrid">
@@ -1378,10 +1374,9 @@
         </div>
       </div>
 
-      <!-- ✅ Footer fijo (siempre visible) -->
       <div class="modalFoot">
         <button class="btn danger" id="btnDelete" type="button" style="display:none;">Eliminar</button>
-        <button class="btn" type="button" onclick="document.getElementById('modal').classList.remove('open')">Cancelar</button>
+        <button class="btn" id="btnCancel" type="button">Cancelar</button>
         <button class="btn primary" id="btnSave" type="button">Crear cita</button>
       </div>
     </div>
@@ -1396,6 +1391,7 @@
   <div id="toast" class="toast">Listo</div>
 </body>
 </html>
+
 
 
 
