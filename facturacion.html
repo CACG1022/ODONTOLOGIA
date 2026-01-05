@@ -616,7 +616,7 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
+    const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOG_sr%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
     // ✅ NUEVO: roles permitidos para entrar a Facturación
@@ -675,6 +675,18 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
+    // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
+    function parseDateYYYYMMDD(s){
+      const v = String(s || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+      const d = new Date(v + "T00:00:00.000Z");
+      if (Number.isNaN(d.getTime())) return null;
+      return v;
+    }
+    function toISODateTimeFromYYYYMMDD(v){
+      return v ? (v + "T00:00:00.000Z") : null;
+    }
+
     function generarNumeroFactura(){
       const d = new Date();
       const y = d.getFullYear();
@@ -731,6 +743,7 @@
 
       if (!ok){
         toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
+        // opcional: cerrar sesión para evitar que vuelva con back
         try { await supabase.auth.signOut(); } catch(e) {}
         window.location.href = INDEX_URL;
         return false;
@@ -749,21 +762,26 @@
       const email = (session.user?.email || "Usuario").toString();
       $("user-email").textContent = email;
 
+      // ✅ Cargar rol real desde profiles
       await cargarRolActual();
 
+      // ✅ Validar acceso (solo admin/auxiliar)
       const okRole = await validarAccesoPorRol();
       if (!okRole) return false;
 
       return true;
     }
 
+    // ✅ Evita redirecciones en el arranque (INITIAL_SESSION)
     supabase.auth.onAuthStateChange((event, session) => {
       console.log("AUTH EVENT:", event, "SESSION:", !!session);
 
+      // Solo redirige si realmente se cerró sesión
       if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
         window.location.href = LOGIN_URL;
       }
 
+      // Si el usuario inicia sesión en otra pestaña, refresca rol
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
@@ -1050,6 +1068,7 @@
       return raw;
     }
 
+    // ✅ Estado actual (columna)
     function pagoLabel(pagada){
       if (pagada === true) return "Pagada";
       if (pagada === false) return "Pendiente";
@@ -1256,10 +1275,10 @@
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
       const observacion = ($("observacion")?.value || "").trim() || null;
 
-      // ✅ NUEVO: estado pago + referencia
+      // ✅ NUEVO
       const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
       const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
-      const fecha_pago = pagada ? new Date().toISOString() : null; // si prefieres date-only: hoyISO()
+      const fecha_pago = pagada ? new Date().toISOString() : null;
 
       const totals = calcularTotalesObj();
 
@@ -1329,7 +1348,6 @@
           if (e1b) throw e1b;
           fac = fac2;
 
-          // “simulamos” en memoria para impresión aunque no exista columna en DB aún
           fac.metodo_pago = metodo_pago;
           fac.observacion = observacion;
           fac.paciente_correo = paciente_correo;
@@ -1397,7 +1415,6 @@
         state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
         state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
 
-        // ✅ NUEVO: refrescar estado pago desde UI
         state.facturaGuardada.pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
         state.facturaGuardada.referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
 
@@ -1444,20 +1461,67 @@
       $("count_facturas").textContent = String((rows || []).length);
     }
 
+    // ✅ CORREGIDO:
+    // - Columna "Pago" muestra estado ACTUAL
+    // - Botón muestra ACCIÓN ("Marcar pagada" / "Marcar pendiente")
+    // - Al marcar PAGADA y método != Efectivo, pide referencia y fecha de pago
     async function togglePagadaFactura(f){
       try{
         const actual = (f.pagada === true);
         const nuevo = !actual;
 
+        let metodo = (f.metodo_pago || "").toString().trim();
+
+        // Si por alguna razón no vino en el listado, lo consultamos
+        if (!metodo){
+          const { data: facDB, error: e0 } = await supabase
+            .from("facturas")
+            .select("id, metodo_pago")
+            .eq("id", f.id)
+            .single();
+          if (!e0) metodo = (facDB?.metodo_pago || "").toString().trim();
+        }
+
+        let referencia = null;
+        let fechaPagoYYYYMMDD = null;
+
+        if (nuevo === true){
+          const isEfectivo = metodo.toLowerCase() === "efectivo";
+
+          if (!isEfectivo){
+            referencia = window.prompt("Ingresa la referencia / comprobante de pago:", f.referencia_pago || "");
+            if (referencia === null) return; // canceló
+            referencia = referencia.trim();
+            if (!referencia){
+              toast("La referencia de pago es obligatoria para este método.", "warn");
+              return;
+            }
+
+            const fp = window.prompt("Ingresa la fecha de pago (YYYY-MM-DD):", hoyISO());
+            if (fp === null) return; // canceló
+            fechaPagoYYYYMMDD = parseDateYYYYMMDD(fp);
+            if (!fechaPagoYYYYMMDD){
+              toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
+              return;
+            }
+          } else {
+            // Efectivo: fecha automática, referencia opcional (aquí la dejamos null)
+            fechaPagoYYYYMMDD = hoyISO();
+            referencia = null;
+          }
+        }
+
         setStatus("Actualizando pago...");
 
-        // si no existe columna en DB, esto fallará: lo manejamos
+        const payload = {
+          pagada: nuevo,
+          fecha_pago: nuevo ? toISODateTimeFromYYYYMMDD(fechaPagoYYYYMMDD || hoyISO()) : null,
+          referencia_pago: nuevo ? (referencia || null) : null
+        };
+
         const { error } = await supabase
           .from("facturas")
-          .update({
-            pagada: nuevo,
-            fecha_pago: nuevo ? new Date().toISOString() : null
-          })
+          .update(payload)
           .eq("id", f.id);
 
         if (error){
@@ -1468,7 +1532,7 @@
           setStatus("");
 
           if (isColumnMissing){
-            toast("En Supabase falta crear columna 'pagada'/'fecha_pago' en facturas.", "warn");
+            toast("En Supabase faltan columnas: pagada / fecha_pago / referencia_pago en 'facturas'.", "warn");
             return;
           }
 
@@ -1478,6 +1542,7 @@
         setStatus("");
         toast(nuevo ? "Marcada como Pagada ✅" : "Marcada como Pendiente ⚠️", "ok");
         await listarFacturas();
+
       } catch(err){
         console.error(err);
         setStatus("");
@@ -1504,19 +1569,22 @@
         const ced = f.paciente_cedula || "—";
         const total = money(f.valor_total || 0);
 
-        const pago = pagoLabel(f.pagada);
+        const estadoPago = pagoLabel(f.pagada);
+
+        // ✅ Botón como ACCIÓN
+        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
 
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
           <td class="mono">${escapeHtml(numf)}</td>
           <td>${escapeHtml(nom)}</td>
           <td class="mono">${escapeHtml(ced)}</td>
-          <td class="mono">${escapeHtml(pago)}</td>
+          <td class="mono">${escapeHtml(estadoPago)}</td>
           <td class="mono">$ ${escapeHtml(total)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
-            <button class="btn small" data-act="toggle">${(f.pagada===true) ? "↘ Pendiente" : "✅ Pagada"}</button>
+            <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
           </td>
         `;
 
@@ -1619,7 +1687,6 @@
         if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
         if ($("observacion")) $("observacion").value = fac.observacion || "";
 
-        // ✅ NUEVO
         if ($("pagada")){
           $("pagada").value = (fac.pagada === false) ? "no" : "si";
         }
@@ -1679,6 +1746,7 @@
           .from("factura_detalle")
           .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
+          .
           .order("id", { ascending: true });
 
         if (e2) throw e2;
@@ -1752,8 +1820,10 @@
           "Tipo usuario": f.tipo_usuario || "",
           "EPS": f.eps || "",
           "Profesional (valor guardado)": f.profesional || "",
-          "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
-          "Referencia pago": f.referencia_pago || "",
+          "Método de pago": f.metodo_pago || "",
+          "Pago": pagoLabel(f.pagada),
+          "Referencia": f.referencia_pago || "",
+          "Fecha pago": f.fecha_pago ? formatFechaHuman(String(f.fecha_pago).slice(0,10)) : "",
           "Total": Number(f.valor_total || 0),
           "Copago": Number(f.copago || 0),
           "Cuota moderadora": Number(f.cuota_moderadora || 0),
@@ -1768,6 +1838,13 @@
           [],
           ["TOTAL FACTURADO", totalFacturado]
         ], { origin: `A${lastRow}` });
+
+        const colWidths = [
+          { wch: 12 }, { wch: 22 }, { wch: 30 }, { wch: 14 }, { wch: 26 },
+          { wch: 14 }, { wch: 16 }, { wch: 26 }, { wch: 16 }, { wch: 10 },
+          { wch: 22 }, { wch: 14 }, { wch: 14 }, { wch: 12 }, { wch: 16 }
+        ];
+        ws["!cols"] = colWidths;
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
@@ -1799,10 +1876,6 @@
       $("year").textContent = new Date().getFullYear();
       $("fecha").value = hoyISO();
       $("numero_factura").value = generarNumeroFactura();
-
-      // ✅ defaults pago
-      if ($("pagada")) $("pagada").value = "si";
-      if ($("referencia_pago")) $("referencia_pago").value = "";
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
       $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
@@ -1863,5 +1936,6 @@
   </script>
 </body>
 </html>
+
 
 
