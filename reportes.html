@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reportes de Ventas - Clínica Odontológica</title>
+
+  <!-- ✅ Chart.js (gráficas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- ✅ Excel export (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+      --ok: #16a34a;
+      --warn: #f59e0b;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    .topbar{
+      max-width: 1200px;
+      margin: 0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .brand h1{ font-size: 16px; margin:0; }
+    .meta{ display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+
+    .chip{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      white-space:nowrap;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      line-height:1.2;
+    }
+    .chip b{ color: var(--text); }
+    .chip .line{ display:flex; gap:6px; align-items:baseline; }
+    .chip .line span{ color: var(--muted); }
+    .chip .line small{ color: var(--muted); font-weight:700; }
+
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding: 8px 10px; font-size: 12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .container{
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      background:#fff;
+    }
+    .header .title{ font-weight:900; font-size: 14px; }
+    .section{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .ctrl label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input, select{
+      width:100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background:#fff;
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      min-height: 86px;
+    }
+    .kpi .k{ color: var(--muted); font-size: 12px; font-weight: 800; }
+    .kpi .v{ margin-top: 8px; font-size: 18px; font-weight: 900; }
+    .kpi .s{ margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .card{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      overflow:hidden;
+    }
+    .card h3{
+      margin:0 0 10px 0;
+      font-size: 13px;
+      font-weight: 900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    table{ width:100%; border-collapse: collapse; }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+      font-size: 12.5px;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .empty{ color: var(--muted); text-align:center; padding: 18px; }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      border: 1px solid var(--line);
+      background:#fff;
+      color: var(--text);
+      white-space:nowrap;
+    }
+    .pill.ok{ border-color: rgba(22,163,74,.25); color: var(--ok); }
+    .pill.warn{ border-color: rgba(245,158,11,.25); color: var(--warn); }
+
+    .footer{
+      padding: 12px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      max-width: 380px;
+      white-space: pre-wrap;
+      z-index: 99;
+    }
+    #toast.show{ opacity: 1; transform: translateY(0); }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+
+    .row-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    @media (max-width: 1050px){
+      .kpis{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px){
+      .kpis{ grid-template-columns: 1fr; }
+      .header{ align-items:flex-start; flex-direction:column; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>CLÍNICA ODONTOLÓGICA — Reporte de ventas</h1>
+    </div>
+    <div class="meta">
+      <div class="chip">
+        <div class="line"><span>Usuario:</span> <b id="user-email">—</b></div>
+        <div class="line"><small>Rol:</small> <b id="user-role">—</b></div>
+      </div>
+      <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+      <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="header">
+      <div class="title">Dashboard de ventas</div>
+      <div class="row-actions">
+        <button class="btn" id="btn-this-month" type="button">📅 Mes actual</button>
+        <button class="btn" id="btn-today" type="button">📌 Hoy</button>
+        <button class="btn primary" id="btn-refresh" type="button">🔄 Actualizar</button>
+        <button class="btn" id="btn-export" type="button">⬇ Excel</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Fecha desde</label>
+          <input id="fecha_desde" type="date">
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Fecha hasta</label>
+          <input id="fecha_hasta" type="date">
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Profesional</label>
+          <select id="f_profesional">
+            <option value="">— Todos —</option>
+          </select>
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Método de pago</label>
+          <select id="f_metodo">
+            <option value="">— Todos —</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Daviplata">Daviplata</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; color:var(--muted); font-size:12px;" class="mono">
+        Tip: el “Total facturado mes actual” se calcula siempre con el mes actual (aunque filtres otro rango).
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">Total facturado (filtro)</div>
+          <div class="v mono">$ <span id="k_total_filtro">0</span></div>
+          <div class="s" id="k_total_filtro_s">—</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Total facturado (mes actual)</div>
+          <div class="v mono">$ <span id="k_total_mes">0</span></div>
+          <div class="s" id="k_total_mes_s">—</div>
+        </div>
+        <div class="kpi">
+          <div class="k">Facturas pendientes (filtro)</div>
+          <div class="v"><span id="k_pendientes">0</span></div>
+          <div class="s">Pagadas: <b id="k_pagadas">0</b></div>
+        </div>
+        <div class="kpi">
+          <div class="k">Procedimiento más vendido (filtro)</div>
+          <div class="v" id="k_top_proc">—</div>
+          <div class="s">Unidades: <b id="k_top_proc_qty">0</b> • Ingreso: <b class="mono">$ <span id="k_top_proc_rev">0</span></b></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 8;">
+          <h3>
+            <span>Ingresos por día (filtro)</span>
+            <span class="sub" id="sub_line">—</span>
+          </h3>
+          <canvas id="chart_line" height="120"></canvas>
+        </div>
+        <div class="card" style="grid-column: span 4;">
+          <h3>
+            <span>Pagadas vs Pendientes</span>
+            <span class="sub" id="sub_donut">—</span>
+          </h3>
+          <canvas id="chart_donut" height="160"></canvas>
+        </div>
+
+        <div class="card" style="grid-column: span 7;">
+          <h3>
+            <span>Top 10 procedimientos (por unidades)</span>
+            <span class="sub" id="sub_top_proc">—</span>
+          </h3>
+          <canvas id="chart_bar" height="130"></canvas>
+        </div>
+        <div class="card" style="grid-column: span 5;">
+          <h3>
+            <span>Métodos de pago (por facturas)</span>
+            <span class="sub" id="sub_pie">—</span>
+          </h3>
+          <canvas id="chart_pie" height="160"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 12;">
+          <h3>
+            <span>Facturas del filtro</span>
+            <span class="sub">Acción rápida: ver pendientes</span>
+          </h3>
+
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+            <button class="btn small" id="btn-show-all" type="button">📄 Todas</button>
+            <button class="btn small" id="btn-show-pending" type="button">⚠️ Solo pendientes</button>
+            <button class="btn small" id="btn-show-paid" type="button">✅ Solo pagadas</button>
+          </div>
+
+          <div style="max-height: 52vh; overflow:auto; border:1px solid var(--line); border-radius: 12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:150px;">Fecha</th>
+                  <th style="width:220px;">N° Factura</th>
+                  <th>Paciente</th>
+                  <th style="width:160px;">Cédula</th>
+                  <th style="width:140px;">Estado</th>
+                  <th style="width:170px;">Método</th>
+                  <th style="width:160px;">Total</th>
+                </tr>
+              </thead>
+              <tbody id="tbody_facturas">
+                <tr><td colspan="7" class="empty">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mono" style="margin-top:10px; color:var(--muted);">
+            Nota: “Procedimiento más vendido” se calcula sumando cantidades en <b>factura_detalle</b> para las facturas del filtro.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="mono" id="status"></div>
+      <div>© <span id="year"></span></div>
+    </div>
+  </div>
+
+  <div id="toast" data-type="ok"></div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Tus mismas credenciales
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // ✅ Roles permitidos (igual que Facturación)
+    const ALLOWED_ROLES = ["admin", "auxiliar"];
+
+    const state = {
+      session: null,
+      role: null,
+      profesionales: [],
+      facturasFiltro: [],
+      detalleFiltro: [],
+      _view: "all", // all | pending | paid
+      charts: {
+        line: null,
+        donut: null,
+        bar: null,
+        pie: null
+      }
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2400);
+    }
+    function setStatus(msg){
+      const el = $("status");
+      if (el) el.textContent = msg || "";
+    }
+
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString("es-CO");
+    }
+    function num(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function hoyISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return \`\${yyyy}-\${mm}-\${dd}\`;
+    }
+    function firstDayOfMonthISO(d = new Date()){
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      return \`\${yyyy}-\${mm}-01\`;
+    }
+    function lastDayOfMonthISO(d = new Date()){
+      const yyyy = d.getFullYear();
+      const mm = d.getMonth();
+      const last = new Date(yyyy, mm+1, 0);
+      const m = String(last.getMonth()+1).padStart(2,"0");
+      const dd = String(last.getDate()).padStart(2,"0");
+      return \`\${yyyy}-\${m}-\${dd}\`;
+    }
+    function formatFechaHuman(iso){
+      if (!iso) return "—";
+      try{
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())){
+          const [y,m,dd] = String(iso).split("-");
+          if (y && m && dd) return \`\${dd}/\${m}/\${y}\`;
+          return String(iso);
+        }
+        return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
+      } catch(e){
+        return String(iso);
+      }
+    }
+
+    /* ✅ OBTENER ROL REAL DESDE public.profiles */
+    async function cargarRolActual(){
+      const email = (state.session?.user?.email || "").trim().toLowerCase();
+      const elRole = $("user-role");
+      if (!email){
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role, created_at, email")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        const finalRole = role || "user";
+
+        state.role = finalRole;
+        if (elRole) elRole.textContent = finalRole;
+
+        return finalRole;
+      } catch(err){
+        console.error("No se pudo leer rol en profiles:", err);
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+    }
+
+    async function validarAccesoPorRol(){
+      const role = (state.role || "user").toString().trim().toLowerCase();
+      const ok = ALLOWED_ROLES.includes(role);
+      if (!ok){
+        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
+        try { await supabase.auth.signOut(); } catch(e) {}
+        window.location.href = INDEX_URL;
+        return false;
+      }
+      return true;
+    }
+
+    async function proteger(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      state.session = session;
+
+      $("user-email").textContent = (session.user?.email || "Usuario").toString();
+
+      await cargarRolActual();
+      const okRole = await validarAccesoPorRol();
+      if (!okRole) return false;
+
+      return true;
+    }
+
+    supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+        window.location.href = LOGIN_URL;
+      }
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+        state.session = session;
+        $("user-email").textContent = session.user?.email || "Usuario";
+        cargarRolActual().then(()=> validarAccesoPorRol());
+      }
+    });
+
+    async function cerrarSesion(){
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    }
+
+    async function cargarProfesionales(){
+      const { data, error } = await supabase
+        .from("profesionales")
+        .select("id, cedula, nombre, activo")
+        .order("nombre", { ascending: true });
+
+      if (error){
+        console.error(error);
+        toast("Error profesionales:\n" + error.message, "err");
+        state.profesionales = [];
+        renderProfesionales();
+        return;
+      }
+
+      const rows = data || [];
+      state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
+      renderProfesionales();
+    }
+
+    function renderProfesionales(){
+      const sel = $("f_profesional");
+      sel.innerHTML = `<option value="">— Todos —</option>`;
+      for (const pr of state.profesionales){
+        const ced = (pr.cedula ?? "").toString().trim();
+        const nom = (pr.nombre ?? "").toString().trim();
+        const opt = document.createElement("option");
+        opt.value = ced ? ced : nom;
+        opt.textContent = nom || ced || "—";
+        sel.appendChild(opt);
+      }
+    }
+
+    // 🔎 Helpers fechas para query
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
+
+    // ✅ Cargar facturas del filtro
+    async function cargarFacturasFiltro(){
+      const desde = ($("fecha_desde").value || "").trim();
+      const hasta = ($("fecha_hasta").value || "").trim();
+      const profesional = ($("f_profesional").value || "").trim();
+      const metodo = ($("f_metodo").value || "").trim();
+
+      setStatus("Cargando facturas (filtro)...");
+      try{
+        let query = supabase
+          .from("facturas")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, pagada, metodo_pago, referencia_pago")
+          .order("fecha", { ascending: true });
+
+        if (desde) query = query.gte("fecha", dateStartISO(desde));
+        if (hasta) query = query.lte("fecha", dateEndISO(hasta));
+        if (profesional) query = query.eq("profesional", profesional);
+        if (metodo) query = query.eq("metodo_pago", metodo);
+
+        const { data, error } = await query;
+        if (error) throw error;
+
+        state.facturasFiltro = data || [];
+
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
+        state.facturasFiltro = [];
+      }
+    }
+
+    // ✅ Cargar detalle del filtro (solo para facturas del filtro)
+    async function cargarDetalleFiltro(){
+      setStatus("Cargando detalle (procedimientos)...");
+      try{
+        const ids = (state.facturasFiltro || []).map(f => f.id);
+        if (!ids.length){
+          state.detalleFiltro = [];
+          setStatus("");
+          return;
+        }
+
+        // Nota: IN tiene límite, pero en reportes usualmente el rango no es gigante.
+        const { data, error } = await supabase
+          .from("factura_detalle")
+          .select("factura_id, descripcion, cantidad, valor_total, valor_unitario, codigo_cups")
+          .in("factura_id", ids);
+
+        if (error) throw error;
+
+        state.detalleFiltro = data || [];
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo cargar detalle:\n" + (err?.message || "Error"), "err");
+        state.detalleFiltro = [];
+      }
+    }
+
+    // ✅ Total mes actual (independiente del filtro)
+    async function cargarTotalMesActual(){
+      const d = new Date();
+      const desde = firstDayOfMonthISO(d);
+      const hasta = lastDayOfMonthISO(d);
+
+      try{
+        const { data, error } = await supabase
+          .from("facturas")
+          .select("valor_total")
+          .gte("fecha", dateStartISO(desde))
+          .lte("fecha", dateEndISO(hasta));
+
+        if (error) throw error;
+
+        const total = (data || []).reduce((acc, r) => acc + (Number(r.valor_total) || 0), 0);
+
+        $("k_total_mes").textContent = money(total);
+        $("k_total_mes_s").textContent = `Mes: ${formatFechaHuman(desde)} → ${formatFechaHuman(hasta)}`;
+      } catch(err){
+        console.error(err);
+        $("k_total_mes").textContent = "0";
+        $("k_total_mes_s").textContent = "No disponible";
+      }
+    }
+
+    function pagoPill(pagada){
+      if (pagada === true) return `<span class="pill ok">✅ Pagada</span>`;
+      if (pagada === false) return `<span class="pill warn">⚠️ Pendiente</span>`;
+      return `<span class="pill">—</span>`;
+    }
+
+    function renderTablaFacturas(){
+      const tbody = $("tbody_facturas");
+      tbody.innerHTML = "";
+
+      let rows = [...(state.facturasFiltro || [])];
+
+      if (state._view === "pending") rows = rows.filter(f => f.pagada === false);
+      if (state._view === "paid") rows = rows.filter(f => f.pagada === true);
+
+      if (!rows.length){
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">No hay facturas para mostrar.</td></tr>`;
+        return;
+      }
+
+      for (const f of rows){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(formatFechaHuman(f.fecha))}</td>
+          <td class="mono">${escapeHtml(f.numero_factura || "—")}</td>
+          <td>${escapeHtml(f.paciente_nombre || "—")}</td>
+          <td class="mono">${escapeHtml(f.paciente_cedula || "—")}</td>
+          <td>${pagoPill(f.pagada)}</td>
+          <td class="mono">${escapeHtml(f.metodo_pago || "—")}</td>
+          <td class="mono">$ ${escapeHtml(money(f.valor_total || 0))}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function calcKPIs(){
+      const rows = state.facturasFiltro || [];
+      const totalFiltro = rows.reduce((acc,f) => acc + (Number(f.valor_total) || 0), 0);
+
+      const pendientes = rows.filter(f => f.pagada === false).length;
+      const pagadas = rows.filter(f => f.pagada === true).length;
+
+      $("k_total_filtro").textContent = money(totalFiltro);
+
+      const desde = ($("fecha_desde").value || "").trim();
+      const hasta = ($("fecha_hasta").value || "").trim();
+      $("k_total_filtro_s").textContent = (desde || hasta) ? `Rango: ${formatFechaHuman(desde)} → ${formatFechaHuman(hasta)}` : "Rango: (sin filtro)";
+
+      $("k_pendientes").textContent = String(pendientes);
+      $("k_pagadas").textContent = String(pagadas);
+
+      // Top procedimiento (por unidades) + ingreso
+      const det = state.detalleFiltro || [];
+      const map = new Map(); // key => { desc, qty, rev }
+      for (const it of det){
+        const desc = (it.descripcion || "—").toString().trim() || "—";
+        const qty = Number(it.cantidad || 0);
+        const rev = Number(it.valor_total || 0);
+        const cur = map.get(desc) || { desc, qty: 0, rev: 0 };
+        cur.qty += qty;
+        cur.rev += rev;
+        map.set(desc, cur);
+      }
+      const arr = Array.from(map.values()).sort((a,b)=> b.qty - a.qty);
+
+      const top = arr[0] || null;
+      if (!top){
+        $("k_top_proc").textContent = "—";
+        $("k_top_proc_qty").textContent = "0";
+        $("k_top_proc_rev").textContent = "0";
+      } else {
+        $("k_top_proc").textContent = top.desc;
+        $("k_top_proc_qty").textContent = String(top.qty);
+        $("k_top_proc_rev").textContent = money(top.rev);
+      }
+
+      return { totalFiltro, pendientes, pagadas, topProcArr: arr };
+    }
+
+    function groupRevenueByDay(){
+      const rows = state.facturasFiltro || [];
+      const map = new Map(); // yyyy-mm-dd -> total
+      for (const f of rows){
+        const iso = (f.fecha && String(f.fecha).includes("T")) ? String(f.fecha).slice(0,10) : String(f.fecha || "").slice(0,10);
+        if (!iso) continue;
+        const cur = map.get(iso) || 0;
+        map.set(iso, cur + (Number(f.valor_total) || 0));
+      }
+      const keys = Array.from(map.keys()).sort();
+      return { labels: keys, values: keys.map(k => map.get(k) || 0) };
+    }
+
+    function groupMetodoPago(){
+      const rows = state.facturasFiltro || [];
+      const map = new Map();
+      for (const f of rows){
+        const k = (f.metodo_pago || "—").toString().trim() || "—";
+        map.set(k, (map.get(k)||0) + 1);
+      }
+      const labels = Array.from(map.keys()).sort((a,b)=> (map.get(b)||0) - (map.get(a)||0));
+      return { labels, values: labels.map(l => map.get(l)||0) };
+    }
+
+    function destroyChart(ch){
+      try{ if (ch) ch.destroy(); } catch(e) {}
+    }
+
+    function renderCharts(kpi){
+      // Line: ingresos por día
+      const line = groupRevenueByDay();
+      $("sub_line").textContent = `${line.labels.length} día(s)`;
+
+      destroyChart(state.charts.line);
+      state.charts.line = new Chart($("chart_line"), {
+        type: "line",
+        data: {
+          labels: line.labels,
+          datasets: [{
+            label: "Total por día",
+            data: line.values
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } },
+          scales: {
+            y: { ticks: { callback: (v)=> "$ " + money(v) } }
+          }
+        }
+      });
+
+      // Donut: pagadas vs pendientes
+      $("sub_donut").textContent = `Pagadas: ${kpi.pagadas} • Pendientes: ${kpi.pendientes}`;
+
+      destroyChart(state.charts.donut);
+      state.charts.donut = new Chart($("chart_donut"), {
+        type: "doughnut",
+        data: {
+          labels: ["Pagadas", "Pendientes"],
+          datasets: [{
+            data: [kpi.pagadas, kpi.pendientes]
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: true } } }
+      });
+
+      // Bar: Top 10 procedimientos
+      const top10 = (kpi.topProcArr || []).slice(0, 10);
+      $("sub_top_proc").textContent = `${top10.length} item(s)`;
+
+      destroyChart(state.charts.bar);
+      state.charts.bar = new Chart($("chart_bar"), {
+        type: "bar",
+        data: {
+          labels: top10.map(x => x.desc.length > 28 ? (x.desc.slice(0,28) + "…") : x.desc),
+          datasets: [{
+            label: "Unidades",
+            data: top10.map(x => x.qty)
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { display: true } },
+          scales: { y: { beginAtZero: true } }
+        }
+      });
+
+      // Pie: métodos de pago
+      const pie = groupMetodoPago();
+      $("sub_pie").textContent = `${pie.labels.length} método(s)`;
+
+      destroyChart(state.charts.pie);
+      state.charts.pie = new Chart($("chart_pie"), {
+        type: "pie",
+        data: {
+          labels: pie.labels,
+          datasets: [{ data: pie.values }]
+        },
+        options: { responsive: true, plugins: { legend: { display: true } } }
+      });
+    }
+
+    function exportarExcel(){
+      try{
+        const rows = state.facturasFiltro || [];
+        if (!rows.length){
+          toast("No hay facturas para exportar con el filtro actual.", "warn");
+          return;
+        }
+
+        const desde = ($("fecha_desde")?.value || "").trim();
+        const hasta = ($("fecha_hasta")?.value || "").trim();
+        const profesional = ($("f_profesional")?.value || "").trim();
+        const metodo = ($("f_metodo")?.value || "").trim();
+
+        const data = rows.map(f => ({
+          "Fecha": formatFechaHuman(f.fecha),
+          "N° Factura": f.numero_factura || "",
+          "Paciente": f.paciente_nombre || "",
+          "Cédula": f.paciente_cedula || "",
+          "Estado": (f.pagada === true) ? "Pagada" : (f.pagada === false ? "Pendiente" : ""),
+          "Método de pago": f.metodo_pago || "",
+          "Referencia": f.referencia_pago || "",
+          "Total": Number(f.valor_total || 0),
+        }));
+
+        const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        const lastRow = data.length + 2;
+        XLSX.utils.sheet_add_aoa(ws, [
+          [],
+          ["TOTAL FACTURADO (FILTRO)", totalFacturado]
+        ], { origin: `A${lastRow}` });
+
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Ventas - Facturas (Filtro)"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Fecha desde:", desde || "(vacío)"],
+          ["Fecha hasta:", hasta || "(vacío)"],
+          ["Profesional:", profesional || "(todos)"],
+          ["Método:", metodo || "(todos)"],
+          ["Cantidad:", rows.length],
+          ["Total facturado:", totalFacturado]
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+
+        const filename = `reporte_ventas_${(desde||"NA")}_a_${(hasta||"NA")}.xlsx`;
+        XLSX.writeFile(wb, filename);
+
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function refrescarDashboard(){
+      await cargarFacturasFiltro();
+      await cargarDetalleFiltro();
+      await cargarTotalMesActual();
+
+      const kpi = calcKPIs();
+      renderTablaFacturas();
+      renderCharts(kpi);
+    }
+
+    function setRangeMesActual(){
+      const d = new Date();
+      $("fecha_desde").value = firstDayOfMonthISO(d);
+      $("fecha_hasta").value = hoyISO();
+    }
+    function setRangeHoy(){
+      const h = hoyISO();
+      $("fecha_desde").value = h;
+      $("fecha_hasta").value = h;
+    }
+
+    async function init(){
+      $("year").textContent = new Date().getFullYear();
+
+      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+      $("btn-logout").addEventListener("click", cerrarSesion);
+
+      $("btn-this-month").addEventListener("click", async () => {
+        setRangeMesActual();
+        await refrescarDashboard();
+      });
+      $("btn-today").addEventListener("click", async () => {
+        setRangeHoy();
+        await refrescarDashboard();
+      });
+
+      $("btn-refresh").addEventListener("click", refrescarDashboard);
+      $("btn-export").addEventListener("click", exportarExcel);
+
+      $("fecha_desde").addEventListener("change", refrescarDashboard);
+      $("fecha_hasta").addEventListener("change", refrescarDashboard);
+      $("f_profesional").addEventListener("change", refrescarDashboard);
+      $("f_metodo").addEventListener("change", refrescarDashboard);
+
+      $("btn-show-all").addEventListener("click", ()=>{ state._view="all"; renderTablaFacturas(); });
+      $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
+      $("btn-show-paid").addEventListener("click", ()=>{ state._view="paid"; renderTablaFacturas(); });
+
+      // ✅ Seguridad y carga base
+      const ok = await proteger();
+      if (!ok) return;
+
+      await cargarProfesionales();
+
+      // default: mes actual
+      setRangeMesActual();
+      await refrescarDashboard();
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
