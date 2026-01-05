@@ -224,34 +224,39 @@
     let __lookupTimer = null;
 
     async function buscarPacienteEnHistorias(documento){
-      const doc = normalizeText(documento);
-      if (!doc) return { found: false };
+  const docTxt = normalizeText(documento);
+  if (!docTxt) return { found: false };
 
-      // Traemos solo lo necesario
-      const cols = `${HIST_COL_NOMBRE},${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
+  // Tu columna es int4 → convertimos a número
+  const docNum = Number(docTxt);
+  if (!Number.isFinite(docNum)) return { found: false };
 
-      const { data, error } = await supabase
-        .from(TABLA_HISTORIAS)
-        .select(cols)
-        .eq(HIST_COL_DOCUMENTO, doc)
-        .maybeSingle();
+  // ✅ En PostgREST, para columnas con espacios conviene usar comillas dobles en el select
+  // (y dejar los nombres EXACTOS como aparecen en tu tabla)
+  const selectCols = `"Nombre y apellido",paciente_cel,paciente_email`;
 
-      if (error){
-        // No bloqueamos el flujo; solo informamos
-        console.error(error);
-        toast("No se pudo consultar historias clínicas (revisa nombre de tabla/campos).", "warn");
-        return { found: false, error };
-      }
+  const { data, error } = await supabase
+    .from("HISTORIAS CLINICAS")
+    .select(selectCols)
+    .eq("Numero de Identificacion", docNum)
+    .maybeSingle();
 
-      if (!data) return { found: false };
+  if (error){
+    console.error("Error HISTORIAS:", error);
+    toast(`Error consultando historias: ${error.message}`, "error");
+    return { found: false, error };
+  }
 
-      return {
-        found: true,
-        nombre: data?.[HIST_COL_NOMBRE] ?? "",
-        telefono: data?.[HIST_COL_TELEFONO] ?? "",
-        correo: data?.[HIST_COL_CORREO] ?? ""
-      };
-    }
+  if (!data) return { found: false };
+
+  return {
+    found: true,
+    nombre: data["Nombre y apellido"] ?? "",
+    telefono: data["paciente_cel"] ?? "",
+    correo: data["paciente_email"] ?? ""
+  };
+}
+
 
     async function autocompletarPacientePorDocumento({ showToast = false } = {}){
       const doc = normalizeText($("documento_paciente").value);
