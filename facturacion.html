@@ -709,6 +709,19 @@
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
+    async function validarAccesoPorRol(){
+  const role = (state.role || "user").toString().trim().toLowerCase();
+  const ok = ALLOWED_ROLES.includes(role);
+
+  if (!ok){
+    alert("⛔ No tienes permisos para acceder al módulo de Facturación.");
+    try { await supabase.auth.signOut(); } catch(e) {}
+    window.location.href = INDEX_URL;
+    return false;
+  }
+  return true;
+}
+
     async function validarPermisoModulo(){
       const { data: { session }, error: eSess } = await supabase.auth.getSession();
       if (eSess) console.error("getSession error:", eSess);
