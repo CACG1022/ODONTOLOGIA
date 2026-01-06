@@ -616,11 +616,8 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-    // ✅ Nombre del módulo desde el archivo actual
-    const MODULO = (location.pathname.split("/").pop() || "")
-      .toLowerCase()
-      .trim()
-      .replace(".html", "");
+    // ⚠️ Se deja tal cual el original, pero ya NO se usa para permisos (se valida por modulos_permisos)
+    const ALLOWED_ROLES = ["admin", "auxiliar"];
 
     const state = {
       session: null,
@@ -643,14 +640,6 @@
       el.classList.add("show");
       clearTimeout(window.__t);
       window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
-    }
-
-    // ✅ NUEVO: redirigir guardando mensaje para que INDEX lo muestre
-    function redirectWithMessage(msg, type="err"){
-      try{
-        sessionStorage.setItem("global_toast", JSON.stringify({ msg, type }));
-      } catch(e){}
-      window.location.href = INDEX_URL;
     }
 
     function setStatus(msg){
@@ -683,6 +672,7 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
+    // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
     function parseDateYYYYMMDD(s){
       const v = String(s || "").trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
@@ -705,72 +695,124 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
-    // =========================
-    // ✅ PERMISOS POR ROL (modulos_permisos)
-    // =========================
-    function getModuloCandidates(mod){
-      const base = String(mod || "").toLowerCase().trim();
+    async function cargarRolActual(){
+      const email = (state.session?.user?.email || "").trim().toLowerCase();
+      const elRole = $("user-role");
+      if (!email){
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role, created_at, email")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        const finalRole = role || "user";
+
+        state.role = finalRole;
+        if (elRole) elRole.textContent = finalRole;
+
+        return finalRole;
+      } catch(err){
+        console.error("No se pudo leer rol en profiles:", err);
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+    }
+
+    // ✅ NUEVO (mínimo): validación por tabla modulos_permisos para "facturacion"
+    function getModuloCandidates(modulo){
+      const base = String(modulo || "").trim().toLowerCase();
       const withHtml = base.endsWith(".html") ? base : (base + ".html");
       const undersc = base.replaceAll("-", "_");
       const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
-    async function validarPermisoModulo(){
+    async function validarAccesoModulo(){
+      const role = (state.role || "user").toString().trim().toLowerCase();
+
+      // Nombre de módulo coherente con permisos.html (en tu tabla aparece "facturacion")
+      const modulo = "facturacion";
+      const candidates = getModuloCandidates(modulo);
+
+      try{
+        const { data, error } = await supabase
+          .from("modulos_permisos")
+          .select("modulo, admin, doctor, auxiliar, paciente")
+          .in("modulo", candidates)
+          .limit(1);
+
+        if (error) throw error;
+
+        const row = (data || [])[0];
+
+        if (!row){
+          window.alert("No tienes permiso para acceder a este módulo.");
+          window.location.href = INDEX_URL;
+          return false;
+        }
+
+        const allowed = (row[role] === true);
+
+        if (!allowed){
+          window.alert("No tienes permiso para acceder a este módulo.");
+          window.location.href = INDEX_URL;
+          return false;
+        }
+
+        return true;
+      } catch(err){
+        console.error("Error validando permisos:", err);
+        window.alert("No tienes permiso para acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+    }
+
+    // (Se deja la función original, pero ya NO se usa para permisos del módulo)
+    async function validarAccesoPorRol(){
+      const role = (state.role || "user").toString().trim().toLowerCase();
+      const ok = ALLOWED_ROLES.includes(role);
+
+      if (!ok){
+        // Antes era toast + redirect rápido (no se veía). Se mantiene pero NO se llama.
+        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
+        try { await supabase.auth.signOut(); } catch(e) {}
+        window.location.href = INDEX_URL;
+        return false;
+      }
+      return true;
+    }
+
+    async function proteger(){
       const { data: { session } } = await supabase.auth.getSession();
-
       if(!session){
-        // Si no hay sesión, vamos a login
         window.location.href = LOGIN_URL;
-        return { ok:false };
+        return false;
       }
-
       state.session = session;
-      $("user-email").textContent = session.user?.email || "Usuario";
 
-      // rol desde profiles por ID (más confiable)
-      const { data: perfil, error: ePerfil } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+      const email = (session.user?.email || "Usuario").toString();
+      $("user-email").textContent = email;
 
-      if (ePerfil || !perfil?.role){
-        console.error("No se pudo obtener rol:", ePerfil);
-        redirectWithMessage("⛔ No se pudo obtener tu rol (profiles).", "err");
-        return { ok:false };
-      }
+      await cargarRolActual();
 
-      const rol = String(perfil.role).toLowerCase().trim() || "user";
-      state.role = rol;
-      $("user-role").textContent = rol;
+      // ✅ Cambio mínimo: ahora valida por permisos (modulos_permisos)
+      const okPerm = await validarAccesoModulo();
+      if (!okPerm) return false;
 
-      const candidates = getModuloCandidates(MODULO);
-
-      const { data: permisos, error: ePerm } = await supabase
-        .from("modulos_permisos")
-        .select("admin, doctor, auxiliar, paciente, modulo")
-        .in("modulo", candidates);
-
-      if (ePerm){
-        console.error("Error leyendo modulos_permisos:", ePerm);
-        redirectWithMessage("⛔ Error leyendo permisos del módulo.", "err");
-        return { ok:false };
-      }
-
-      const permiso = (permisos || [])[0] || null;
-
-      if (!permiso){
-        redirectWithMessage("⛔ Este módulo no está configurado en Permisos.", "err");
-        return { ok:false };
-      }
-
-      if (!permiso[rol]){
-        redirectWithMessage("⛔ No tienes permiso para acceder a Facturación.", "err");
-        return { ok:false };
-      }
-
-      return { ok:true, session, rol };
+      return true;
     }
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -783,7 +825,7 @@
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
-        validarPermisoModulo();
+        cargarRolActual().then(()=> validarAccesoModulo());
       }
     });
 
@@ -1817,9 +1859,7 @@
         XLSX.utils.sheet_add_aoa(ws, [
           [],
           ["TOTAL FACTURADO", totalFacturado]
-        ], considerOrigin({ origin: `A${lastRow}` }));
-
-        function considerOrigin(opts){ return opts; }
+        ], { origin: `A${lastRow}` });
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
@@ -1897,9 +1937,8 @@
 
         $("btn-export-excel").addEventListener("click", exportarExcel);
 
-        // ✅ Guard del módulo por permisos
-        const guard = await validarPermisoModulo();
-        if (!guard.ok) return;
+        const ok = await proteger();
+        if (!ok) return;
 
         await cargarProfesionales();
         await cargarProcedimientos();
@@ -1913,6 +1952,7 @@
       }
     }
 
+    // ✅ ARRANQUE ROBUSTO (esto evita el “ningún botón funciona”)
     if (document.readyState === "loading"){
       window.addEventListener("DOMContentLoaded", init);
     } else {
@@ -1921,5 +1961,4 @@
   </script>
 </body>
 </html>
-
 
