@@ -96,15 +96,12 @@
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"; // <-- sb_publishable_...
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const ADMIN_EMAIL = "camilo-1000@hotmail.com".toLowerCase();
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
-    // ✅ CAMBIA ESTO SOLO SI tu fila en modulos_permisos usa otro nombre.
-    // Debe coincidir EXACTO con modulos_permisos.modulo
     const MODULO = (location.pathname.split("/").pop() || "")
       .toLowerCase()
       .trim()
@@ -135,7 +132,6 @@
       const undersc = base.replaceAll("-", "_");
       const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
 
-      // Únicos, sin vacíos
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
@@ -143,7 +139,6 @@
       const session = await verificarSesion();
       if (!session) return { ok:false };
 
-      // 1) Leer rol desde profiles (por id del auth user)
       const { data: perfil, error: ePerfil } = await supabase
         .from("profiles")
         .select("role")
@@ -156,11 +151,10 @@
         return { ok:false };
       }
 
-      const rol = String(perfil.role).toLowerCase().trim(); // admin/doctor/auxiliar/paciente/user
+      const rol = String(perfil.role).toLowerCase().trim();
 
-      // 2) Leer permisos del módulo en modulos_permisos (con fallback por variantes)
       const candidates = getModuloCandidates(MODULO);
-      console.log("🔎 MODULO detectado:", MODULO, "→ candidatos:", candidates);
+      console.log("🔎 MODULO detectado:", MODULO, "→ candidatos:", candidates, "Rol:", rol);
 
       const { data: permisos, error: ePerm } = await supabase
         .from("modulos_permisos")
@@ -177,53 +171,28 @@
       const permiso = (permisos || [])[0] || null;
 
       if (!permiso){
-        console.warn("⚠️ No existe fila en modulos_permisos para modulo candidates =", candidates);
         alert("Módulo no configurado en permisos.");
         window.location.href = INDEX_URL;
         return { ok:false };
       }
 
-      // 3) Validar permiso (si el rol es "user" no existe columna => false)
       if (!permiso[rol]){
         alert("⛔ No tienes permiso para acceder a este módulo.");
         window.location.href = INDEX_URL;
         return { ok:false };
       }
 
-      console.log("✅ Acceso permitido a:", permiso.modulo, "Rol:", rol);
       return { ok:true, session, rol };
     }
 
-    // ✅ Mantengo tu lógica anterior: solo ADMIN (por email) puede MODIFICAR roles
-    async function requireAdmin(){
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session){
-    window.location.href = LOGIN_URL;
-    return null;
-  }
-
-  const { data: perfil, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  if (error || !perfil?.role){
-    alert("No se pudo validar tu rol.");
-    window.location.href = INDEX_URL;
-    return null;
-  }
-
-  const rol = String(perfil.role).toLowerCase().trim();
-  if (rol !== "admin"){
-    alert("No autorizado");
-    window.location.href = INDEX_URL;
-    return null;
-  }
-
-  return session;
-}
-
+    async function requireAdmin(rol){
+      if (String(rol || "").toLowerCase().trim() !== "admin"){
+        alert("No autorizado");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+      return true;
+    }
 
     function roleSelect(current){
       const roles = ["user","doctor","auxiliar","admin"];
@@ -251,18 +220,30 @@
         .order("created_at", { ascending: false })
         .limit(200);
 
-      // filtro opcional por email (ilike)
       if (q) query = query.ilike("email", `%${q}%`);
 
       const { data, error } = await query;
 
+      console.log("📦 loadProfiles -> data:", data, "error:", error);
+
       if (error){
-        setStatus("Error cargando perfiles:\n" + error.message);
+        setStatus(
+          "Error cargando perfiles:\n" +
+          (error.message || "") +
+          (error.details ? ("\n\nDetalles:\n" + error.details) : "") +
+          (error.hint ? ("\n\nHint:\n" + error.hint) : "") +
+          (error.code ? ("\n\nCode: " + error.code) : "")
+        );
         return;
       }
 
       if (!data || data.length === 0){
-        setStatus("No hay usuarios para mostrar.", true);
+        setStatus(
+          "No hay usuarios para mostrar.\n" +
+          "Si esperabas ver usuarios, casi seguro es RLS en la tabla profiles.\n" +
+          "Revisa consola (F12) y policies de SELECT en profiles.",
+          false
+        );
         return;
       }
 
@@ -287,7 +268,7 @@
             .eq("id", p.id);
 
           if (uerr){
-            setStatus("No se pudo actualizar:\n" + uerr.message);
+            setStatus("No se pudo actualizar:\n" + (uerr.message || "Error"));
             return;
           }
 
@@ -307,13 +288,14 @@
       window.location.href = LOGIN_URL;
     });
 
-    // ✅ GUARD por módulo (permisos.html) + tu regla admin por email
     const guard = await validarPermisoModulo();
-     if (!guard.ok) return;
+    if (!guard.ok) return;
 
-     await requireAdmin();
-     await loadProfiles();
+    const okAdmin = await requireAdmin(guard.rol);
+    if (!okAdmin) return;
 
+    await loadProfiles();
   </script>
 </body>
 </html>
+
