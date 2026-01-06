@@ -103,6 +103,10 @@
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
+    // ✅ CAMBIA ESTO SOLO SI tu fila en modulos_permisos usa otro nombre.
+    // Debe coincidir EXACTO con modulos_permisos.modulo
+    const MODULO = "administrar_roles";
+
     const tbody = document.getElementById("tbody");
     const status = document.getElementById("status");
 
@@ -111,6 +115,68 @@
       status.className = "msg" + (ok ? " ok" : "");
     }
 
+    async function verificarSesion() {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error) console.error("getSession error:", error);
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+      return session;
+    }
+
+    async function validarPermisoModulo(){
+      const session = await verificarSesion();
+      if (!session) return { ok:false };
+
+      // 1) Leer rol desde profiles (por id del auth user)
+      const { data: perfil, error: ePerfil } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (ePerfil || !perfil?.role){
+        alert("No se pudo obtener tu rol.");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      const rol = String(perfil.role).toLowerCase().trim(); // admin/doctor/auxiliar/paciente/user
+
+      // 2) Leer permisos del módulo en modulos_permisos
+      const { data: permiso, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente, modulo")
+        .eq("modulo", MODULO)
+        .maybeSingle();
+
+      if (ePerm){
+        console.error("❌ Error leyendo modulos_permisos:", ePerm);
+        alert("Error leyendo permisos del módulo: " + (ePerm.message || ePerm));
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      if (!permiso){
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        alert("Módulo no configurado en permisos.");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      // 3) Validar permiso (si el rol es "user" no existe columna => false)
+      if (!permiso[rol]){
+        alert("⛔ No tienes permiso para acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      console.log("✅ Acceso permitido a:", MODULO, "Rol:", rol);
+      return { ok:true, session, rol };
+    }
+
+    // ✅ Mantengo tu lógica anterior: solo ADMIN (por email) puede MODIFICAR roles
     async function requireAdmin(){
       const { data: { session } } = await supabase.auth.getSession();
       if (!session){
@@ -208,8 +274,13 @@
       window.location.href = LOGIN_URL;
     });
 
+    // ✅ GUARD por módulo (permisos.html) + tu regla admin por email
+    const guard = await validarPermisoModulo();
+    if (!guard.ok) { /* redirigido */ }
+
     await requireAdmin();
     await loadProfiles();
   </script>
 </body>
 </html>
+
