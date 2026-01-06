@@ -729,18 +729,46 @@
       }
     }
 
-    async function validarAccesoPorRol(){
-      const role = (state.role || "user").toString().trim().toLowerCase();
-      const ok = ALLOWED_ROLES.includes(role);
+    function getModuloCandidates(mod){
+  const base = String(mod || "").toLowerCase().trim();
+  const withHtml = base.endsWith(".html") ? base : base + ".html";
+  const undersc = base.replaceAll("-", "_");
+  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+  return Array.from(new Set([base, withHtml, undersc, underscHtml]));
+}
 
-      if (!ok){
-        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
-        try { await supabase.auth.signOut(); } catch(e) {}
-        window.location.href = INDEX_URL;
-        return false;
-      }
-      return true;
+async function validarPermisoDesdeTabla(){
+  const modulo = "facturacion";
+  const role = (state.role || "user").toLowerCase().trim();
+  const candidates = getModuloCandidates(modulo);
+
+  try{
+    const { data, error } = await supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente, modulo")
+      .in("modulo", candidates);
+
+    if (error) throw error;
+
+    const permiso = data?.[0];
+    if (!permiso || permiso[role] !== true){
+      window.alert("⛔ No tienes permiso para acceder a este módulo.");
+      window.location.href = INDEX_URL;
+      return false;
     }
+    return true;
+  }catch(err){
+    console.error("Error validando permisos:", err);
+    window.alert("⛔ No se pudo validar permisos de acceso.");
+    window.location.href = INDEX_URL;
+    return false;
+  }
+}
+
+    async function validarAccesoPorRol(){
+  return await validarPermisoDesdeTabla();
+}
+
 
     async function proteger(){
       const { data: { session } } = await supabase.auth.getSession();
