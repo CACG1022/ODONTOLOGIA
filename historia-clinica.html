@@ -8,30 +8,82 @@
 
   <!-- 🔐 LOGIN CON SUPABASE -->
   <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-    );
+  // ==============================
+  // 🔐 CONFIG SUPABASE
+  // ==============================
+  const supabase = createClient(
+    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  );
 
-    // ✅ Para que cerrarSesion() funcione desde el <script> normal
-    window.supabase = supabase;
+  window.supabase = supabase;
 
-    async function verificarSesion() {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-      }
+  window.APP_URLS = {
+    LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
+    HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
+  };
+
+  const MODULO = "historia_clinica";
+
+  async function verificarSesion() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = window.APP_URLS.LOGIN;
+      return null;
+    }
+    return session;
+  }
+
+  async function validarPermisoModulo() {
+    const session = await verificarSesion();
+    if (!session) return;
+
+    const { data: perfil, error: ePerfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (ePerfil || !perfil?.role) {
+      alert("No se pudo obtener tu rol.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
     }
 
-    verificarSesion();
+    const rol = perfil.role;
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-      }
-    });
+    const { data: permiso, error: ePerm } = await supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente")
+      .eq("modulo", MODULO)
+      .single();
+
+    if (ePerm || !permiso) {
+      alert("Módulo no configurado en permisos.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    if (!permiso[rol]) {
+      alert("⛔ No tienes permiso para acceder a Historia Clínica.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    console.log("✅ Acceso permitido a Historia Clínica para:", rol);
+  }
+
+  // ✅ EJECUCIÓN SEGURA (sin await directo)
+  validarPermisoModulo();
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      window.location.href = window.APP_URLS.LOGIN;
+    }
+  });
+
     // ==============================
 // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
 // ==============================
@@ -1357,7 +1409,7 @@ Fecha: {{FECHA}}
   // ==============================
   // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
   // ==============================
-  const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+  const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
   const INACTIVIDAD_MS = 5 * 60 * 1000;
 
   async function cerrarSesion(motivo = "") {
@@ -2654,65 +2706,6 @@ const profesionalNombre = (d.profesional || "").trim();
   setTimeout(() => window.print(), 200);
 })();
 <\/script>
-
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "TU_ANON_KEY"
-);
-
-const MODULO = "historia_clinica"; // 👈 CLAVE DE LA TABLA
-const LOGIN_URL = "login.html";
-const HOME_URL  = "index.html";
-
-async function validarPermiso() {
-
-  // 1️⃣ Sesión
-  const { data:{ session } } = await supabase.auth.getSession();
-  if(!session){
-    window.location.href = LOGIN_URL;
-    return;
-  }
-
-  // 2️⃣ Rol del usuario
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  const rol = perfil?.role;
-
-  // 3️⃣ Permisos del módulo
-  const { data: permiso } = await supabase
-    .from("modulos_permisos")
-    .select("admin, doctor, auxiliar, paciente")
-    .eq("modulo", MODULO)
-    .single();
-
-  if(!permiso){
-    alert("Módulo no configurado");
-    window.location.href = HOME_URL;
-    return;
-  }
-
-  // 4️⃣ VALIDACIÓN FINAL
-  if(!permiso[rol]){
-    alert("No tienes permiso para acceder a este módulo");
-    window.location.href = HOME_URL;
-    return;
-  }
-
-  console.log("✅ Acceso permitido:", rol);
-}
-
-// Ejecutar antes de cargar la página
-validarPermiso();
-</script>
-
-
 </body>
 </html>`;
 
