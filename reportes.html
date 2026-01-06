@@ -507,7 +507,9 @@
     // =========================
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-    const ALLOWED_ROLES = ["admin", "auxiliar"];
+
+    // ✅ MODULO (debe coincidir EXACTO con modulos_permisos.modulo)
+    const MODULO = "reportes";
 
     const state = {
       session: null,
@@ -617,15 +619,39 @@
       }
     }
 
-    async function validarAccesoPorRol(){
-      const role = (state.role || "user").toString().trim().toLowerCase();
-      const ok = ALLOWED_ROLES.includes(role);
-      if (!ok){
-        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
-        try { await supabase.auth.signOut(); } catch(e) {}
+    // =========================
+    // ✅ VALIDAR PERMISO POR MODULO (modulos_permisos)
+    // =========================
+    async function validarPermisoModulo(){
+      const rol = (state.role || "user").toString().trim().toLowerCase();
+
+      const { data: permiso, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente")
+        .eq("modulo", MODULO)
+        .maybeSingle();
+
+      if (ePerm){
+        console.error("❌ Error leyendo modulos_permisos:", ePerm);
+        alert("Error leyendo permisos del módulo.");
         window.location.href = INDEX_URL;
         return false;
       }
+
+      if (!permiso){
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        alert("Módulo no configurado en permisos.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+
+      if (!permiso[rol]){
+        alert("⛔ No tienes permiso para acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+
+      console.log("✅ Acceso permitido a:", MODULO, "Rol:", rol);
       return true;
     }
 
@@ -650,8 +676,10 @@
       $("user-email").textContent = (session.user?.email || "Usuario").toString();
 
       await cargarRolActual();
-      const okRole = await validarAccesoPorRol();
-      if (!okRole) return false;
+
+      // ✅ AHORA: permiso depende de modulos_permisos (no hardcode)
+      const okPerm = await validarPermisoModulo();
+      if (!okPerm) return false;
 
       return true;
     }
@@ -665,7 +693,7 @@
         if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
           state.session = session;
           $("user-email").textContent = session.user?.email || "Usuario";
-          cargarRolActual().then(()=> validarAccesoPorRol());
+          cargarRolActual().then(()=> validarPermisoModulo());
         }
       });
     }
@@ -817,7 +845,6 @@
         viewName = "Solo pagadas";
       }
 
-      // ✅ Total de la vista (lo que estás viendo en la tabla)
       const totalVista = rows.reduce((acc,f) => acc + (Number(f.valor_total) || 0), 0);
       const viewLine = $("view_total_line");
       if (viewLine){
@@ -854,7 +881,6 @@
       const pendientes = pendientesRows.length;
       const pagadas = pagadasRows.length;
 
-      // ✅ NUEVO: totales en dinero por estado
       const totalPendientes = pendientesRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
       const totalPagadas = pagadasRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
 
@@ -867,13 +893,11 @@
       $("k_pendientes").textContent = String(pendientes);
       $("k_pagadas").textContent = String(pagadas);
 
-      // ✅ Pintar los totales
       $("k_total_pendientes").textContent = money(totalPendientes);
       $("k_total_pagadas").textContent = money(totalPagadas);
 
-      // Top procedimiento
       const det = state.detalleFiltro || [];
-      const map = new Map(); // desc => { desc, qty, rev }
+      const map = new Map();
       for (const it of det){
         const desc = (it.descripcion || "—").toString().trim() || "—";
         const qty = Number(it.cantidad || 0);
@@ -928,7 +952,6 @@
     }
 
     function renderCharts(kpi){
-      // Si Chart.js no cargó, no romper
       if (!window.Chart){
         console.error("Chart.js no cargó");
         return;
@@ -1054,7 +1077,6 @@
       renderCharts(kpi);
 
       if ((state.facturasFiltro || []).length === 0){
-        // para que sea claro si no hay data o si hay bloqueo
         setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
       } else {
         setStatus("");
@@ -1101,7 +1123,7 @@
       // default: mes actual
       setRangeMesActual();
 
-      // ✅ Proteger y cargar
+      // ✅ Proteger y cargar (ahora valida modulos_permisos)
       const ok = await proteger();
       if (!ok) return;
 
@@ -1110,7 +1132,6 @@
     }
 
     window.addEventListener("DOMContentLoaded", () => {
-      // Si el DOM carga y aun así no corre, al menos avisamos
       try{
         init();
       }catch(err){
@@ -1121,5 +1142,6 @@
   </script>
 </body>
 </html>
+
 
 
