@@ -17,10 +17,71 @@
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const HOME_URL  = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // ✅ Admin por email (mismo que en index)
-    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+    // ✅ Módulo actual (debe existir en modulos_permisos, como en permisos.html)
+    const MODULO_ACTUAL = "profesionales-admin";
 
     function $(id){ return document.getElementById(id); }
+
+    function getModuloCandidates(mod){
+      const base = String(mod || "").toLowerCase().trim();
+      const withHtml = base.endsWith(".html") ? base : base + ".html";
+      const undersc = base.replaceAll("-", "_");
+      const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+      return Array.from(new Set([base, withHtml, undersc, underscHtml]));
+    }
+
+    async function cargarRolDesdeProfilesPorEmail(email){
+      try{
+        const em = String(email || "").trim().toLowerCase();
+        if (!em) return "user";
+
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role, created_at, email")
+          .eq("email", em)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        return role || "user";
+      } catch (e){
+        console.error("No se pudo leer rol en profiles:", e);
+        return "user";
+      }
+    }
+
+    async function validarPermisoModulo(role){
+      const r = (role || "user").toLowerCase().trim();
+      const candidates = getModuloCandidates(MODULO_ACTUAL);
+
+      try{
+        const { data, error } = await supabase
+          .from("modulos_permisos")
+          .select("admin, doctor, auxiliar, paciente, modulo")
+          .in("modulo", candidates);
+
+        if (error) throw error;
+
+        const permiso = data?.[0] || null;
+        const ok = !!(permiso && permiso[r] === true);
+
+        if (!ok){
+          // ✅ MISMO aviso
+          window.alert("⛔ No tienes permiso para acceder a este módulo.");
+          window.location.href = HOME_URL;
+          return false;
+        }
+        return true;
+      } catch (e){
+        console.error("Error validando permisos:", e);
+        window.alert("⛔ No se pudo validar permisos de acceso.");
+        window.location.href = HOME_URL;
+        return false;
+      }
+    }
 
     function setDisabled(el, disabled, reason="No autorizado"){
       if (!el) return;
@@ -34,22 +95,6 @@
         el.removeAttribute("aria-disabled");
         delete el.dataset.disabledReason;
         if (el.onclick) el.onclick = null;
-      }
-    }
-
-    // ✅ Lee rol desde profiles
-    async function cargarRolDesdeProfiles(userId) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userId)
-          .single();
-
-        if (error) return null;
-        return data?.role || null;
-      } catch {
-        return null;
       }
     }
 
@@ -258,10 +303,16 @@
       const email = (currentUser?.email || "").toLowerCase();
       $("user-email").textContent = currentUser?.email || "Usuario autenticado";
 
-      const role = await cargarRolDesdeProfiles(currentUser.id);
+      // ✅ 1) Rol desde profiles (por email)
+      const role = await cargarRolDesdeProfilesPorEmail(email);
       $("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
-      isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+      // ✅ 2) Validar permiso del módulo (permisos.html)
+      const ok = await validarPermisoModulo(role);
+      if (!ok) return; // ya redirigió con alert
+
+      // ✅ 3) Definir si puede hacer CRUD (solo admin)
+      isAdmin = (String(role || "").toLowerCase() === "admin");
 
       setDisabled($("btn-guardar"), !isAdmin, "Solo administrador");
       setDisabled($("btn-limpiar"), !isAdmin, "Solo administrador");
@@ -310,7 +361,14 @@
     init();
 
     supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = LOGIN_URL;
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      // ✅ si se refresca sesión / vuelve login, revalida permisos
+      const email = (session.user?.email || "").toLowerCase();
+      cargarRolDesdeProfilesPorEmail(email).then(role => validarPermisoModulo(role));
     });
 
     window.cerrarSesion = async () => {
@@ -708,7 +766,6 @@
             <input type="text" id="nombre" placeholder="Ej: Camilo Andres..." />
           </label>
 
-          <!-- ✅ CAMBIO: Profesión y Especialidad en columnas separadas (uno debajo del otro) -->
           <label>
             Profesión
             <input type="text" id="profesion" placeholder="Ej: Odontólogo" />
@@ -777,4 +834,5 @@
   <div id="toast" class="toast"></div>
 </body>
 </html>
+
 
