@@ -95,13 +95,41 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+    // =========================
+    // ✅ DEBUG GLOBAL (si algo falla, lo verás en pantalla)
+    // =========================
+    function showFatal(msg){
+      const status = document.getElementById("status");
+      if (status){
+        status.textContent = msg;
+        status.className = "msg";
+      }
+      console.error(msg);
+      alert(msg);
+    }
+
+    window.addEventListener("error", (e) => {
+      const m = e?.message || "Error JS";
+      showFatal("❌ Error JS:\n" + m + "\n\nRevisa consola (F12).");
+    });
+
+    window.addEventListener("unhandledrejection", (e) => {
+      const m = (e?.reason && (e.reason.message || JSON.stringify(e.reason))) || "Promise error";
+      showFatal("❌ Error (Promise):\n" + m + "\n\nRevisa consola (F12).");
+    });
+
+    // =========================
+    // ✅ SUPABASE
+    // =========================
     const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const LOGIN_URL = "login.html";
-    const INDEX_URL = "index.html";
+    // ✅ URLs (GitHub Pages)
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
+    // ✅ Nombre del módulo (debe existir en modulos_permisos.modulo)
     const MODULO = (location.pathname.split("/").pop() || "")
       .toLowerCase()
       .trim()
@@ -128,10 +156,8 @@
     function getModuloCandidates(mod){
       const base = String(mod || "").toLowerCase().trim();
       const withHtml = base.endsWith(".html") ? base : (base + ".html");
-
       const undersc = base.replaceAll("-", "_");
       const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
-
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
@@ -139,6 +165,7 @@
       const session = await verificarSesion();
       if (!session) return { ok:false };
 
+      // rol desde profiles
       const { data: perfil, error: ePerfil } = await supabase
         .from("profiles")
         .select("role")
@@ -146,15 +173,15 @@
         .single();
 
       if (ePerfil || !perfil?.role){
-        alert("No se pudo obtener tu rol.");
+        alert("No se pudo obtener tu rol (profiles).");
         window.location.href = INDEX_URL;
         return { ok:false };
       }
 
       const rol = String(perfil.role).toLowerCase().trim();
-
       const candidates = getModuloCandidates(MODULO);
-      console.log("🔎 MODULO detectado:", MODULO, "→ candidatos:", candidates, "Rol:", rol);
+
+      console.log("🔎 MODULO:", MODULO, "candidates:", candidates, "rol:", rol);
 
       const { data: permisos, error: ePerm } = await supabase
         .from("modulos_permisos")
@@ -162,8 +189,8 @@
         .in("modulo", candidates);
 
       if (ePerm){
-        console.error("❌ Error leyendo modulos_permisos:", ePerm);
-        alert("Error leyendo permisos del módulo: " + (ePerm.message || ePerm));
+        console.error("❌ Error modulos_permisos:", ePerm);
+        alert("Error leyendo permisos del módulo: " + (ePerm.message || "Error"));
         window.location.href = INDEX_URL;
         return { ok:false };
       }
@@ -185,8 +212,28 @@
       return { ok:true, session, rol };
     }
 
-    async function requireAdmin(rol){
-      if (String(rol || "").toLowerCase().trim() !== "admin"){
+    // ✅ Solo ADMIN puede modificar roles (por rol real en profiles)
+    async function requireAdmin(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (error || !perfil?.role){
+        alert("No se pudo validar tu rol.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+
+      const rol = String(perfil.role).toLowerCase().trim();
+      if (rol !== "admin"){
         alert("No autorizado");
         window.location.href = INDEX_URL;
         return false;
@@ -224,7 +271,7 @@
 
       const { data, error } = await query;
 
-      console.log("📦 loadProfiles -> data:", data, "error:", error);
+      console.log("📦 profiles -> data:", data, "error:", error);
 
       if (error){
         setStatus(
@@ -240,8 +287,7 @@
       if (!data || data.length === 0){
         setStatus(
           "No hay usuarios para mostrar.\n" +
-          "Si esperabas ver usuarios, casi seguro es RLS en la tabla profiles.\n" +
-          "Revisa consola (F12) y policies de SELECT en profiles.",
+          "Si esperabas ver usuarios, revisa RLS/policies de SELECT en profiles.",
           false
         );
         return;
@@ -281,20 +327,39 @@
       setStatus("Usuarios cargados: " + data.length, true);
     }
 
-    document.getElementById("btn-refresh").addEventListener("click", loadProfiles);
-
-    document.getElementById("btn-logout").addEventListener("click", async () => {
+    async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e){}
       window.location.href = LOGIN_URL;
+    }
+
+    async function init(){
+      setStatus("Inicializando...");
+
+      // ✅ bind botones SIEMPRE (para que nunca “queden muertos”)
+      document.getElementById("btn-refresh").addEventListener("click", loadProfiles);
+      document.getElementById("btn-logout").addEventListener("click", cerrarSesion);
+
+      // ✅ 1) Guard por permisos
+      const guard = await validarPermisoModulo();
+      if (!guard.ok) return;
+
+      // ✅ 2) Solo admin puede usar este módulo
+      const okAdmin = await requireAdmin();
+      if (!okAdmin) return;
+
+      // ✅ 3) cargar
+      await loadProfiles();
+    }
+
+    // ✅ Garantiza que el DOM exista antes de correr todo
+    window.addEventListener("DOMContentLoaded", () => {
+      try { init(); }
+      catch (e){
+        console.error(e);
+        showFatal("❌ Falló init:\n" + (e?.message || "Error") + "\n\nRevisa consola (F12).");
+      }
     });
-
-    const guard = await validarPermisoModulo();
-    if (!guard.ok) return;
-
-    const okAdmin = await requireAdmin(guard.rol);
-    if (!okAdmin) return;
-
-    await loadProfiles();
   </script>
 </body>
 </html>
+
