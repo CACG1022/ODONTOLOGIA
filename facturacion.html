@@ -616,7 +616,11 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-    const ALLOWED_ROLES = ["admin", "auxiliar"];
+    // ✅ Nombre del módulo desde el archivo actual: facturacion
+    const MODULO = (location.pathname.split("/").pop() || "")
+      .toLowerCase()
+      .trim()
+      .replace(".html", "");
 
     const state = {
       session: null,
@@ -694,70 +698,76 @@
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
-    async function cargarRolActual(){
-      const email = (state.session?.user?.email || "").trim().toLowerCase();
-      const elRole = $("user-role");
-      if (!email){
-        state.role = "user";
-        if (elRole) elRole.textContent = "user";
-        return "user";
-      }
-
-      try{
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role, created_at, email")
-          .eq("email", email)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        const role = (data?.role || "").toString().trim().toLowerCase();
-        const finalRole = role || "user";
-
-        state.role = finalRole;
-        if (elRole) elRole.textContent = finalRole;
-
-        return finalRole;
-      } catch(err){
-        console.error("No se pudo leer rol en profiles:", err);
-        state.role = "user";
-        if (elRole) elRole.textContent = "user";
-        return "user";
-      }
+    // =========================
+    // ✅ PERMISOS POR ROL (modulos_permisos) — MISMA LÓGICA QUE permisos.html
+    // =========================
+    function getModuloCandidates(mod){
+      const base = String(mod || "").toLowerCase().trim();
+      const withHtml = base.endsWith(".html") ? base : (base + ".html");
+      const undersc = base.replaceAll("-", "_");
+      const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
+      return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
-    async function validarAccesoPorRol(){
-      const role = (state.role || "user").toString().trim().toLowerCase();
-      const ok = ALLOWED_ROLES.includes(role);
+    async function validarPermisoModulo(){
+      const { data: { session }, error: eSess } = await supabase.auth.getSession();
+      if (eSess) console.error("getSession error:", eSess);
 
-      if (!ok){
-        toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
-        try { await supabase.auth.signOut(); } catch(e) {}
-        window.location.href = INDEX_URL;
-        return false;
-      }
-      return true;
-    }
-
-    async function proteger(){
-      const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
-        return false;
+        return { ok:false };
       }
       state.session = session;
 
-      const email = (session.user?.email || "Usuario").toString();
-      $("user-email").textContent = email;
+      // UI
+      $("user-email").textContent = session.user?.email || "Usuario";
 
-      await cargarRolActual();
-      const okRole = await validarAccesoPorRol();
-      if (!okRole) return false;
+      // rol desde profiles por ID (más confiable)
+      const { data: perfil, error: ePerfil } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
 
-      return true;
+      if (ePerfil || !perfil?.role){
+        toast("No se pudo obtener tu rol (profiles).", "err");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      const rol = String(perfil.role).toLowerCase().trim() || "user";
+      state.role = rol;
+      $("user-role").textContent = rol;
+
+      const candidates = getModuloCandidates(MODULO);
+
+      const { data: permisos, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente, modulo")
+        .in("modulo", candidates);
+
+      if (ePerm){
+        console.error("Error leyendo modulos_permisos:", ePerm);
+        toast("Error leyendo permisos del módulo.", "err");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      const permiso = (permisos || [])[0] || null;
+
+      if (!permiso){
+        toast("Módulo no configurado en permisos.", "err");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      if (!permiso[rol]){
+        toast("⛔ No tienes permiso para acceder a Facturación.", "err");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      return { ok:true, session, rol };
     }
 
     supabase.auth.onAuthStateChange((event, session) => {
@@ -767,10 +777,12 @@
         window.location.href = LOGIN_URL;
       }
 
+      // Si vuelve a iniciar / refresca token, revalida permisos del módulo
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
-        cargarRolActual().then(()=> validarAccesoPorRol());
+        // revalida permisos sin romper nada
+        validarPermisoModulo();
       }
     });
 
@@ -1438,10 +1450,6 @@
       $("count_facturas").textContent = String((rows || []).length);
     }
 
-    // ✅ CORREGIDO COMPLETO:
-    // - Columna "Pago" = ESTADO
-    // - Botón = ACCIÓN
-    // - Si método != Efectivo, pide referencia + fecha pago al marcar Pagada
     async function togglePagadaFactura(f){
       try{
         const actual = (f.pagada === true);
@@ -1449,7 +1457,6 @@
 
         let metodo = (f.metodo_pago || "").toString().trim();
 
-        // Si no vino en listado, intentamos leerlo
         if (!metodo){
           const { data: facDB, error: e0 } = await supabase
             .from("facturas")
@@ -1486,7 +1493,7 @@
             }
           } else {
             fechaPagoYYYYMMDD = hoyISO();
-            referencia = null; // efectivo: opcional
+            referencia = null;
           }
         }
 
@@ -1887,8 +1894,10 @@
 
         $("btn-export-excel").addEventListener("click", exportarExcel);
 
-        const ok = await proteger();
-        if (!ok) return;
+        // ✅ Antes: proteger() + ALLOWED_ROLES
+        // ✅ Ahora: PERMISOS POR ROL (modulos_permisos)
+        const guard = await validarPermisoModulo();
+        if (!guard.ok) return;
 
         await cargarProfesionales();
         await cargarProcedimientos();
@@ -1911,5 +1920,6 @@
   </script>
 </body>
 </html>
+
 
 
