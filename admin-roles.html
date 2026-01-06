@@ -105,7 +105,11 @@
 
     // ✅ CAMBIA ESTO SOLO SI tu fila en modulos_permisos usa otro nombre.
     // Debe coincidir EXACTO con modulos_permisos.modulo
-    const MODULO = "admin-roles";
+    const MODULO = (location.pathname.split("/").pop() || "")
+  .toLowerCase()
+  .trim()
+  .replace(".html", "");
+
 
     const tbody = document.getElementById("tbody");
     const status = document.getElementById("status");
