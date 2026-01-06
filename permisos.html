@@ -3,9 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Gestión de Permisos</title>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Gestión de Permisos por Rol</title>
 
   <style>
     :root{
@@ -15,6 +13,9 @@
       --muted:#6b7280;
       --primary:#2c7be5;
       --line:#e5e7eb;
+      --danger:#b91c1c;
+      --dangerBg:#fef2f2;
+      --dangerLine:#fecaca;
     }
     body{
       margin:0;
@@ -32,8 +33,9 @@
     }
     h1{
       margin:0;
-      font-size:32px;
+      font-size:34px;
       font-weight:800;
+      letter-spacing:-.3px;
     }
     .actions{
       display:flex;
@@ -45,30 +47,46 @@
       border:none;
       background:var(--primary);
       color:#fff;
-      border-radius:8px;
+      border-radius:10px;
       cursor:pointer;
-      font-weight:700;
+      font-weight:800;
+      box-shadow:0 2px 10px rgba(0,0,0,.08);
     }
-    button.secondary{
-      background:#111827;
-    }
-    button:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-    }
+    button.secondary{ background:#111827; }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
 
     .card{
       background:var(--card);
       border:1px solid var(--line);
-      border-radius:12px;
+      border-radius:14px;
       overflow:hidden;
-      box-shadow:0 2px 10px rgba(0,0,0,.04);
+      box-shadow:0 4px 18px rgba(0,0,0,.05);
     }
 
-    table{
-      width:100%;
-      border-collapse:collapse;
+    .statusbar{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:12px 16px;
+      border-bottom:1px solid var(--line);
+      background:#fbfdff;
+      flex-wrap:wrap;
     }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:7px 11px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:13px;
+      color:var(--muted);
+      background:#fff;
+      font-weight:700;
+    }
+    .dot{ width:8px;height:8px;border-radius:999px;background:var(--primary); display:inline-block; }
+
+    table{ width:100%; border-collapse:collapse; }
     th,td{
       padding:14px 12px;
       border-bottom:1px solid var(--line);
@@ -78,56 +96,35 @@
     th{
       background:var(--primary);
       color:#fff;
-      font-weight:800;
+      font-weight:900;
     }
     td:first-child, th:first-child{
       text-align:left;
       padding-left:16px;
+      font-weight:800;
     }
-    tr:hover td{
-      background:#f9fafb;
-    }
+    tr:hover td{ background:#f9fafb; }
 
     input[type="checkbox"]{
       transform:scale(1.15);
       cursor:pointer;
     }
 
-    .statusbar{
-      display:flex;
-      gap:10px;
-      align-items:center;
-      padding:12px 16px;
-      border-bottom:1px solid var(--line);
-      background:#fbfdff;
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      font-size:13px;
-      color:var(--muted);
-      background:#fff;
-    }
-    .dot{
-      width:8px;height:8px;border-radius:999px;background:var(--primary);
-      display:inline-block;
-    }
     .msg{
       padding:18px 16px;
       color:var(--muted);
-      font-weight:600;
-    }
-    .error{
-      color:#b91c1c;
-      background:#fef2f2;
-      border-top:1px solid #fecaca;
-      padding:12px 16px;
+      font-weight:700;
       display:none;
+    }
+
+    .error{
+      display:none;
+      color:var(--danger);
+      background:var(--dangerBg);
+      border-top:1px solid var(--dangerLine);
+      padding:12px 16px;
       white-space:pre-wrap;
+      font-weight:700;
     }
   </style>
 </head>
@@ -137,8 +134,8 @@
   <div class="top">
     <h1>Gestión de Permisos por Rol</h1>
     <div class="actions">
-      <button class="secondary" id="btnSeed" onclick="seedModulos()">Cargar módulos por defecto</button>
-      <button onclick="window.location.href='index.html'">Volver</button>
+      <button class="secondary" id="btnReload">Recargar</button>
+      <button onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">Volver</button>
     </div>
   </div>
 
@@ -146,6 +143,7 @@
     <div class="statusbar">
       <span class="badge"><span class="dot"></span> Usuario: <b id="uEmail">—</b></span>
       <span class="badge">Rol: <b id="uRole">—</b></span>
+      <span class="badge">Tabla: <b>modulos_permisos</b></span>
     </div>
 
     <table>
@@ -161,173 +159,157 @@
       <tbody id="tablaPermisos"></tbody>
     </table>
 
-    <div id="emptyMsg" class="msg" style="display:none;">
-      No hay módulos cargados en <b>modulos_permisos</b>.  
-      Puedes insertarlos en Supabase o presionar <b>“Cargar módulos por defecto”</b>.
+    <div id="emptyMsg" class="msg">
+      No se encontraron módulos en <b>modulos_permisos</b>.
     </div>
 
     <div id="errBox" class="error"></div>
   </div>
 
-<script>
-  // ✅ Pega aquí tus credenciales
-  const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    // ✅ MISMAS credenciales que en tu index.html
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
 
-  const elEmail = document.getElementById('uEmail');
-  const elRole  = document.getElementById('uRole');
-  const tbody   = document.getElementById('tablaPermisos');
-  const emptyMsg= document.getElementById('emptyMsg');
-  const errBox  = document.getElementById('errBox');
-  const btnSeed = document.getElementById('btnSeed');
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-  let rolActual = null;
+    const elEmail = document.getElementById("uEmail");
+    const elRole  = document.getElementById("uRole");
+    const tbody   = document.getElementById("tablaPermisos");
+    const emptyMsg= document.getElementById("emptyMsg");
+    const errBox  = document.getElementById("errBox");
+    const btnReload = document.getElementById("btnReload");
 
-  function showError(msg){
-    errBox.style.display = 'block';
-    errBox.textContent = msg;
-  }
-
-  function clearError(){
-    errBox.style.display = 'none';
-    errBox.textContent = '';
-  }
-
-  async function validarAccesoAdmin() {
-    clearError();
-
-    const { data: { user }, error: eUser } = await supabase.auth.getUser();
-    if (eUser) showError("Error getUser():\n" + JSON.stringify(eUser, null, 2));
-
-    if (!user) {
-      window.location.href = 'login.html';
-      return;
+    function showError(msg){
+      errBox.style.display = "block";
+      errBox.textContent = msg;
+      console.error(msg);
+    }
+    function clearError(){
+      errBox.style.display = "none";
+      errBox.textContent = "";
     }
 
-    elEmail.textContent = user.email || user.id;
+    async function validarAdminYMostrarUsuario(){
+      clearError();
 
-    const { data: perfil, error } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+      const { data: { session }, error: eSession } = await supabase.auth.getSession();
 
-    if (error) {
-      showError("No pude leer tu rol en profiles.\n" + JSON.stringify(error, null, 2));
-      return;
+      if (eSession){
+        showError("Error getSession():\n" + JSON.stringify(eSession, null, 2));
+        return null;
+      }
+
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+
+      elEmail.textContent = session.user?.email || session.user?.id || "Usuario autenticado";
+
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (error){
+        showError(
+          "No pude leer tu rol en profiles.\n" +
+          "Si tienes RLS en profiles, revisa tu policy.\n\n" +
+          JSON.stringify(error, null, 2)
+        );
+        return null;
+      }
+
+      const rolActual = perfil?.role || "user";
+      elRole.textContent = rolActual;
+
+      if (rolActual !== "admin"){
+        alert("Acceso denegado: solo ADMIN.");
+        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+        return null;
+      }
+
+      return rolActual;
     }
 
-    rolActual = perfil?.role || 'user';
-    elRole.textContent = rolActual;
+    async function cargarPermisos(){
+      clearError();
+      tbody.innerHTML = "";
+      emptyMsg.style.display = "none";
 
-    if (rolActual !== 'admin') {
-      alert('Acceso denegado: solo ADMIN.');
-      window.location.href = 'index.html';
-      return;
-    }
-  }
+      // ✅ OJO: tus columnas son admin/doctor/auxiliar/paciente
+      const { data, error } = await supabase
+        .from("modulos_permisos")
+        .select("id, modulo, label, admin, doctor, auxiliar, paciente")
+        .order("label", { ascending: true });
 
-  async function cargarPermisos(){
-    clearError();
-    tbody.innerHTML = '';
-    emptyMsg.style.display = 'none';
+      if (error){
+        showError(
+          "Error leyendo modulos_permisos.\n\n" +
+          JSON.stringify(error, null, 2)
+        );
+        return;
+      }
 
-    const { data, error } = await supabase
-      .from('modulos_permisos')
-      .select('id, modulo, label, admin, doctor, auxiliar, paciente')
-      .order('label', { ascending: true });
+      if (!data || data.length === 0){
+        emptyMsg.style.display = "block";
+        return;
+      }
 
-    if (error) {
-      showError(
-        "Error cargando modulos_permisos.\n" +
-        "Revisa RLS/policies (SELECT) o el nombre de columnas.\n\n" +
-        JSON.stringify(error, null, 2)
-      );
-      return;
-    }
+      data.forEach(m => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${m.label} <span style="color:#9ca3af;font-weight:700;">(${m.modulo})</span></td>
+          <td><input type="checkbox" ${m.admin ? "checked":""} data-id="${m.id}" data-col="admin"></td>
+          <td><input type="checkbox" ${m.doctor ? "checked":""} data-id="${m.id}" data-col="doctor"></td>
+          <td><input type="checkbox" ${m.auxiliar ? "checked":""} data-id="${m.id}" data-col="auxiliar"></td>
+          <td><input type="checkbox" ${m.paciente ? "checked":""} data-id="${m.id}" data-col="paciente"></td>
+        `;
+        tbody.appendChild(tr);
+      });
 
-    if (!data || data.length === 0) {
-      emptyMsg.style.display = 'block';
-      return;
-    }
+      // Listener único para toda la tabla
+      tbody.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+        chk.addEventListener("change", async (e) => {
+          const id = e.target.dataset.id;
+          const col = e.target.dataset.col;
+          const val = e.target.checked;
 
-    data.forEach(m => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${m.label} <span style="color:#9ca3af;">(${m.modulo})</span></td>
-        <td><input type="checkbox" ${m.admin ? 'checked':''}
-              onchange="guardar('${m.id}','admin',this.checked)"></td>
-        <td><input type="checkbox" ${m.doctor ? 'checked':''}
-              onchange="guardar('${m.id}','doctor',this.checked)"></td>
-        <td><input type="checkbox" ${m.auxiliar ? 'checked':''}
-              onchange="guardar('${m.id}','auxiliar',this.checked)"></td>
-        <td><input type="checkbox" ${m.paciente ? 'checked':''}
-              onchange="guardar('${m.id}','paciente',this.checked)"></td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
+          const { error: upErr } = await supabase
+            .from("modulos_permisos")
+            .update({ [col]: val })
+            .eq("id", id);
 
-  async function guardar(id, campo, valor){
-    clearError();
-
-    const { error } = await supabase
-      .from('modulos_permisos')
-      .update({ [campo]: valor })
-      .eq('id', id);
-
-    if (error) {
-      showError(
-        "Error guardando permiso.\n" +
-        "Si dice RLS: te falta policy de UPDATE para admin.\n\n" +
-        JSON.stringify(error, null, 2)
-      );
-    }
-  }
-
-  // 🔥 Crea módulos por defecto desde la UI
-  async function seedModulos(){
-    clearError();
-    btnSeed.disabled = true;
-
-    const defaults = [
-      { modulo:'index', label:'Panel Principal', admin:true, doctor:true, auxiliar:true, paciente:true },
-      { modulo:'agendamientos', label:'Agendamientos', admin:true, doctor:true, auxiliar:true, paciente:true },
-      { modulo:'historia_clinica', label:'Historia Clínica', admin:true, doctor:true, auxiliar:true, paciente:false },
-      { modulo:'facturacion', label:'Facturación', admin:true, doctor:false, auxiliar:true, paciente:false },
-      { modulo:'reportes', label:'Reportes', admin:true, doctor:false, auxiliar:false, paciente:false },
-      { modulo:'actualizacion_precios', label:'Actualización de Precios', admin:true, doctor:false, auxiliar:false, paciente:false },
-      { modulo:'admin_roles', label:'Administración de Usuarios', admin:true, doctor:false, auxiliar:false, paciente:false }
-    ];
-
-    // Nota: insert requiere policy de INSERT para admin (si no, fallará con RLS)
-    const { error } = await supabase
-      .from('modulos_permisos')
-      .insert(defaults, { returning: 'minimal' });
-
-    btnSeed.disabled = false;
-
-    if (error) {
-      showError(
-        "No pude insertar módulos por defecto.\n" +
-        "Si el error es RLS, crea policy de INSERT para admin.\n\n" +
-        JSON.stringify(error, null, 2)
-      );
-      return;
+          if (upErr){
+            showError(
+              "Error actualizando permiso.\n" +
+              "Si luego activas RLS en modulos_permisos, crea policy de UPDATE para admin.\n\n" +
+              JSON.stringify(upErr, null, 2)
+            );
+          }
+        });
+      });
     }
 
-    await cargarPermisos();
-  }
+    async function init(){
+      const ok = await validarAdminYMostrarUsuario();
+      if (!ok) return;
+      await cargarPermisos();
+    }
 
-  // Init
-  (async function(){
-    await validarAccesoAdmin();
-    await cargarPermisos();
-  })();
-</script>
+    btnReload.addEventListener("click", init);
+
+    // Iniciar
+    init();
+  </script>
 
 </body>
 </html>
+
 
