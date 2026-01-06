@@ -126,16 +126,16 @@
       const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
 
       // ✅ Activar/Desactivar botones restringidos (SOLO ADMIN)
-      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-reporte-ventas"), !isAdmin, "Solo administrador");
+      //setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
+     // setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
+     // setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
+     // setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
+      //setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
+     // setDisabled(document.getElementById("go-reporte-ventas"), !isAdmin, "Solo administrador");
 
 
       // ✅ NUEVO: Facturación (SOLO ADMIN)
-      setDisabled(document.getElementById("go-facturacion"), !isAdmin, "Solo administrador");
+      //setDisabled(document.getElementById("go-facturacion"), !isAdmin, "Solo administrador");
 
       // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
