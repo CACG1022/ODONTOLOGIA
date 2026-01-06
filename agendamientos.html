@@ -1,6 +1,104 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
+<!-- 🔐 GUARD / PERMISOS POR MODULO (SUPABASE) -->
+<script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+  // ==============================
+  // ✅ CONFIG SUPABASE
+  // ==============================
+  const supabase = createClient(
+    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  );
+
+  // Hacerlo global para que el resto del JS lo use
+  window.supabase = supabase;
+
+  // ==============================
+  // ✅ URLs DE TU APP
+  // ==============================
+  window.APP_URLS = {
+    LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
+    HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
+  };
+
+  // ==============================
+  // ✅ CAMBIA ESTO EN CADA MODULO
+  // (debe coincidir EXACTO con modulos_permisos.modulo)
+  // ==============================
+  const MODULO = "facturacion"; 
+  // Ejemplos:
+  // const MODULO = "historia_clinica";
+  // const MODULO = "agenda";
+  // const MODULO = "plan_tratamiento";
+  // const MODULO = "reportes";
+
+  async function verificarSesion() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = window.APP_URLS.LOGIN;
+      return null;
+    }
+    return session;
+  }
+
+  async function validarPermisoModulo() {
+    const session = await verificarSesion();
+    if (!session) return;
+
+    // 1) Leer rol desde profiles
+    const { data: perfil, error: ePerfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (ePerfil || !perfil?.role) {
+      alert("No se pudo obtener tu rol.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    const rol = String(perfil.role).toLowerCase(); // admin/doctor/auxiliar/paciente
+
+    // 2) Leer permisos del módulo
+    const { data: permiso, error: ePerm } = await supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente")
+      .eq("modulo", MODULO)
+      .single();
+
+    if (ePerm || !permiso) {
+      alert("Módulo no configurado en permisos.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    // 3) Validar permiso
+    if (!permiso[rol]) {
+      alert("⛔ No tienes permiso para acceder a este módulo.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    console.log("✅ Acceso permitido a:", MODULO, "Rol:", rol);
+  }
+
+  // ✅ Ejecutar validación al cargar
+  validarPermisoModulo();
+
+  // ✅ Si se cierra sesión, sacarlo
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) window.location.href = window.APP_URLS.LOGIN;
+  });
+
+  
+
+
+  
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Agendamiento Avanzado - Clínica Odontológica</title>
