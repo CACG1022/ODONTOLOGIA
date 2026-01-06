@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Gestión de Permisos</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    body{
+      font-family: Arial, sans-serif;
+      background:#f3f5f7;
+      padding:20px;
+    }
+    h1{
+      margin-bottom:20px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border-radius:8px;
+      overflow:hidden;
+    }
+    th,td{
+      padding:12px;
+      text-align:center;
+      border-bottom:1px solid #eee;
+    }
+    th{
+      background:#2c7be5;
+      color:#fff;
+    }
+    tr:hover{
+      background:#f8f9fa;
+    }
+    input[type="checkbox"]{
+      transform:scale(1.2);
+      cursor:pointer;
+    }
+    .top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:15px;
+    }
+    button{
+      padding:8px 14px;
+      border:none;
+      background:#2c7be5;
+      color:#fff;
+      border-radius:6px;
+      cursor:pointer;
+    }
+    button:hover{
+      opacity:.9;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="top">
+  <h1>Gestión de Permisos por Rol</h1>
+  <button onclick="window.location.href='index.html'">Volver</button>
+</div>
+
+<table>
+  <thead>
+    <tr>
+      <th>Módulo</th>
+      <th>Admin</th>
+      <th>Doctor</th>
+      <th>Auxiliar</th>
+      <th>User</th>
+    </tr>
+  </thead>
+  <tbody id="tablaPermisos"></tbody>
+</table>
+
+<script>
+  const supabase = window.supabase.createClient(
+    'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE
+'
+  );
+
+  let usuarioActual = null;
+  let rolActual = null;
+
+  // 🔒 Verificar sesión y rol
+  async function validarAcceso() {
+    const { data:{ user } } = await supabase.auth.getUser();
+    if(!user){
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const { data: perfil } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single();
+
+    rolActual = perfil?.role;
+
+    if(rolActual !== 'admin'){
+      alert('Acceso denegado');
+      window.location.href = 'index.html';
+    }
+  }
+
+  // 📥 Cargar permisos
+  async function cargarPermisos(){
+    const { data, error } = await supabase
+      .from('modulos_permisos')
+      .select('*')
+      .order('label');
+
+    if(error){
+      alert('Error cargando permisos');
+      return;
+    }
+
+    const tbody = document.getElementById('tablaPermisos');
+    tbody.innerHTML = '';
+
+    data.forEach(m => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${m.label}</td>
+        <td><input type="checkbox" ${m.admin ? 'checked':''} onchange="guardar('${m.id}','admin',this.checked)"></td>
+        <td><input type="checkbox" ${m.doctor ? 'checked':''} onchange="guardar('${m.id}','doctor',this.checked)"></td>
+        <td><input type="checkbox" ${m.auxiliar ? 'checked':''} onchange="guardar('${m.id}','auxiliar',this.checked)"></td>
+        <td><input type="checkbox" ${m.user ? 'checked':''} onchange="guardar('${m.id}','user',this.checked)"></td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // 💾 Guardar cambio
+  async function guardar(id, campo, valor){
+    const { error } = await supabase
+      .from('modulos_permisos')
+      .update({ [campo]: valor })
+      .eq('id', id);
+
+    if(error){
+      alert('Error guardando permiso');
+    }
+  }
+
+  // Init
+  validarAcceso().then(cargarPermisos);
+</script>
+
+</body>
+</html>
