@@ -2655,6 +2655,64 @@ const profesionalNombre = (d.profesional || "").trim();
 })();
 <\/script>
 
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "TU_ANON_KEY"
+);
+
+const MODULO = "historia_clinica"; // 👈 CLAVE DE LA TABLA
+const LOGIN_URL = "login.html";
+const HOME_URL  = "index.html";
+
+async function validarPermiso() {
+
+  // 1️⃣ Sesión
+  const { data:{ session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.href = LOGIN_URL;
+    return;
+  }
+
+  // 2️⃣ Rol del usuario
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .single();
+
+  const rol = perfil?.role;
+
+  // 3️⃣ Permisos del módulo
+  const { data: permiso } = await supabase
+    .from("modulos_permisos")
+    .select("admin, doctor, auxiliar, paciente")
+    .eq("modulo", MODULO)
+    .single();
+
+  if(!permiso){
+    alert("Módulo no configurado");
+    window.location.href = HOME_URL;
+    return;
+  }
+
+  // 4️⃣ VALIDACIÓN FINAL
+  if(!permiso[rol]){
+    alert("No tienes permiso para acceder a este módulo");
+    window.location.href = HOME_URL;
+    return;
+  }
+
+  console.log("✅ Acceso permitido:", rol);
+}
+
+// Ejecutar antes de cargar la página
+validarPermiso();
+</script>
+
+
 </body>
 </html>`;
 
