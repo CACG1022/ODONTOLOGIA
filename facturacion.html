@@ -616,7 +616,6 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-    // ⚠️ Se deja tal cual el original, pero ya NO se usa para permisos (se valida por modulos_permisos)
     const ALLOWED_ROLES = ["admin", "auxiliar"];
 
     const state = {
@@ -730,63 +729,11 @@
       }
     }
 
-    // ✅ NUEVO (mínimo): validación por tabla modulos_permisos para "facturacion"
-    function getModuloCandidates(modulo){
-      const base = String(modulo || "").trim().toLowerCase();
-      const withHtml = base.endsWith(".html") ? base : (base + ".html");
-      const undersc = base.replaceAll("-", "_");
-      const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
-      return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
-    }
-
-    async function validarAccesoModulo(){
-      const role = (state.role || "user").toString().trim().toLowerCase();
-
-      // Nombre de módulo coherente con permisos.html (en tu tabla aparece "facturacion")
-      const modulo = "facturacion";
-      const candidates = getModuloCandidates(modulo);
-
-      try{
-        const { data, error } = await supabase
-          .from("modulos_permisos")
-          .select("modulo, admin, doctor, auxiliar, paciente")
-          .in("modulo", candidates)
-          .limit(1);
-
-        if (error) throw error;
-
-        const row = (data || [])[0];
-
-        if (!row){
-          window.alert("No tienes permiso para acceder a este módulo.");
-          window.location.href = INDEX_URL;
-          return false;
-        }
-
-        const allowed = (row[role] === true);
-
-        if (!allowed){
-          window.alert("No tienes permiso para acceder a este módulo.");
-          window.location.href = INDEX_URL;
-          return false;
-        }
-
-        return true;
-      } catch(err){
-        console.error("Error validando permisos:", err);
-        window.alert("No tienes permiso para acceder a este módulo.");
-        window.location.href = INDEX_URL;
-        return false;
-      }
-    }
-
-    // (Se deja la función original, pero ya NO se usa para permisos del módulo)
     async function validarAccesoPorRol(){
       const role = (state.role || "user").toString().trim().toLowerCase();
       const ok = ALLOWED_ROLES.includes(role);
 
       if (!ok){
-        // Antes era toast + redirect rápido (no se veía). Se mantiene pero NO se llama.
         toast("⛔ Acceso denegado: solo Admin o Auxiliar", "err");
         try { await supabase.auth.signOut(); } catch(e) {}
         window.location.href = INDEX_URL;
@@ -807,10 +754,8 @@
       $("user-email").textContent = email;
 
       await cargarRolActual();
-
-      // ✅ Cambio mínimo: ahora valida por permisos (modulos_permisos)
-      const okPerm = await validarAccesoModulo();
-      if (!okPerm) return false;
+      const okRole = await validarAccesoPorRol();
+      if (!okRole) return false;
 
       return true;
     }
@@ -825,7 +770,7 @@
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
-        cargarRolActual().then(()=> validarAccesoModulo());
+        cargarRolActual().then(()=> validarAccesoPorRol());
       }
     });
 
@@ -1493,6 +1438,10 @@
       $("count_facturas").textContent = String((rows || []).length);
     }
 
+    // ✅ CORREGIDO COMPLETO:
+    // - Columna "Pago" = ESTADO
+    // - Botón = ACCIÓN
+    // - Si método != Efectivo, pide referencia + fecha pago al marcar Pagada
     async function togglePagadaFactura(f){
       try{
         const actual = (f.pagada === true);
@@ -1500,6 +1449,7 @@
 
         let metodo = (f.metodo_pago || "").toString().trim();
 
+        // Si no vino en listado, intentamos leerlo
         if (!metodo){
           const { data: facDB, error: e0 } = await supabase
             .from("facturas")
@@ -1536,7 +1486,7 @@
             }
           } else {
             fechaPagoYYYYMMDD = hoyISO();
-            referencia = null;
+            referencia = null; // efectivo: opcional
           }
         }
 
@@ -1961,4 +1911,6 @@
   </script>
 </body>
 </html>
+
+
 
