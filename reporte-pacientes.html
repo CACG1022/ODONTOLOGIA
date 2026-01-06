@@ -3,527 +3,882 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Reporte de Pacientes - Clínica Dra. Leidi Silva</title>
+  <title>Reporte de Pacientes - Clínica Odontológica</title>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <!-- ✅ Supabase (UMD) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
-    // ✅ Supabase (MISMAS credenciales que tu index)
-    const supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-    );
+  <!-- ✅ Chart.js (gráficas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
+  <!-- ✅ Excel export (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    :root{
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+      --ok: #16a34a;
+      --warn: #f59e0b;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+
+    .topbar{
+      max-width: 1200px;
+      margin: 0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .brand h1{ font-size: 16px; margin:0; }
+
+    .meta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
+
+    .chip{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      white-space:nowrap;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      line-height:1.2;
+    }
+    .chip b{ color: var(--text); }
+    .chip .line{ display:flex; gap:6px; align-items:baseline; }
+    .chip .line span{ color: var(--muted); }
+    .chip .line small{ color: var(--muted); font-weight:700; }
+
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding: 8px 10px; font-size: 12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .container{
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      background:#fff;
+      flex-wrap:wrap;
+    }
+    .header .title{ font-weight:900; font-size: 14px; }
+
+    .section{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .ctrl label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input, select{
+      width:100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background:#fff;
+    }
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+    .kpi{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      min-height: 86px;
+    }
+    .kpi .k{ color: var(--muted); font-size: 12px; font-weight: 800; }
+    .kpi .v{ margin-top: 8px; font-size: 18px; font-weight: 900; }
+    .kpi .s{ margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .card{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      overflow:hidden;
+    }
+    .card h3{
+      margin:0 0 10px 0;
+      font-size: 13px;
+      font-weight: 900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    table{ width:100%; border-collapse: collapse; }
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+      font-size: 12.5px;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .empty{ color: var(--muted); text-align:center; padding: 18px; }
+
+    .footer{
+      padding: 12px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      max-width: 520px;
+      white-space: pre-wrap;
+      z-index: 99;
+    }
+    #toast.show{ opacity: 1; transform: translateY(0); }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+
+    .row-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    .blocked{
+      max-width: 1200px;
+      margin: 0 auto 12px;
+      background: #fff;
+      border: 1px solid #fde2e2;
+      color: #991b1b;
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.06);
+      display:none;
+      white-space: pre-wrap;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1050px){
+      .kpis{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px){
+      .kpis{ grid-template-columns: 1fr; }
+      .header{ align-items:flex-start; flex-direction:column; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>CLÍNICA ODONTOLÓGICA — Reporte de pacientes</h1>
+    </div>
+    <div class="meta">
+      <div class="chip">
+        <div class="line"><span>Usuario:</span> <b id="user-email">—</b></div>
+        <div class="line"><small>Rol:</small> <b id="user-role">—</b></div>
+      </div>
+      <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+      <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <div id="blocked" class="blocked"></div>
+
+  <div class="container" id="app">
+    <div class="header">
+      <div class="title">Dashboard de pacientes</div>
+      <div class="row-actions">
+        <button class="btn primary" id="btn-refresh" type="button">🔄 Actualizar</button>
+        <button class="btn" id="btn-export" type="button">⬇ Excel</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Búsqueda (nombre / cédula / teléfono / correo)</label>
+          <input id="q" type="text" placeholder="Ej: 102295..., Juan, 300..., correo@...">
+        </div>
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Solo con correo</label>
+          <select id="f_con_correo">
+            <option value="">— Todos —</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Solo con teléfono</label>
+          <select id="f_con_telefono">
+            <option value="">— Todos —</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
+
+      <div style="margin-top:10px; color:var(--muted); font-size:12px;" class="mono">
+        Fuente: tabla <b>HISTORIAS CLINICAS</b> (campos: “Numero de Identificacion”, “Nombre y apellido”, “paciente_cel”, “paciente_email”).
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">Pacientes (resultado)</div>
+          <div class="v mono"><span id="k_total">0</span></div>
+          <div class="s">Según filtros actuales</div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">Con correo</div>
+          <div class="v mono"><span id="k_con_correo">0</span></div>
+          <div class="s"><span id="k_con_correo_pct">0%</span> del resultado</div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">Con teléfono</div>
+          <div class="v mono"><span id="k_con_tel">0</span></div>
+          <div class="s"><span id="k_con_tel_pct">0%</span> del resultado</div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">Sin correo y sin teléfono</div>
+          <div class="v mono"><span id="k_sin_contacto">0</span></div>
+          <div class="s">Recomendación: completar datos</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 6;">
+          <h3>
+            <span>Completitud de contacto</span>
+            <span class="sub" id="sub_contact">—</span>
+          </h3>
+          <canvas id="chart_contact" height="140"></canvas>
+        </div>
+
+        <div class="card" style="grid-column: span 6;">
+          <h3>
+            <span>Distribución (correo / teléfono)</span>
+            <span class="sub" id="sub_dist">—</span>
+          </h3>
+          <canvas id="chart_dist" height="140"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 12;">
+          <h3>
+            <span>Listado de pacientes</span>
+            <span class="sub" id="sub_table">—</span>
+          </h3>
+
+          <div style="max-height: 55vh; overflow:auto; border:1px solid var(--line); border-radius: 12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:190px;">Cédula</th>
+                  <th>Nombre</th>
+                  <th style="width:200px;">Teléfono</th>
+                  <th style="width:260px;">Correo</th>
+                </tr>
+              </thead>
+              <tbody id="tbody_pacientes">
+                <tr><td colspan="4" class="empty">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mono" style="margin-top:10px; color:var(--muted);">
+            Nota: si no ves datos, revisa RLS/policies de la tabla <b>HISTORIAS CLINICAS</b>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="mono" id="status"></div>
+      <div>© <span id="year"></span></div>
+    </div>
+  </div>
+
+  <div id="toast" data-type="ok"></div>
+
+  <script>
+    // =========================
+    // ✅ DEBUG GLOBAL
+    // =========================
+    window.addEventListener("error", (e) => {
+      console.error("JS ERROR:", e?.error || e?.message || e);
+      try{
+        const el = document.getElementById("toast");
+        if (el){
+          el.textContent = "Error JS: revisa consola (F12)\n" + (e?.message || "Error");
+          el.dataset.type = "err";
+          el.classList.add("show");
+          clearTimeout(window.__t);
+          window.__t = setTimeout(()=> el.classList.remove("show"), 4500);
+        }
+      }catch(_){}
+    });
+
+    // =========================
+    // ✅ SUPABASE CLIENT (UMD)
+    // =========================
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+
+    if (!window.supabase){
+      console.error("Supabase UMD no cargó (CDN bloqueado?)");
+    }
+
+    const supabase = window.supabase?.createClient
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // =========================
+    // ✅ CONFIG (MISMAS URLS)
+    // =========================
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-    // ✅ Candidatos (por si la API expone variaciones)
-    const TABLE_CANDIDATES = [
-      "HISTORIAS CLINICAS",
-      "HISTORIAS_CLINICAS",
-      "historias_clinicas",
-      "Historias Clinicas"
-    ];
-    let TABLE = null;
+    // ✅ ESTE DEBE COINCIDIR con modulos_permisos.modulo
+    const MODULO = "reporte_pacientes";
 
-    // ✅ Columnas EXACTAS (según tu captura)
-    const COL_ID      = "id";
-    const COL_CEDULA  = "Numero de Identificacion";
-    const COL_NOMBRE  = "Nombre y apellido";
-    const COL_EDAD    = "Edad";
-    const COL_TIPO    = "Tipo identificacion";
-    const COL_LUGAR   = "Lugar exp";
-    const COL_NAC     = "Fecha de nacimiento";      // ✅ IMPORTANTE: así está en tu tabla
-    const COL_CREATED = "created_at";
+    // =========================
+    // ✅ TABLA PACIENTES (según lo que ya usas en Agendamientos)
+    // =========================
+    const TABLA_HISTORIAS = "HISTORIAS CLINICAS";
+    const HIST_COL_DOCUMENTO = "Numero de Identificacion";
+    const HIST_COL_NOMBRE = "Nombre y apellido";
+    const HIST_COL_TELEFONO = "paciente_cel";
+    const HIST_COL_CORREO = "paciente_email";
 
-    // ✅ Admin por email (igual que tu index)
-    const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+    const state = {
+      session: null,
+      role: null,
+      pacientes: [],
+      charts: { contact:null, dist:null }
+    };
 
-    function $(id){ return document.getElementById(id); }
+    const $ = (id) => document.getElementById(id);
 
-    function setLoading(isLoading) {
-      const btn = $("btn-buscar");
-      const sp = $("status");
-      if (btn) btn.disabled = isLoading;
-      if (sp) sp.textContent = isLoading ? "Cargando..." : "";
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
     }
-
-    function setError(msg) {
-      const el = $("error");
+    function setStatus(msg){
+      const el = $("status");
       if (el) el.textContent = msg || "";
     }
-
-    function setInfo(msg) {
-      const el = $("info");
-      if (el) el.textContent = msg || "";
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
     }
+    function normalizeText(t){ return String(t || "").trim(); }
+    function hasValue(v){ return normalizeText(v).length > 0; }
 
-    async function verificarSesion() {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      if (error) console.warn("getSession error:", error);
-
-      if (!session) {
-        window.location.href = LOGIN_URL;
-        return null;
+    function showBlocked(msg){
+      const box = $("blocked");
+      const app = $("app");
+      if (box){
+        box.style.display = "block";
+        box.textContent = msg || "⛔ Acceso denegado.";
       }
-      return session;
+      if (app) app.style.display = "none";
+    }
+    function hideBlocked(){
+      const box = $("blocked");
+      const app = $("app");
+      if (box) box.style.display = "none";
+      if (app) app.style.display = "block";
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = LOGIN_URL;
-    });
-
-    // ✅ Lee role desde profiles (igual que index)
-    async function cargarRolDesdeProfiles(userId) {
-      try {
+    // =========================
+    // ✅ AUTH + ROLE
+    // =========================
+    async function cargarRolActualPorId(userId){
+      try{
         const { data, error } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", userId)
           .single();
 
-        if (error) {
-          console.warn("No se pudo leer profiles.role:", error.message);
-          return null;
-        }
-        return data?.role || null;
-      } catch (e) {
-        console.warn("Error leyendo role:", e);
-        return null;
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        state.role = role || "user";
+        $("user-role").textContent = state.role;
+        return state.role;
+      }catch(err){
+        console.error("No se pudo leer rol en profiles:", err);
+        state.role = "user";
+        $("user-role").textContent = "user";
+        return "user";
       }
     }
 
-    // ✅ Solo admin puede ver esta página
-    async function exigirAdmin(session) {
-      const email = (session.user?.email || "").toLowerCase();
-      const role = await cargarRolDesdeProfiles(session.user.id);
+    // =========================
+    // ✅ PERMISOS POR MÓDULO (modulos_permisos)
+    // =========================
+    async function validarPermisoModulo(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return { ok:false };
+      }
 
-      // Mostrar usuario y rol en pantalla
-      const u = $("user-email");
-      if (u) u.textContent = session.user?.email || "Usuario autenticado";
+      // rol desde profiles (id)
+      const rol = await cargarRolActualPorId(session.user.id);
+      const rolKey = String(rol || "user").toLowerCase().trim(); // admin/doctor/auxiliar/paciente/user
 
-      const r = $("user-role");
-      if (r) r.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+      // leer permisos del módulo
+      const { data: permiso, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente, modulo")
+        .eq("modulo", MODULO)
+        .maybeSingle();
 
-      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+      if (ePerm){
+        console.error("❌ Error leyendo modulos_permisos:", ePerm);
+        showBlocked("Error leyendo permisos del módulo.\n" + (ePerm.message || ePerm));
+        toast("Error permisos (ver consola)", "err");
+        return { ok:false };
+      }
 
-      if (!isAdmin) {
-        alert("🚫 Acceso restringido: Solo administrador.");
+      if (!permiso){
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        showBlocked("Módulo no configurado en permisos.\n(" + MODULO + ")");
+        toast("Módulo no configurado en permisos.", "warn");
+        return { ok:false };
+      }
+
+      // validar permiso
+      if (!permiso[rolKey]){
+        showBlocked("⛔ No tienes permiso para acceder a este módulo.\nMódulo: " + MODULO + "\nRol: " + rolKey);
+        toast("⛔ Sin permiso para este módulo", "err");
         window.location.href = INDEX_URL;
-        return { isAdmin: false, role };
+        return { ok:false };
       }
 
-      return { isAdmin: true, role };
+      console.log("✅ Acceso permitido a:", MODULO, "Rol:", rolKey);
+      hideBlocked();
+      return { ok:true, session, rol: rolKey };
     }
 
-    // ✅ Detecta la tabla REAL
-    async function detectarTabla() {
-      let lastErr = null;
-
-      for (const t of TABLE_CANDIDATES) {
-        const { error } = await supabase
-          .from(t)
-          .select(COL_ID, { head: true, count: "exact" })
-          .limit(1);
-
-        if (!error) return t;
-        lastErr = { table: t, error };
-      }
-
-      if (lastErr) {
-        const e = lastErr.error;
-        setError(`No pude acceder a la tabla. Último intento: "${lastErr.table}". Error: ${e.code || ""} ${e.message || ""}`);
-        console.error("❌ detectarTabla último error:", lastErr);
-      }
-      return null;
+    function bindAuthListener(){
+      if (!supabase) return;
+      supabase.auth.onAuthStateChange((event, session) => {
+        if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+          window.location.href = LOGIN_URL;
+        }
+      });
     }
 
-    function renderTable(rows) {
-      const tbody = $("tbody");
-      const empty = $("empty");
-      if (!tbody) return;
+    async function cerrarSesion(){
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    }
 
+    // =========================
+    // ✅ DATA LOADERS (PACIENTES)
+    // =========================
+    async function cargarPacientes(){
+      setStatus("Cargando pacientes...");
+      try{
+        // Selección con comillas por columnas con espacios
+        const selectCols = `"${HIST_COL_DOCUMENTO}","${HIST_COL_NOMBRE}",${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
+
+        // ⚠️ Si tienes muchos registros, puedes paginar o aumentar el limit
+        const { data, error } = await supabase
+          .from(TABLA_HISTORIAS)
+          .select(selectCols)
+          .limit(5000);
+
+        if (error) throw error;
+
+        const rows = (data || []).map(r => ({
+          documento: r[HIST_COL_DOCUMENTO],
+          nombre: r[HIST_COL_NOMBRE],
+          telefono: r[HIST_COL_TELEFONO],
+          correo: r[HIST_COL_CORREO],
+        }));
+
+        state.pacientes = rows;
+        setStatus("");
+      } catch(err){
+        console.error("cargarPacientes:", err);
+        setStatus("");
+        toast("No se pudieron cargar pacientes (posible RLS o columnas):\n" + (err?.message || "Error"), "err");
+        state.pacientes = [];
+      }
+    }
+
+    // =========================
+    // ✅ FILTROS + RENDER
+    // =========================
+    function aplicarFiltros(){
+      const q = normalizeText($("q").value).toLowerCase();
+      const fCorreo = ($("f_con_correo").value || "").trim();
+      const fTel = ($("f_con_telefono").value || "").trim();
+
+      let rows = [...(state.pacientes || [])];
+
+      if (q){
+        rows = rows.filter(p => {
+          const doc = String(p.documento ?? "").toLowerCase();
+          const nom = String(p.nombre ?? "").toLowerCase();
+          const tel = String(p.telefono ?? "").toLowerCase();
+          const cor = String(p.correo ?? "").toLowerCase();
+          return doc.includes(q) || nom.includes(q) || tel.includes(q) || cor.includes(q);
+        });
+      }
+
+      if (fCorreo === "si") rows = rows.filter(p => hasValue(p.correo));
+      if (fCorreo === "no") rows = rows.filter(p => !hasValue(p.correo));
+
+      if (fTel === "si") rows = rows.filter(p => hasValue(p.telefono));
+      if (fTel === "no") rows = rows.filter(p => !hasValue(p.telefono));
+
+      return rows;
+    }
+
+    function renderTabla(rows){
+      const tbody = $("tbody_pacientes");
       tbody.innerHTML = "";
 
-      if (!rows || rows.length === 0) {
-        if (empty) empty.style.display = "block";
+      $("sub_table").textContent = `${rows.length} registro(s)`;
+
+      if (!rows.length){
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay pacientes para mostrar.</td></tr>`;
         return;
-      } else {
-        if (empty) empty.style.display = "none";
       }
 
-      for (const r of rows) {
+      for (const p of rows){
         const tr = document.createElement("tr");
-
-        const cedula = r[COL_CEDULA] ?? "";
-        const nombre = r[COL_NOMBRE] ?? "";
-        const edad   = r[COL_EDAD] ?? "";
-        const tipo   = Array.isArray(r[COL_TIPO]) ? r[COL_TIPO].join(", ") : (r[COL_TIPO] ?? "");
-        const lugar  = r[COL_LUGAR] ?? "";
-        const nac    = r[COL_NAC] ?? "";
-        const creado = r[COL_CREATED] ? new Date(r[COL_CREATED]).toLocaleString("es-CO") : "";
-
         tr.innerHTML = `
-          <td>${cedula}</td>
-          <td>${nombre}</td>
-          <td>${edad}</td>
-          <td>${tipo}</td>
-          <td>${lugar}</td>
-          <td>${nac}</td>
-          <td>${creado}</td>
+          <td class="mono">${escapeHtml(p.documento ?? "—")}</td>
+          <td>${escapeHtml(p.nombre ?? "—")}</td>
+          <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
+          <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
         `;
         tbody.appendChild(tr);
       }
     }
 
-    async function buscarPacientes() {
-      setError("");
-      setInfo("");
-      setLoading(true);
+    function calcKPIs(rows){
+      const total = rows.length;
 
-      try {
-        const cedulaRaw = ($("q-cedula")?.value || "").trim();
-        const nombreRaw = ($("q-nombre")?.value || "").trim();
+      const conCorreo = rows.filter(p => hasValue(p.correo)).length;
+      const conTel = rows.filter(p => hasValue(p.telefono)).length;
+      const sinContacto = rows.filter(p => !hasValue(p.correo) && !hasValue(p.telefono)).length;
 
-        if (!TABLE) {
-          setError("Tabla no detectada. Recarga la página.");
-          renderTable([]);
+      $("k_total").textContent = String(total);
+      $("k_con_correo").textContent = String(conCorreo);
+      $("k_con_tel").textContent = String(conTel);
+      $("k_sin_contacto").textContent = String(sinContacto);
+
+      const pct = (a,b)=> (b>0 ? Math.round((a/b)*100) : 0);
+      $("k_con_correo_pct").textContent = pct(conCorreo, total) + "%";
+      $("k_con_tel_pct").textContent = pct(conTel, total) + "%";
+
+      $("sub_contact").textContent = `Total: ${total}`;
+      $("sub_dist").textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
+
+      return { total, conCorreo, conTel, sinContacto };
+    }
+
+    function destroyChart(ch){
+      try{ if (ch) ch.destroy(); } catch(e) {}
+    }
+
+    function renderCharts(kpi){
+      if (!window.Chart){
+        console.error("Chart.js no cargó");
+        return;
+      }
+
+      // 1) doughnut: completitud (tiene ambos / solo correo / solo tel / ninguno)
+      const rows = aplicarFiltros();
+      const ambos = rows.filter(p => hasValue(p.correo) && hasValue(p.telefono)).length;
+      const soloCorreo = rows.filter(p => hasValue(p.correo) && !hasValue(p.telefono)).length;
+      const soloTel = rows.filter(p => !hasValue(p.correo) && hasValue(p.telefono)).length;
+      const ninguno = rows.filter(p => !hasValue(p.correo) && !hasValue(p.telefono)).length;
+
+      destroyChart(state.charts.contact);
+      state.charts.contact = new Chart($("chart_contact"), {
+        type: "doughnut",
+        data: {
+          labels: ["Correo + Teléfono", "Solo correo", "Solo teléfono", "Sin contacto"],
+          datasets: [{ data: [ambos, soloCorreo, soloTel, ninguno] }]
+        },
+        options: { responsive: true, plugins: { legend: { display: true } } }
+      });
+
+      // 2) pie: distribución simple (con correo / sin correo / con tel / sin tel)
+      destroyChart(state.charts.dist);
+      state.charts.dist = new Chart($("chart_dist"), {
+        type: "pie",
+        data: {
+          labels: ["Con correo", "Sin correo", "Con teléfono", "Sin teléfono"],
+          datasets: [{
+            data: [
+              kpi.conCorreo,
+              Math.max(0, kpi.total - kpi.conCorreo),
+              kpi.conTel,
+              Math.max(0, kpi.total - kpi.conTel)
+            ]
+          }]
+        },
+        options: { responsive: true, plugins: { legend: { display: true } } }
+      });
+    }
+
+    // =========================
+    // ✅ EXPORT EXCEL
+    // =========================
+    function exportarExcel(){
+      try{
+        const rows = aplicarFiltros();
+        if (!rows.length){
+          toast("No hay pacientes para exportar con el filtro actual.", "warn");
           return;
         }
 
-        // ✅ SELECT explícito (columnas con espacios)
-        let q = supabase
-          .from(TABLE)
-          .select(`
-            "Numero de Identificacion",
-            "Nombre y apellido",
-            "Edad",
-            "Tipo identificacion",
-            "Lugar exp",
-            "Fecha de nacimiento",
-            created_at
-          `)
-          .order("created_at", { ascending: false })
-          .limit(200);
+        const q = normalizeText($("q").value);
+        const fCorreo = ($("f_con_correo").value || "").trim();
+        const fTel = ($("f_con_telefono").value || "").trim();
 
-        // Filtro por cédula (int)
-        if (cedulaRaw) {
-          const cedulaNum = Number(cedulaRaw);
-          if (Number.isNaN(cedulaNum)) {
-            setError("La cédula debe ser numérica.");
-            renderTable([]);
-            return;
-          }
-          q = q.eq(COL_CEDULA, cedulaNum);
-        }
+        const data = rows.map(p => ({
+          "Cédula": p.documento ?? "",
+          "Nombre": p.nombre ?? "",
+          "Teléfono": p.telefono ?? "",
+          "Correo": p.correo ?? ""
+        }));
 
-        // Filtro por nombre (búsqueda parcial)
-        if (nombreRaw) {
-          q = q.ilike(COL_NOMBRE, `%${nombreRaw}%`);
-        }
+        const ws = XLSX.utils.json_to_sheet(data);
 
-        const { data, error } = await q;
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Pacientes - (Filtro)"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Búsqueda:", q || "(vacío)"],
+          ["Solo con correo:", fCorreo || "(todos)"],
+          ["Solo con teléfono:", fTel || "(todos)"],
+          ["Cantidad:", rows.length]
+        ]);
 
-        if (error) {
-          console.error("❌ Error Supabase:", error);
-          setError(`Error Supabase: ${error.code || ""} ${error.message || ""}`);
-          renderTable([]);
-          return;
-        }
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pacientes");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
 
-        setInfo(`Tabla: ${TABLE} | Registros cargados: ${data?.length || 0}`);
-        renderTable(data || []);
-      } catch (e) {
-        console.error("❌ Excepción:", e);
-        setError(`Error inesperado: ${String(e?.message || e)}`);
-        renderTable([]);
-      } finally {
-        setLoading(false);
+        const filename = `reporte_pacientes_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
       }
     }
 
-    async function init() {
-      const session = await verificarSesion();
-      if (!session) return;
+    // =========================
+    // ✅ DASHBOARD
+    // =========================
+    async function refrescarDashboard(){
+      await cargarPacientes();
+      const rows = aplicarFiltros();
+      const kpi = calcKPIs(rows);
+      renderTabla(rows);
+      renderCharts(kpi);
 
-      // ✅ Exigir Admin y mostrar Rol
-      const { isAdmin } = await exigirAdmin(session);
-      if (!isAdmin) return;
-
-      // ✅ Detectar tabla
-      TABLE = await detectarTabla();
-      if (!TABLE) return;
-
-      console.log("✅ Tabla detectada:", TABLE);
-      setInfo(`Tabla detectada: ${TABLE}`);
-
-      // Buscar inicialmente
-      await buscarPacientes();
-
-      // Eventos
-      $("btn-buscar")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        buscarPacientes();
-      });
-
-      $("btn-limpiar")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        $("q-cedula").value = "";
-        $("q-nombre").value = "";
-        buscarPacientes();
-      });
-
-      // Enter para buscar
-      ["q-cedula", "q-nombre"].forEach(id => {
-        $(id)?.addEventListener("keydown", (ev) => {
-          if (ev.key === "Enter") {
-            ev.preventDefault();
-            buscarPacientes();
-          }
-        });
-      });
-
-      // Volver
-      $("btn-volver")?.addEventListener("click", (e) => {
-        e.preventDefault();
-        window.location.href = INDEX_URL;
-      });
+      if ((state.pacientes || []).length === 0){
+        setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
+      } else {
+        setStatus("");
+      }
     }
 
-    init();
+    // =========================
+    // ✅ INIT
+    // =========================
+    async function init(){
+      $("year").textContent = new Date().getFullYear();
+
+      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+      $("btn-logout").addEventListener("click", cerrarSesion);
+
+      $("btn-refresh").addEventListener("click", refrescarDashboard);
+      $("btn-export").addEventListener("click", exportarExcel);
+
+      $("q").addEventListener("input", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+      $("f_con_correo").addEventListener("change", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+      $("f_con_telefono").addEventListener("change", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+
+      bindAuthListener();
+
+      if (!supabase){
+        showBlocked("No cargó Supabase (CDN). Revisa tu conexión o bloqueadores.");
+        toast("No cargó Supabase (CDN)", "err");
+        return;
+      }
+
+      // ✅ Guard por permisos del módulo
+      const guard = await validarPermisoModulo();
+      if (!guard.ok) return;
+
+      state.session = guard.session;
+      $("user-email").textContent = (guard.session.user?.email || "Usuario").toString();
+
+      await refrescarDashboard();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      try{
+        init();
+      }catch(err){
+        console.error("INIT FAILED:", err);
+        toast("Falló init: revisa consola (F12)\n" + (err?.message || "Error"), "err");
+      }
+    });
   </script>
-
-  <style>
-    :root{
-      --bg: #f5f7fb;
-      --surface: #ffffff;
-      --border: rgba(15, 23, 42, 0.10);
-      --text: #0f172a;
-      --muted: #64748b;
-      --accent: #2563eb;
-      --accent-2: #1d4ed8;
-      --shadow: 0 20px 45px rgba(15,23,42,.10);
-      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
-      --radius: 18px;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      margin:0;
-      min-height:100vh;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color: var(--text);
-      background:
-        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
-        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
-        linear-gradient(180deg, #ffffff, var(--bg));
-      padding: 22px 14px;
-    }
-    .wrap{
-      width:min(1100px, 100%);
-      margin:0 auto;
-      display:flex;
-      flex-direction:column;
-      gap: 14px;
-    }
-    header{
-      background: linear-gradient(180deg, var(--surface), #fbfcff);
-      border:1px solid var(--border);
-      box-shadow: var(--shadow);
-      border-radius: var(--radius);
-      padding: 16px;
-      display:flex;
-      justify-content:space-between;
-      gap: 12px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .title{
-      display:flex;
-      flex-direction:column;
-      gap: 6px;
-      min-width: 240px;
-    }
-    .title h1{
-      margin:0;
-      font-size: 18px;
-      letter-spacing:.2px;
-    }
-    .title small{
-      color: var(--muted);
-      font-weight: 700;
-      display:block;
-      line-height: 1.35;
-    }
-    .actions{
-      display:flex;
-      gap: 10px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:flex-end;
-    }
-    .btn{
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 12px;
-      cursor:pointer;
-      font-weight: 800;
-      letter-spacing:.2px;
-      box-shadow: var(--shadow-2);
-      transition: transform .12s ease, border-color .12s ease;
-    }
-    .btn:hover{ transform: translateY(-1px); border-color: rgba(37,99,235,.28); }
-    .btn.primary{
-      background: var(--accent);
-      border-color: rgba(37,99,235,.35);
-      color:#fff;
-      box-shadow: 0 12px 18px rgba(37,99,235,.18);
-    }
-    .btn.primary:hover{ background: var(--accent-2); }
-    .panel{
-      background:#fff;
-      border:1px solid var(--border);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 14px;
-    }
-    form{
-      display:grid;
-      grid-template-columns: repeat(12, 1fr);
-      gap: 10px;
-      align-items:end;
-    }
-    label{
-      display:flex;
-      flex-direction:column;
-      gap: 6px;
-      color: var(--muted);
-      font-weight: 800;
-      font-size: 12px;
-    }
-    input{
-      border:1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px 12px;
-      outline:none;
-      font-weight: 700;
-    }
-    input:focus{ border-color: rgba(37,99,235,.35); }
-    .col-4{ grid-column: span 4; }
-    .col-5{ grid-column: span 5; }
-    .col-3{ grid-column: span 3; }
-    @media (max-width: 900px){
-      .col-4,.col-5,.col-3{ grid-column: span 12; }
-      .actions{ width:100%; justify-content:stretch; }
-      .actions .btn{ flex:1; }
-    }
-    .meta{
-      display:flex;
-      gap: 12px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-top: 10px;
-    }
-    #status{ color: var(--muted); font-weight: 800; }
-    #error{ color: #b91c1c; font-weight: 900; }
-    #info{ color: #0f172a; font-weight: 800; }
-
-    .table-wrap{
-      overflow:auto;
-      border-radius: 14px;
-      border:1px solid var(--border);
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width: 920px;
-      background:#fff;
-    }
-    th, td{
-      padding: 10px 12px;
-      border-bottom:1px solid rgba(15,23,42,.08);
-      text-align:left;
-      font-size: 13px;
-      white-space:nowrap;
-    }
-    th{
-      position:sticky;
-      top:0;
-      background: #fbfcff;
-      z-index: 1;
-      color: var(--muted);
-      font-size: 12px;
-      letter-spacing:.2px;
-    }
-    tr:hover td{ background: rgba(37,99,235,.04); }
-    #empty{
-      display:none;
-      color: var(--muted);
-      font-weight: 800;
-      padding: 12px 4px 0;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <header>
-      <div class="title">
-        <h1>Reporte de Pacientes</h1>
-        <small>Usuario: <span id="user-email"></span></small>
-        <small><span id="user-role">Rol: ...</span></small>
-      </div>
-      <div class="actions">
-        <button class="btn" id="btn-volver" type="button">← Volver al inicio</button>
-      </div>
-    </header>
-
-    <div class="panel">
-      <form>
-        <label class="col-4">
-          Buscar por cédula
-          <input id="q-cedula" inputmode="numeric" placeholder="Ej: 1022956666" />
-        </label>
-
-        <label class="col-5">
-          Buscar por nombre
-          <input id="q-nombre" placeholder="Ej: Leidi, Edward, Camilo..." />
-        </label>
-
-        <div class="col-3" style="display:flex; gap:10px;">
-          <button class="btn primary" id="btn-buscar" type="button">Buscar</button>
-          <button class="btn" id="btn-limpiar" type="button">Limpiar</button>
-        </div>
-      </form>
-
-      <div class="meta">
-        <span id="status"></span>
-        <span id="info"></span>
-        <span id="error"></span>
-      </div>
-    </div>
-
-    <div class="panel">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Cédula</th>
-              <th>Nombre y apellido</th>
-              <th>Edad</th>
-              <th>Tipo ID</th>
-              <th>Lugar exp</th>
-              <th>Fecha nac</th>
-              <th>Creado</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
-      <div id="empty">No se encontraron pacientes con esos filtros.</div>
-    </div>
-  </div>
 </body>
 </html>
 
