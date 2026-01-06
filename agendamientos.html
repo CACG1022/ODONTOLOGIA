@@ -73,16 +73,25 @@
 
       // 2) Leer permisos del módulo
       const { data: permiso, error: ePerm } = await supabase
-        .from("modulos_permisos")
-        .select("admin, doctor, auxiliar, paciente")
-        .eq("modulo", MODULO)
-        .single();
+  .from("modulos_permisos")
+  .select("admin, doctor, auxiliar, paciente, modulo")
+  .eq("modulo", MODULO)
+  .maybeSingle();
 
-      if (ePerm || !permiso) {
-        alert("Módulo no configurado en permisos.");
-        window.location.href = window.APP_URLS.HOME;
-        return { ok:false };
-      }
+if (ePerm) {
+  console.error("❌ Error leyendo modulos_permisos:", ePerm);
+  alert("Error leyendo permisos del módulo: " + (ePerm.message || ePerm));
+  window.location.href = window.APP_URLS.HOME;
+  return { ok:false };
+}
+
+if (!permiso) {
+  console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+  alert("Módulo no configurado en permisos.");
+  window.location.href = window.APP_URLS.HOME;
+  return { ok:false };
+}
+
 
       // 3) Validar permiso
       if (!permiso[rol]) {
