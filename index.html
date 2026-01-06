@@ -46,7 +46,6 @@
         el.setAttribute("aria-disabled", "true");
         el.dataset.disabledReason = reason;
 
-        // Bloqueo explícito
         el.onclick = (e) => {
           e.preventDefault();
           alert("🚫 Acceso restringido: " + reason);
@@ -56,7 +55,6 @@
         el.removeAttribute("aria-disabled");
         delete el.dataset.disabledReason;
 
-        // Si estaba bloqueado, lo quitamos
         if (el.onclick) el.onclick = null;
       }
     }
@@ -65,7 +63,6 @@
       const el = document.getElementById(id);
       if (!el) return;
 
-      // Evitar acumular listeners (asignar onclick)
       el.onclick = (e) => {
         e.preventDefault();
 
@@ -100,12 +97,16 @@
       }
     }
 
-    // ✅ Mapa: botón del index -> modulo EXACTO como está guardado en modulos_permisos
-    // (Aquí está el fix principal: permisos.html)
+    // ✅ Mapa: botón del index -> modulo EXACTO como está en tu tabla modulos_permisos
+    // (ESTO ES LO QUE ESTABA FALLANDO)
     const MODULE_MAP = {
       "go-reporte-ventas":   "reportes",
       "go-agendar":          "agendamientos",
-      "go-gestiondepermisos":"permisos.html",          // ✅ FIX: tu módulo real
+
+      // ⚠️ OJO: en tu tabla NO existe "permisos.html".
+      // Si tu pantalla permisos.html realmente es la de roles, entonces el módulo debe ser admin-roles:
+      "go-gestiondepermisos":"admin-roles",
+
       "go-historia":         "historia_clinica",
       "go-reporte-pacientes":"reporte_pacientes",
       "go-plan":             "plandetratamiento",
@@ -114,14 +115,13 @@
       "go-profesionales":    "profesionales-admin.html",
       "go-facturacion":      "facturacion",
 
-      // Estos 3 solo funcionarán si existen en tu tabla modulos_permisos con EXACTO ese nombre:
+      // Estos 3 NO están en tu tabla, así que por tabla se bloquearán siempre:
       "go-hoy":              "hoy",
       "go-rips":             "rips",
       "go-registro":         "registro"
     };
 
-    async function cargarPermisosPorRol(roleKey) {
-      // Traemos SOLO los módulos que existen en este index (para hacer la consulta más liviana)
+    async function cargarPermisosPorRol() {
       const modulos = Object.values(MODULE_MAP);
 
       try {
@@ -132,22 +132,19 @@
 
         if (error) throw error;
 
-        // Convertimos a mapa {modulo: fila}
         const map = {};
         (data || []).forEach(row => { map[row.modulo] = row; });
         return map;
       } catch (e) {
         console.warn("No se pudo cargar modulos_permisos:", e?.message || e);
-        return null; // null = fallo (mejor deshabilitar por seguridad)
+        return null;
       }
     }
 
     function puedeAcceder(permisosMap, modulo, roleKey) {
-      if (!permisosMap) return false;            // si falló la consulta, bloqueamos
+      if (!permisosMap) return false;
       const row = permisosMap[modulo];
-      if (!row) return false;                    // si no existe el modulo en tabla, bloqueamos
-
-      // Columnas esperadas: admin/doctor/auxiliar/paciente
+      if (!row) return false;
       return !!row[roleKey];
     }
 
@@ -172,26 +169,21 @@
       const roleEl = document.getElementById("user-role");
       if (roleEl) roleEl.textContent = roleRaw ? `Rol: ${roleRaw}` : "Rol: (sin rol)";
 
-      // Si no hay rol, asumimos paciente (ajústalo si tu sistema usa otro default)
       const roleKey =
         roleNorm === "admin" ? "admin" :
         roleNorm === "doctor" ? "doctor" :
         roleNorm === "auxiliar" ? "auxiliar" :
         "paciente";
 
-      // ✅ Permisos admin por email o rol (esto NO cambia tus configuraciones; solo define roleKey)
-      const isAdminByEmail = (email === ADMIN_EMAIL);
-      const finalRoleKey = isAdminByEmail ? "admin" : roleKey;
+      // ✅ admin por email también
+      const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
-      // ✅ Cargar permisos reales desde modulos_permisos
-      const permisosMap = await cargarPermisosPorRol(finalRoleKey);
+      const permisosMap = await cargarPermisosPorRol();
 
-      // ✅ Aplicar habilitar/deshabilitar según permisos.html (tabla)
       for (const [btnId, modulo] of Object.entries(MODULE_MAP)) {
         const el = document.getElementById(btnId);
         const ok = puedeAcceder(permisosMap, modulo, finalRoleKey);
 
-        // Mensajes claros
         const reason = !permisosMap
           ? "No se pudieron cargar permisos"
           : !permisosMap[modulo]
@@ -201,7 +193,7 @@
         setDisabled(el, !ok, reason);
       }
 
-      // ✅ Navegación (igual que ya tenías)
+      // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
       wireNav("go-gestiondepermisos", URLS.gestiondepermisos, "open");
       wireNav("go-historia", URLS.historia, "href");
@@ -230,12 +222,10 @@
 
     verificarSesionYPermisos();
 
-    // Si se expira/cierra, vuelve al login
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
