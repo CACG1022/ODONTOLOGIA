@@ -69,7 +69,7 @@
 <body>
   <div class="card">
     <h2>Administrar usuarios y roles</h2>
-    <div class="muted">Solo el administrador puede ver y modificar roles.</div>
+    <div class="muted">Acceso controlado por permisos (modulos_permisos).</div>
 
     <div class="row" style="margin-top:12px;">
       <input id="q" placeholder="Buscar por email (opcional)..." />
@@ -130,6 +130,7 @@
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
     // ✅ Nombre del módulo (debe existir en modulos_permisos.modulo)
+    // admin-roles.html -> admin-roles
     const MODULO = (location.pathname.split("/").pop() || "")
       .toLowerCase()
       .trim()
@@ -161,6 +162,12 @@
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
+    /**
+     * ✅ Guard principal: SOLO usa la tabla modulos_permisos (como permisos.html)
+     * - Lee el rol desde profiles.role
+     * - Busca el módulo por candidatos (admin-roles / admin-roles.html / admin_roles / admin_roles.html)
+     * - Si no está permitido, redirige al index
+     */
     async function validarPermisoModulo(){
       const session = await verificarSesion();
       if (!session) return { ok:false };
@@ -209,36 +216,7 @@
         return { ok:false };
       }
 
-      return { ok:true, session, rol };
-    }
-
-    // ✅ Solo ADMIN puede modificar roles (por rol real en profiles)
-    async function requireAdmin(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session){
-        window.location.href = LOGIN_URL;
-        return false;
-      }
-
-      const { data: perfil, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (error || !perfil?.role){
-        alert("No se pudo validar tu rol.");
-        window.location.href = INDEX_URL;
-        return false;
-      }
-
-      const rol = String(perfil.role).toLowerCase().trim();
-      if (rol !== "admin"){
-        alert("No autorizado");
-        window.location.href = INDEX_URL;
-        return false;
-      }
-      return true;
+      return { ok:true, session, rol, permiso };
     }
 
     function roleSelect(current){
@@ -339,15 +317,11 @@
       document.getElementById("btn-refresh").addEventListener("click", loadProfiles);
       document.getElementById("btn-logout").addEventListener("click", cerrarSesion);
 
-      // ✅ 1) Guard por permisos
+      // ✅ ÚNICO guard: permisos por rol (modulos_permisos)
       const guard = await validarPermisoModulo();
       if (!guard.ok) return;
 
-      // ✅ 2) Solo admin puede usar este módulo
-      const okAdmin = await requireAdmin();
-      if (!okAdmin) return;
-
-      // ✅ 3) cargar
+      // ✅ cargar
       await loadProfiles();
     }
 
@@ -362,4 +336,5 @@
   </script>
 </body>
 </html>
+
 
