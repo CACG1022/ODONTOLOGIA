@@ -151,6 +151,23 @@
     .kpi .k{ color: var(--muted); font-size: 12px; font-weight: 800; }
     .kpi .v{ margin-top: 8px; font-size: 18px; font-weight: 900; }
     .kpi .s{ margin-top: 6px; color: var(--muted); font-size: 12px; }
+    .kpi .row{
+      margin-top: 8px;
+      display:flex;
+      flex-direction:column;
+      gap: 6px;
+    }
+    .kpi .row .line{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 10px;
+      font-size: 12.5px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    .kpi .row .line b{ color: var(--text); font-weight: 900; }
+    .kpi .row .line .mono{ font-weight: 900; color: var(--text); }
 
     .cards{
       display:grid;
@@ -335,16 +352,29 @@
           <div class="v mono">$ <span id="k_total_filtro">0</span></div>
           <div class="s" id="k_total_filtro_s">—</div>
         </div>
+
         <div class="kpi">
           <div class="k">Total facturado (mes actual)</div>
           <div class="v mono">$ <span id="k_total_mes">0</span></div>
           <div class="s" id="k_total_mes_s">—</div>
         </div>
+
+        <!-- ✅ AJUSTADO: ahora muestra cantidades + totales ($) de pendientes y pagadas -->
         <div class="kpi">
-          <div class="k">Facturas pendientes (filtro)</div>
-          <div class="v"><span id="k_pendientes">0</span></div>
-          <div class="s">Pagadas: <b id="k_pagadas">0</b></div>
+          <div class="k">Facturas (filtro)</div>
+          <div class="row">
+            <div class="line">
+              <span>⚠️ Pendientes:</span>
+              <span><b id="k_pendientes">0</b> • <span class="mono">$ <span id="k_total_pendientes">0</span></span></span>
+            </div>
+            <div class="line">
+              <span>✅ Pagadas:</span>
+              <span><b id="k_pagadas">0</b> • <span class="mono">$ <span id="k_total_pagadas">0</span></span></span>
+            </div>
+          </div>
+          <div class="s">Totales calculados con el filtro actual.</div>
         </div>
+
         <div class="kpi">
           <div class="k">Procedimiento más vendido (filtro)</div>
           <div class="v" id="k_top_proc">—</div>
@@ -399,6 +429,11 @@
             <button class="btn small" id="btn-show-all" type="button">📄 Todas</button>
             <button class="btn small" id="btn-show-pending" type="button">⚠️ Solo pendientes</button>
             <button class="btn small" id="btn-show-paid" type="button">✅ Solo pagadas</button>
+          </div>
+
+          <!-- ✅ NUEVO: total de la vista (según botón: todas/pendientes/pagadas) -->
+          <div class="mono" id="view_total_line" style="margin:-2px 0 10px 0; color:var(--muted);">
+            Mostrando: — • Total: $ 0
           </div>
 
           <div style="max-height: 52vh; overflow:auto; border:1px solid var(--line); border-radius: 12px;">
@@ -771,8 +806,23 @@
       tbody.innerHTML = "";
 
       let rows = [...(state.facturasFiltro || [])];
-      if (state._view === "pending") rows = rows.filter(f => f.pagada === false);
-      if (state._view === "paid") rows = rows.filter(f => f.pagada === true);
+      let viewName = "Todas";
+
+      if (state._view === "pending"){
+        rows = rows.filter(f => f.pagada === false);
+        viewName = "Solo pendientes";
+      }
+      if (state._view === "paid"){
+        rows = rows.filter(f => f.pagada === true);
+        viewName = "Solo pagadas";
+      }
+
+      // ✅ Total de la vista (lo que estás viendo en la tabla)
+      const totalVista = rows.reduce((acc,f) => acc + (Number(f.valor_total) || 0), 0);
+      const viewLine = $("view_total_line");
+      if (viewLine){
+        viewLine.textContent = `Mostrando: ${viewName} (${rows.length}) • Total: $ ${money(totalVista)}`;
+      }
 
       if (!rows.length){
         tbody.innerHTML = `<tr><td colspan="7" class="empty">No hay facturas para mostrar.</td></tr>`;
@@ -798,8 +848,15 @@
       const rows = state.facturasFiltro || [];
       const totalFiltro = rows.reduce((acc,f) => acc + (Number(f.valor_total) || 0), 0);
 
-      const pendientes = rows.filter(f => f.pagada === false).length;
-      const pagadas = rows.filter(f => f.pagada === true).length;
+      const pendientesRows = rows.filter(f => f.pagada === false);
+      const pagadasRows = rows.filter(f => f.pagada === true);
+
+      const pendientes = pendientesRows.length;
+      const pagadas = pagadasRows.length;
+
+      // ✅ NUEVO: totales en dinero por estado
+      const totalPendientes = pendientesRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
+      const totalPagadas = pagadasRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
 
       $("k_total_filtro").textContent = money(totalFiltro);
       const desde = ($("fecha_desde").value || "").trim();
@@ -809,6 +866,10 @@
 
       $("k_pendientes").textContent = String(pendientes);
       $("k_pagadas").textContent = String(pagadas);
+
+      // ✅ Pintar los totales
+      $("k_total_pendientes").textContent = money(totalPendientes);
+      $("k_total_pagadas").textContent = money(totalPagadas);
 
       // Top procedimiento
       const det = state.detalleFiltro || [];
@@ -1060,4 +1121,5 @@
   </script>
 </body>
 </html>
+
 
