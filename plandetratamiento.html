@@ -14,25 +14,110 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
     );
 
-    // 🔒 Verificar sesión activa
-    async function verificarSesion() {
-      const { data: { session } } = await window.supabase.auth.getSession();
-      if (!session) {
-        console.warn("🚫 No hay sesión activa, redirigiendo al login...");
-        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-      } else {
-        console.log("✅ Usuario autenticado:", session.user.email);
-      }
+    // ✅ URLs
+const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+// ✅ Nombre del módulo (ajústalo al nombre real con el que lo guardas en permisos.html)
+const MODULO_ACTUAL = "plandetratamiento";
+
+// ✅ Normaliza posibles nombres de módulo (con/sin .html, con guiones/underscores)
+function getModuloCandidates(mod){
+  const base = String(mod || "").toLowerCase().trim();
+  const withHtml = base.endsWith(".html") ? base : base + ".html";
+  const undersc = base.replaceAll("-", "_");
+  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+  return Array.from(new Set([base, withHtml, undersc, underscHtml]));
+}
+
+// ✅ Leer rol desde profiles (igual que facturación)
+async function cargarRolActual(session){
+  const email = (session?.user?.email || "").trim().toLowerCase();
+  if (!email) return "user";
+
+  try{
+    const { data, error } = await window.supabase
+      .from("profiles")
+      .select("role, created_at, email")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+
+    const role = (data?.role || "").toString().trim().toLowerCase();
+    return role || "user";
+  } catch (err){
+    console.error("No se pudo leer rol en profiles:", err);
+    return "user";
+  }
+}
+
+// ✅ Validar permiso desde modulos_permisos (igual que permisos.html)
+async function validarPermisoModulo(role){
+  const r = (role || "user").toLowerCase().trim();
+  const candidates = getModuloCandidates(MODULO_ACTUAL);
+
+  try{
+    const { data, error } = await window.supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente, modulo")
+      .in("modulo", candidates);
+
+    if (error) throw error;
+
+    const permiso = data?.[0] || null;
+    const ok = !!(permiso && permiso[r] === true);
+
+    if (!ok){
+      window.alert("⛔ No tienes permiso para acceder a este módulo.");
+      window.location.href = INDEX_URL;
+      return false;
     }
+    return true;
+  } catch(err){
+    console.error("Error validando permisos:", err);
+    window.alert("⛔ No se pudo validar permisos de acceso.");
+    window.location.href = INDEX_URL;
+    return false;
+  }
+}
 
-    verificarSesion();
+// 🔒 Verificar sesión activa + permisos (REEMPLAZA tu verificarSesion por este)
+async function verificarSesion() {
+  const { data: { session } } = await window.supabase.auth.getSession();
 
-    window.supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) {
-        console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
-        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-      }
-    });
+  if (!session) {
+    console.warn("🚫 No hay sesión activa, redirigiendo al login...");
+    window.location.href = LOGIN_URL;
+    return;
+  }
+
+  console.log("✅ Usuario autenticado:", session.user.email);
+
+  // ✅ 1) cargar rol
+  const role = await cargarRolActual(session);
+  console.log("👤 Rol:", role);
+
+  // ✅ 2) validar permiso del módulo
+  await validarPermisoModulo(role);
+}
+
+verificarSesion();
+
+window.supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) {
+    console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
+    window.location.href = LOGIN_URL;
+  } else {
+    // ✅ Si vuelve sesión (refresh/login), revalidar permisos
+    cargarRolActual(session).then(role => validarPermisoModulo(role));
+  }
+});
+
+
+    
   </script>
 
   <meta charset="UTF-8" />
