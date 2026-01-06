@@ -616,7 +616,7 @@
     const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
     const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-    // ✅ Nombre del módulo desde el archivo actual: facturacion
+    // ✅ Nombre del módulo desde el archivo actual
     const MODULO = (location.pathname.split("/").pop() || "")
       .toLowerCase()
       .trim()
@@ -643,6 +643,14 @@
       el.classList.add("show");
       clearTimeout(window.__t);
       window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
+    }
+
+    // ✅ NUEVO: redirigir guardando mensaje para que INDEX lo muestre
+    function redirectWithMessage(msg, type="err"){
+      try{
+        sessionStorage.setItem("global_toast", JSON.stringify({ msg, type }));
+      } catch(e){}
+      window.location.href = INDEX_URL;
     }
 
     function setStatus(msg){
@@ -675,7 +683,6 @@
       return `${yyyy}-${mm}-${dd}`;
     }
 
-    // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
     function parseDateYYYYMMDD(s){
       const v = String(s || "").trim();
       if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
@@ -699,7 +706,7 @@
     }
 
     // =========================
-    // ✅ PERMISOS POR ROL (modulos_permisos) — MISMA LÓGICA QUE permisos.html
+    // ✅ PERMISOS POR ROL (modulos_permisos)
     // =========================
     function getModuloCandidates(mod){
       const base = String(mod || "").toLowerCase().trim();
@@ -709,30 +716,16 @@
       return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
-    async function validarAccesoPorRol(){
-  const role = (state.role || "user").toString().trim().toLowerCase();
-  const ok = ALLOWED_ROLES.includes(role);
-
-  if (!ok){
-    alert("⛔ No tienes permisos para acceder al módulo de Facturación.");
-    try { await supabase.auth.signOut(); } catch(e) {}
-    window.location.href = INDEX_URL;
-    return false;
-  }
-  return true;
-}
-
     async function validarPermisoModulo(){
-      const { data: { session }, error: eSess } = await supabase.auth.getSession();
-      if (eSess) console.error("getSession error:", eSess);
+      const { data: { session } } = await supabase.auth.getSession();
 
       if(!session){
+        // Si no hay sesión, vamos a login
         window.location.href = LOGIN_URL;
         return { ok:false };
       }
-      state.session = session;
 
-      // UI
+      state.session = session;
       $("user-email").textContent = session.user?.email || "Usuario";
 
       // rol desde profiles por ID (más confiable)
@@ -743,8 +736,8 @@
         .single();
 
       if (ePerfil || !perfil?.role){
-        toast("No se pudo obtener tu rol (profiles).", "err");
-        window.location.href = INDEX_URL;
+        console.error("No se pudo obtener rol:", ePerfil);
+        redirectWithMessage("⛔ No se pudo obtener tu rol (profiles).", "err");
         return { ok:false };
       }
 
@@ -761,22 +754,19 @@
 
       if (ePerm){
         console.error("Error leyendo modulos_permisos:", ePerm);
-        toast("Error leyendo permisos del módulo.", "err");
-        window.location.href = INDEX_URL;
+        redirectWithMessage("⛔ Error leyendo permisos del módulo.", "err");
         return { ok:false };
       }
 
       const permiso = (permisos || [])[0] || null;
 
       if (!permiso){
-        toast("Módulo no configurado en permisos.", "err");
-        window.location.href = INDEX_URL;
+        redirectWithMessage("⛔ Este módulo no está configurado en Permisos.", "err");
         return { ok:false };
       }
 
       if (!permiso[rol]){
-        toast("⛔ No tienes permiso para acceder a Facturación.", "err");
-        window.location.href = INDEX_URL;
+        redirectWithMessage("⛔ No tienes permiso para acceder a Facturación.", "err");
         return { ok:false };
       }
 
@@ -790,11 +780,9 @@
         window.location.href = LOGIN_URL;
       }
 
-      // Si vuelve a iniciar / refresca token, revalida permisos del módulo
       if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
         state.session = session;
         $("user-email").textContent = session.user?.email || "Usuario";
-        // revalida permisos sin romper nada
         validarPermisoModulo();
       }
     });
@@ -1829,7 +1817,9 @@
         XLSX.utils.sheet_add_aoa(ws, [
           [],
           ["TOTAL FACTURADO", totalFacturado]
-        ], { origin: `A${lastRow}` });
+        ], considerOrigin({ origin: `A${lastRow}` }));
+
+        function considerOrigin(opts){ return opts; }
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
@@ -1907,8 +1897,7 @@
 
         $("btn-export-excel").addEventListener("click", exportarExcel);
 
-        // ✅ Antes: proteger() + ALLOWED_ROLES
-        // ✅ Ahora: PERMISOS POR ROL (modulos_permisos)
+        // ✅ Guard del módulo por permisos
         const guard = await validarPermisoModulo();
         if (!guard.ok) return;
 
@@ -1924,7 +1913,6 @@
       }
     }
 
-    // ✅ ARRANQUE ROBUSTO (esto evita el “ningún botón funciona”)
     if (document.readyState === "loading"){
       window.addEventListener("DOMContentLoaded", init);
     } else {
@@ -1933,6 +1921,5 @@
   </script>
 </body>
 </html>
-
 
 
