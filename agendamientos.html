@@ -73,25 +73,24 @@
 
       // 2) Leer permisos del módulo
       const { data: permiso, error: ePerm } = await supabase
-  .from("modulos_permisos")
-  .select("admin, doctor, auxiliar, paciente, modulo")
-  .eq("modulo", MODULO)
-  .maybeSingle();
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente, modulo")
+        .eq("modulo", MODULO)
+        .maybeSingle();
 
-if (ePerm) {
-  console.error("❌ Error leyendo modulos_permisos:", ePerm);
-  alert("Error leyendo permisos del módulo: " + (ePerm.message || ePerm));
-  window.location.href = window.APP_URLS.HOME;
-  return { ok:false };
-}
+      if (ePerm) {
+        console.error("❌ Error leyendo modulos_permisos:", ePerm);
+        alert("Error leyendo permisos del módulo: " + (ePerm.message || ePerm));
+        window.location.href = window.APP_URLS.HOME;
+        return { ok:false };
+      }
 
-if (!permiso) {
-  console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
-  alert("Módulo no configurado en permisos.");
-  window.location.href = window.APP_URLS.HOME;
-  return { ok:false };
-}
-
+      if (!permiso) {
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        alert("Módulo no configurado en permisos.");
+        window.location.href = window.APP_URLS.HOME;
+        return { ok:false };
+      }
 
       // 3) Validar permiso
       if (!permiso[rol]) {
@@ -169,10 +168,39 @@ if (!permiso) {
       return `${y}-${m}-${d}T${hh}:${mm}`;
     }
 
+    // ✅ Mantener para cálculos/título (usa UTC)
     function toISOFromLocalInput(val){
       const d = new Date(val);
       if (isNaN(d.getTime())) return null;
       return d.toISOString();
+    }
+
+    // ✅ NUEVO: guardar en DB como hora local (Colombia) sin zona
+    function toDbLocalTimestamp(val){
+      // "2026-01-07T16:00" -> "2026-01-07 16:00:00"
+      if (!val) return null;
+      return String(val).replace("T"," ") + ":00";
+    }
+
+    // ✅ NUEVO: Date -> "YYYY-MM-DD HH:mm:ss" en hora local
+    function toDbFromDate(dateObj){
+      if (!dateObj || !(dateObj instanceof Date) || isNaN(dateObj.getTime())) return null;
+      const pad = (n)=> String(n).padStart(2,"0");
+      const y = dateObj.getFullYear();
+      const m = pad(dateObj.getMonth()+1);
+      const d = pad(dateObj.getDate());
+      const hh = pad(dateObj.getHours());
+      const mm = pad(dateObj.getMinutes());
+      const ss = pad(dateObj.getSeconds());
+      return `${y}-${m}-${d} ${hh}:${mm}:${ss}`;
+    }
+
+    // ✅ NUEVO: DB "YYYY-MM-DD HH:mm:ss" -> input datetime-local "YYYY-MM-DDTHH:mm"
+    function dbTimestampToDatetimeLocal(ts){
+      if (!ts) return "";
+      const s = String(ts);
+      // acepta "YYYY-MM-DD HH:mm:ss" o "YYYY-MM-DDTHH:mm:ss"
+      return s.replace(" ", "T").slice(0,16);
     }
 
     function normalizeText(t){ return (t || "").trim(); }
@@ -404,16 +432,17 @@ if (!permiso) {
     // CRUD Supabase (citas)
     // =========================
     function rowToEvent(row){
-      const start = new Date(row.inicio);
-      const end   = new Date(row.fin);
+      // ✅ Como ahora inicio/fin son timestamp sin tz, los convertimos a Date desde partes (más seguro)
+      const start = new Date(dbTimestampToDatetimeLocal(row.inicio));
+      const end   = new Date(dbTimestampToDatetimeLocal(row.fin));
 
       const estado = row.estado || "programada";
 
       const titulo = normalizeText(row.titulo)
         ? row.titulo
         : construirTituloAutomatico({
-            inicioISO: row.inicio,
-            finISO: row.fin,
+            inicioISO: toISOFromLocalInput(dbTimestampToDatetimeLocal(row.inicio)),
+            finISO: toISOFromLocalInput(dbTimestampToDatetimeLocal(row.fin)),
             nombrePaciente: row.nombre_paciente,
             cedulaPaciente: row.documento_paciente,
             especialidad: row.especialidad
@@ -422,8 +451,8 @@ if (!permiso) {
       return {
         id: row.id,
         title: titulo,
-        start: row.inicio,
-        end: row.fin,
+        start: dbTimestampToDatetimeLocal(row.inicio),
+        end: dbTimestampToDatetimeLocal(row.fin),
         backgroundColor: colorPorEstado(estado),
         borderColor: colorPorEstado(estado),
         extendedProps: {
@@ -443,11 +472,16 @@ if (!permiso) {
     }
 
     async function fetchCitas(rangeStartISO, rangeEndISO, profesionalIdFiltro, estadoFiltro, especialidadFiltro){
+      // ✅ rangeStartISO/rangeEndISO vienen en ISO UTC por FullCalendar.
+      // Convertimos a hora local para comparar con timestamp sin tz en DB.
+      const startLocal = toDbFromDate(new Date(rangeStartISO));
+      const endLocal   = toDbFromDate(new Date(rangeEndISO));
+
       let q = supabase
         .from(TABLA_CITAS)
         .select("*")
-        .gte("inicio", rangeStartISO)
-        .lt("inicio", rangeEndISO)
+        .gte("inicio", startLocal)
+        .lt("inicio", endLocal)
         .order("inicio", { ascending: true });
 
       if (profesionalIdFiltro) q = q.eq("profesional_id", profesionalIdFiltro);
@@ -675,8 +709,9 @@ if (!permiso) {
               especialidad: row.especialidad,
               estado: row.estado,
               notas: row.notas,
-              inicio_local: toLocalInputValue(new Date(row.inicio)),
-              fin_local: toLocalInputValue(new Date(row.fin)),
+              // ✅ timestamp sin tz -> input datetime-local directo
+              inicio_local: dbTimestampToDatetimeLocal(row.inicio),
+              fin_local: dbTimestampToDatetimeLocal(row.fin),
             });
 
           } catch(e){
@@ -692,6 +727,11 @@ if (!permiso) {
             setLoading(true);
             const id = info.event.id;
 
+            // ✅ Guardar en DB como hora local (no ISO UTC)
+            const inicioDB = toDbFromDate(info.event.start);
+            const finDB = toDbFromDate(info.event.end);
+
+            // Para título seguimos usando ISO (solo visual)
             const inicioISO = info.event.start.toISOString();
             const finISO = info.event.end.toISOString();
 
@@ -703,7 +743,7 @@ if (!permiso) {
               especialidad: info.event.extendedProps.especialidad
             });
 
-            const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
+            const row = { inicio: inicioDB, fin: finDB, titulo: nuevoTitulo };
             await actualizarCita(id, row);
 
             info.event.setProp("title", nuevoTitulo);
@@ -725,6 +765,11 @@ if (!permiso) {
             setLoading(true);
             const id = info.event.id;
 
+            // ✅ Guardar en DB como hora local (no ISO UTC)
+            const inicioDB = toDbFromDate(info.event.start);
+            const finDB = toDbFromDate(info.event.end);
+
+            // Para título seguimos usando ISO (solo visual)
             const inicioISO = info.event.start.toISOString();
             const finISO = info.event.end.toISOString();
 
@@ -736,7 +781,7 @@ if (!permiso) {
               especialidad: info.event.extendedProps.especialidad
             });
 
-            const row = { inicio: inicioISO, fin: finISO, titulo: nuevoTitulo };
+            const row = { inicio: inicioDB, fin: finDB, titulo: nuevoTitulo };
             await actualizarCita(id, row);
 
             info.event.setProp("title", nuevoTitulo);
@@ -830,12 +875,14 @@ if (!permiso) {
         if (!especialidad){ toast("Selecciona la especialidad del procedimiento.", "warn"); return; }
         if (!inicioLocal || !finLocal){ toast("Selecciona inicio y fin.", "warn"); return; }
 
+        // ✅ Para cálculos/título seguimos usando ISO (UTC)
         const inicioISO = toISOFromLocalInput(inicioLocal);
         const finISO = toISOFromLocalInput(finLocal);
         if (!inicioISO || !finISO){ toast("Fecha/hora inválida.", "warn"); return; }
 
-        const inicioD = new Date(inicioISO);
-        const finD = new Date(finISO);
+        // ✅ Validación de rango usando valores del input (local)
+        const inicioD = new Date(inicioLocal);
+        const finD = new Date(finLocal);
         if (finD <= inicioD){ toast("La hora final debe ser mayor que la inicial.", "warn"); return; }
 
         const tituloAuto = construirTituloAutomatico({
@@ -848,6 +895,10 @@ if (!permiso) {
 
         $("titulo").value = tituloAuto;
         $("titulo_preview").textContent = tituloAuto;
+
+        // ✅ Guardar en DB como hora local Colombia (timestamp sin tz)
+        const inicioDB = toDbLocalTimestamp(inicioLocal);
+        const finDB = toDbLocalTimestamp(finLocal);
 
         const row = {
           usuario_id: currentSession.user.id,
@@ -863,8 +914,8 @@ if (!permiso) {
           estado: $("estado").value || "programada",
           notas: normalizeText($("notas").value),
 
-          inicio: inicioISO,
-          fin: finISO,
+          inicio: inicioDB,
+          fin: finDB,
 
           nombre_profesional: getNombreProfesionalPorId(profesionalId)
         };
@@ -1492,7 +1543,6 @@ if (!permiso) {
   <div id="toast" class="toast">Listo</div>
 </body>
 </html>
-
 
 
 
