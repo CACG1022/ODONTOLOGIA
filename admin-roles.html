@@ -309,10 +309,11 @@
 
     // ✅ GUARD por módulo (permisos.html) + tu regla admin por email
     const guard = await validarPermisoModulo();
-    if (!guard.ok) { /* redirigido */ }
+     if (!guard.ok) return;
 
-    await requireAdmin();
-    await loadProfiles();
+     await requireAdmin();
+     await loadProfiles();
+
   </script>
 </body>
 </html>
