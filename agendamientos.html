@@ -244,7 +244,7 @@ if (!permiso) {
       $("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
       const r = String(role || "").toLowerCase().trim();
-      const allowed = (r === "admin" || r === "auxiliar");
+      const allowed = (r === "admin" || r === "auxiliar"|| r === "doctor");
 
       if (!allowed){
         $("blocked").style.display = "block";
