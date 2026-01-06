@@ -901,26 +901,26 @@
         const finDB = toDbLocalTimestamp(finLocal);
 
         const row = {
-          usuario_id: currentSession.user.id,
-          profesional_id: profesionalId,
+  usuario_id: currentSession.user.id,
+  profesional_id: profesionalId,
 
-          nombre_paciente: normalizeText($("nombre_paciente").value),
-          documento_paciente: normalizeText($("documento_paciente").value),
-          telefono_paciente: normalizeText($("telefono_paciente").value),
-          correo_paciente: normalizeText($("correo_paciente").value),
+  nombre_paciente: normalizeText($("nombre_paciente").value),
+  documento_paciente: normalizeText($("documento_paciente").value),
+  telefono_paciente: normalizeText($("telefono_paciente").value),
+  correo_paciente: normalizeText($("correo_paciente").value),
 
-          especialidad: normalizeText(especialidad),
-          titulo: tituloAuto,
-          estado: $("estado").value || "programada",
-          notas: normalizeText($("notas").value),
+  especialidad: normalizeText(especialidad),
+  titulo: tituloAuto,
+  estado: $("estado").value || "programada",
+  notas: normalizeText($("notas").value),
 
-          inicio: inicioDB,
-          fin: finDB,
+  inicio: inicioDB,
+  fin: finDB,
 
-          nombre_profesional: getNombreProfesionalPorId(profesionalId)
-          usuario_email: currentSession.user.email,
+  nombre_profesional: getNombreProfesionalPorId(profesionalId),
+  usuario_email: currentSession.user.email
+};
 
-        };
 
         if (id){
           await actualizarCita(id, row);
