@@ -8,152 +8,326 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
+    :root{
+      --bg:#f3f5f7;
+      --card:#ffffff;
+      --text:#1f2a37;
+      --muted:#6b7280;
+      --primary:#2c7be5;
+      --line:#e5e7eb;
+    }
     body{
+      margin:0;
       font-family: Arial, sans-serif;
-      background:#f3f5f7;
-      padding:20px;
-    }
-    h1{
-      margin-bottom:20px;
-    }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border-radius:8px;
-      overflow:hidden;
-    }
-    th,td{
-      padding:12px;
-      text-align:center;
-      border-bottom:1px solid #eee;
-    }
-    th{
-      background:#2c7be5;
-      color:#fff;
-    }
-    tr:hover{
-      background:#f8f9fa;
-    }
-    input[type="checkbox"]{
-      transform:scale(1.2);
-      cursor:pointer;
+      background:var(--bg);
+      color:var(--text);
+      padding:24px;
     }
     .top{
       display:flex;
-      justify-content:space-between;
       align-items:center;
-      margin-bottom:15px;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:16px;
+    }
+    h1{
+      margin:0;
+      font-size:32px;
+      font-weight:800;
+    }
+    .actions{
+      display:flex;
+      gap:10px;
+      align-items:center;
     }
     button{
-      padding:8px 14px;
+      padding:10px 14px;
       border:none;
-      background:#2c7be5;
+      background:var(--primary);
       color:#fff;
-      border-radius:6px;
+      border-radius:8px;
+      cursor:pointer;
+      font-weight:700;
+    }
+    button.secondary{
+      background:#111827;
+    }
+    button:disabled{
+      opacity:.6;
+      cursor:not-allowed;
+    }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 2px 10px rgba(0,0,0,.04);
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+    }
+    th,td{
+      padding:14px 12px;
+      border-bottom:1px solid var(--line);
+      text-align:center;
+      font-size:14px;
+    }
+    th{
+      background:var(--primary);
+      color:#fff;
+      font-weight:800;
+    }
+    td:first-child, th:first-child{
+      text-align:left;
+      padding-left:16px;
+    }
+    tr:hover td{
+      background:#f9fafb;
+    }
+
+    input[type="checkbox"]{
+      transform:scale(1.15);
       cursor:pointer;
     }
-    button:hover{
-      opacity:.9;
+
+    .statusbar{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      padding:12px 16px;
+      border-bottom:1px solid var(--line);
+      background:#fbfdff;
+    }
+    .badge{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      font-size:13px;
+      color:var(--muted);
+      background:#fff;
+    }
+    .dot{
+      width:8px;height:8px;border-radius:999px;background:var(--primary);
+      display:inline-block;
+    }
+    .msg{
+      padding:18px 16px;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .error{
+      color:#b91c1c;
+      background:#fef2f2;
+      border-top:1px solid #fecaca;
+      padding:12px 16px;
+      display:none;
+      white-space:pre-wrap;
     }
   </style>
 </head>
 
 <body>
 
-<div class="top">
-  <h1>Gestión de Permisos por Rol</h1>
-  <button onclick="window.location.href='index.html'">Volver</button>
-</div>
+  <div class="top">
+    <h1>Gestión de Permisos por Rol</h1>
+    <div class="actions">
+      <button class="secondary" id="btnSeed" onclick="seedModulos()">Cargar módulos por defecto</button>
+      <button onclick="window.location.href='index.html'">Volver</button>
+    </div>
+  </div>
 
-<table>
-  <thead>
-    <tr>
-      <th>Módulo</th>
-      <th>Admin</th>
-      <th>Doctor</th>
-      <th>Auxiliar</th>
-      <th>User</th>
-    </tr>
-  </thead>
-  <tbody id="tablaPermisos"></tbody>
-</table>
+  <div class="card">
+    <div class="statusbar">
+      <span class="badge"><span class="dot"></span> Usuario: <b id="uEmail">—</b></span>
+      <span class="badge">Rol: <b id="uRole">—</b></span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Módulo</th>
+          <th>Admin</th>
+          <th>Doctor</th>
+          <th>Auxiliar</th>
+          <th>Paciente</th>
+        </tr>
+      </thead>
+      <tbody id="tablaPermisos"></tbody>
+    </table>
+
+    <div id="emptyMsg" class="msg" style="display:none;">
+      No hay módulos cargados en <b>modulos_permisos</b>.  
+      Puedes insertarlos en Supabase o presionar <b>“Cargar módulos por defecto”</b>.
+    </div>
+
+    <div id="errBox" class="error"></div>
+  </div>
 
 <script>
-  const supabase = window.supabase.createClient(
-    'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE
-'
-  );
+  // ✅ Pega aquí tus credenciales
+  const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
 
-  let usuarioActual = null;
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const elEmail = document.getElementById('uEmail');
+  const elRole  = document.getElementById('uRole');
+  const tbody   = document.getElementById('tablaPermisos');
+  const emptyMsg= document.getElementById('emptyMsg');
+  const errBox  = document.getElementById('errBox');
+  const btnSeed = document.getElementById('btnSeed');
+
   let rolActual = null;
 
-  // 🔒 Verificar sesión y rol
-  async function validarAcceso() {
-    const { data:{ user } } = await supabase.auth.getUser();
-    if(!user){
+  function showError(msg){
+    errBox.style.display = 'block';
+    errBox.textContent = msg;
+  }
+
+  function clearError(){
+    errBox.style.display = 'none';
+    errBox.textContent = '';
+  }
+
+  async function validarAccesoAdmin() {
+    clearError();
+
+    const { data: { user }, error: eUser } = await supabase.auth.getUser();
+    if (eUser) showError("Error getUser():\n" + JSON.stringify(eUser, null, 2));
+
+    if (!user) {
       window.location.href = 'login.html';
       return;
     }
 
-    const { data: perfil } = await supabase
+    elEmail.textContent = user.email || user.id;
+
+    const { data: perfil, error } = await supabase
       .from('profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
-    rolActual = perfil?.role;
-
-    if(rolActual !== 'admin'){
-      alert('Acceso denegado');
-      window.location.href = 'index.html';
-    }
-  }
-
-  // 📥 Cargar permisos
-  async function cargarPermisos(){
-    const { data, error } = await supabase
-      .from('modulos_permisos')
-      .select('*')
-      .order('label');
-
-    if(error){
-      alert('Error cargando permisos');
+    if (error) {
+      showError("No pude leer tu rol en profiles.\n" + JSON.stringify(error, null, 2));
       return;
     }
 
-    const tbody = document.getElementById('tablaPermisos');
+    rolActual = perfil?.role || 'user';
+    elRole.textContent = rolActual;
+
+    if (rolActual !== 'admin') {
+      alert('Acceso denegado: solo ADMIN.');
+      window.location.href = 'index.html';
+      return;
+    }
+  }
+
+  async function cargarPermisos(){
+    clearError();
     tbody.innerHTML = '';
+    emptyMsg.style.display = 'none';
+
+    const { data, error } = await supabase
+      .from('modulos_permisos')
+      .select('id, modulo, label, admin, doctor, auxiliar, paciente')
+      .order('label', { ascending: true });
+
+    if (error) {
+      showError(
+        "Error cargando modulos_permisos.\n" +
+        "Revisa RLS/policies (SELECT) o el nombre de columnas.\n\n" +
+        JSON.stringify(error, null, 2)
+      );
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      emptyMsg.style.display = 'block';
+      return;
+    }
 
     data.forEach(m => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td>${m.label}</td>
-        <td><input type="checkbox" ${m.admin ? 'checked':''} onchange="guardar('${m.id}','admin',this.checked)"></td>
-        <td><input type="checkbox" ${m.doctor ? 'checked':''} onchange="guardar('${m.id}','doctor',this.checked)"></td>
-        <td><input type="checkbox" ${m.auxiliar ? 'checked':''} onchange="guardar('${m.id}','auxiliar',this.checked)"></td>
-        <td><input type="checkbox" ${m.user ? 'checked':''} onchange="guardar('${m.id}','user',this.checked)"></td>
+        <td>${m.label} <span style="color:#9ca3af;">(${m.modulo})</span></td>
+        <td><input type="checkbox" ${m.admin ? 'checked':''}
+              onchange="guardar('${m.id}','admin',this.checked)"></td>
+        <td><input type="checkbox" ${m.doctor ? 'checked':''}
+              onchange="guardar('${m.id}','doctor',this.checked)"></td>
+        <td><input type="checkbox" ${m.auxiliar ? 'checked':''}
+              onchange="guardar('${m.id}','auxiliar',this.checked)"></td>
+        <td><input type="checkbox" ${m.paciente ? 'checked':''}
+              onchange="guardar('${m.id}','paciente',this.checked)"></td>
       `;
       tbody.appendChild(tr);
     });
   }
 
-  // 💾 Guardar cambio
   async function guardar(id, campo, valor){
+    clearError();
+
     const { error } = await supabase
       .from('modulos_permisos')
       .update({ [campo]: valor })
       .eq('id', id);
 
-    if(error){
-      alert('Error guardando permiso');
+    if (error) {
+      showError(
+        "Error guardando permiso.\n" +
+        "Si dice RLS: te falta policy de UPDATE para admin.\n\n" +
+        JSON.stringify(error, null, 2)
+      );
     }
   }
 
+  // 🔥 Crea módulos por defecto desde la UI
+  async function seedModulos(){
+    clearError();
+    btnSeed.disabled = true;
+
+    const defaults = [
+      { modulo:'index', label:'Panel Principal', admin:true, doctor:true, auxiliar:true, paciente:true },
+      { modulo:'agendamientos', label:'Agendamientos', admin:true, doctor:true, auxiliar:true, paciente:true },
+      { modulo:'historia_clinica', label:'Historia Clínica', admin:true, doctor:true, auxiliar:true, paciente:false },
+      { modulo:'facturacion', label:'Facturación', admin:true, doctor:false, auxiliar:true, paciente:false },
+      { modulo:'reportes', label:'Reportes', admin:true, doctor:false, auxiliar:false, paciente:false },
+      { modulo:'actualizacion_precios', label:'Actualización de Precios', admin:true, doctor:false, auxiliar:false, paciente:false },
+      { modulo:'admin_roles', label:'Administración de Usuarios', admin:true, doctor:false, auxiliar:false, paciente:false }
+    ];
+
+    // Nota: insert requiere policy de INSERT para admin (si no, fallará con RLS)
+    const { error } = await supabase
+      .from('modulos_permisos')
+      .insert(defaults, { returning: 'minimal' });
+
+    btnSeed.disabled = false;
+
+    if (error) {
+      showError(
+        "No pude insertar módulos por defecto.\n" +
+        "Si el error es RLS, crea policy de INSERT para admin.\n\n" +
+        JSON.stringify(error, null, 2)
+      );
+      return;
+    }
+
+    await cargarPermisos();
+  }
+
   // Init
-  validarAcceso().then(cargarPermisos);
+  (async function(){
+    await validarAccesoAdmin();
+    await cargarPermisos();
+  })();
 </script>
 
 </body>
 </html>
+
