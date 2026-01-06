@@ -106,10 +106,9 @@
     // ✅ CAMBIA ESTO SOLO SI tu fila en modulos_permisos usa otro nombre.
     // Debe coincidir EXACTO con modulos_permisos.modulo
     const MODULO = (location.pathname.split("/").pop() || "")
-  .toLowerCase()
-  .trim()
-  .replace(".html", "");
-
+      .toLowerCase()
+      .trim()
+      .replace(".html", "");
 
     const tbody = document.getElementById("tbody");
     const status = document.getElementById("status");
@@ -127,6 +126,17 @@
         return null;
       }
       return session;
+    }
+
+    function getModuloCandidates(mod){
+      const base = String(mod || "").toLowerCase().trim();
+      const withHtml = base.endsWith(".html") ? base : (base + ".html");
+
+      const undersc = base.replaceAll("-", "_");
+      const underscHtml = undersc.endsWith(".html") ? undersc : (undersc + ".html");
+
+      // Únicos, sin vacíos
+      return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
     }
 
     async function validarPermisoModulo(){
@@ -148,12 +158,14 @@
 
       const rol = String(perfil.role).toLowerCase().trim(); // admin/doctor/auxiliar/paciente/user
 
-      // 2) Leer permisos del módulo en modulos_permisos
-      const { data: permiso, error: ePerm } = await supabase
+      // 2) Leer permisos del módulo en modulos_permisos (con fallback por variantes)
+      const candidates = getModuloCandidates(MODULO);
+      console.log("🔎 MODULO detectado:", MODULO, "→ candidatos:", candidates);
+
+      const { data: permisos, error: ePerm } = await supabase
         .from("modulos_permisos")
         .select("admin, doctor, auxiliar, paciente, modulo")
-        .eq("modulo", MODULO)
-        .maybeSingle();
+        .in("modulo", candidates);
 
       if (ePerm){
         console.error("❌ Error leyendo modulos_permisos:", ePerm);
@@ -162,8 +174,10 @@
         return { ok:false };
       }
 
+      const permiso = (permisos || [])[0] || null;
+
       if (!permiso){
-        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo candidates =", candidates);
         alert("Módulo no configurado en permisos.");
         window.location.href = INDEX_URL;
         return { ok:false };
@@ -176,7 +190,7 @@
         return { ok:false };
       }
 
-      console.log("✅ Acceso permitido a:", MODULO, "Rol:", rol);
+      console.log("✅ Acceso permitido a:", permiso.modulo, "Rol:", rol);
       return { ok:true, session, rol };
     }
 
@@ -287,4 +301,3 @@
   </script>
 </body>
 </html>
-
