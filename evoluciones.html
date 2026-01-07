@@ -5,122 +5,20 @@
   <title>Sección Evoluciones</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <style>
-    :root{
-      --ink:#19324d;
-      --muted:#6b7a90;
-      --bg:#f6f8fb;
-      --card:#ffffff;
-      --brand:#2a5d84;
-      --gap:18px;
-      --radius:14px;
-      --shadow:0 6px 18px rgba(0,0,0,.06);
-      --line:#e7edf5;
-      --input:#cbd5e1;
-    }
+  <!-- 🔐 SUPABASE (IGUAL AL ORIGINAL) -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    *{box-sizing:border-box}
-    body{
-      margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg);
-    }
-    .container{ max-width:1100px; margin:0 auto; }
-    h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
-    h2{ font-size:18px; margin:0 0 14px; color:var(--brand); }
+    // ==============================
+    // 🔐 CONFIG SUPABASE
+    // ==============================
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
 
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:22px;
-      box-shadow:var(--shadow);
-      margin-bottom:22px;
-    }
-    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
+    window.supabase = supabase;
 
-    .grid{ display:grid; gap:var(--gap); }
-    .g-2{ grid-template-columns:1fr 1fr; }
-    .g-3{ grid-template-columns:repeat(3,1fr); }
-    .g-4{ grid-template-columns:repeat(4,1fr); }
-    .full{ grid-column:1 / -1; }
-
-    .ctrl{ display:flex; flex-direction:column; gap:8px; }
-    .ctrl label{ font-size:13px; color:var(--muted); }
-
-    input[type="text"],input[type="email"],input[type="tel"],
-    input[type="number"],input[type="date"],input[type="time"], textarea{
-      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
-      font-size:15px; background:#fff;
-    }
-    select {
-      width:100%;
-      border:1px solid var(--input);
-      border-radius:10px;
-      padding:12px;
-      font-size:15px;
-      background:#fff;
-      cursor:pointer;
-    }
-
-    textarea{ min-height:120px; resize:vertical; }
-    .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
-    .chip{
-      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
-      border:1px solid var(--line); border-radius:999px; background:#fff;
-    }
-
-    .checks{
-      display:grid; gap:10px 18px;
-      grid-template-columns:repeat(2,minmax(220px,1fr));
-      padding-top:10px;
-    }
-    .check{
-      display:flex; align-items:center; gap:8px;
-      padding:6px 10px; border:1px dashed var(--line); border-radius:10px; background:#fafcff;
-    }
-
-    .rowline{ height:1px; background:var(--line); margin:12px 0; }
-
-    @media (max-width:980px){
-      .g-4{ grid-template-columns:1fr 1fr; }
-      .g-3{ grid-template-columns:1fr 1fr; }
-    }
-    @media (max-width:680px){
-      .g-2,.g-3,.g-4{ grid-template-columns:1fr; }
-      .checks{ grid-template-columns:1fr; }
-    }
-
-    .btn{
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      border:none;
-      cursor:pointer;
-      color:white;
-      font-size:14px;
-    }
-    .btn-buscar{ background:#0D47A1; }
-    .btn-agenda{ background:#009688; }
-
-    .tabla-evo{
-      width:100%;
-      border-collapse:collapse;
-    }
-    .tabla-evo th,.tabla-evo td{
-      padding:10px;
-      border:1px solid var(--line);
-      vertical-align:top;
-    }
-    .tabla-evo thead tr{
-      background:#eef6ff;
-    }
-
-    .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
-    .vwrap .vfield{ flex: 1; }
-    .vbtn{ width: 44px; min-width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: #F5F5F5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; color: transparent; }
-    .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
-  </style>
-
-  <script>
     // ==============================
     // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
     // ==============================
@@ -250,10 +148,8 @@
     window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
 
     // ==============================
-    // ✅ EVOLUCIONES
+    // ✅ UTILIDADES (IGUAL)
     // ==============================
-    let evoluciones = [];
-
     function _uuidFallback() {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
@@ -280,6 +176,93 @@
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
+
+    // ==============================
+    // ✅ PROCEDIMIENTOS DESDE SUPABASE (IGUAL)
+    // ==============================
+    async function cargarProcedimientosDesdeSupabase() {
+      const dl = document.getElementById("procedimientos_list_supabase");
+      if (!dl) return;
+
+      let tries = 0;
+      while (!window.supabase && tries < 40) {
+        await new Promise(r => setTimeout(r, 100));
+        tries++;
+      }
+      if (!window.supabase) return;
+
+      try {
+        const { data, error } = await window.supabase
+          .from("procedimientos_precios")
+          .select("procedimiento, activo")
+          .eq("activo", true)
+          .order("procedimiento", { ascending: true });
+
+        if (error) throw error;
+
+        const items = (data || [])
+          .map(x => String(x.procedimiento || "").trim())
+          .filter(Boolean);
+
+        dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
+      } catch (e) {
+        console.warn("⚠️ Error cargando procedimientos:", e);
+      }
+    }
+
+    // ==============================
+    // ✅ PROFESIONALES DESDE SUPABASE (IGUAL)
+    // ==============================
+    async function cargarProfesionalesDesdeSupabase() {
+      // Esperar a que window.supabase exista
+      let tries = 0;
+      while (!window.supabase && tries < 40) {
+        await new Promise(r => setTimeout(r, 100));
+        tries++;
+      }
+      if (!window.supabase) return;
+
+      const selEvo = document.getElementById("evo_profesional");
+      const selDoc = document.getElementById("doc_profesional");
+      if (!selEvo && !selDoc) return;
+
+      const placeholder = `<option value="">Seleccione profesional...</option>`;
+      if (selEvo) selEvo.innerHTML = placeholder;
+      if (selDoc) selDoc.innerHTML = placeholder;
+
+      try {
+        const { data, error } = await window.supabase
+          .from("profesionales")
+          .select("id, nombre, cedula, activo")
+          .eq("activo", true)
+          .order("nombre", { ascending: true });
+
+        if (error) throw error;
+
+        const options = (data || []).map(p => {
+          const nombre = (p.nombre || "").trim();
+          const cedula = (p.cedula || "").trim();
+
+          // ✅ ESTO ES LO IMPORTANTE:
+          // el value será lo que quieres que quede guardado e impreso
+          const valor = `${cedula} ${nombre}`.trim(); // ejemplo: "1022956631 Camilo Andres..."
+          const label = nombre; // SOLO nombre
+
+          return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
+        }).join("");
+
+        if (selEvo) selEvo.innerHTML = placeholder + options;
+        if (selDoc) selDoc.innerHTML = placeholder + options;
+
+      } catch (e) {
+        console.warn("⚠️ Error cargando profesionales:", e);
+      }
+    }
+
+    // ==============================
+    // ✅ EVOLUCIONES (IGUAL)
+    // ==============================
+    let evoluciones = [];
 
     function limpiarEvolucionForm() {
       const f = document.getElementById("evo_fecha");
@@ -308,16 +291,10 @@
       if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
 
       const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-      const cedula = (
-        document.getElementById("paciente_numdoc")?.value ||
-        document.getElementById("buscar_cedula")?.value ||
-        ""
-      ).trim();
 
-      if (!cedula) {
-        alert("⚠️ Primero debes tener la cédula del paciente.");
-        return;
-      }
+      // En esta versión SOLO Evoluciones, usamos una cédula de ejemplo si no existe.
+      // (No afecta la UI de la sección)
+      const cedula = (localStorage.getItem("cedula_paciente") || "").trim() || "SIN_CEDULA";
 
       const item = {
         id: generarEvolucionId(),
@@ -411,21 +388,127 @@
       });
     }
 
+    // ==============================
+    // ✅ INIT (IMPORTANTÍSIMO para que carguen profesionales y procedimientos)
+    // ==============================
+    document.addEventListener("DOMContentLoaded", () => {
+      // set valores iniciales de fecha/hora como el original al limpiar
+      const f = document.getElementById("evo_fecha");
+      const h = document.getElementById("evo_hora");
+      if (f) f.value = _hoyISO();
+      if (h) h.value = _horaHHMM();
+
+      cargarProcedimientosDesdeSupabase();
+      cargarProfesionalesDesdeSupabase();
+      renderEvoluciones();
+    });
+
     // Exponer funciones usadas en HTML
     window.agregarEvolucion = agregarEvolucion;
     window.eliminarEvolucion = eliminarEvolucion;
     window.limpiarEvolucionForm = limpiarEvolucionForm;
-
-    document.addEventListener("DOMContentLoaded", () => {
-      limpiarEvolucionForm();
-    });
+    window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
   </script>
+
+  <style>
+    :root{
+      --ink:#19324d;
+      --muted:#6b7a90;
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --brand:#2a5d84;
+      --gap:18px;
+      --radius:14px;
+      --shadow:0 6px 18px rgba(0,0,0,.06);
+      --line:#e7edf5;
+      --input:#cbd5e1;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg);
+    }
+    .container{ max-width:1100px; margin:0 auto; }
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
+    }
+    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
+
+    .grid{ display:grid; gap:var(--gap); }
+    .g-3{ grid-template-columns:repeat(3,1fr); }
+    .full{ grid-column:1 / -1; }
+
+    .ctrl{ display:flex; flex-direction:column; gap:8px; }
+    .ctrl label{ font-size:13px; color:var(--muted); }
+
+    input[type="text"],input[type="date"],input[type="time"], textarea{
+      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
+      font-size:15px; background:#fff;
+    }
+    select {
+      width:100%;
+      border:1px solid var(--input);
+      border-radius:10px;
+      padding:12px;
+      font-size:15px;
+      background:#fff;
+      cursor:pointer;
+    }
+
+    textarea{ min-height:120px; resize:vertical; }
+
+    .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+
+    .btn{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      color:white;
+      font-size:14px;
+    }
+    .btn-buscar{ background:#0D47A1; }
+    .btn-agenda{ background:#009688; }
+
+    .tabla-evo{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .tabla-evo th,.tabla-evo td{
+      padding:10px;
+      border:1px solid var(--line);
+      vertical-align:top;
+    }
+    .tabla-evo thead tr{
+      background:#eef6ff;
+    }
+
+    .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
+    .vwrap .vfield{ flex: 1; }
+    .vbtn{ width: 44px; min-width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: #F5F5F5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; color: transparent; }
+    .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
+
+    .rowline{ height:1px; background:var(--line); margin:12px 0; }
+
+    @media (max-width:980px){
+      .g-3{ grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:680px){
+      .g-3{ grid-template-columns:1fr; }
+    }
+  </style>
 </head>
 
 <body>
   <div class="container">
 
-    <!-- ✅ EVOLUCIONES -->
+    <!-- ✅ EVOLUCIONES (IGUALITO AL ORIGINAL) -->
     <section class="card">
       <div class="legend">Evoluciones (procedimientos realizados)</div>
 
@@ -478,6 +561,7 @@
             🎙️ Dictando... habla normal. (Se agregará al final del texto)
           </div>
         </div>
+
       </div>
 
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -505,9 +589,9 @@
       </div>
     </section>
 
-  </div>
+    <!-- ✅ DATALIST (IGUAL AL ORIGINAL, NECESARIO PARA PROCEDIMIENTOS) -->
+    <datalist id="procedimientos_list_supabase"></datalist>
 
-  <!-- (Se mantiene tal cual lo tenías: el datalist sigue referenciado por evo_tipo) -->
-  <datalist id="procedimientos_list_supabase"></datalist>
+  </div>
 </body>
 </html>
