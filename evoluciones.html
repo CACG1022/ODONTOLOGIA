@@ -246,7 +246,6 @@
     }
     textarea{ min-height:120px; resize:vertical; }
 
-    .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
     @media (max-width:980px){ .g-3{ grid-template-columns:1fr 1fr; } }
@@ -282,6 +281,9 @@
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
 
     /* ✅ Firmas */
+    .firma-wrapper{ display:none; }  /* oculto por defecto */
+    .firma-wrapper.show{ display:block; }
+
     .firma-box{
       border:1px solid var(--input);
       border-radius:12px;
@@ -310,13 +312,62 @@
     }
     canvas.firma-canvas{
       width:100%;
-      height:180px; /* visual */
+      height:180px;
       border:1px dashed var(--line);
       border-radius:10px;
-      touch-action:none; /* importante para mobile */
+      touch-action:none;
       background:#fff;
     }
     .firma-hint{ font-size:12px; color:var(--muted); }
+
+    /* ✅ Modal firmas */
+    .modal{
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:9999;
+    }
+    .modal.show{ display:flex; }
+    .modal-card{
+      width:min(720px, 100%);
+      background:#fff;
+      border-radius:14px;
+      box-shadow:0 16px 40px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .modal-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      background:#f6fbff;
+      gap:10px;
+    }
+    .modal-title{ font-weight:800; color:var(--brand); }
+    .modal-close{
+      border:none;
+      background:#0D47A1;
+      color:#fff;
+      padding:10px 12px;
+      border-radius:10px;
+      cursor:pointer;
+      font-size:13px;
+      width:auto;
+    }
+    .modal-body{
+      padding:14px;
+    }
+    .modal-body img{
+      width:100%;
+      height:auto;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fff;
+    }
   </style>
 </head>
 
@@ -402,28 +453,43 @@
         </div>
       </div>
 
-      <!-- ✅ NUEVOS CAMPOS: FIRMAS -->
+      <!-- ✅ BOTÓN PARA MOSTRAR/OCULTAR FIRMAS -->
       <div class="ctrl full">
-        <label>Firma del paciente</label>
-        <div class="firma-box">
-          <canvas id="firma_paciente" class="firma-canvas"></canvas>
-          <div class="firma-actions">
-            <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
-            <button type="button" class="btn-mini" onclick="limpiarFirma('firma_paciente')">Limpiar firma</button>
-          </div>
+        <button type="button" id="btnToggleFirmas" class="btn btn-buscar" style="max-width:260px;" onclick="toggleFirmas()">
+          Agregar firmas
+        </button>
+        <div style="font-size:12px; color:#6b7a90; margin-top:6px;">
+          (Opcional) Solo úsalo cuando sea necesario.
         </div>
       </div>
 
-      <div class="ctrl full">
-        <label>Firma del profesional</label>
-        <div class="firma-box">
-          <canvas id="firma_profesional" class="firma-canvas"></canvas>
-          <div class="firma-actions">
-            <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
-            <button type="button" class="btn-mini" onclick="limpiarFirma('firma_profesional')">Limpiar firma</button>
+      <!-- ✅ FIRMA: ocultas por defecto -->
+      <div id="firmaWrapper" class="firma-wrapper full">
+
+        <div class="ctrl full">
+          <label>Firma del paciente (opcional)</label>
+          <div class="firma-box">
+            <canvas id="firma_paciente" class="firma-canvas"></canvas>
+            <div class="firma-actions">
+              <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
+              <button type="button" class="btn-mini" onclick="limpiarFirma('firma_paciente')">Limpiar firma</button>
+            </div>
           </div>
         </div>
+
+        <div class="ctrl full" style="margin-top:14px;">
+          <label>Firma del profesional (opcional)</label>
+          <div class="firma-box">
+            <canvas id="firma_profesional" class="firma-canvas"></canvas>
+            <div class="firma-actions">
+              <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
+              <button type="button" class="btn-mini" onclick="limpiarFirma('firma_profesional')">Limpiar firma</button>
+            </div>
+          </div>
+        </div>
+
       </div>
+      <!-- /firmaWrapper -->
 
     </div>
 
@@ -444,6 +510,7 @@
             <th>Profesional</th>
             <th>Procedimiento</th>
             <th>Detalle</th>
+            <th>Firmas</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -455,6 +522,19 @@
 </div>
 
 <datalist id="procedimientos_list_supabase"></datalist>
+
+<!-- ✅ Modal para ver firmas -->
+<div id="modalFirma" class="modal" onclick="closeFirmaModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div id="modalFirmaTitulo" class="modal-title">Firma</div>
+      <button class="modal-close" type="button" onclick="closeFirmaModal()">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <img id="modalFirmaImg" alt="Firma" />
+    </div>
+  </div>
+</div>
 
 <script>
   // ==============================
@@ -521,15 +601,41 @@
   }
 
   // ==============================
+  // ✅ TOGGLE FIRMAS
+  // ==============================
+  function toggleFirmas(forceState) {
+    const wrap = document.getElementById("firmaWrapper");
+    const btn = document.getElementById("btnToggleFirmas");
+    if (!wrap || !btn) return;
+
+    const isShowing = wrap.classList.contains("show");
+    const next = (typeof forceState === "boolean") ? forceState : !isShowing;
+
+    if (next) {
+      wrap.classList.add("show");
+      btn.textContent = "Ocultar firmas";
+      // si al mostrar no estaban inicializadas, asegurar init y resize
+      try {
+        _ensureFirmasInit();
+        _refreshCanvasSizes();
+      } catch(e) {}
+    } else {
+      wrap.classList.remove("show");
+      btn.textContent = "Agregar firmas";
+    }
+  }
+
+  // ==============================
   // ✅ FIRMA EN CANVAS (mouse + touch)
   // ==============================
+  let _firmasIniciadas = false;
+
   const firmas = {
     firma_paciente: { canvas: null, ctx: null, drawing: false, hasInk: false },
     firma_profesional: { canvas: null, ctx: null, drawing: false, hasInk: false }
   };
 
   function _resizeCanvasToCSS(canvas) {
-    // Ajusta resolución real al tamaño CSS para evitar firmas pixeladas
     const rect = canvas.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(rect.width * dpr));
@@ -538,6 +644,15 @@
       canvas.width = w;
       canvas.height = h;
     }
+  }
+
+  function _paintWhiteBg(ctx, canvas){
+    ctx.save();
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.globalCompositeOperation = "source-over";
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.restore();
   }
 
   function _initFirma(id) {
@@ -550,13 +665,7 @@
 
     function setup() {
       _resizeCanvasToCSS(canvas);
-      // Fondo blanco (para que el PNG no sea transparente)
-      ctx.save();
-      ctx.setTransform(1,0,0,1,0,0);
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.restore();
+      _paintWhiteBg(ctx, canvas);
 
       ctx.lineWidth = 3;
       ctx.lineCap = "round";
@@ -613,48 +722,82 @@
       ctx.closePath();
     }
 
-    // Mouse
     canvas.addEventListener("mousedown", start);
     canvas.addEventListener("mousemove", move);
     window.addEventListener("mouseup", end);
 
-    // Touch
     canvas.addEventListener("touchstart", start, { passive: false });
     canvas.addEventListener("touchmove", move, { passive: false });
     canvas.addEventListener("touchend", end, { passive: false });
     canvas.addEventListener("touchcancel", end, { passive: false });
 
-    // Reajuste al cambiar tamaño
+    // resize mantenido
     window.addEventListener("resize", () => {
-      // Guardar imagen actual
       const dataUrl = canvas.toDataURL("image/png");
       setup();
-      // Reponer imagen (si existe)
       const img = new Image();
       img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
       img.src = dataUrl;
     });
   }
 
+  function _ensureFirmasInit() {
+    if (_firmasIniciadas) return;
+    _initFirma("firma_paciente");
+    _initFirma("firma_profesional");
+    _firmasIniciadas = true;
+  }
+
+  function _refreshCanvasSizes() {
+    ["firma_paciente", "firma_profesional"].forEach(id => {
+      const f = firmas[id];
+      if (!f?.canvas || !f?.ctx) return;
+      const dataUrl = f.canvas.toDataURL("image/png");
+      _resizeCanvasToCSS(f.canvas);
+      _paintWhiteBg(f.ctx, f.canvas);
+      const img = new Image();
+      img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
+      img.src = dataUrl;
+    });
+  }
+
   function limpiarFirma(id) {
+    _ensureFirmasInit();
     const f = firmas[id];
     if (!f?.canvas || !f?.ctx) return;
     _resizeCanvasToCSS(f.canvas);
-    f.ctx.save();
-    f.ctx.setTransform(1,0,0,1,0,0);
-    f.ctx.globalCompositeOperation = "source-over";
-    f.ctx.fillStyle = "#ffffff";
-    f.ctx.fillRect(0,0,f.canvas.width,f.canvas.height);
-    f.ctx.restore();
+    _paintWhiteBg(f.ctx, f.canvas);
     f.hasInk = false;
   }
 
   function obtenerFirmaBase64(id) {
+    // Si está oculto, igual puede haber firma (no obligatoria)
+    _ensureFirmasInit();
     const f = firmas[id];
     if (!f?.canvas) return "";
-    // Si no se dibujó nada, retornamos vacío
     if (!f.hasInk) return "";
-    return f.canvas.toDataURL("image/png"); // base64 PNG
+    return f.canvas.toDataURL("image/png");
+  }
+
+  // ==============================
+  // ✅ MODAL VER FIRMA
+  // ==============================
+  function openFirmaModal(titulo, dataUrl) {
+    const modal = document.getElementById("modalFirma");
+    const img = document.getElementById("modalFirmaImg");
+    const t = document.getElementById("modalFirmaTitulo");
+    if (!modal || !img || !t) return;
+
+    t.textContent = titulo || "Firma";
+    img.src = dataUrl;
+    modal.classList.add("show");
+  }
+
+  function closeFirmaModal(evt) {
+    // si se llamó con click afuera, evt existe
+    const modal = document.getElementById("modalFirma");
+    if (!modal) return;
+    modal.classList.remove("show");
   }
 
   // ==============================
@@ -719,8 +862,8 @@
       const options = (data || []).map(p => {
         const nombre = (p.nombre || "").trim();
         const cedula = (p.cedula || "").trim();
-        const valor = `${cedula} ${nombre}`.trim(); // value: "CEDULA NOMBRE"
-        const label = nombre; // label: SOLO nombre
+        const valor = `${cedula} ${nombre}`.trim();
+        const label = nombre;
         return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
       }).join("");
 
@@ -750,9 +893,12 @@
     if (t) t.value = "";
     if (d) d.value = "";
 
-    // ✅ limpiar firmas
+    // NO borramos firmas automáticamente porque pueden ser opcionales,
+    // pero sí es lo más común al limpiar:
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
+    // además, ocultamos de vuelta el bloque
+    toggleFirmas(false);
   }
 
   function generarEvolucionId() { return uuid(); }
@@ -796,6 +942,26 @@
       const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
       const detalle = evo.detalle ?? evo.evo_detalle ?? "";
 
+      const fp = evo.firma_paciente || "";
+      const fpr = evo.firma_profesional || "";
+
+      const btnFirmas = `
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${
+            fp
+              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+                    onclick="openFirmaModal('Firma del paciente', '${fp}')">Ver firma paciente</button>`
+              : `<span style="font-size:12px; color:#6b7a90;">Sin firma paciente</span>`
+          }
+          ${
+            fpr
+              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+                    onclick="openFirmaModal('Firma del profesional', '${fpr}')">Ver firma profesional</button>`
+              : `<span style="font-size:12px; color:#6b7a90;">Sin firma profesional</span>`
+          }
+        </div>
+      `;
+
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
@@ -806,6 +972,7 @@
         <td>${escapeHtml(String(profesional).toUpperCase())}</td>
         <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+        <td>${btnFirmas}</td>
         <td style="display:flex; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
             Eliminar
@@ -828,22 +995,18 @@
     const tipo = (document.getElementById("evo_tipo").value || "").trim();
     const detalle = (document.getElementById("evo_detalle").value || "").trim();
 
-    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
-    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
-
     if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
     if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-
-    // ✅ valida firmas (si no quieres obligatorio, borra estas 2 líneas)
-    if (!firmaPaciente) { alert("⚠️ Falta la firma del paciente."); return; }
-    if (!firmaProfesional) { alert("⚠️ Falta la firma del profesional."); return; }
 
     const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
 
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-    // ✅ item incluye firmas
+    // ✅ firmas opcionales: solo se envían si fueron dibujadas
+    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
+    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
     const item = {
       id: generarEvolucionId(),
       fecha,
@@ -851,8 +1014,8 @@
       profesional,
       procedimiento: tipo,
       detalle,
-      firma_paciente: firmaPaciente,
-      firma_profesional: firmaProfesional,
+      firma_paciente: firmaPaciente,         // "" si no hay
+      firma_profesional: firmaProfesional,   // "" si no hay
       cedula_paciente: cedula,
       usuario,
       ts: new Date().toISOString()
@@ -918,13 +1081,12 @@
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
+    // firmas se inicializan, pero no se muestran hasta el botón.
+    _ensureFirmasInit();
+
     limpiarEvolucionForm();
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
-
-    // ✅ iniciar firmas
-    _initFirma("firma_paciente");
-    _initFirma("firma_profesional");
   });
 
   // Exponer
@@ -937,9 +1099,14 @@
   window.limpiarEvolucionForm = limpiarEvolucionForm;
 
   window.limpiarFirma = limpiarFirma;
+  window.toggleFirmas = toggleFirmas;
+
+  window.openFirmaModal = openFirmaModal;
+  window.closeFirmaModal = closeFirmaModal;
 </script>
 </body>
 </html>
+
 
 
 
