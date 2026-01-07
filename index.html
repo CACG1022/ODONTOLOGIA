@@ -94,6 +94,7 @@
       }
     }
 
+    // ✅ Normaliza nombres de módulos para que coincidan aunque tengan .html
     function normModulo(s) {
       return String(s || "")
         .trim()
@@ -102,6 +103,7 @@
         .replace(/\.html$/i, "");
     }
 
+    // ✅ Mapa: botón -> modulo (DEBE coincidir con lo que tienes en modulos_permisos)
     const MODULE_MAP = {
       "go-reporte-ventas":    "reportes",
       "go-agendar":           "agendamientos",
@@ -118,6 +120,7 @@
       "go-rips":              "rips",
     };
 
+    // Compatibilidad extra (si permisos lo manejas como admin-roles)
     function getModuloCandidates(mod) {
       const m = normModulo(mod);
       const out = new Set([m, `${m}.html`]);
@@ -185,12 +188,14 @@
         roleNorm === "auxiliar" ? "auxiliar" :
         "paciente";
 
+      // ✅ admin por email también
       const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
       const permisosMap = await cargarPermisosPorRol();
 
       for (const [btnId, modulo] of Object.entries(MODULE_MAP)) {
         const el = document.getElementById(btnId);
+
         const ok = puedeAcceder(permisosMap, modulo, finalRoleKey);
 
         const reason = !permisosMap
@@ -241,44 +246,38 @@
   </script>
 
   <style>
-    /* =========================
-       DENTOVA UI THEME (como la 1ra imagen)
-       ========================= */
-
     :root{
-      /* Fondo etéreo */
-      --bg0: #eef3ff;
-      --bg1: #f7fbff;
+      /* Fondo */
+      --bgA:#f4f7ff;
+      --bgB:#eef3ff;
 
-      /* Superficies */
-      --surface: rgba(255,255,255,.72);
-      --surface-2: rgba(255,255,255,.82);
+      /* Glass */
+      --card: rgba(255,255,255,.72);
+      --card2: rgba(255,255,255,.62);
       --stroke: rgba(15, 23, 42, 0.10);
 
       /* Texto */
-      --text: #0b1220;
+      --text:#0b1220;
       --muted: rgba(15,23,42,.58);
 
-      /* Acentos DENTOVA (azul/teal + dorado) */
-      --a1: #1d6ef2;   /* azul */
-      --a2: #11b7c8;   /* teal */
-      --gold: #d4af37; /* dorado */
+      /* DENTOVA */
+      --blue:#1d6ef2;
+      --teal:#11b7c8;
+      --gold:#d4af37;
 
-      /* Estados */
-      --ok: #16a34a;
+      --ok:#16a34a;
 
-      /* Sombras suaves */
-      --shadow-lg: 0 22px 60px rgba(15,23,42,.14);
-      --shadow-md: 0 14px 28px rgba(15,23,42,.10);
-      --shadow-sm: 0 10px 18px rgba(15,23,42,.08);
+      --shadow-lg: 0 26px 70px rgba(15,23,42,.14);
+      --shadow-md: 0 16px 30px rgba(15,23,42,.12);
+      --shadow-sm: 0 10px 18px rgba(15,23,42,.10);
 
-      --r-xl: 22px;
-      --r-lg: 18px;
+      --r-xl: 26px;
+      --r-lg: 20px;
       --r-md: 16px;
     }
 
     *{ box-sizing:border-box; }
-    html, body{ height:100%; }
+    html,body{ height:100%; }
 
     body{
       margin:0;
@@ -288,31 +287,33 @@
       align-items:center;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-      padding: 28px 16px;
+      padding: 30px 16px;
 
-      /* Fondo tipo "nebula" con brillos sutiles */
       background:
-        radial-gradient(1200px 700px at 15% 10%, rgba(29,110,242,.20), transparent 55%),
-        radial-gradient(900px 600px at 85% 70%, rgba(17,183,200,.16), transparent 60%),
-        radial-gradient(700px 420px at 60% 18%, rgba(212,175,55,.12), transparent 55%),
-        linear-gradient(180deg, var(--bg1), var(--bg0));
+        radial-gradient(1200px 700px at 15% 12%, rgba(29,110,242,.20), transparent 55%),
+        radial-gradient(900px 600px at 85% 72%, rgba(17,183,200,.18), transparent 60%),
+        radial-gradient(900px 520px at 55% 20%, rgba(212,175,55,.12), transparent 60%),
+        linear-gradient(180deg, #fbfdff, var(--bgB));
       overflow-x:hidden;
     }
 
-    /* “Chispitas” suaves */
+    /* ⭐ Sparkles */
     body::before{
       content:"";
       position:fixed;
       inset:0;
       pointer-events:none;
-      opacity:.30;
-      background-image:
-        radial-gradient(circle at 20% 30%, rgba(255,255,255,.65) 0 1px, transparent 2px),
-        radial-gradient(circle at 70% 40%, rgba(255,255,255,.55) 0 1px, transparent 2px),
-        radial-gradient(circle at 45% 75%, rgba(255,255,255,.55) 0 1px, transparent 2px),
-        radial-gradient(circle at 85% 20%, rgba(255,255,255,.50) 0 1px, transparent 2px);
-      background-size: 260px 260px, 320px 320px, 280px 280px, 360px 360px;
-      filter: blur(.2px);
+      opacity:.42;
+      background:
+        radial-gradient(circle at 20% 18%, rgba(255,255,255,.85) 0 1px, transparent 2px),
+        radial-gradient(circle at 34% 30%, rgba(255,255,255,.75) 0 1px, transparent 2px),
+        radial-gradient(circle at 68% 24%, rgba(255,255,255,.78) 0 1px, transparent 2px),
+        radial-gradient(circle at 82% 40%, rgba(255,255,255,.70) 0 1px, transparent 2px),
+        radial-gradient(circle at 56% 60%, rgba(255,255,255,.75) 0 1px, transparent 2px),
+        radial-gradient(circle at 18% 72%, rgba(255,255,255,.65) 0 1px, transparent 2px),
+        radial-gradient(circle at 85% 78%, rgba(255,255,255,.70) 0 1px, transparent 2px);
+      background-size: 260px 260px, 320px 320px, 300px 300px, 360px 360px, 340px 340px, 380px 380px, 410px 410px;
+      filter: blur(.25px);
     }
 
     .wrapper{
@@ -323,49 +324,55 @@
       gap: 18px;
     }
 
-    .brand{
+    /* Logo */
+    .logo-top{
       display:flex;
-      justify-content:center;
+      flex-direction:column;
       align-items:center;
-      padding-top: 6px;
+      justify-content:center;
+      gap: 6px;
+      padding-top: 4px;
     }
-
-    /* 👇 Reemplaza este src por tu logo final (PNG/SVG) */
-    .brand img{
-      width: min(520px, 92vw);
-      height: auto;
-      object-fit: contain;
+    .logo-top img{
+      width: min(560px, 92vw);
+      height:auto;
+      object-fit:contain;
       filter: drop-shadow(0 16px 22px rgba(15,23,42,.18));
       user-select:none;
     }
+    .logo-sub{
+      font-size: 14px;
+      letter-spacing:.25em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,.40);
+      margin-top: -4px;
+    }
 
+    /* Card principal */
     .main-card{
       width: min(980px, 100%);
       padding: 20px;
       border-radius: var(--r-xl);
-      background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.64));
-      border: 1px solid rgba(255,255,255,.55);
+      background: linear-gradient(180deg, var(--card), var(--card2));
+      border: 1px solid rgba(255,255,255,.62);
       box-shadow: var(--shadow-lg);
       position: relative;
       overflow:hidden;
-
-      /* “glass” */
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
-    /* Brillos internos */
     .main-card::before{
       content:"";
       position:absolute;
-      inset:-120px -160px auto auto;
-      width: 420px;
-      height: 420px;
+      inset:-160px -220px auto auto;
+      width: 520px;
+      height: 520px;
       background:
-        radial-gradient(circle, rgba(29,110,242,.18), transparent 58%),
-        radial-gradient(circle at 30% 40%, rgba(17,183,200,.14), transparent 60%);
+        radial-gradient(circle, rgba(29,110,242,.20), transparent 58%),
+        radial-gradient(circle at 35% 45%, rgba(17,183,200,.18), transparent 62%),
+        radial-gradient(circle at 60% 25%, rgba(212,175,55,.16), transparent 62%);
       pointer-events:none;
-      filter: blur(0px);
     }
 
     .header{
@@ -383,15 +390,10 @@
       font-size: 13.5px;
       line-height: 1.35;
       color: var(--muted);
-      letter-spacing: .2px;
     }
 
-    #user-email{
-      color: var(--text) !important;
-      font-weight: 800 !important;
-    }
+    #user-email{ color: var(--text) !important; font-weight: 900 !important; }
 
-    /* Chip del rol, estilo “pill” como en la imagen */
     #user-role{
       display:inline-flex;
       align-items:center;
@@ -400,9 +402,9 @@
       padding: 7px 12px;
       border-radius: 999px;
       border: 1px solid rgba(29,110,242,.20);
-      background: linear-gradient(180deg, rgba(29,110,242,.10), rgba(17,183,200,.06));
-      color: rgba(29,110,242,.95);
-      font-weight: 800;
+      background: rgba(29,110,242,.08);
+      color: rgba(29,110,242,.92);
+      font-weight: 900;
       font-size: 12px;
       box-shadow: var(--shadow-sm);
     }
@@ -410,7 +412,7 @@
       content:"";
       width: 8px; height: 8px;
       border-radius: 999px;
-      background: linear-gradient(180deg, var(--a2), var(--a1));
+      background: var(--blue);
       box-shadow: 0 0 0 4px rgba(29,110,242,.12);
     }
 
@@ -419,7 +421,6 @@
       gap: 10px;
       flex-wrap:wrap;
       justify-content:flex-end;
-      align-items:flex-start;
     }
 
     .chip{
@@ -428,19 +429,16 @@
       gap: 8px;
       padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.65);
-      background: rgba(255,255,255,.80);
-      color: rgba(15,23,42,.62);
+      border: 1px solid rgba(255,255,255,.70);
+      background: rgba(255,255,255,.82);
+      color: rgba(15,23,42,.60);
       font-size: 12px;
-      white-space:nowrap;
       box-shadow: var(--shadow-sm);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
     }
 
     .dot{
-      width: 10px; height: 10px;
-      border-radius: 999px;
+      width:10px; height:10px;
+      border-radius:999px;
       background: var(--ok);
       box-shadow: 0 0 0 4px rgba(22,163,74,.14);
     }
@@ -450,14 +448,12 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
-
     @media (max-width: 900px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px){
       .grid{ grid-template-columns: 1fr; }
-      .brand img{ width: 92vw; }
+      .logo-top img{ width: 92vw; }
     }
 
-    /* Tarjetas tipo “tile” suaves y elegantes */
     .tile{
       display:flex;
       align-items:center;
@@ -467,25 +463,19 @@
       border-radius: var(--r-lg);
       text-decoration:none;
       color: var(--text);
-
-      /* Glassy card */
-      background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.72));
-      border: 1px solid rgba(255,255,255,.65);
+      background: rgba(255,255,255,.82);
+      border: 1px solid rgba(255,255,255,.75);
       box-shadow: var(--shadow-md);
-
-      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
-      min-height: 74px;
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
+      min-height: 76px;
       cursor:pointer;
-
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
     }
-
     .tile:hover{
       transform: translateY(-1px);
       border-color: rgba(29,110,242,.24);
-      box-shadow: 0 18px 32px rgba(15,23,42,.14);
-      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.78));
+      box-shadow: 0 20px 36px rgba(15,23,42,.16);
     }
     .tile:active{ transform: translateY(0px); }
 
@@ -494,28 +484,23 @@
       cursor: not-allowed;
       transform: none !important;
       box-shadow: var(--shadow-md) !important;
-      border-color: rgba(255,255,255,.55) !important;
-      filter: grayscale(.15);
     }
 
     .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
 
-    /* Icono con degradado y borde sutil, como el mockup */
     .icon{
       width: 46px; height: 46px;
       border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.70);
+      border: 1px solid rgba(212,175,55,.38);
       background:
-        radial-gradient(circle at 30% 20%, rgba(29,110,242,.14), transparent 55%),
-        radial-gradient(circle at 70% 80%, rgba(17,183,200,.12), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.62));
+        radial-gradient(circle at 30% 22%, rgba(29,110,242,.12), transparent 55%),
+        radial-gradient(circle at 70% 78%, rgba(17,183,200,.10), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.70));
       display:grid;
       place-items:center;
+      box-shadow: 0 12px 18px rgba(15,23,42,.10);
       flex: 0 0 auto;
-      box-shadow: 0 10px 18px rgba(15,23,42,.10);
     }
-
-    /* SVG dorado suave */
     .icon svg{
       width: 20px; height: 20px;
       color: var(--gold);
@@ -526,9 +511,9 @@
     .ttext h3{
       margin:0;
       font-size: 14px;
-      letter-spacing:.2px;
+      letter-spacing:.15px;
+      font-weight: 900;
       color: rgba(15,23,42,.92);
-      font-weight: 800;
     }
     .ttext p{
       margin: 6px 0 0;
@@ -542,27 +527,27 @@
       -webkit-box-orient: vertical;
     }
 
-    /* Flecha redondeada, con hover dorado */
     .arrow{
-      width: 38px; height: 38px;
+      width: 40px; height: 40px;
       border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.70);
-      background: rgba(255,255,255,.70);
+      border: 1px solid rgba(255,255,255,.75);
+      background: rgba(255,255,255,.78);
       display:grid;
       place-items:center;
-      flex: 0 0 auto;
-      color: rgba(15,23,42,.55);
-      font-weight: 900;
-      transition: background .14s ease, border-color .14s ease, color .14s ease, transform .14s ease;
       box-shadow: 0 10px 18px rgba(15,23,42,.08);
+      transition: background .14s ease, border-color .14s ease, transform .14s ease;
+      flex: 0 0 auto;
     }
-
+    .arrow span{
+      font-weight: 900;
+      color: rgba(15,23,42,.55);
+    }
     .tile:hover .arrow{
       background: rgba(212,175,55,.14);
       border-color: rgba(212,175,55,.30);
-      color: rgba(29,110,242,.90);
       transform: translateX(1px);
     }
+    .tile:hover .arrow span{ color: rgba(29,110,242,.90); }
 
     .footer{
       margin-top: 14px;
@@ -577,44 +562,43 @@
       align-items:center;
     }
 
-    /* Botón principal “teal/blue” como la imagen */
     button.logout{
-      border: 1px solid rgba(255,255,255,.60);
-      background: linear-gradient(180deg, rgba(17,183,200,.98), rgba(29,110,242,.98));
+      border: 1px solid rgba(255,255,255,.65);
+      background: linear-gradient(180deg, rgba(29,110,242,.95), rgba(17,183,200,.95));
       color: #fff;
-      border-radius: 14px;
-      padding: 11px 16px;
+      border-radius: 999px;
+      padding: 11px 20px;
       cursor:pointer;
       font-weight: 900;
       letter-spacing:.2px;
-      box-shadow: 0 16px 24px rgba(29,110,242,.20);
+      box-shadow: 0 18px 26px rgba(29,110,242,.22);
       transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
     }
     button.logout:hover{
       transform: translateY(-1px);
-      box-shadow: 0 20px 30px rgba(29,110,242,.24);
+      box-shadow: 0 22px 30px rgba(29,110,242,.26);
       filter: saturate(1.05);
     }
     button.logout:active{ transform: translateY(0px); }
 
-    /* Accesibilidad: focus visible */
     .tile:focus-visible,
     button.logout:focus-visible{
-      outline: 3px solid rgba(29,110,242,.25);
-      outline-offset: 3px;
+      outline: 3px solid rgba(29,110,242,.22);
+      outline-offset: 4px;
     }
   </style>
 </head>
 
 <body>
   <div class="wrapper">
-    <div class="brand">
-      <!-- ✅ Pon aquí tu logo DENTOVA (recomendado SVG o PNG transparente) -->
-      <!-- Puedes usar el logo generado subiéndolo a tu repo y pegando la URL aquí -->
+    <!-- ✅ LOGO DENTOVA -->
+    <div class="logo-top">
+      <!-- Cambia el src por tu logo DENTOVA (PNG/SVG) -->
       <img
         src="https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png"
         alt="DENTOVA"
       />
+      <div class="logo-sub">Software Dental</div>
     </div>
 
     <section class="main-card">
@@ -622,7 +606,7 @@
         <p class="title">
           Software Dental<br/>
           Clínica Dra. Leidi Silva<br/>
-          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:800;"></span><br/>
+          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:900;"></span><br/>
           <span id="user-role">Rol: ...</span>
         </p>
 
@@ -648,7 +632,7 @@
               <p>Visualizar reportes de ventas.</p>
             </div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-agendar">
@@ -663,7 +647,7 @@
             </div>
             <div class="ttext"><h3>Agendar</h3><p>Ir al enlace de citas.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-gestiondepermisos">
@@ -678,7 +662,7 @@
             </div>
             <div class="ttext"><h3>Gestión de permisos</h3><p>Permisos.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-historia">
@@ -692,7 +676,7 @@
             </div>
             <div class="ttext"><h3>Historia Clínica</h3><p>Gestión del paciente.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-reporte-pacientes">
@@ -705,7 +689,7 @@
             </div>
             <div class="ttext"><h3>Reporte de pacientes</h3><p>Buscar por cédula o nombre.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-plan">
@@ -718,7 +702,7 @@
             </div>
             <div class="ttext"><h3>Plan de Tratamiento</h3><p>Registrar procedimientos.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-hoy">
@@ -731,7 +715,7 @@
             </div>
             <div class="ttext"><h3>Pacientes agendados hoy</h3><p>(Pendiente URL)</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-rips">
@@ -746,7 +730,7 @@
             </div>
             <div class="ttext"><h3>RIPS</h3><p>Solo administrador.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-registro">
@@ -760,7 +744,7 @@
             </div>
             <div class="ttext"><h3>Registrar Usuarios</h3><p>Solo administrador.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-usuarios">
@@ -775,7 +759,7 @@
             </div>
             <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-precios">
@@ -791,7 +775,7 @@
             </div>
             <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-profesionales">
@@ -805,7 +789,7 @@
             </div>
             <div class="ttext"><h3>Agregar profesionales</h3><p>Crear, editar y eliminar (solo admin).</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
 
         <a class="tile" href="#" id="go-facturacion">
@@ -818,7 +802,7 @@
             </div>
             <div class="ttext"><h3>Facturación</h3><p>Crear y guardar facturas (solo admin).</p></div>
           </div>
-          <div class="arrow">→</div>
+          <div class="arrow"><span>→</span></div>
         </a>
       </div>
 
