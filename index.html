@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inicio - DENTOVA</title>
+  <title>Inicio - Clínica Dra. Leidi Silva</title>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -28,6 +28,8 @@
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
       precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html",
       profesionales: "https://cacg1022.github.io/ODONTOLOGIA/profesionales-admin.html",
+
+      // ✅ NUEVO: Facturación (solo admin)
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html",
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
       reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
@@ -63,6 +65,7 @@
 
       el.onclick = (e) => {
         e.preventDefault();
+
         if (el.classList.contains("disabled")) return;
 
         if (!url || url === "#") {
@@ -94,6 +97,7 @@
       }
     }
 
+    // ✅ Normaliza nombres de módulos para que coincidan aunque tengan .html
     function normModulo(s) {
       return String(s || "")
         .trim()
@@ -102,30 +106,44 @@
         .replace(/\.html$/i, "");
     }
 
+    // ✅ Mapa: botón -> modulo (DEBE coincidir con lo que tienes en modulos_permisos)
+    // Según tu captura de permisos.html: profesionales-admin (sin .html)
     const MODULE_MAP = {
       "go-reporte-ventas":    "reportes",
       "go-agendar":           "agendamientos",
-      "go-gestiondepermisos": "permisos",
+      "go-gestiondepermisos": "permisos",           // si en tu tabla existe "permisos" o "permisos.html" (ver abajo)
       "go-historia":          "historia_clinica",
       "go-reporte-pacientes": "reporte_pacientes",
       "go-plan":              "plandetratamiento",
       "go-precios":           "actualizacion_precios",
       "go-usuarios":          "admin-roles",
-      "go-profesionales":     "profesionales-admin",
+      "go-profesionales":     "profesionales-admin", // ✅ clave del error en tu caso
       "go-facturacion":       "facturacion",
-      "go-registro":          "registro",
+      "go-registro":       "registro",
+
+      // estos no están en tu tabla (si los quieres controlar por permisos, crea filas)
       "go-hoy":               "hoy",
       "go-rips":              "rips",
+      //"go-registro":          "registro"
     };
 
+    // ✅ IMPORTANTE:
+    // En tu captura NO se ve un módulo llamado "permisos" ni "permisos.html"
+    // Se ve admin-roles como "Administración de Usuarios".
+    // Si tu página permisos.html controla esa misma tabla, puedes usar admin-roles también.
+    // Para que funcione SIEMPRE, intentamos ambos: permisos y admin-roles.
     function getModuloCandidates(mod) {
       const m = normModulo(mod);
       const out = new Set([m, `${m}.html`]);
+
+      // compatibilidad extra por tu caso real
       if (m === "permisos") out.add("admin-roles");
+
       return Array.from(out);
     }
 
     async function cargarPermisosPorRol() {
+      // Pedimos todo (es poco) para evitar que un mismatch bloquee
       try {
         const { data, error } = await supabase
           .from("modulos_permisos")
@@ -133,6 +151,7 @@
 
         if (error) throw error;
 
+        // Creamos un mapa normalizado + alias con/sin .html
         const map = {};
         (data || []).forEach(row => {
           const base = normModulo(row.modulo);
@@ -168,9 +187,11 @@
 
       const email = (session.user?.email || "").toLowerCase();
 
+      // ✅ Mostrar email
       const u = document.getElementById("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
 
+      // ✅ Cargar rol y mostrarlo
       const roleRaw = await cargarRolDesdeProfiles(session.user.id);
       const roleNorm = String(roleRaw || "").toLowerCase().trim();
 
@@ -183,6 +204,7 @@
         roleNorm === "auxiliar" ? "auxiliar" :
         "paciente";
 
+      // ✅ admin por email también
       const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
       const permisosMap = await cargarPermisosPorRol();
@@ -199,6 +221,7 @@
         setDisabled(el, !ok, reason);
       }
 
+      // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
       wireNav("go-gestiondepermisos", URLS.gestiondepermisos, "open");
       wireNav("go-historia", URLS.historia, "href");
@@ -213,6 +236,7 @@
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
       wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
 
+      // Fecha
       const t = document.getElementById("today");
       if (t) {
         t.textContent = new Date().toLocaleDateString("es-CO", {
@@ -239,149 +263,72 @@
 
   <style>
     :root{
-      --text:#0b1220;
-      --muted: rgba(15,23,42,.58);
+      --bg: #f5f7fb;
+      --surface: #ffffff;
+      --surface-2: #fbfcff;
+      --border: rgba(15, 23, 42, 0.10);
+      --text: #0f172a;
+      --muted: #64748b;
+      --accent: #2563eb;
+      --accent-2: #1d4ed8;
+      --ok: #16a34a;
 
-      --blue:#1d6ef2;
-      --teal:#11b7c8;
-      --gold:#d4af37;
-
-      --ok:#16a34a;
-
-      --shadow-lg: 0 26px 70px rgba(15,23,42,.14);
-      --shadow-md: 0 16px 30px rgba(15,23,42,.12);
-      --shadow-sm: 0 10px 18px rgba(15,23,42,.10);
-
-      --r-xl: 26px;
-      --r-lg: 20px;
+      --shadow: 0 20px 45px rgba(15,23,42,.10);
+      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
+      --radius: 18px;
     }
 
     *{ box-sizing:border-box; }
 
-    /* ✅ MUY IMPORTANTE: no forces height 100% para evitar recorte */
-    html, body { height: auto; }
-
     body{
       margin:0;
       min-height:100vh;
-
-      /* ✅ AQUI ESTA LA CLAVE: arranca arriba y no en el centro */
       display:flex;
       justify-content:center;
-      align-items:flex-start;
-
+      align-items:center;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-
-      /* ✅ espacio arriba para que el logo nunca quede “cortado” */
-      padding: 42px 16px 30px;
-
-      /* ✅ Fondo más suave (menos cortes) */
       background:
-        radial-gradient(1400px 900px at 18% 10%, rgba(29,110,242,.18), transparent 65%),
-        radial-gradient(1100px 800px at 88% 78%, rgba(17,183,200,.16), transparent 68%),
-        radial-gradient(900px 700px at 55% 20%, rgba(212,175,55,.10), transparent 70%),
-        linear-gradient(180deg, #fbfdff 0%, #eef4ff 55%, #f7fbff 100%);
-
-      overflow-x:hidden;
-    }
-
-    /* ⭐ Sparkles suaves */
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      opacity:.35;
-      background:
-        radial-gradient(circle at 20% 18%, rgba(255,255,255,.85) 0 1px, transparent 2px),
-        radial-gradient(circle at 34% 30%, rgba(255,255,255,.70) 0 1px, transparent 2px),
-        radial-gradient(circle at 68% 24%, rgba(255,255,255,.78) 0 1px, transparent 2px),
-        radial-gradient(circle at 82% 40%, rgba(255,255,255,.66) 0 1px, transparent 2px),
-        radial-gradient(circle at 56% 60%, rgba(255,255,255,.72) 0 1px, transparent 2px),
-        radial-gradient(circle at 18% 72%, rgba(255,255,255,.60) 0 1px, transparent 2px),
-        radial-gradient(circle at 85% 78%, rgba(255,255,255,.66) 0 1px, transparent 2px);
-      background-size: 260px 260px, 320px 320px, 300px 300px, 360px 360px, 340px 340px, 380px 380px, 410px 410px;
-      filter: blur(.25px);
-    }
-
-    /* ✅ Noise overlay para quitar banding (líneas/cortes del gradiente) */
-    body::after{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      opacity:.06;
-      mix-blend-mode: overlay;
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
-      background-size: 220px 220px;
+        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
+        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
+        linear-gradient(180deg, #ffffff, var(--bg));
+      padding: 28px 16px;
     }
 
     .wrapper{
-      width: min(1050px, 100%);
+      width: min(1020px, 100%);
       display:flex;
       flex-direction:column;
       align-items:center;
       gap: 18px;
-
-      /* ✅ evita que el logo quede pegado arriba */
-      margin-top: 6px;
     }
 
-    /* ✅ Logo: sin recorte + tamaño controlado */
-    .logo-top{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap: 10px;
-      width: 100%;
-      padding: 6px 0 2px;
-    }
+    .logo-top{ display:flex; justify-content:center; }
     .logo-top img{
-      width: min(760px, 96vw);
+      width: 400px;
       height: auto;
-      max-height: 320px;           /* ✅ evita que se “coma” la pantalla */
       object-fit: contain;
-      object-position: center;
-      filter: drop-shadow(0 16px 22px rgba(15,23,42,.18));
-      user-select:none;
-      display:block;
-    }
-    .logo-sub{
-      font-size: 12.5px;
-      letter-spacing:.30em;
-      text-transform: uppercase;
-      color: rgba(15,23,42,.38);
-      margin-top: -2px;
+      filter: drop-shadow(0 12px 18px rgba(15,23,42,.18));
     }
 
     .main-card{
       width: min(980px, 100%);
-      padding: 20px;
-      border-radius: var(--r-xl);
-      background: linear-gradient(180deg, rgba(255,255,255,.72), rgba(255,255,255,.62));
-      border: 1px solid rgba(255,255,255,.62);
-      box-shadow: var(--shadow-lg);
+      padding: 22px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--surface), var(--surface-2));
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
       position: relative;
       overflow:hidden;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
     }
 
-    /* Glow más suave (sin bordes duros) */
     .main-card::before{
       content:"";
       position:absolute;
-      inset:-220px -260px auto auto;
-      width: 640px;
-      height: 640px;
-      background:
-        radial-gradient(circle at 40% 30%, rgba(29,110,242,.18), transparent 68%),
-        radial-gradient(circle at 55% 55%, rgba(17,183,200,.14), transparent 70%),
-        radial-gradient(circle at 65% 25%, rgba(212,175,55,.12), transparent 72%);
+      inset: -120px -120px auto auto;
+      width: 300px; height: 300px;
+      background: radial-gradient(circle, rgba(37,99,235,.12), transparent 60%);
       pointer-events:none;
-      filter: blur(.2px);
     }
 
     .header{
@@ -390,7 +337,7 @@
       justify-content:space-between;
       gap: 12px;
       padding-bottom: 14px;
-      border-bottom: 1px solid rgba(15,23,42,.10);
+      border-bottom: 1px solid var(--border);
       margin-bottom: 16px;
     }
 
@@ -399,29 +346,30 @@
       font-size: 13.5px;
       line-height: 1.35;
       color: var(--muted);
+      letter-spacing: .2px;
     }
-    #user-email{ color: var(--text) !important; font-weight: 900 !important; }
+
+    #user-email{ color: var(--text) !important; font-weight: 700 !important; }
 
     #user-role{
       display:inline-flex;
       align-items:center;
       gap: 8px;
       margin-top: 8px;
-      padding: 7px 12px;
+      padding: 6px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(29,110,242,.20);
-      background: rgba(29,110,242,.08);
-      color: rgba(29,110,242,.92);
-      font-weight: 900;
+      border: 1px solid var(--border);
+      background: rgba(37,99,235,.06);
+      color: var(--accent-2);
+      font-weight: 700;
       font-size: 12px;
-      box-shadow: var(--shadow-sm);
     }
     #user-role::before{
       content:"";
       width: 8px; height: 8px;
       border-radius: 999px;
-      background: var(--blue);
-      box-shadow: 0 0 0 4px rgba(29,110,242,.12);
+      background: var(--accent);
+      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
     }
 
     .meta{
@@ -429,24 +377,25 @@
       gap: 10px;
       flex-wrap:wrap;
       justify-content:flex-end;
+      align-items:flex-start;
     }
 
     .chip{
       display:flex;
       align-items:center;
       gap: 8px;
-      padding: 9px 12px;
+      padding: 8px 12px;
       border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.70);
-      background: rgba(255,255,255,.82);
-      color: rgba(15,23,42,.60);
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
       font-size: 12px;
-      box-shadow: var(--shadow-sm);
+      white-space:nowrap;
+      box-shadow: var(--shadow-2);
     }
-
     .dot{
-      width:10px; height:10px;
-      border-radius:999px;
+      width: 10px; height: 10px;
+      border-radius: 999px;
       background: var(--ok);
       box-shadow: 0 0 0 4px rgba(22,163,74,.14);
     }
@@ -459,7 +408,7 @@
     @media (max-width: 900px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px){
       .grid{ grid-template-columns: 1fr; }
-      .logo-top img{ max-height: 240px; }
+      .logo-top img{ width: 140px; }
     }
 
     .tile{
@@ -468,22 +417,21 @@
       justify-content:space-between;
       gap: 12px;
       padding: 14px 14px;
-      border-radius: var(--r-lg);
+      border-radius: 16px;
       text-decoration:none;
       color: var(--text);
-      background: rgba(255,255,255,.82);
-      border: 1px solid rgba(255,255,255,.75);
-      box-shadow: var(--shadow-md);
-      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
-      min-height: 76px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: var(--shadow-2);
+      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+      min-height: 70px;
       cursor:pointer;
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
     }
+
     .tile:hover{
       transform: translateY(-1px);
-      border-color: rgba(29,110,242,.24);
-      box-shadow: 0 20px 36px rgba(15,23,42,.16);
+      border-color: rgba(37,99,235,.28);
+      box-shadow: 0 16px 28px rgba(15,23,42,.12);
     }
     .tile:active{ transform: translateY(0px); }
 
@@ -491,41 +439,30 @@
       opacity: .55;
       cursor: not-allowed;
       transform: none !important;
-      box-shadow: var(--shadow-md) !important;
+      box-shadow: var(--shadow-2) !important;
+      border-color: var(--border) !important;
+      background: #fff !important;
+      filter: grayscale(.15);
     }
 
     .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
 
     .icon{
-      width: 46px; height: 46px;
-      border-radius: 16px;
-      border: 1px solid rgba(212,175,55,.38);
-      background:
-        radial-gradient(circle at 30% 22%, rgba(29,110,242,.12), transparent 55%),
-        radial-gradient(circle at 70% 78%, rgba(17,183,200,.10), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.90), rgba(255,255,255,.70));
+      width: 44px; height: 44px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(37,99,235,.06);
       display:grid;
       place-items:center;
-      box-shadow: 0 12px 18px rgba(15,23,42,.10);
       flex: 0 0 auto;
     }
-    .icon svg{
-      width: 20px; height: 20px;
-      color: var(--gold);
-      filter: drop-shadow(0 2px 4px rgba(212,175,55,.25));
-    }
+    .icon svg{ width: 20px; height: 20px; color: #D4AF37; }
 
     .ttext{ min-width:0; }
-    .ttext h3{
-      margin:0;
-      font-size: 14px;
-      letter-spacing:.15px;
-      font-weight: 900;
-      color: rgba(15,23,42,.92);
-    }
+    .ttext h3{ margin:0; font-size: 14px; letter-spacing:.2px; color: var(--text); }
     .ttext p{
       margin: 6px 0 0;
-      color: rgba(15,23,42,.58);
+      color: var(--muted);
       font-size: 12.5px;
       line-height: 1.25;
       overflow:hidden;
@@ -536,64 +473,54 @@
     }
 
     .arrow{
-      width: 40px; height: 40px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.75);
-      background: rgba(255,255,255,.78);
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(2, 6, 23, .02);
       display:grid;
       place-items:center;
-      box-shadow: var(--shadow-sm);
-      transition: background .14s ease, border-color .14s ease, transform .14s ease;
       flex: 0 0 auto;
-    }
-    .arrow span{
-      font-weight: 900;
-      color: rgba(15,23,42,.55);
+      color: var(--muted);
+      font-weight: 800;
+      transition: background .12s ease, border-color .12s ease, color .12s ease;
     }
     .tile:hover .arrow{
-      background: rgba(212,175,55,.14);
+      background: rgba(212,175,55,.10);
       border-color: rgba(212,175,55,.30);
-      transform: translateX(1px);
+      color: var(--accent-2);
     }
-    .tile:hover .arrow span{ color: rgba(29,110,242,.90); }
 
     .footer{
       margin-top: 14px;
       padding-top: 14px;
-      border-top: 1px solid rgba(15,23,42,.10);
+      border-top: 1px solid var(--border);
       display:flex;
       justify-content:space-between;
       gap: 10px;
       flex-wrap:wrap;
-      color: rgba(15,23,42,.58);
+      color: var(--muted);
       font-size: 12.5px;
       align-items:center;
     }
 
     button.logout{
-      border: 1px solid rgba(255,255,255,.65);
-      background: linear-gradient(180deg, rgba(29,110,242,.95), rgba(17,183,200,.95));
+      border: 1px solid var(--border);
+      background: var(--accent);
       color: #fff;
-      border-radius: 999px;
-      padding: 11px 20px;
+      border-radius: 12px;
+      padding: 10px 14px;
       cursor:pointer;
-      font-weight: 900;
+      font-weight: 800;
       letter-spacing:.2px;
-      box-shadow: 0 18px 26px rgba(29,110,242,.22);
-      transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
+      box-shadow: 0 12px 18px rgba(37,99,235,.18);
+      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
     }
     button.logout:hover{
+      background: var(--accent-2);
       transform: translateY(-1px);
-      box-shadow: 0 22px 30px rgba(29,110,242,.26);
-      filter: saturate(1.05);
+      box-shadow: 0 16px 24px rgba(37,99,235,.22);
     }
     button.logout:active{ transform: translateY(0px); }
-
-    .tile:focus-visible,
-    button.logout:focus-visible{
-      outline: 3px solid rgba(29,110,242,.22);
-      outline-offset: 4px;
-    }
   </style>
 </head>
 
@@ -602,9 +529,8 @@
     <div class="logo-top">
       <img
         src="https://static.wixstatic.com/media/63e6ec_3945b13f3ee94c0d8c27c716cb633be5~mv2.png/v1/fill/w_480,h_378,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/DENTOVA_edited.png"
-        alt="DENTOVA"
+        alt="Logo Clínica Dra. Leidi Silva"
       />
-      <div class="logo-sub">Software Dental</div>
     </div>
 
     <section class="main-card">
@@ -612,7 +538,7 @@
         <p class="title">
           Software Dental<br/>
           Clínica Dra. Leidi Silva<br/>
-          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:900;"></span><br/>
+          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:700;"></span><br/>
           <span id="user-role">Rol: ...</span>
         </p>
 
@@ -623,7 +549,6 @@
       </div>
 
       <div class="grid">
-        <!-- (Tus botones EXACTOS - no cambié IDs ni SVGs) -->
         <a class="tile" href="#" id="go-reporte-ventas">
           <div class="left">
             <div class="icon">
@@ -639,7 +564,7 @@
               <p>Visualizar reportes de ventas.</p>
             </div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-agendar">
@@ -654,7 +579,7 @@
             </div>
             <div class="ttext"><h3>Agendar</h3><p>Ir al enlace de citas.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-gestiondepermisos">
@@ -667,9 +592,9 @@
                 <path d="M7.5 12.5h4M7.5 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext"><h3>Gestión de permisos</h3><p>Permisos.</p></div>
+            <div class="ttext"><h3>Gestion de permisos</h3><p>Permisos.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-historia">
@@ -683,7 +608,7 @@
             </div>
             <div class="ttext"><h3>Historia Clínica</h3><p>Gestión del paciente.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-reporte-pacientes">
@@ -696,7 +621,7 @@
             </div>
             <div class="ttext"><h3>Reporte de pacientes</h3><p>Buscar por cédula o nombre.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-plan">
@@ -709,7 +634,7 @@
             </div>
             <div class="ttext"><h3>Plan de Tratamiento</h3><p>Registrar procedimientos.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-hoy">
@@ -722,7 +647,7 @@
             </div>
             <div class="ttext"><h3>Pacientes agendados hoy</h3><p>(Pendiente URL)</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-rips">
@@ -737,7 +662,7 @@
             </div>
             <div class="ttext"><h3>RIPS</h3><p>Solo administrador.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-registro">
@@ -751,7 +676,7 @@
             </div>
             <div class="ttext"><h3>Registrar Usuarios</h3><p>Solo administrador.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-usuarios">
@@ -766,7 +691,7 @@
             </div>
             <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-precios">
@@ -782,7 +707,7 @@
             </div>
             <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-profesionales">
@@ -796,7 +721,7 @@
             </div>
             <div class="ttext"><h3>Agregar profesionales</h3><p>Crear, editar y eliminar (solo admin).</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
 
         <a class="tile" href="#" id="go-facturacion">
@@ -809,18 +734,23 @@
             </div>
             <div class="ttext"><h3>Facturación</h3><p>Crear y guardar facturas (solo admin).</p></div>
           </div>
-          <div class="arrow"><span>→</span></div>
+          <div class="arrow">→</div>
         </a>
       </div>
 
       <div class="footer">
-        <span>© <span id="year"></span> DENTOVA</span>
+        <span>© <span id="year"></span> Clínica Dra. Leidi Silva</span>
         <button class="logout" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </section>
   </div>
 </body>
 </html>
+
+
+
+
+
 
 
 
