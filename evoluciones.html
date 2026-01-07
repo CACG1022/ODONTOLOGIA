@@ -208,11 +208,8 @@
       --line:#e7edf5;
       --input:#cbd5e1;
     }
-
     *{box-sizing:border-box}
-    body{
-      margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg);
-    }
+    body{ margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg); }
     .container{ max-width:1100px; margin:0 auto; }
     h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
 
@@ -252,12 +249,8 @@
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
-    @media (max-width:980px){
-      .g-3{ grid-template-columns:1fr 1fr; }
-    }
-    @media (max-width:680px){
-      .g-2,.g-3{ grid-template-columns:1fr; }
-    }
+    @media (max-width:980px){ .g-3{ grid-template-columns:1fr 1fr; } }
+    @media (max-width:680px){ .g-2,.g-3{ grid-template-columns:1fr; } }
 
     .btn{
       width:100%;
@@ -270,27 +263,14 @@
     }
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
-    .btn-inicio{
-      background:#E3E3E3;
-      color:#009688;
-      font-weight:700;
-    }
+    .btn-inicio{ background:#E3E3E3; color:#009688; font-weight:700; }
     .btn-salir{ background:#009688; }
 
-    .tabla-evo{
-      width:100%;
-      border-collapse:collapse;
-    }
-    .tabla-evo th,.tabla-evo td{
-      padding:10px;
-      border:1px solid var(--line);
-      vertical-align:top;
-    }
-    .tabla-evo thead tr{
-      background:#eef6ff;
-    }
+    .tabla-evo{ width:100%; border-collapse:collapse; }
+    .tabla-evo th,.tabla-evo td{ padding:10px; border:1px solid var(--line); vertical-align:top; }
+    .tabla-evo thead tr{ background:#eef6ff; }
 
-    /* Dictado (igual) */
+    /* Dictado */
     .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
     .vwrap .vfield{ flex: 1; }
     .vbtn{
@@ -300,6 +280,43 @@
       font-size: 18px; color: transparent;
     }
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
+
+    /* ✅ Firmas */
+    .firma-box{
+      border:1px solid var(--input);
+      border-radius:12px;
+      background:#fff;
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .firma-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .btn-mini{
+      width:auto;
+      padding:10px 12px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      font-size:13px;
+      color:#fff;
+      background:#0D47A1;
+    }
+    canvas.firma-canvas{
+      width:100%;
+      height:180px; /* visual */
+      border:1px dashed var(--line);
+      border-radius:10px;
+      touch-action:none; /* importante para mobile */
+      background:#fff;
+    }
+    .firma-hint{ font-size:12px; color:var(--muted); }
   </style>
 </head>
 
@@ -338,7 +355,6 @@
 
   <h1>Evoluciones (procedimientos realizados)</h1>
 
-  <!-- ✅ EVOLUCIONES (idéntica estructura/estilo del original) -->
   <section class="card">
     <div class="legend">Registro de evolución</div>
 
@@ -355,29 +371,23 @@
 
       <div class="ctrl">
         <label for="evo_profesional">Profesional</label>
-        <div class="inline" style="gap:10px;">
-          <select id="evo_profesional">
-            <option value="">Seleccione profesional...</option>
-          </select>
-        </div>
+        <select id="evo_profesional">
+          <option value="">Seleccione profesional...</option>
+        </select>
       </div>
 
       <div class="ctrl">
         <label for="evo_tipo">Procedimiento</label>
-        <div class="inline" style="gap:10px;">
-          <input id="evo_tipo" type="text" list="procedimientos_list_supabase"
-            placeholder="Buscar o escribir procedimiento..." autocomplete="off" style="flex:1;" />
-        </div>
+        <input id="evo_tipo" type="text" list="procedimientos_list_supabase"
+          placeholder="Buscar o escribir procedimiento..." autocomplete="off" />
       </div>
 
       <div class="ctrl full">
         <label for="evo_detalle">Detalle / Observaciones</label>
-
         <div class="vwrap">
           <div class="vfield">
             <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
           </div>
-
           <button
             id="btnDictadoEvoDetalle"
             type="button"
@@ -387,11 +397,34 @@
             onclick="toggleDictadoEvoDetalle()"
           >🎤</button>
         </div>
-
         <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
           🎙️ Dictando... habla normal. (Se agregará al final del texto)
         </div>
       </div>
+
+      <!-- ✅ NUEVOS CAMPOS: FIRMAS -->
+      <div class="ctrl full">
+        <label>Firma del paciente</label>
+        <div class="firma-box">
+          <canvas id="firma_paciente" class="firma-canvas"></canvas>
+          <div class="firma-actions">
+            <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
+            <button type="button" class="btn-mini" onclick="limpiarFirma('firma_paciente')">Limpiar firma</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="ctrl full">
+        <label>Firma del profesional</label>
+        <div class="firma-box">
+          <canvas id="firma_profesional" class="firma-canvas"></canvas>
+          <div class="firma-actions">
+            <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
+            <button type="button" class="btn-mini" onclick="limpiarFirma('firma_profesional')">Limpiar firma</button>
+          </div>
+        </div>
+      </div>
+
     </div>
 
     <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -430,11 +463,9 @@
   const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
   const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-  // ✅ Webhook original (consulta historia + trae evoluciones dentro)
   const WEBHOOK_BUSCAR_HISTORIA =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
-  // ✅ Webhook original (guardar evolución)
   const WEBHOOK_GUARDAR_EVOLUCION =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
 
@@ -451,7 +482,7 @@
   }
 
   // ==============================
-  // UTILIDADES (igual estilo del original)
+  // UTILIDADES
   // ==============================
   function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -490,7 +521,144 @@
   }
 
   // ==============================
-  // ✅ PROCEDIMIENTOS DESDE SUPABASE (igual)
+  // ✅ FIRMA EN CANVAS (mouse + touch)
+  // ==============================
+  const firmas = {
+    firma_paciente: { canvas: null, ctx: null, drawing: false, hasInk: false },
+    firma_profesional: { canvas: null, ctx: null, drawing: false, hasInk: false }
+  };
+
+  function _resizeCanvasToCSS(canvas) {
+    // Ajusta resolución real al tamaño CSS para evitar firmas pixeladas
+    const rect = canvas.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(1, Math.round(rect.width * dpr));
+    const h = Math.max(1, Math.round(rect.height * dpr));
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
+    }
+  }
+
+  function _initFirma(id) {
+    const canvas = document.getElementById(id);
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    firmas[id].canvas = canvas;
+    firmas[id].ctx = ctx;
+
+    function setup() {
+      _resizeCanvasToCSS(canvas);
+      // Fondo blanco (para que el PNG no sea transparente)
+      ctx.save();
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.restore();
+
+      ctx.lineWidth = 3;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#111";
+    }
+
+    setup();
+
+    let lastX = 0, lastY = 0;
+
+    function getPos(evt) {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = window.devicePixelRatio || 1;
+
+      let clientX, clientY;
+
+      if (evt.touches && evt.touches.length) {
+        clientX = evt.touches[0].clientX;
+        clientY = evt.touches[0].clientY;
+      } else {
+        clientX = evt.clientX;
+        clientY = evt.clientY;
+      }
+
+      const x = (clientX - rect.left) * dpr;
+      const y = (clientY - rect.top) * dpr;
+      return { x, y };
+    }
+
+    function start(evt) {
+      evt.preventDefault();
+      firmas[id].drawing = true;
+      const p = getPos(evt);
+      lastX = p.x; lastY = p.y;
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+    }
+
+    function move(evt) {
+      if (!firmas[id].drawing) return;
+      evt.preventDefault();
+      const p = getPos(evt);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      firmas[id].hasInk = true;
+    }
+
+    function end(evt) {
+      if (!firmas[id].drawing) return;
+      evt.preventDefault();
+      firmas[id].drawing = false;
+      ctx.closePath();
+    }
+
+    // Mouse
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", end);
+
+    // Touch
+    canvas.addEventListener("touchstart", start, { passive: false });
+    canvas.addEventListener("touchmove", move, { passive: false });
+    canvas.addEventListener("touchend", end, { passive: false });
+    canvas.addEventListener("touchcancel", end, { passive: false });
+
+    // Reajuste al cambiar tamaño
+    window.addEventListener("resize", () => {
+      // Guardar imagen actual
+      const dataUrl = canvas.toDataURL("image/png");
+      setup();
+      // Reponer imagen (si existe)
+      const img = new Image();
+      img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
+      img.src = dataUrl;
+    });
+  }
+
+  function limpiarFirma(id) {
+    const f = firmas[id];
+    if (!f?.canvas || !f?.ctx) return;
+    _resizeCanvasToCSS(f.canvas);
+    f.ctx.save();
+    f.ctx.setTransform(1,0,0,1,0,0);
+    f.ctx.globalCompositeOperation = "source-over";
+    f.ctx.fillStyle = "#ffffff";
+    f.ctx.fillRect(0,0,f.canvas.width,f.canvas.height);
+    f.ctx.restore();
+    f.hasInk = false;
+  }
+
+  function obtenerFirmaBase64(id) {
+    const f = firmas[id];
+    if (!f?.canvas) return "";
+    // Si no se dibujó nada, retornamos vacío
+    if (!f.hasInk) return "";
+    return f.canvas.toDataURL("image/png"); // base64 PNG
+  }
+
+  // ==============================
+  // ✅ PROCEDIMIENTOS DESDE SUPABASE
   // ==============================
   async function cargarProcedimientosDesdeSupabase() {
     const dl = document.getElementById("procedimientos_list_supabase");
@@ -523,7 +691,7 @@
   }
 
   // ==============================
-  // ✅ PROFESIONALES DESDE SUPABASE (igual)
+  // ✅ PROFESIONALES DESDE SUPABASE
   // ==============================
   async function cargarProfesionalesDesdeSupabase() {
     let tries = 0;
@@ -564,7 +732,7 @@
   }
 
   // ==============================
-  // ✅ EVOLUCIONES (igual comportamiento del original)
+  // ✅ EVOLUCIONES
   // ==============================
   let evoluciones = [];
   let _cedulaActual = "";
@@ -581,6 +749,10 @@
     if (p) p.value = "";
     if (t) t.value = "";
     if (d) d.value = "";
+
+    // ✅ limpiar firmas
+    limpiarFirma("firma_paciente");
+    limpiarFirma("firma_profesional");
   }
 
   function generarEvolucionId() { return uuid(); }
@@ -603,6 +775,8 @@
       profesional: e.profesional ?? e.evo_profesional ?? "",
       procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
       detalle: e.detalle ?? e.evo_detalle ?? "",
+      firma_paciente: e.firma_paciente ?? "",
+      firma_profesional: e.firma_profesional ?? "",
       created_at: e.created_at ?? null,
       ts: e.ts ?? e.created_at ?? new Date().toISOString()
     }));
@@ -615,8 +789,6 @@
     tbody.innerHTML = "";
 
     evoluciones.forEach((evo, idx) => {
-      const tr = document.createElement("tr");
-
       const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
@@ -624,6 +796,7 @@
       const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
       const detalle = evo.detalle ?? evo.evo_detalle ?? "";
 
+      const tr = document.createElement("tr");
       tr.innerHTML = `
         <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
           ${escapeHtml(idEvo)}
@@ -639,7 +812,6 @@
           </button>
         </td>
       `;
-
       tbody.appendChild(tr);
     });
   }
@@ -656,15 +828,22 @@
     const tipo = (document.getElementById("evo_tipo").value || "").trim();
     const detalle = (document.getElementById("evo_detalle").value || "").trim();
 
+    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
+    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
     if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
     if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
+
+    // ✅ valida firmas (si no quieres obligatorio, borra estas 2 líneas)
+    if (!firmaPaciente) { alert("⚠️ Falta la firma del paciente."); return; }
+    if (!firmaProfesional) { alert("⚠️ Falta la firma del profesional."); return; }
 
     const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
 
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-    // ✅ payload igual a tu original (incluye evento, cedula, evolucion, usuario_logueado)
+    // ✅ item incluye firmas
     const item = {
       id: generarEvolucionId(),
       fecha,
@@ -672,6 +851,8 @@
       profesional,
       procedimiento: tipo,
       detalle,
+      firma_paciente: firmaPaciente,
+      firma_profesional: firmaProfesional,
       cedula_paciente: cedula,
       usuario,
       ts: new Date().toISOString()
@@ -703,10 +884,6 @@
     }
   }
 
-  // ==============================
-  // ✅ BUSCAR evoluciones por cédula (misma fuente que el original)
-  // (usa el webhook de buscar historia y toma el campo 'evoluciones')
-  // ==============================
   async function buscarEvolucionesPorCedula() {
     const cedula = (document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("Ingrese una cédula"); return; }
@@ -730,7 +907,6 @@
 
       evoluciones = normalizarEvolucionesDeWebhook(data);
       renderEvoluciones();
-
       alert("Evoluciones cargadas con éxito");
     } catch (err) {
       console.error(err);
@@ -745,9 +921,13 @@
     limpiarEvolucionForm();
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
+
+    // ✅ iniciar firmas
+    _initFirma("firma_paciente");
+    _initFirma("firma_profesional");
   });
 
-  // Exponer funciones usadas en HTML
+  // Exponer
   window.cerrarSesion = cerrarSesion;
   window.irInicio = irInicio;
 
@@ -755,8 +935,11 @@
   window.agregarEvolucion = agregarEvolucion;
   window.eliminarEvolucion = eliminarEvolucion;
   window.limpiarEvolucionForm = limpiarEvolucionForm;
+
+  window.limpiarFirma = limpiarFirma;
 </script>
 </body>
 </html>
+
 
 
