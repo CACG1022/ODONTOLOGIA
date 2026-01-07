@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inicio - Clínica Dra. Leidi Silva</title>
+  <title>Inicio - DENTOVA</title>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -28,8 +28,6 @@
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
       precios: "https://cacg1022.github.io/ODONTOLOGIA/actualizacion-precios.html",
       profesionales: "https://cacg1022.github.io/ODONTOLOGIA/profesionales-admin.html",
-
-      // ✅ NUEVO: Facturación (solo admin)
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html",
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
       reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
@@ -65,7 +63,6 @@
 
       el.onclick = (e) => {
         e.preventDefault();
-
         if (el.classList.contains("disabled")) return;
 
         if (!url || url === "#") {
@@ -97,7 +94,6 @@
       }
     }
 
-    // ✅ Normaliza nombres de módulos para que coincidan aunque tengan .html
     function normModulo(s) {
       return String(s || "")
         .trim()
@@ -106,44 +102,30 @@
         .replace(/\.html$/i, "");
     }
 
-    // ✅ Mapa: botón -> modulo (DEBE coincidir con lo que tienes en modulos_permisos)
-    // Según tu captura de permisos.html: profesionales-admin (sin .html)
     const MODULE_MAP = {
       "go-reporte-ventas":    "reportes",
       "go-agendar":           "agendamientos",
-      "go-gestiondepermisos": "permisos",           // si en tu tabla existe "permisos" o "permisos.html" (ver abajo)
+      "go-gestiondepermisos": "permisos",
       "go-historia":          "historia_clinica",
       "go-reporte-pacientes": "reporte_pacientes",
       "go-plan":              "plandetratamiento",
       "go-precios":           "actualizacion_precios",
       "go-usuarios":          "admin-roles",
-      "go-profesionales":     "profesionales-admin", // ✅ clave del error en tu caso
+      "go-profesionales":     "profesionales-admin",
       "go-facturacion":       "facturacion",
-      "go-registro":       "registro",
-
-      // estos no están en tu tabla (si los quieres controlar por permisos, crea filas)
+      "go-registro":          "registro",
       "go-hoy":               "hoy",
       "go-rips":              "rips",
-      //"go-registro":          "registro"
     };
 
-    // ✅ IMPORTANTE:
-    // En tu captura NO se ve un módulo llamado "permisos" ni "permisos.html"
-    // Se ve admin-roles como "Administración de Usuarios".
-    // Si tu página permisos.html controla esa misma tabla, puedes usar admin-roles también.
-    // Para que funcione SIEMPRE, intentamos ambos: permisos y admin-roles.
     function getModuloCandidates(mod) {
       const m = normModulo(mod);
       const out = new Set([m, `${m}.html`]);
-
-      // compatibilidad extra por tu caso real
       if (m === "permisos") out.add("admin-roles");
-
       return Array.from(out);
     }
 
     async function cargarPermisosPorRol() {
-      // Pedimos todo (es poco) para evitar que un mismatch bloquee
       try {
         const { data, error } = await supabase
           .from("modulos_permisos")
@@ -151,7 +133,6 @@
 
         if (error) throw error;
 
-        // Creamos un mapa normalizado + alias con/sin .html
         const map = {};
         (data || []).forEach(row => {
           const base = normModulo(row.modulo);
@@ -204,14 +185,12 @@
         roleNorm === "auxiliar" ? "auxiliar" :
         "paciente";
 
-      // ✅ admin por email también
       const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
       const permisosMap = await cargarPermisosPorRol();
 
       for (const [btnId, modulo] of Object.entries(MODULE_MAP)) {
         const el = document.getElementById(btnId);
-
         const ok = puedeAcceder(permisosMap, modulo, finalRoleKey);
 
         const reason = !permisosMap
@@ -262,23 +241,44 @@
   </script>
 
   <style>
+    /* =========================
+       DENTOVA UI THEME (como la 1ra imagen)
+       ========================= */
+
     :root{
-      --bg: #f5f7fb;
-      --surface: #ffffff;
-      --surface-2: #fbfcff;
-      --border: rgba(15, 23, 42, 0.10);
-      --text: #0f172a;
-      --muted: #64748b;
-      --accent: #2563eb;
-      --accent-2: #1d4ed8;
+      /* Fondo etéreo */
+      --bg0: #eef3ff;
+      --bg1: #f7fbff;
+
+      /* Superficies */
+      --surface: rgba(255,255,255,.72);
+      --surface-2: rgba(255,255,255,.82);
+      --stroke: rgba(15, 23, 42, 0.10);
+
+      /* Texto */
+      --text: #0b1220;
+      --muted: rgba(15,23,42,.58);
+
+      /* Acentos DENTOVA (azul/teal + dorado) */
+      --a1: #1d6ef2;   /* azul */
+      --a2: #11b7c8;   /* teal */
+      --gold: #d4af37; /* dorado */
+
+      /* Estados */
       --ok: #16a34a;
 
-      --shadow: 0 20px 45px rgba(15,23,42,.10);
-      --shadow-2: 0 10px 20px rgba(15,23,42,.08);
-      --radius: 18px;
+      /* Sombras suaves */
+      --shadow-lg: 0 22px 60px rgba(15,23,42,.14);
+      --shadow-md: 0 14px 28px rgba(15,23,42,.10);
+      --shadow-sm: 0 10px 18px rgba(15,23,42,.08);
+
+      --r-xl: 22px;
+      --r-lg: 18px;
+      --r-md: 16px;
     }
 
     *{ box-sizing:border-box; }
+    html, body{ height:100%; }
 
     body{
       margin:0;
@@ -288,47 +288,84 @@
       align-items:center;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
-      background:
-        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
-        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
-        linear-gradient(180deg, #ffffff, var(--bg));
       padding: 28px 16px;
+
+      /* Fondo tipo "nebula" con brillos sutiles */
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(29,110,242,.20), transparent 55%),
+        radial-gradient(900px 600px at 85% 70%, rgba(17,183,200,.16), transparent 60%),
+        radial-gradient(700px 420px at 60% 18%, rgba(212,175,55,.12), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg0));
+      overflow-x:hidden;
+    }
+
+    /* “Chispitas” suaves */
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      opacity:.30;
+      background-image:
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,.65) 0 1px, transparent 2px),
+        radial-gradient(circle at 70% 40%, rgba(255,255,255,.55) 0 1px, transparent 2px),
+        radial-gradient(circle at 45% 75%, rgba(255,255,255,.55) 0 1px, transparent 2px),
+        radial-gradient(circle at 85% 20%, rgba(255,255,255,.50) 0 1px, transparent 2px);
+      background-size: 260px 260px, 320px 320px, 280px 280px, 360px 360px;
+      filter: blur(.2px);
     }
 
     .wrapper{
-      width: min(1020px, 100%);
+      width: min(1050px, 100%);
       display:flex;
       flex-direction:column;
       align-items:center;
       gap: 18px;
     }
 
-    .logo-top{ display:flex; justify-content:center; }
-    .logo-top img{
-      width: 400px;
+    .brand{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      padding-top: 6px;
+    }
+
+    /* 👇 Reemplaza este src por tu logo final (PNG/SVG) */
+    .brand img{
+      width: min(520px, 92vw);
       height: auto;
       object-fit: contain;
-      filter: drop-shadow(0 12px 18px rgba(15,23,42,.18));
+      filter: drop-shadow(0 16px 22px rgba(15,23,42,.18));
+      user-select:none;
     }
 
     .main-card{
       width: min(980px, 100%);
-      padding: 22px;
-      border-radius: var(--radius);
-      background: linear-gradient(180deg, var(--surface), var(--surface-2));
-      border: 1px solid var(--border);
-      box-shadow: var(--shadow);
+      padding: 20px;
+      border-radius: var(--r-xl);
+      background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.64));
+      border: 1px solid rgba(255,255,255,.55);
+      box-shadow: var(--shadow-lg);
       position: relative;
       overflow:hidden;
+
+      /* “glass” */
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
+    /* Brillos internos */
     .main-card::before{
       content:"";
       position:absolute;
-      inset: -120px -120px auto auto;
-      width: 300px; height: 300px;
-      background: radial-gradient(circle, rgba(37,99,235,.12), transparent 60%);
+      inset:-120px -160px auto auto;
+      width: 420px;
+      height: 420px;
+      background:
+        radial-gradient(circle, rgba(29,110,242,.18), transparent 58%),
+        radial-gradient(circle at 30% 40%, rgba(17,183,200,.14), transparent 60%);
       pointer-events:none;
+      filter: blur(0px);
     }
 
     .header{
@@ -337,7 +374,7 @@
       justify-content:space-between;
       gap: 12px;
       padding-bottom: 14px;
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid rgba(15,23,42,.10);
       margin-bottom: 16px;
     }
 
@@ -349,27 +386,32 @@
       letter-spacing: .2px;
     }
 
-    #user-email{ color: var(--text) !important; font-weight: 700 !important; }
+    #user-email{
+      color: var(--text) !important;
+      font-weight: 800 !important;
+    }
 
+    /* Chip del rol, estilo “pill” como en la imagen */
     #user-role{
       display:inline-flex;
       align-items:center;
       gap: 8px;
       margin-top: 8px;
-      padding: 6px 10px;
+      padding: 7px 12px;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      background: rgba(37,99,235,.06);
-      color: var(--accent-2);
-      font-weight: 700;
+      border: 1px solid rgba(29,110,242,.20);
+      background: linear-gradient(180deg, rgba(29,110,242,.10), rgba(17,183,200,.06));
+      color: rgba(29,110,242,.95);
+      font-weight: 800;
       font-size: 12px;
+      box-shadow: var(--shadow-sm);
     }
     #user-role::before{
       content:"";
       width: 8px; height: 8px;
       border-radius: 999px;
-      background: var(--accent);
-      box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+      background: linear-gradient(180deg, var(--a2), var(--a1));
+      box-shadow: 0 0 0 4px rgba(29,110,242,.12);
     }
 
     .meta{
@@ -384,15 +426,18 @@
       display:flex;
       align-items:center;
       gap: 8px;
-      padding: 8px 12px;
+      padding: 9px 12px;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      background: #fff;
-      color: var(--muted);
+      border: 1px solid rgba(255,255,255,.65);
+      background: rgba(255,255,255,.80);
+      color: rgba(15,23,42,.62);
       font-size: 12px;
       white-space:nowrap;
-      box-shadow: var(--shadow-2);
+      box-shadow: var(--shadow-sm);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
+
     .dot{
       width: 10px; height: 10px;
       border-radius: 999px;
@@ -405,33 +450,42 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 12px;
     }
+
     @media (max-width: 900px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px){
       .grid{ grid-template-columns: 1fr; }
-      .logo-top img{ width: 140px; }
+      .brand img{ width: 92vw; }
     }
 
+    /* Tarjetas tipo “tile” suaves y elegantes */
     .tile{
       display:flex;
       align-items:center;
       justify-content:space-between;
       gap: 12px;
       padding: 14px 14px;
-      border-radius: 16px;
+      border-radius: var(--r-lg);
       text-decoration:none;
       color: var(--text);
-      border: 1px solid var(--border);
-      background: #fff;
-      box-shadow: var(--shadow-2);
-      transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
-      min-height: 70px;
+
+      /* Glassy card */
+      background: linear-gradient(180deg, rgba(255,255,255,.86), rgba(255,255,255,.72));
+      border: 1px solid rgba(255,255,255,.65);
+      box-shadow: var(--shadow-md);
+
+      transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease, background .14s ease;
+      min-height: 74px;
       cursor:pointer;
+
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
     }
 
     .tile:hover{
       transform: translateY(-1px);
-      border-color: rgba(37,99,235,.28);
-      box-shadow: 0 16px 28px rgba(15,23,42,.12);
+      border-color: rgba(29,110,242,.24);
+      box-shadow: 0 18px 32px rgba(15,23,42,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.78));
     }
     .tile:active{ transform: translateY(0px); }
 
@@ -439,30 +493,46 @@
       opacity: .55;
       cursor: not-allowed;
       transform: none !important;
-      box-shadow: var(--shadow-2) !important;
-      border-color: var(--border) !important;
-      background: #fff !important;
+      box-shadow: var(--shadow-md) !important;
+      border-color: rgba(255,255,255,.55) !important;
       filter: grayscale(.15);
     }
 
     .left{ display:flex; align-items:center; gap: 12px; min-width:0; }
 
+    /* Icono con degradado y borde sutil, como el mockup */
     .icon{
-      width: 44px; height: 44px;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      background: rgba(37,99,235,.06);
+      width: 46px; height: 46px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.70);
+      background:
+        radial-gradient(circle at 30% 20%, rgba(29,110,242,.14), transparent 55%),
+        radial-gradient(circle at 70% 80%, rgba(17,183,200,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.80), rgba(255,255,255,.62));
       display:grid;
       place-items:center;
       flex: 0 0 auto;
+      box-shadow: 0 10px 18px rgba(15,23,42,.10);
     }
-    .icon svg{ width: 20px; height: 20px; color: #D4AF37; }
+
+    /* SVG dorado suave */
+    .icon svg{
+      width: 20px; height: 20px;
+      color: var(--gold);
+      filter: drop-shadow(0 2px 4px rgba(212,175,55,.25));
+    }
 
     .ttext{ min-width:0; }
-    .ttext h3{ margin:0; font-size: 14px; letter-spacing:.2px; color: var(--text); }
+    .ttext h3{
+      margin:0;
+      font-size: 14px;
+      letter-spacing:.2px;
+      color: rgba(15,23,42,.92);
+      font-weight: 800;
+    }
     .ttext p{
       margin: 6px 0 0;
-      color: var(--muted);
+      color: rgba(15,23,42,.58);
       font-size: 12.5px;
       line-height: 1.25;
       overflow:hidden;
@@ -472,64 +542,78 @@
       -webkit-box-orient: vertical;
     }
 
+    /* Flecha redondeada, con hover dorado */
     .arrow{
-      width: 36px; height: 36px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-      background: rgba(2, 6, 23, .02);
+      width: 38px; height: 38px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.70);
+      background: rgba(255,255,255,.70);
       display:grid;
       place-items:center;
       flex: 0 0 auto;
-      color: var(--muted);
-      font-weight: 800;
-      transition: background .12s ease, border-color .12s ease, color .12s ease;
+      color: rgba(15,23,42,.55);
+      font-weight: 900;
+      transition: background .14s ease, border-color .14s ease, color .14s ease, transform .14s ease;
+      box-shadow: 0 10px 18px rgba(15,23,42,.08);
     }
+
     .tile:hover .arrow{
-      background: rgba(212,175,55,.10);
+      background: rgba(212,175,55,.14);
       border-color: rgba(212,175,55,.30);
-      color: var(--accent-2);
+      color: rgba(29,110,242,.90);
+      transform: translateX(1px);
     }
 
     .footer{
       margin-top: 14px;
       padding-top: 14px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid rgba(15,23,42,.10);
       display:flex;
       justify-content:space-between;
       gap: 10px;
       flex-wrap:wrap;
-      color: var(--muted);
+      color: rgba(15,23,42,.58);
       font-size: 12.5px;
       align-items:center;
     }
 
+    /* Botón principal “teal/blue” como la imagen */
     button.logout{
-      border: 1px solid var(--border);
-      background: var(--accent);
+      border: 1px solid rgba(255,255,255,.60);
+      background: linear-gradient(180deg, rgba(17,183,200,.98), rgba(29,110,242,.98));
       color: #fff;
-      border-radius: 12px;
-      padding: 10px 14px;
+      border-radius: 14px;
+      padding: 11px 16px;
       cursor:pointer;
-      font-weight: 800;
+      font-weight: 900;
       letter-spacing:.2px;
-      box-shadow: 0 12px 18px rgba(37,99,235,.18);
-      transition: transform .12s ease, background .12s ease, box-shadow .12s ease;
+      box-shadow: 0 16px 24px rgba(29,110,242,.20);
+      transition: transform .14s ease, box-shadow .14s ease, filter .14s ease;
     }
     button.logout:hover{
-      background: var(--accent-2);
       transform: translateY(-1px);
-      box-shadow: 0 16px 24px rgba(37,99,235,.22);
+      box-shadow: 0 20px 30px rgba(29,110,242,.24);
+      filter: saturate(1.05);
     }
     button.logout:active{ transform: translateY(0px); }
+
+    /* Accesibilidad: focus visible */
+    .tile:focus-visible,
+    button.logout:focus-visible{
+      outline: 3px solid rgba(29,110,242,.25);
+      outline-offset: 3px;
+    }
   </style>
 </head>
 
 <body>
   <div class="wrapper">
-    <div class="logo-top">
+    <div class="brand">
+      <!-- ✅ Pon aquí tu logo DENTOVA (recomendado SVG o PNG transparente) -->
+      <!-- Puedes usar el logo generado subiéndolo a tu repo y pegando la URL aquí -->
       <img
         src="https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png"
-        alt="Logo Clínica Dra. Leidi Silva"
+        alt="DENTOVA"
       />
     </div>
 
@@ -538,7 +622,7 @@
         <p class="title">
           Software Dental<br/>
           Clínica Dra. Leidi Silva<br/>
-          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:700;"></span><br/>
+          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:800;"></span><br/>
           <span id="user-role">Rol: ...</span>
         </p>
 
@@ -592,7 +676,7 @@
                 <path d="M7.5 12.5h4M7.5 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
               </svg>
             </div>
-            <div class="ttext"><h3>Gestion de permisos</h3><p>Permisos.</p></div>
+            <div class="ttext"><h3>Gestión de permisos</h3><p>Permisos.</p></div>
           </div>
           <div class="arrow">→</div>
         </a>
@@ -739,15 +823,13 @@
       </div>
 
       <div class="footer">
-        <span>© <span id="year"></span> Clínica Dra. Leidi Silva</span>
+        <span>© <span id="year"></span> DENTOVA</span>
         <button class="logout" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
       </div>
     </section>
   </div>
 </body>
 </html>
-
-
 
 
 
