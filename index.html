@@ -107,43 +107,31 @@
     }
 
     // ✅ Mapa: botón -> modulo (DEBE coincidir con lo que tienes en modulos_permisos)
-    // Según tu captura de permisos.html: profesionales-admin (sin .html)
     const MODULE_MAP = {
       "go-reporte-ventas":    "reportes",
       "go-agendar":           "agendamientos",
-      "go-gestiondepermisos": "permisos",           // si en tu tabla existe "permisos" o "permisos.html" (ver abajo)
+      "go-gestiondepermisos": "permisos",
       "go-historia":          "historia_clinica",
       "go-reporte-pacientes": "reporte_pacientes",
       "go-plan":              "plandetratamiento",
       "go-precios":           "actualizacion_precios",
       "go-usuarios":          "admin-roles",
-      "go-profesionales":     "profesionales-admin", // ✅ clave del error en tu caso
+      "go-profesionales":     "profesionales-admin",
       "go-facturacion":       "facturacion",
-      "go-registro":       "registro",
+      "go-registro":          "registro",
 
-      // estos no están en tu tabla (si los quieres controlar por permisos, crea filas)
       "go-hoy":               "hoy",
       "go-rips":              "rips",
-      //"go-registro":          "registro"
     };
 
-    // ✅ IMPORTANTE:
-    // En tu captura NO se ve un módulo llamado "permisos" ni "permisos.html"
-    // Se ve admin-roles como "Administración de Usuarios".
-    // Si tu página permisos.html controla esa misma tabla, puedes usar admin-roles también.
-    // Para que funcione SIEMPRE, intentamos ambos: permisos y admin-roles.
     function getModuloCandidates(mod) {
       const m = normModulo(mod);
       const out = new Set([m, `${m}.html`]);
-
-      // compatibilidad extra por tu caso real
       if (m === "permisos") out.add("admin-roles");
-
       return Array.from(out);
     }
 
     async function cargarPermisosPorRol() {
-      // Pedimos todo (es poco) para evitar que un mismatch bloquee
       try {
         const { data, error } = await supabase
           .from("modulos_permisos")
@@ -151,7 +139,6 @@
 
         if (error) throw error;
 
-        // Creamos un mapa normalizado + alias con/sin .html
         const map = {};
         (data || []).forEach(row => {
           const base = normModulo(row.modulo);
@@ -187,11 +174,9 @@
 
       const email = (session.user?.email || "").toLowerCase();
 
-      // ✅ Mostrar email
       const u = document.getElementById("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
 
-      // ✅ Cargar rol y mostrarlo
       const roleRaw = await cargarRolDesdeProfiles(session.user.id);
       const roleNorm = String(roleRaw || "").toLowerCase().trim();
 
@@ -204,7 +189,6 @@
         roleNorm === "auxiliar" ? "auxiliar" :
         "paciente";
 
-      // ✅ admin por email también
       const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
       const permisosMap = await cargarPermisosPorRol();
@@ -221,7 +205,6 @@
         setDisabled(el, !ok, reason);
       }
 
-      // ✅ Navegación
       wireNav("go-agendar", URLS.agendar, "open");
       wireNav("go-gestiondepermisos", URLS.gestiondepermisos, "open");
       wireNav("go-historia", URLS.historia, "href");
@@ -236,7 +219,6 @@
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
       wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
 
-      // Fecha
       const t = document.getElementById("today");
       if (t) {
         t.textContent = new Date().toLocaleDateString("es-CO", {
@@ -279,13 +261,14 @@
     }
 
     *{ box-sizing:border-box; }
+    html,body{ height:100%; }
 
     body{
       margin:0;
       min-height:100vh;
       display:flex;
       justify-content:center;
-      align-items:center;
+      align-items:flex-start;
       font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color: var(--text);
       background:
@@ -293,6 +276,7 @@
         radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
         linear-gradient(180deg, #ffffff, var(--bg));
       padding: 28px 16px;
+      overflow-x:hidden;
     }
 
     .wrapper{
@@ -303,12 +287,32 @@
       gap: 18px;
     }
 
-    .logo-top{ display:flex; justify-content:center; }
+    /* ✅ LOGO + SUBTITULO (ARREGLADO) */
+    .logo-top{
+      width: 100%;
+      display:flex;
+      flex-direction:column; /* ✅ para que el texto quede debajo */
+      align-items:center;    /* ✅ centrado */
+      justify-content:center;
+      text-align:center;
+      gap: 8px;
+      margin-top: 4px;
+    }
     .logo-top img{
-      width: 400px;
+      width: min(560px, 92vw);
       height: auto;
       object-fit: contain;
+      display:block;
       filter: drop-shadow(0 12px 18px rgba(15,23,42,.18));
+    }
+    .logo-sub{
+      font-size: 13px;
+      letter-spacing: .30em;
+      text-transform: uppercase;
+      color: rgba(15,23,42,.45);
+      margin-top: -6px;
+      line-height: 1.1;
+      font-weight: 500;
     }
 
     .main-card{
@@ -408,7 +412,7 @@
     @media (max-width: 900px){ .grid{ grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 560px){
       .grid{ grid-template-columns: 1fr; }
-      .logo-top img{ width: 140px; }
+      .logo-top img{ width: 92vw; }
     }
 
     .tile{
@@ -747,7 +751,6 @@
   </div>
 </body>
 </html>
-
 
 
 
