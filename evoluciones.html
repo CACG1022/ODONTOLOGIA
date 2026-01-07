@@ -1,14 +1,85 @@
+<!-- evoluciones.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>Evoluciones - Buscar por Cédula Paciente</title>
+  <title>Evoluciones - Historia Clínica Odontológica</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Dictado por voz (SpeechRecognition) -->
-  <script>
+  <!-- 🔐 SUPABASE + LOGIN (igual lógica del original) -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    window.supabase = supabase;
+
+    window.APP_URLS = {
+      LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
+      HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
+    };
+
+    const MODULO = "historia_clinica";
+
+    async function verificarSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = window.APP_URLS.LOGIN;
+        return null;
+      }
+      return session;
+    }
+
+    async function validarPermisoModulo() {
+      const session = await verificarSesion();
+      if (!session) return;
+
+      const { data: perfil, error: ePerfil } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if (ePerfil || !perfil?.role) {
+        alert("No se pudo obtener tu rol.");
+        window.location.href = window.APP_URLS.HOME;
+        return;
+      }
+
+      const rol = perfil.role;
+
+      const { data: permiso, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente")
+        .eq("modulo", MODULO)
+        .single();
+
+      if (ePerm || !permiso) {
+        alert("Módulo no configurado en permisos.");
+        window.location.href = window.APP_URLS.HOME;
+        return;
+      }
+
+      if (!permiso[rol]) {
+        alert("⛔ No tienes permiso para acceder a Evoluciones.");
+        window.location.href = window.APP_URLS.HOME;
+        return;
+      }
+
+      console.log("✅ Acceso permitido a Evoluciones para:", rol);
+    }
+
+    validarPermisoModulo();
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = window.APP_URLS.LOGIN;
+    });
+
     // ==============================
-    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
+    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle) - IGUAL AL ORIGINAL
     // ==============================
     let _srEvo = null;
     let _srEvoOn = false;
@@ -19,6 +90,7 @@
 
     function _appendEnTextarea(textarea, texto) {
       if (!textarea) return;
+
       const actual = textarea.value || "";
       const add = (texto || "").trim();
       if (!add) return;
@@ -57,11 +129,15 @@
 
       _srEvo.onresult = (event) => {
         let textoFinal = "";
+
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const res = event.results[i];
           const t = (res[0]?.transcript || "").trim();
           if (!t) continue;
-          if (res.isFinal) textoFinal += (textoFinal ? " " : "") + t;
+
+          if (res.isFinal) {
+            textoFinal += (textoFinal ? " " : "") + t;
+          }
         }
 
         if (textoFinal) {
@@ -115,362 +191,8 @@
     window.addEventListener("beforeunload", () => {
       try { detenerDictadoEvoDetalle(); } catch(e) {}
     });
+
     window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
-  </script>
-
-  <!-- Supabase -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    // ==============================
-    // 🔐 CONFIG SUPABASE (IGUAL A TU CÓDIGO)
-    // ==============================
-    const supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-    );
-    window.supabase = supabase;
-
-    // ==============================
-    // ✅ CONFIG: NOMBRE DE TABLA EN SUPABASE
-    // ==============================
-    // Asegúrate de que exista esta tabla y tenga columnas:
-    // id, fecha, hora, profesional, procedimiento, detalle, cedula_paciente, usuario, ts (o created_at)
-    const EVOLUCIONES_TABLE = "evoluciones";
-
-    // ==============================
-    // ✅ UTILIDADES
-    // ==============================
-    function escapeHtml(str){
-      return String(str ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-
-    function _uuidFallback() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-      });
-    }
-
-    function uuid() {
-      try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
-      catch(e){ return _uuidFallback(); }
-    }
-
-    function _hoyISO() { return new Date().toISOString().slice(0, 10); }
-
-    function _horaHHMM() {
-      const d = new Date();
-      return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-    }
-
-    function _soloFechaYYYYMMDD(valor) {
-      if (!valor) return "";
-      if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
-      return String(valor);
-    }
-
-    function _soloHoraHHMM(valor) {
-      if (!valor) return "";
-      const s = String(valor);
-      if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
-      return s;
-    }
-
-    function _normalizarCedula(v){
-      return String(v || "").trim().replace(/[^0-9]/g, "");
-    }
-
-    // ==============================
-    // ✅ CARGAR PROCEDIMIENTOS (datalist)
-    // ==============================
-    async function cargarProcedimientosDesdeSupabase() {
-      const dl = document.getElementById("procedimientos_list_supabase");
-      if (!dl) return;
-
-      try {
-        const { data, error } = await window.supabase
-          .from("procedimientos_precios")
-          .select("procedimiento, activo")
-          .eq("activo", true)
-          .order("procedimiento", { ascending: true });
-
-        if (error) throw error;
-
-        const items = (data || [])
-          .map(x => String(x.procedimiento || "").trim())
-          .filter(Boolean);
-
-        dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
-      } catch (e) {
-        console.warn("⚠️ Error cargando procedimientos:", e);
-      }
-    }
-
-    // ==============================
-    // ✅ CARGAR PROFESIONALES (select)
-    // ==============================
-    async function cargarProfesionalesDesdeSupabase() {
-      const sel = document.getElementById("evo_profesional");
-      if (!sel) return;
-
-      const placeholder = `<option value="">Seleccione profesional...</option>`;
-      sel.innerHTML = placeholder;
-
-      try {
-        const { data, error } = await window.supabase
-          .from("profesionales")
-          .select("id, nombre, cedula, activo")
-          .eq("activo", true)
-          .order("nombre", { ascending: true });
-
-        if (error) throw error;
-
-        const options = (data || []).map(p => {
-          const nombre = (p.nombre || "").trim();
-          const cedula = (p.cedula || "").trim();
-          const valor = `${cedula} ${nombre}`.trim();
-          const label = nombre || valor;
-          return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
-        }).join("");
-
-        sel.innerHTML = placeholder + options;
-      } catch (e) {
-        console.warn("⚠️ Error cargando profesionales:", e);
-      }
-    }
-
-    // ==============================
-    // ✅ EVOLUCIONES (BUSCAR POR CÉDULA PACIENTE)
-    // ==============================
-    let evoluciones = [];
-    let _cedulaPacienteActiva = "";
-
-    function setCedulaPacienteUI(ced){
-      const c = _normalizarCedula(ced);
-      _cedulaPacienteActiva = c;
-
-      const inputBuscar = document.getElementById("buscar_cedula_paciente");
-      const inputForm   = document.getElementById("evo_cedula_paciente");
-
-      if (inputBuscar && inputBuscar.value !== c) inputBuscar.value = c;
-      if (inputForm && inputForm.value !== c) inputForm.value = c;
-    }
-
-    function limpiarEvolucionForm() {
-      const c = document.getElementById("evo_cedula_paciente");
-      const f = document.getElementById("evo_fecha");
-      const h = document.getElementById("evo_hora");
-      const p = document.getElementById("evo_profesional");
-      const t = document.getElementById("evo_tipo");
-      const d = document.getElementById("evo_detalle");
-
-      if (c) c.value = _cedulaPacienteActiva || "";
-      if (f) f.value = _hoyISO();
-      if (h) h.value = _horaHHMM();
-      if (p) p.value = "";
-      if (t) t.value = "";
-      if (d) d.value = "";
-    }
-
-    function renderEvoluciones() {
-      const tbody = document.getElementById("tabla_evoluciones");
-      const empty = document.getElementById("evo_empty");
-      if (!tbody) return;
-
-      tbody.innerHTML = "";
-
-      if (!evoluciones.length){
-        if (empty) empty.style.display = "block";
-        return;
-      }
-      if (empty) empty.style.display = "none";
-
-      evoluciones.forEach((evo) => {
-        const tr = document.createElement("tr");
-
-        const idEvo = evo.id ?? "";
-        const fecha = _soloFechaYYYYMMDD(evo.fecha);
-        const hora  = _soloHoraHHMM(evo.hora);
-        const profesional = evo.profesional ?? "";
-        const procedimiento = evo.procedimiento ?? "";
-        const detalle = evo.detalle ?? "";
-        const cedula = evo.cedula_paciente ?? "";
-
-        tr.innerHTML = `
-          <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-            ${escapeHtml(idEvo)}
-          </td>
-          <td>${escapeHtml(cedula)}</td>
-          <td>${escapeHtml(fecha)}</td>
-          <td>${escapeHtml(hora)}</td>
-          <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-          <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
-          <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-          <td>
-            <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-              onclick="eliminarEvolucionSupabase('${escapeHtml(idEvo)}')">
-              Eliminar
-            </button>
-          </td>
-        `;
-
-        tbody.appendChild(tr);
-      });
-    }
-
-    function normalizarEvoRow(x){
-      return {
-        id: x.id ?? x.id_evolucion ?? x["id-evolucion"] ?? "",
-        fecha: _soloFechaYYYYMMDD(x.fecha ?? x.evo_fecha ?? x.ts ?? x.created_at ?? ""),
-        hora: _soloHoraHHMM(x.hora ?? x.evo_hora ?? ""),
-        profesional: x.profesional ?? x.evo_profesional ?? "",
-        procedimiento: x.procedimiento ?? x.evo_tipo ?? "",
-        detalle: x.detalle ?? x.evo_detalle ?? "",
-        cedula_paciente: x.cedula_paciente ?? "",
-        usuario: x.usuario ?? "",
-        ts: x.ts ?? x.created_at ?? null
-      };
-    }
-
-    async function cargarEvolucionesPacienteDesdeSupabase(cedula){
-      const c = _normalizarCedula(cedula);
-      if (!c) {
-        evoluciones = [];
-        renderEvoluciones();
-        return;
-      }
-
-      setCedulaPacienteUI(c);
-
-      try{
-        const { data, error } = await window.supabase
-          .from(EVOLUCIONES_TABLE)
-          .select("*")
-          .eq("cedula_paciente", c)
-          .order("ts", { ascending: false });
-
-        if (error) {
-          // fallback: si no existe "ts", intenta por created_at
-          const { data: data2, error: error2 } = await window.supabase
-            .from(EVOLUCIONES_TABLE)
-            .select("*")
-            .eq("cedula_paciente", c)
-            .order("created_at", { ascending: false });
-
-          if (error2) throw error2;
-          evoluciones = (data2 || []).map(normalizarEvoRow);
-          renderEvoluciones();
-          return;
-        }
-
-        evoluciones = (data || []).map(normalizarEvoRow);
-        renderEvoluciones();
-      }catch(e){
-        console.warn("❌ Error cargando evoluciones:", e);
-        alert("❌ No se pudieron cargar evoluciones. Revisa consola.\n\n" + (e?.message || JSON.stringify(e)));
-        evoluciones = [];
-        renderEvoluciones();
-      }
-    }
-
-    async function agregarEvolucion() {
-      const cedula = _normalizarCedula(document.getElementById("evo_cedula_paciente")?.value);
-      const fecha = (document.getElementById("evo_fecha")?.value || _hoyISO()).trim();
-      const hora = (document.getElementById("evo_hora")?.value || _horaHHMM()).trim();
-      const profesional = (document.getElementById("evo_profesional")?.value || "").trim();
-      const tipo = (document.getElementById("evo_tipo")?.value || "").trim();
-      const detalle = (document.getElementById("evo_detalle")?.value || "").trim();
-
-      if (!cedula) { alert("⚠️ Debes ingresar la cédula del paciente."); return; }
-      if (!profesional) { alert("⚠️ Debes seleccionar el profesional."); return; }
-      if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-
-      const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-
-      const item = {
-        id: uuid(),
-        fecha,
-        hora,
-        profesional,
-        procedimiento: tipo,
-        detalle,
-        cedula_paciente: cedula,
-        usuario,
-        ts: new Date().toISOString()
-      };
-
-      try{
-        const { error } = await window.supabase
-          .from(EVOLUCIONES_TABLE)
-          .insert(item);
-
-        if (error) throw error;
-
-        setCedulaPacienteUI(cedula);
-        await cargarEvolucionesPacienteDesdeSupabase(cedula);
-        limpiarEvolucionForm();
-        alert("✅ Evolución guardada.");
-      }catch(e){
-        console.warn("❌ Error guardando evolución:", e);
-        alert("❌ No se pudo guardar la evolución.\n\n" + (e?.message || JSON.stringify(e)));
-      }
-    }
-
-    async function eliminarEvolucionSupabase(id){
-      if (!id) return;
-      const ok = confirm("¿Eliminar esta evolución?");
-      if (!ok) return;
-
-      try{
-        const { error } = await window.supabase
-          .from(EVOLUCIONES_TABLE)
-          .delete()
-          .eq("id", id);
-
-        if (error) throw error;
-
-        await cargarEvolucionesPacienteDesdeSupabase(_cedulaPacienteActiva);
-        alert("✅ Evolución eliminada.");
-      }catch(e){
-        console.warn("❌ Error eliminando evolución:", e);
-        alert("❌ No se pudo eliminar.\n\n" + (e?.message || JSON.stringify(e)));
-      }
-    }
-
-    async function buscarEvolucionesPorCedula(){
-      const cedula = _normalizarCedula(document.getElementById("buscar_cedula_paciente")?.value);
-      if (!cedula) { alert("⚠️ Ingresa la cédula del paciente."); return; }
-      await cargarEvolucionesPacienteDesdeSupabase(cedula);
-      limpiarEvolucionForm();
-    }
-
-    function ponerHoraFechaAuto(){
-      const f = document.getElementById("evo_fecha");
-      const h = document.getElementById("evo_hora");
-      if (f) f.value = _hoyISO();
-      if (h) h.value = _horaHHMM();
-    }
-
-    // Exponer a window (para onclick)
-    window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
-    window.agregarEvolucion = agregarEvolucion;
-    window.limpiarEvolucionForm = limpiarEvolucionForm;
-    window.eliminarEvolucionSupabase = eliminarEvolucionSupabase;
-
-    // Init
-    document.addEventListener("DOMContentLoaded", async () => {
-      ponerHoraFechaAuto();
-      await cargarProcedimientosDesdeSupabase();
-      await cargarProfesionalesDesdeSupabase();
-      limpiarEvolucionForm();
-    });
   </script>
 
   <style>
@@ -493,6 +215,7 @@
     }
     .container{ max-width:1100px; margin:0 auto; }
     h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
+
     .card{
       background:var(--card);
       border:1px solid var(--line);
@@ -501,7 +224,7 @@
       box-shadow:var(--shadow);
       margin-bottom:22px;
     }
-    .legend{ font-weight:800; margin-bottom:8px; color:var(--brand); }
+    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
 
     .grid{ display:grid; gap:var(--gap); }
     .g-2{ grid-template-columns:1fr 1fr; }
@@ -511,13 +234,30 @@
     .ctrl{ display:flex; flex-direction:column; gap:8px; }
     .ctrl label{ font-size:13px; color:var(--muted); }
 
-    input[type="text"],input[type="number"],input[type="date"],input[type="time"], textarea, select{
+    input[type="text"], input[type="date"], input[type="time"], textarea{
       width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
       font-size:15px; background:#fff;
+    }
+    select{
+      width:100%;
+      border:1px solid var(--input);
+      border-radius:10px;
+      padding:12px;
+      font-size:15px;
+      background:#fff;
+      cursor:pointer;
     }
     textarea{ min-height:120px; resize:vertical; }
 
     .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .rowline{ height:1px; background:var(--line); margin:12px 0; }
+
+    @media (max-width:980px){
+      .g-3{ grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:680px){
+      .g-2,.g-3{ grid-template-columns:1fr; }
+    }
 
     .btn{
       width:100%;
@@ -527,12 +267,15 @@
       cursor:pointer;
       color:white;
       font-size:14px;
-      font-weight:700;
     }
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
-
-    .rowline{ height:1px; background:var(--line); margin:12px 0; }
+    .btn-inicio{
+      background:#E3E3E3;
+      color:#009688;
+      font-weight:700;
+    }
+    .btn-salir{ background:#009688; }
 
     .tabla-evo{
       width:100%;
@@ -547,172 +290,473 @@
       background:#eef6ff;
     }
 
+    /* Dictado (igual) */
     .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
     .vwrap .vfield{ flex: 1; }
     .vbtn{
       width: 44px; min-width: 44px; height: 44px; border-radius: 10px;
       border: 1px solid var(--line); background: #F5F5F5; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
-      color: transparent;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; color: transparent;
     }
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
-
-    .muted{ color:var(--muted); font-size:13px; }
-
-    @media (max-width:980px){
-      .g-3{ grid-template-columns:1fr 1fr; }
-    }
-    @media (max-width:680px){
-      .g-2,.g-3{ grid-template-columns:1fr; }
-    }
   </style>
 </head>
 
 <body>
-  <div class="container">
-    <h1>Evoluciones (procedimientos realizados)</h1>
+<div class="container">
 
-    <!-- ✅ BUSCAR POR CÉDULA PACIENTE (NUEVO) -->
-    <section class="card">
-      <div class="legend">Buscar evoluciones por cédula del paciente</div>
+  <section class="card">
+    <div class="legend">Buscar evoluciones por cédula del paciente</div>
 
-      <div class="grid g-2" style="align-items:end;">
-        <div class="ctrl">
-          <label for="buscar_cedula_paciente">Cédula paciente</label>
-          <input
-            id="buscar_cedula_paciente"
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]+"
-            placeholder="Ej: 10229566001"
-            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-          />
-        </div>
-
-        <div class="ctrl">
-          <label>&nbsp;</label>
-          <button type="button" class="btn btn-buscar" onclick="buscarEvolucionesPorCedula()">
-            Buscar evoluciones
-          </button>
-        </div>
+    <div class="grid g-2" style="align-items:end;">
+      <div class="ctrl">
+        <label for="cedula_paciente">Cédula paciente</label>
+        <input id="cedula_paciente" type="text" placeholder="Ej: 10229566001"
+          inputmode="numeric" pattern="[0-9]+"
+          oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+      </div>
+      <div class="ctrl">
+        <label>&nbsp;</label>
+        <button type="button" class="btn btn-buscar" onclick="buscarEvolucionesPorCedula()">
+          Buscar evoluciones
+        </button>
       </div>
 
-      <div class="muted" style="margin-top:10px;">
-        ✅ Tip: al buscar por cédula, esa misma cédula queda lista para agregar nuevas evoluciones al mismo paciente.
+      <div class="ctrl">
+        <button type="button" class="btn btn-inicio" onclick="irInicio()">IR A INICIO</button>
       </div>
-    </section>
+      <div class="ctrl">
+        <button type="button" class="btn btn-salir" onclick="cerrarSesion()">Cerrar sesión</button>
+      </div>
+    </div>
 
-    <!-- ✅ FORMULARIO EVOLUCIÓN -->
-    <section class="card">
-      <div class="legend">Nueva evolución</div>
+    <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
+      Nota: Esto consulta evoluciones desde el mismo webhook de N8N que usa tu historia clínica.
+    </div>
+  </section>
 
-      <div class="grid g-3">
-        <!-- ✅ NUEVO CAMPO: CÉDULA PACIENTE -->
-        <div class="ctrl">
-          <label for="evo_cedula_paciente">Cédula paciente</label>
-          <input
-            id="evo_cedula_paciente"
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]+"
-            placeholder="Ej: 10229566001"
-            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-          />
-        </div>
+  <h1>Evoluciones (procedimientos realizados)</h1>
 
-        <div class="ctrl">
-          <label for="evo_fecha">Fecha</label>
-          <input id="evo_fecha" type="date">
-        </div>
+  <!-- ✅ EVOLUCIONES (idéntica estructura/estilo del original) -->
+  <section class="card">
+    <div class="legend">Registro de evolución</div>
 
-        <div class="ctrl">
-          <label for="evo_hora">Hora</label>
-          <input id="evo_hora" type="time" readonly>
-        </div>
+    <div class="grid g-3">
+      <div class="ctrl">
+        <label for="evo_fecha">Fecha</label>
+        <input id="evo_fecha" type="date" disabled>
+      </div>
 
-        <div class="ctrl">
-          <label for="evo_profesional">Profesional</label>
+      <div class="ctrl">
+        <label for="evo_hora">Hora</label>
+        <input id="evo_hora" type="time" readonly>
+      </div>
+
+      <div class="ctrl">
+        <label for="evo_profesional">Profesional</label>
+        <div class="inline" style="gap:10px;">
           <select id="evo_profesional">
             <option value="">Seleccione profesional...</option>
           </select>
         </div>
+      </div>
 
-        <div class="ctrl">
-          <label for="evo_tipo">Procedimiento</label>
-          <input
-            id="evo_tipo"
-            type="text"
-            list="procedimientos_list_supabase"
-            placeholder="Buscar o escribir procedimiento..."
-            autocomplete="off"
-          />
-        </div>
-
-        <div class="ctrl full">
-          <label for="evo_detalle">Detalle / Observaciones</label>
-
-          <div class="vwrap">
-            <div class="vfield">
-              <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
-            </div>
-
-            <button
-              id="btnDictadoEvoDetalle"
-              type="button"
-              class="vbtn"
-              title="Dictar por voz"
-              aria-label="Dictar por voz"
-              onclick="toggleDictadoEvoDetalle()"
-            >🎤</button>
-          </div>
-
-          <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
-            🎙️ Dictando... habla normal. (Se agregará al final del texto)
-          </div>
+      <div class="ctrl">
+        <label for="evo_tipo">Procedimiento</label>
+        <div class="inline" style="gap:10px;">
+          <input id="evo_tipo" type="text" list="procedimientos_list_supabase"
+            placeholder="Buscar o escribir procedimiento..." autocomplete="off" style="flex:1;" />
         </div>
       </div>
 
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">
-          Agregar evolución
-        </button>
-        <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">
-          Limpiar
-        </button>
+      <div class="ctrl full">
+        <label for="evo_detalle">Detalle / Observaciones</label>
+
+        <div class="vwrap">
+          <div class="vfield">
+            <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
+          </div>
+
+          <button
+            id="btnDictadoEvoDetalle"
+            type="button"
+            class="vbtn"
+            title="Dictar por voz"
+            aria-label="Dictar por voz"
+            onclick="toggleDictadoEvoDetalle()"
+          >🎤</button>
+        </div>
+
+        <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
+          🎙️ Dictando... habla normal. (Se agregará al final del texto)
+        </div>
       </div>
+    </div>
 
-      <datalist id="procedimientos_list_supabase"></datalist>
-    </section>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+      <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">Agregar evolución</button>
+      <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">Limpiar</button>
+    </div>
 
-    <!-- ✅ TABLA EVOLUCIONES -->
-    <section class="card">
-      <div class="legend">Evoluciones encontradas</div>
+    <div class="rowline"></div>
 
-      <div id="evo_empty" class="muted" style="display:block; margin-bottom:10px;">
-        Sin evoluciones para mostrar. Busca por cédula para cargar.
-      </div>
+    <div style="overflow:auto;">
+      <table class="tabla-evo">
+        <thead>
+          <tr>
+            <th>ID Evolución</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Profesional</th>
+            <th>Procedimiento</th>
+            <th>Detalle</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="tabla_evoluciones"></tbody>
+      </table>
+    </div>
+  </section>
 
-      <div style="overflow:auto;">
-        <table class="tabla-evo">
-          <thead>
-            <tr>
-              <th>ID Evolución</th>
-              <th>Cédula paciente</th>
-              <th>Fecha</th>
-              <th>Hora</th>
-              <th>Profesional</th>
-              <th>Procedimiento</th>
-              <th>Detalle</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="tabla_evoluciones"></tbody>
-        </table>
-      </div>
-    </section>
-  </div>
+</div>
+
+<datalist id="procedimientos_list_supabase"></datalist>
+
+<script>
+  // ==============================
+  // CONFIG (urls originales)
+  // ==============================
+  const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+  const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+  // ✅ Webhook original (consulta historia + trae evoluciones dentro)
+  const WEBHOOK_BUSCAR_HISTORIA =
+    "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+
+  // ✅ Webhook original (guardar evolución)
+  const WEBHOOK_GUARDAR_EVOLUCION =
+    "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
+
+  function irInicio(){ window.location.href = URL_INICIO; }
+
+  async function cerrarSesion(motivo = "") {
+    try {
+      if (window.supabase?.auth?.signOut) await window.supabase.auth.signOut();
+    } catch (e) { console.warn("Error cerrando sesión:", e); }
+
+    try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
+    if (motivo) alert(motivo);
+    window.location.href = LOGIN_URL;
+  }
+
+  // ==============================
+  // UTILIDADES (igual estilo del original)
+  // ==============================
+  function _uuidFallback() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+  function uuid() {
+    try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
+    catch(e){ return _uuidFallback(); }
+  }
+  function _hoyISO() { return new Date().toISOString().slice(0, 10); }
+  function _horaHHMM() {
+    const d = new Date();
+    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
+  }
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+  function _soloFechaYYYYMMDD(valor) {
+    if (!valor) return "";
+    if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
+    return String(valor);
+  }
+  function _soloHoraHHMM(valor) {
+    if (!valor) return "";
+    const s = String(valor);
+    if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
+    return s;
+  }
+
+  // ==============================
+  // ✅ PROCEDIMIENTOS DESDE SUPABASE (igual)
+  // ==============================
+  async function cargarProcedimientosDesdeSupabase() {
+    const dl = document.getElementById("procedimientos_list_supabase");
+    if (!dl) return;
+
+    let tries = 0;
+    while (!window.supabase && tries < 40) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.supabase) return;
+
+    try {
+      const { data, error } = await window.supabase
+        .from("procedimientos_precios")
+        .select("procedimiento, activo")
+        .eq("activo", true)
+        .order("procedimiento", { ascending: true });
+
+      if (error) throw error;
+
+      const items = (data || [])
+        .map(x => String(x.procedimiento || "").trim())
+        .filter(Boolean);
+
+      dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
+    } catch (e) {
+      console.warn("⚠️ Error cargando procedimientos:", e);
+    }
+  }
+
+  // ==============================
+  // ✅ PROFESIONALES DESDE SUPABASE (igual)
+  // ==============================
+  async function cargarProfesionalesDesdeSupabase() {
+    let tries = 0;
+    while (!window.supabase && tries < 40) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.supabase) return;
+
+    const selEvo = document.getElementById("evo_profesional");
+    if (!selEvo) return;
+
+    const placeholder = `<option value="">Seleccione profesional...</option>`;
+    selEvo.innerHTML = placeholder;
+
+    try {
+      const { data, error } = await window.supabase
+        .from("profesionales")
+        .select("id, nombre, cedula, activo")
+        .eq("activo", true)
+        .order("nombre", { ascending: true });
+
+      if (error) throw error;
+
+      const options = (data || []).map(p => {
+        const nombre = (p.nombre || "").trim();
+        const cedula = (p.cedula || "").trim();
+        const valor = `${cedula} ${nombre}`.trim(); // value: "CEDULA NOMBRE"
+        const label = nombre; // label: SOLO nombre
+        return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
+      }).join("");
+
+      selEvo.innerHTML = placeholder + options;
+
+    } catch (e) {
+      console.warn("⚠️ Error cargando profesionales:", e);
+    }
+  }
+
+  // ==============================
+  // ✅ EVOLUCIONES (igual comportamiento del original)
+  // ==============================
+  let evoluciones = [];
+  let _cedulaActual = "";
+
+  function limpiarEvolucionForm() {
+    const f = document.getElementById("evo_fecha");
+    const h = document.getElementById("evo_hora");
+    const p = document.getElementById("evo_profesional");
+    const t = document.getElementById("evo_tipo");
+    const d = document.getElementById("evo_detalle");
+
+    if (f) f.value = _hoyISO();
+    if (h) h.value = _horaHHMM();
+    if (p) p.value = "";
+    if (t) t.value = "";
+    if (d) d.value = "";
+  }
+
+  function generarEvolucionId() { return uuid(); }
+
+  function normalizarEvolucionesDeWebhook(data) {
+    let raw = data?.evoluciones;
+
+    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
+      raw = raw.evoluciones;
+    }
+    if (typeof raw === "string") {
+      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
+    }
+    if (!Array.isArray(raw)) raw = [];
+
+    return raw.map((e) => ({
+      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
+      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
+      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
+      profesional: e.profesional ?? e.evo_profesional ?? "",
+      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
+      detalle: e.detalle ?? e.evo_detalle ?? "",
+      created_at: e.created_at ?? null,
+      ts: e.ts ?? e.created_at ?? new Date().toISOString()
+    }));
+  }
+
+  function renderEvoluciones() {
+    const tbody = document.getElementById("tabla_evoluciones");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    evoluciones.forEach((evo, idx) => {
+      const tr = document.createElement("tr");
+
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
+      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
+      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
+      const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
+      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
+
+      tr.innerHTML = `
+        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+          ${escapeHtml(idEvo)}
+        </td>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
+        <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
+            Eliminar
+          </button>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function eliminarEvolucion(idx) {
+    evoluciones.splice(idx, 1);
+    renderEvoluciones();
+  }
+
+  async function agregarEvolucion() {
+    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
+    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
+    const profesional = (document.getElementById("evo_profesional").value || "").trim();
+    const tipo = (document.getElementById("evo_tipo").value || "").trim();
+    const detalle = (document.getElementById("evo_detalle").value || "").trim();
+
+    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
+    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
+
+    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+    if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
+
+    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+
+    // ✅ payload igual a tu original (incluye evento, cedula, evolucion, usuario_logueado)
+    const item = {
+      id: generarEvolucionId(),
+      fecha,
+      hora,
+      profesional,
+      procedimiento: tipo,
+      detalle,
+      cedula_paciente: cedula,
+      usuario,
+      ts: new Date().toISOString()
+    };
+
+    evoluciones.unshift(item);
+    renderEvoluciones();
+    limpiarEvolucionForm();
+
+    try {
+      const payload = {
+        evento: "agregar_evolucion",
+        cedula: cedula,
+        evolucion: item,
+        fecha_envio: new Date().toISOString(),
+        usuario_logueado: usuario
+      };
+
+      const resp = await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+    } catch (err) {
+      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
+      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
+    }
+  }
+
+  // ==============================
+  // ✅ BUSCAR evoluciones por cédula (misma fuente que el original)
+  // (usa el webhook de buscar historia y toma el campo 'evoluciones')
+  // ==============================
+  async function buscarEvolucionesPorCedula() {
+    const cedula = (document.getElementById("cedula_paciente")?.value || "").trim();
+    if (!cedula) { alert("Ingrese una cédula"); return; }
+
+    _cedulaActual = cedula;
+    evoluciones = [];
+    renderEvoluciones();
+
+    const url = WEBHOOK_BUSCAR_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
+
+    try {
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      if (!data?.existe) {
+        evoluciones = [];
+        renderEvoluciones();
+        alert("No existe historia clínica para este paciente (o no hay evoluciones).");
+        return;
+      }
+
+      evoluciones = normalizarEvolucionesDeWebhook(data);
+      renderEvoluciones();
+
+      alert("Evoluciones cargadas con éxito");
+    } catch (err) {
+      console.error(err);
+      alert("Error consultando N8N");
+    }
+  }
+
+  // ==============================
+  // INIT
+  // ==============================
+  document.addEventListener("DOMContentLoaded", async () => {
+    limpiarEvolucionForm();
+    await cargarProcedimientosDesdeSupabase();
+    await cargarProfesionalesDesdeSupabase();
+  });
+
+  // Exponer funciones usadas en HTML
+  window.cerrarSesion = cerrarSesion;
+  window.irInicio = irInicio;
+
+  window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
+  window.agregarEvolucion = agregarEvolucion;
+  window.eliminarEvolucion = eliminarEvolucion;
+  window.limpiarEvolucionForm = limpiarEvolucionForm;
+</script>
 </body>
 </html>
-
 
 
