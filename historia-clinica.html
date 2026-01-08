@@ -3019,6 +3019,8 @@ function abrirModalEvoluciones(){
   // ✅ Guardar paciente actual para que evoluciones.html lo cargue automáticamente
   try {
     localStorage.setItem("paciente_actual_evoluciones", JSON.stringify(paciente));
+    localStorage.setItem("cedula_paciente_actual", paciente.cedula);
+
   } catch(e) {}
 
   // ✅ también pasamos la cédula por querystring (doble seguridad)
