@@ -1198,6 +1198,33 @@
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
   });
+ function getCedulaAuto() {
+  // 1) si vienes por URL: evoluciones.html?cedula=123
+  const params = new URLSearchParams(window.location.search);
+  const q = (params.get("cedula") || "").trim();
+  if (q) return q;
+
+  // 2) si vienes por localStorage (desde historias-clinicas.html)
+  const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
+  if (ls) return ls;
+
+  // 3) fallback: lo que esté escrito en el input
+  const inp = (document.getElementById("cedula_paciente")?.value || "").trim();
+  return inp;
+}
+
+async function autoloadEvolucionesSiHayPaciente() {
+  const ced = getCedulaAuto();
+  if (!ced) return;
+
+  // pinta la cédula arriba
+  const inp = document.getElementById("cedula_paciente");
+  if (inp) inp.value = ced;
+
+  // set variable global y dispara búsqueda
+  _cedulaActual = ced;
+  await buscarEvolucionesPorCedula();
+}
 
   // Exponer
   window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
