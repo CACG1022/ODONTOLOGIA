@@ -3046,22 +3046,18 @@ function abrirModalEvoluciones(){
     return;
   }
 
-  // ✅ Guardar paciente actual para que evoluciones.html lo cargue automáticamente
+  // (Opcional) seguir guardando en localStorage por si lo usas allá
   try {
     localStorage.setItem("paciente_actual_evoluciones", JSON.stringify(paciente));
     localStorage.setItem("cedula_paciente_actual", paciente.cedula);
-
   } catch(e) {}
 
-  // ✅ también pasamos la cédula por querystring (doble seguridad)
-  const url = "https://cacg1022.github.io/ODONTOLOGIA/evoluciones.html?cedula=" + encodeURIComponent(paciente.cedula);
+  const cedula = paciente.cedula;
 
-  const modal = document.getElementById("modalEvoluciones");
-  const iframe = document.getElementById("iframeEvoluciones");
-  if (iframe) iframe.src = url;
-
-  if (modal) modal.style.display = "block";
+  // ✅ AQUÍ tu línea
+  window.location.href = `evoluciones.html?auto=1&cedula=${encodeURIComponent(cedula)}`;
 }
+
 
 function cerrarModalEvoluciones(){
   const modal = document.getElementById("modalEvoluciones");
