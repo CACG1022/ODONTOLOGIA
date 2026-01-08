@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+  
   <meta charset="UTF-8" />
   <title>Evoluciones - Historia Clínica Odontológica</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1088,9 +1089,16 @@
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
         <td>${btnFirmas}</td>
         <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-buscar" style="padding:8px disabled 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
+          <button
+            type="button"
+            class="btn btn-buscar"
+            style="padding:8px 10px; width:auto;"
+            disabled
+           title="No permitido"
+           >
             Eliminar
           </button>
+
         </td>
       `;
       tbody.appendChild(tr);
