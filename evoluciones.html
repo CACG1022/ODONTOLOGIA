@@ -391,14 +391,6 @@
         </button>
       </div>
 
-      <div class="ctrl">
-        <button type="button" class="btn btn-inicio" onclick="irInicio()">IR A INICIO</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" class="btn btn-salir" onclick="cerrarSesion()">Cerrar sesión</button>
-      </div>
-    </div>
-
     <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
       Nota: Esto consulta evoluciones desde el mismo webhook de N8N que usa tu historia clínica.
     </div>
@@ -548,18 +540,6 @@
 
   const WEBHOOK_GUARDAR_EVOLUCION =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
-
-  function irInicio(){ window.location.href = URL_INICIO; }
-
-  async function cerrarSesion(motivo = "") {
-    try {
-      if (window.supabase?.auth?.signOut) await window.supabase.auth.signOut();
-    } catch (e) { console.warn("Error cerrando sesión:", e); }
-
-    try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
-    if (motivo) alert(motivo);
-    window.location.href = LOGIN_URL;
-  }
 
   // ==============================
   // UTILIDADES
