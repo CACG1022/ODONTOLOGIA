@@ -54,7 +54,12 @@
 
     const rol = perfil.role;
 
-    const { data: permiso, error: ePerm } = await supabase
+    
+
+    // ✅ Guardar rol global y activar modo solo-lectura para Auxiliar
+    window.USER_ROLE = rol;
+    window.READ_ONLY = (rol === "auxiliar");
+const { data: permiso, error: ePerm } = await supabase
       .from("modulos_permisos")
       .select("admin, doctor, auxiliar, paciente")
       .eq("modulo", MODULO)
@@ -3411,6 +3416,109 @@ function _evolucionesToHTML(evos){
 }
 window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
 
+
+
+// ============================================================
+// ✅ MODO SOLO LECTURA PARA AUXILIAR (puede ver, pero NO modificar)
+// ============================================================
+function activarModoSoloLecturaAuxiliar(){
+  try{
+    if (!window.READ_ONLY) return;
+
+    // Banner superior
+    const banner = document.createElement("div");
+    banner.textContent = "🔒 MODO SOLO LECTURA (AUXILIAR): puedes consultar e imprimir, pero no puedes modificar ni guardar.";
+    banner.style.cssText = "position:sticky;top:0;z-index:1000005;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;padding:10px 12px;border-radius:12px;font-weight:800;margin:0 auto 14px;max-width:1100px;box-shadow:0 6px 18px rgba(0,0,0,.06);";
+    const cont = document.querySelector(".container");
+    if (cont) cont.prepend(banner);
+
+    // 1) Deshabilitar campos editables
+    const fields = document.querySelectorAll(".container input, .container textarea, .container select, .container canvas");
+    fields.forEach(el => {
+      const id = (el.id || "").trim();
+
+      // Allowlist: búsqueda + acciones seguras
+      const allow =
+        id === "buscar_cedula"; // buscar
+
+      if (allow) return;
+
+      if (el.tagName === "CANVAS"){
+        // bloquear firmas
+        el.style.pointerEvents = "none";
+        el.style.opacity = "0.75";
+        return;
+      }
+
+      // input / textarea / select
+      try{
+        el.disabled = true;
+      }catch(e){}
+      if (el.tagName === "TEXTAREA" || (el.tagName === "INPUT" && (el.type === "text" || el.type === "number" || el.type === "date" || el.type === "time" || el.type === "email" || el.type === "tel")) {
+        el.readOnly = true;
+      }
+    });
+
+    // 2) Bloquear odontograma (no clicks)
+    document.querySelectorAll(".cara, .centro").forEach(el => {
+      el.style.pointerEvents = "none";
+    });
+
+    // 3) Deshabilitar botones que escriben/guardan/eliminen
+    const allowOnclick = new Set([
+      "buscarHistoria()",
+      "irInicio()",
+      "cerrarSesion()",
+      "irAgendamiento()",
+      "imprimirHistoriaClinica()",
+      "abrirModalEvoluciones()",
+      "irPlanTratamiento()"
+    ]);
+
+    document.querySelectorAll("button").forEach(btn => {
+      const oc = (btn.getAttribute("onclick") || "").trim();
+
+      // permitir botones "Ver" (documentos) y cierres de modales, impresión, etc.
+      const esVerDoc = btn.getAttribute("data-action") === "ver";
+      const texto = (btn.textContent || "").toLowerCase();
+
+      const permitido =
+        esVerDoc ||
+        allowOnclick.has(oc) ||
+        texto.includes("cerrar") ||
+        texto.includes("salir") ||
+        texto.includes("imprimir") ||
+        texto.includes("descargar") ||
+        texto.includes("ver");
+
+      if (!permitido){
+        btn.disabled = true;
+        btn.title = "No permitido (solo lectura)";
+        btn.style.opacity = "0.65";
+        btn.style.cursor = "not-allowed";
+      }
+    });
+
+    // 4) Refuerzo: anular funciones de escritura (si existen)
+    const _bloq = (msg="⛔ Acción no permitida: Modo solo lectura (Auxiliar).") => { alert(msg); return; };
+
+    if (typeof window.enviarAN8N === "function") window.enviarAN8N = () => _bloq();
+    if (typeof window.guardarDocumentoSupabase === "function") window.guardarDocumentoSupabase = () => _bloq();
+    if (typeof window.eliminarDocumentoSupabase === "function") window.eliminarDocumentoSupabase = () => _bloq();
+    if (typeof window.guardarPlantillaSupabase === "function") window.guardarPlantillaSupabase = () => _bloq();
+    if (typeof window.eliminarPlantillaSupabase === "function") window.eliminarPlantillaSupabase = () => _bloq();
+    if (typeof window.guardarEvolucion === "function") window.guardarEvolucion = () => _bloq();
+    if (typeof window.eliminarEvolucion === "function") window.eliminarEvolucion = () => _bloq();
+    if (typeof window.mostrarPopup === "function") window.mostrarPopup = (event, elemento) => { if (event) event.preventDefault(); return _bloq("⛔ No puedes modificar el odontograma (solo lectura)."); };
+
+    console.log("🔒 Modo solo lectura activo para Auxiliar.");
+  }catch(e){
+    console.warn("⚠️ Error activando modo solo lectura:", e);
+  }
+}
+
+document.addEventListener("DOMContentLoaded", activarModoSoloLecturaAuxiliar);
+
 </script>
 <!-- ✅ MODAL EVOLUCIONES (ventana modal con iframe) -->
 <div id="modalEvoluciones" style="
@@ -3485,8 +3593,6 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
-
-
 
 
 
