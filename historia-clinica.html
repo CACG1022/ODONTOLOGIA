@@ -133,7 +133,7 @@ function _odontogramaToHTML(odontogramaCompleto){
 }
 
 function _evolucionesToHTML(evos){
-  localStorage.setItem("cedula_paciente_actual", cedula);
+  
   const lista = Array.isArray(evos) ? evos : [];
   if (!lista.length) return `<h3>Evoluciones</h3><div class="muted">Sin evoluciones registradas.</div>`;
 
