@@ -410,6 +410,7 @@ function _evolucionesToHTML(evos){
 
   
 /* ✅ BOTONERA SUPERIOR UNIFICADA */
+
 .botones-top{
   display:grid;
   grid-template-columns: repeat(3, 1fr);
@@ -455,14 +456,9 @@ function _evolucionesToHTML(evos){
       <button id="btnGuardarEnviarHistoria" type="button" onclick="enviarAN8N()" class="btn">GUARDAR Y ENVIAR</button>
       <button type="button" onclick="irAConsentimientos()" class="btn">CONSENTIMIENTOS INFORMADOS</button>
       <button type="button" onclick="irPlanTratamiento()" class="btn">PLAN DE TRATAMIENTO</button>
+      <button type="button" onclick="imprimirHistoriaClinica()" class="btn">IMPRIMIR HISTORIA CLÍNICA</button>
     </div>
     </div>
-
-    <div class="ctrl print-wrap">
-  <button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
-    IMPRIMIR HISTORIA CLÍNICA
-  </button>
-  </div>
 
   </section>
 
@@ -3544,6 +3540,8 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
+
+
 
 
 
