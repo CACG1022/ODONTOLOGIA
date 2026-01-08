@@ -412,11 +412,24 @@ function _evolucionesToHTML(evos){
 /* ✅ BOTONERA SUPERIOR UNIFICADA */
 
 .botones-top{
-  display:grid;
-  grid-template-columns: repeat(3, 1fr);
+  display:flex;
+  flex-wrap:nowrap;          /* ✅ una sola fila */
   gap:12px;
   margin-top:12px;
+  align-items:stretch;
+  overflow-x:auto;           /* ✅ si no cabe, hace scroll horizontal */
+  padding-bottom:6px;        /* espacio para scrollbar */
+  -webkit-overflow-scrolling: touch;
 }
+.botones-top .ctrl{ flex:0 0 auto; width:auto; }
+.botones-top .btn{
+  width:auto;                /* ✅ evita que se estire a 100% */
+  min-width:170px;           /* ✅ tamaño consistente */
+  white-space:nowrap;        /* ✅ texto en una línea */
+  padding:12px 18px;
+  background:#0D47A1 !important;
+}
+
 
 .botones-top .btn{
   background:#0D47A1 !important;
@@ -3540,6 +3553,19 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
