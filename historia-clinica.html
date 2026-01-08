@@ -85,8 +85,9 @@
   });
 
     // ==============================
-// ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
-// ==============================
+    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
+    // ==============================
+    // (Se mantiene el código para no desconfigurar nada, aunque ya no exista el textarea en la UI)
 let _srEvo = null;
 let _srEvoOn = false;
 
@@ -479,9 +480,8 @@ function _evolucionesToHTML(evos){
       width:1000px; height:2px; background:#E3E3E3; border-radius:2px;
     }
     .print-wrap{
-  margin-top: 16px; /* ajusta: 8px, 16px, etc */
-     }
-
+      margin-top: 16px;
+    }
   </style>
 </head>
 
@@ -525,10 +525,10 @@ function _evolucionesToHTML(evos){
     </div>
 
     <div class="ctrl print-wrap">
-  <button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
-    IMPRIMIR HISTORIA CLÍNICA
-  </button>
-  </div>
+      <button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
+        IMPRIMIR HISTORIA CLÍNICA
+      </button>
+    </div>
 
   </section>
 
@@ -954,66 +954,17 @@ function _evolucionesToHTML(evos){
       <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
     </div>
   </section>
-  <!-- ✅ EVOLUCIONES -->
+
+  <!-- ✅ EVOLUCIONES (AJUSTADO) -->
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
 
-    <div class="grid g-3">
-      <div class="ctrl">
-        <label for="evo_fecha">Fecha</label>
-        <input id="evo_fecha" type="date" disabled>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_hora">Hora</label>
-        <input id="evo_hora" type="time" readonly>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_profesional">Profesional</label>
-        <div class="inline" style="gap:10px;">
-       <select id="evo_profesional">
-        <option value="">Seleccione profesional...</option>
-        </select>
-          </div>
-      </div>
-
-
-      <div class="ctrl">
-        <label for="evo_tipo">Procedimiento</label>
-        <div class="inline" style="gap:10px;">
-          <input id="evo_tipo" type="text" list="procedimientos_list_supabase" placeholder="Buscar o escribir procedimiento..." autocomplete="off" style="flex:1;" />
-        </div>
-      </div>
-
-      <div class="ctrl full">
-  <label for="evo_detalle">Detalle / Observaciones</label>
-
-  <div class="vwrap">
-    <div class="vfield">
-      <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
-    </div>
-
-    <button
-      id="btnDictadoEvoDetalle"
-      type="button"
-      class="vbtn"
-      title="Dictar por voz"
-      aria-label="Dictar por voz"
-      onclick="toggleDictadoEvoDetalle()"
-    >🎤</button>
-  </div>
-
-  <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
-    🎙️ Dictando... habla normal. (Se agregará al final del texto)
-  </div>
-</div>
-
-    </div>
-
+    <!-- ✅ Se eliminan los campos Fecha/Hora/Profesional/Procedimiento/Detalle y los botones Agregar/Limpiar.
+         ✅ Se agrega un solo botón "Evoluciones" que abre una ventana modal y carga el paciente actual. -->
     <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">Agregar evolución</button>
-      <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">Limpiar</button>
+      <button type="button" onclick="abrirModalEvoluciones()" class="btn btn-agenda" style="max-width:260px;">
+        Evoluciones
+      </button>
     </div>
 
     <div class="rowline"></div>
@@ -1035,6 +986,43 @@ function _evolucionesToHTML(evos){
       </table>
     </div>
   </section>
+
+  <!-- ✅ MODAL EVOLUCIONES (VENTANA MODAL) -->
+  <div id="modalEvoluciones" style="
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+    z-index:1000006; padding:20px;">
+    <div style="
+      max-width:1100px; margin:0 auto; background:#fff; border-radius:14px;
+      border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.2);
+      overflow:hidden;
+      max-height: calc(100vh - 40px);
+      display:flex; flex-direction:column;
+    ">
+      <div style="
+        display:flex; justify-content:space-between; align-items:center;
+        padding:14px 16px; background:#eef6ff; border-bottom:1px solid #e7edf5; gap:16px;
+      ">
+        <div style="font-weight:800; color:#2a5d84; font-size:16px;">
+          Evoluciones
+        </div>
+
+        <div style="display:flex; align-items:center; gap:12px;">
+          <button type="button" onclick="cerrarModalEvoluciones()" style="
+            border:none; background:#0D47A1; color:#fff; font-weight:700;
+            border-radius:10px; padding:10px 12px; cursor:pointer;
+          ">
+            Cerrar ✕
+          </button>
+        </div>
+      </div>
+
+      <div style="padding:0; overflow:hidden; flex:1;">
+        <iframe id="iframeEvoluciones" src="about:blank" style="
+          width:100%; height:100%; border:none; display:block;
+        "></iframe>
+      </div>
+    </div>
+  </div>
 
   <!-- ODONTOGRAMA -->
   <div id="odontograma-wrapper">
@@ -1443,6 +1431,8 @@ Fecha: {{FECHA}}
   const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
   const LOGO_CLINICA = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
 
+  // ✅ URL EVOLUCIONES (NUEVO)
+  const URL_EVOLUCIONES = "https://cacg1022.github.io/ODONTOLOGIA/evoluciones.html";
 
   function irInicio() { window.location.href = URL_INICIO; }
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
@@ -1492,6 +1482,79 @@ Fecha: {{FECHA}}
   }
 
   // ==============================
+  // ✅ MODAL EVOLUCIONES + CARGA AUTOMÁTICA DEL PACIENTE ACTUAL
+  // ==============================
+  function _getPacienteActual() {
+    const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const cedula = (
+      document.getElementById("paciente_numdoc")?.value ||
+      document.getElementById("buscar_cedula")?.value ||
+      ""
+    ).trim();
+
+    const paciente = {
+      cedula_paciente: cedula,
+      paciente_nombre,
+      paciente_edad: (document.getElementById("paciente_edad")?.value || "").trim(),
+      paciente_email: (document.getElementById("paciente_email")?.value || "").trim(),
+      paciente_tel: (document.getElementById("paciente_tel")?.value || "").trim(),
+      paciente_cel: (document.getElementById("paciente_cel")?.value || "").trim(),
+      paciente_ciudad: (document.getElementById("paciente_ciudad")?.value || "").trim(),
+      ts: new Date().toISOString()
+    };
+
+    return paciente;
+  }
+
+  function abrirModalEvoluciones() {
+    const paciente = _getPacienteActual();
+    if (!paciente.cedula_paciente) {
+      alert("⚠️ Primero debes buscar o cargar el paciente (cédula).");
+      return;
+    }
+
+    // ✅ Guardar en localStorage para que evoluciones.html lo lea automáticamente
+    // (Evoluciones.html debe leer esta key si quieres autoload total)
+    try {
+      localStorage.setItem("paciente_actual_historia_clinica", JSON.stringify(paciente));
+      // compat: también guardo solo cedula
+      localStorage.setItem("cedula_paciente_evoluciones", paciente.cedula_paciente);
+    } catch(e) {}
+
+    const modal = document.getElementById("modalEvoluciones");
+    const iframe = document.getElementById("iframeEvoluciones");
+    if (!modal || !iframe) return;
+
+    // ✅ abrir modal
+    modal.style.display = "block";
+
+    // ✅ pasar cedula por query también (por si lo quieres leer en evoluciones.html)
+    const url = URL_EVOLUCIONES + (URL_EVOLUCIONES.includes("?") ? "&" : "?") +
+      "cedula=" + encodeURIComponent(paciente.cedula_paciente) +
+      "&from=historia_clinica";
+
+    iframe.src = url;
+
+    // ✅ además enviar por postMessage (si evoluciones.html lo implementa)
+    // cuando el iframe cargue
+    iframe.onload = () => {
+      try {
+        iframe.contentWindow.postMessage(
+          { type: "PACIENTE_ACTUAL", payload: paciente },
+          "https://cacg1022.github.io"
+        );
+      } catch(e) {}
+    };
+  }
+
+  function cerrarModalEvoluciones() {
+    const modal = document.getElementById("modalEvoluciones");
+    const iframe = document.getElementById("iframeEvoluciones");
+    if (modal) modal.style.display = "none";
+    if (iframe) iframe.src = "about:blank";
+  }
+
+  // ==============================
   // ✅ PROCEDIMIENTOS DESDE SUPABASE
   // ==============================
   async function cargarProcedimientosDesdeSupabase() {
@@ -1526,904 +1589,14 @@ Fecha: {{FECHA}}
   document.addEventListener("DOMContentLoaded", cargarProcedimientosDesdeSupabase);
 
   // ==============================
-// ✅ PROFESIONALES DESDE SUPABASE
-// ==============================
-async function cargarProfesionalesDesdeSupabase() {
-  // Esperar a que window.supabase exista
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  const selEvo = document.getElementById("evo_profesional");
-  const selDoc = document.getElementById("doc_profesional");
-  if (!selEvo && !selDoc) return;
-
-  const placeholder = `<option value="">Seleccione profesional...</option>`;
-  if (selEvo) selEvo.innerHTML = placeholder;
-  if (selDoc) selDoc.innerHTML = placeholder;
-
-  try {
-    const { data, error } = await window.supabase
-      .from("profesionales")
-      .select("id, nombre, cedula, activo")
-      .eq("activo", true)
-      .order("nombre", { ascending: true });
-
-    if (error) throw error;
-
-    const options = (data || []).map(p => {
-      const nombre = (p.nombre || "").trim();
-      const cedula = (p.cedula || "").trim();
-
-      // ✅ ESTO ES LO IMPORTANTE:
-      // el value será lo que quieres que quede guardado e impreso
-      const valor = `${cedula} ${nombre}`.trim(); // ejemplo: "1022956631 Camilo Andres..."
-      const label = nombre; // SOLO nombre
-
-      return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
-    }).join("");
-
-    if (selEvo) selEvo.innerHTML = placeholder + options;
-    if (selDoc) selDoc.innerHTML = placeholder + options;
-
-  } catch (e) {
-    console.warn("⚠️ Error cargando profesionales:", e);
-  }
-}
-
+  // ✅ PROFESIONALES DESDE SUPABASE
 
   // ==============================
-  // ✅ EVOLUCIONES
+  // ✅ PROFESIONALES DESDE SUPABASE
   // ==============================
-  let evoluciones = [];
-
-  function limpiarEvolucionForm() {
-    const f = document.getElementById("evo_fecha");
-    const h = document.getElementById("evo_hora");
-    const p = document.getElementById("evo_profesional");
-    const t = document.getElementById("evo_tipo");
-    const d = document.getElementById("evo_detalle");
-
-    if (f) f.value = _hoyISO();
-    if (h) h.value = _horaHHMM();
-    if (p) p.value = "";
-    if (t) t.value = "";
-    if (d) d.value = "";
-  }
-
-  function generarEvolucionId() { return uuid(); }
-
-  async function agregarEvolucion() {
-    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
-    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
-    const profesional = document.getElementById("evo_profesional").value.trim();
-    const tipo = document.getElementById("evo_tipo").value.trim();
-    const detalle = document.getElementById("evo_detalle").value.trim();
-
-    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
-    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-
-    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-    const cedula = (
-      document.getElementById("paciente_numdoc")?.value ||
-      document.getElementById("buscar_cedula")?.value ||
-      ""
-    ).trim();
-
-    if (!cedula) {
-      alert("⚠️ Primero debes tener la cédula del paciente.");
-      return;
-    }
-
-    const item = {
-      id: generarEvolucionId(),
-      fecha,
-      hora,
-      profesional,
-      procedimiento: tipo,
-      detalle,
-      cedula_paciente: cedula,
-      usuario,
-      ts: new Date().toISOString()
-    };
-
-    evoluciones.unshift(item);
-    renderEvoluciones();
-    limpiarEvolucionForm();
-
-    try {
-      const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
-      const payload = {
-        evento: "agregar_evolucion",
-        cedula: cedula,
-        evolucion: item,
-        fecha_envio: new Date().toISOString(),
-        usuario_logueado: usuario
-      };
-
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-    } catch (err) {
-      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
-      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
-    }
-  }
-
-  function eliminarEvolucion(idx) {
-    evoluciones.splice(idx, 1);
-    renderEvoluciones();
-  }
-
-  function _soloFechaYYYYMMDD(valor) {
-    if (!valor) return "";
-    if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
-    return String(valor);
-  }
-  function _soloHoraHHMM(valor) {
-    if (!valor) return "";
-    const s = String(valor);
-    if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
-    return s;
-  }
-
-  function renderEvoluciones() {
-    const tbody = document.getElementById("tabla_evoluciones");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    evoluciones.forEach((evo, idx) => {
-      const tr = document.createElement("tr");
-
-      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
-      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
-      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
-      const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
-      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
-
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}
-        </td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
-            Eliminar
-          </button>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-    });
-  }
-
-  function normalizarEvolucionesDeWebhook(data) {
-    let raw = data?.evoluciones;
-
-    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
-      raw = raw.evoluciones;
-    }
-    if (typeof raw === "string") {
-      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
-    }
-    if (!Array.isArray(raw)) raw = [];
-
-    return raw.map((e) => ({
-      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
-      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
-      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
-      profesional: e.profesional ?? e.evo_profesional ?? "",
-      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
-      detalle: e.detalle ?? e.evo_detalle ?? "",
-      created_at: e.created_at ?? null,
-      ts: e.ts ?? e.created_at ?? new Date().toISOString()
-    }));
-  }
-
-  document.addEventListener("DOMContentLoaded", () => {
-  _initCanvasDoc("doc_firmaPaciente");
-  _initCanvasDoc("doc_firmaProfesional");
-  nuevoDocumento();
-  cargarPlantillasDesdeSupabase(); // ✅ NUEVO
-  cargarProfesionalesDesdeSupabase();
-});
-
-
-  // ==============================
-  // ODONTOGRAMA
-  // ==============================
-  const preexistencias = {
-    Caries: 'red',
-    Sano: '#8BC34A',
-    Resina: '#a06c3f',
-    Corona_adaptada: 'blue',
-    Corona_desadaptada: '#C299F7',
-    Endodoncia: '#005E94',
-    Obturación: 'green',
-    Fractura: 'orange',
-    Ausente: '#c3c5c7',
-    Implante: '#7eff42',
-    "Extracción indicada": '#42b7ff',
-    Exodoncia: '#ff38ef',
-    Póntico: 'cyan',
-    "Movilidad dental": 'pink',
-    Retenido: 'purple',
-    "Prótesis fija": '#880E4F',
-    "Prótesis removible": '#42ffc6',
-    "Prótesis total": '#fff642',
-    Amalgama: '#2B2B2B'
-  };
-
-  let reporte = {};
-  const contenedorLeyenda = document.getElementById('grid-leyenda');
-  Object.entries(preexistencias).forEach(([nombre, color]) => {
-    const item = document.createElement('div');
-    item.innerHTML = `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
-    contenedorLeyenda.appendChild(item);
-  });
-
-  const dientesSuperior = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-  const dientesInferior = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
-
-  function crearDiente(numero, contenedor) {
-    const contenedorDiente = document.createElement('div');
-    contenedorDiente.className = 'contenedor-diente';
-
-    const diente = document.createElement('div');
-    diente.className = 'diente';
-    diente.dataset.numero = numero;
-
-    ['superior','inferior','izquierda','derecha'].forEach(region => {
-      const div = document.createElement('div');
-      div.className = `cara ${region}`;
-      div.dataset.region = region;
-      div.onclick = (event) => mostrarPopup(event, div);
-      diente.appendChild(div);
-    });
-
-    const centro = document.createElement('div');
-    centro.className = 'centro';
-    centro.dataset.region = 'centro';
-    centro.onclick = (event) => mostrarPopup(event, centro);
-    diente.appendChild(centro);
-
-    const label = document.createElement('div');
-    label.className = 'numero';
-    label.textContent = numero;
-
-    contenedorDiente.appendChild(diente);
-    contenedorDiente.appendChild(label);
-
-    if (numero === 14 || numero === 24) {
-      const extra = document.createElement("div");
-      extra.className = "extra-etiquetas";
-      extra.innerHTML = `<div>Palatino</div><div class="lingual">Lingual</div>`;
-      contenedorDiente.appendChild(extra);
-    }
-
-    contenedor.appendChild(contenedorDiente);
-  }
-
-  function mostrarPopup(event, elemento) {
-    event.stopPropagation();
-    document.querySelectorAll('.popup').forEach(p => p.remove());
-
-    const menu = document.createElement('div');
-    menu.className = 'popup';
-
-    const limpiar = document.createElement('div');
-    limpiar.innerHTML = `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
-
-    limpiar.onclick = () => {
-      elemento.style.background = "white";
-
-      const dienteNumero = elemento.parentElement.dataset.numero;
-      const cara = elemento.dataset.region;
-
-      if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
-        delete reporte[dienteNumero][cara];
-      }
-      if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
-        delete reporte[dienteNumero];
-      }
-
-      menu.remove();
-    };
-
-    menu.appendChild(limpiar);
-
-    Object.entries(preexistencias).forEach(([nombre, color]) => {
-      const item = document.createElement('div');
-      item.innerHTML = `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
-
-      item.onclick = () => {
-        const dienteNumero = elemento.parentElement.dataset.numero;
-        const cara = elemento.dataset.region;
-
-        if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
-
-        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona_adaptada"|| nombre === "Corona_desadaptada") {
-          elemento.parentElement.querySelectorAll(".cara, .centro")
-            .forEach(c => c.style.background = preexistencias[nombre]);
-
-          ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
-            reporte[dienteNumero][c] = nombre;
-          });
-        } else {
-          elemento.style.background = color;
-          reporte[dienteNumero][cara] = nombre;
-        }
-
-        menu.remove();
-      };
-
-      menu.appendChild(item);
-    });
-
-    document.body.appendChild(menu);
-    menu.style.left = `${event.pageX + 5}px`;
-    menu.style.top  = `${event.pageY + 5}px`;
-    menu.style.display = 'block';
-  }
-
-  const filaSuperior = document.getElementById('fila-superior');
-  dientesSuperior.forEach(num => crearDiente(num, filaSuperior));
-
-  const filaInferior = document.getElementById('fila-inferior');
-  dientesInferior.forEach(num => crearDiente(num, filaInferior));
-
-  function ajustarLineaMedia() {
-    const topEtiqueta = document.querySelector(".seccion .etiqueta-eje:not(.eje-inferior)");
-    const topLinea = topEtiqueta?.querySelector(".linea-media");
-    const bottomEtiqueta = document.querySelector(".etiqueta-eje.eje-inferior");
-    const bottomLinea = bottomEtiqueta?.querySelector(".linea-media");
-
-    if (!topEtiqueta || !topLinea || !bottomEtiqueta || !bottomLinea) return;
-
-    const rTop = topEtiqueta.getBoundingClientRect();
-    const rBottom = bottomEtiqueta.getBoundingClientRect();
-
-    const dist = rBottom.top - rTop.bottom;
-    const h = Math.max(0, Math.round(dist / 2));
-
-    topLinea.style.height = h + "px";
-    bottomLinea.style.height = h + "px";
-  }
-
-  window.addEventListener("load", ajustarLineaMedia);
-  window.addEventListener("resize", ajustarLineaMedia);
-  document.body.addEventListener('click', () => document.querySelectorAll('.popup').forEach(p => p.remove()));
-
-  function obtenerRegion(diente, cara) {
-    diente = parseInt(diente);
-    if (cara === "centro") return "Oclusal";
-
-    if (diente >= 11 && diente <= 28) {
-      if (cara === "superior") return "Vestibular";
-      if (cara === "inferior") return "Palatino";
-    }
-    if (diente >= 31 && diente <= 48) {
-      if (cara === "superior") return "Lingual";
-      if (cara === "inferior") return "Vestibular";
-    }
-
-    const derechaEsMesial = (
-      (diente >= 11 && diente <= 18) ||
-      (diente >= 41 && diente <= 48)
-    );
-
-    if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
-    if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
-    return null;
-  }
-
-  function mostrarReporte() {
-    let html = `
-      <h2>Reporte de Preexistencias</h2>
-      <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
-        <tr style="background:#eee; font-weight:bold;">
-          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th><th>Vestibular</th><th>Lingual</th><th>Palatino</th>
-        </tr>
-    `;
-
-    Object.entries(reporte).forEach(([diente, caras]) => {
-      let fila = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
-      Object.entries(caras).forEach(([cara, preexistencia]) => {
-        let region = obtenerRegion(diente, cara);
-        if (region) fila[region] = String(preexistencia || "").toUpperCase();
-      });
-
-      html += `
-        <tr>
-          <td>${diente}</td>
-          <td>${fila.Mesial}</td>
-          <td>${fila.Distal}</td>
-          <td>${fila.Oclusal}</td>
-          <td>${fila.Vestibular}</td>
-          <td>${fila.Lingual}</td>
-          <td>${fila.Palatino}</td>
-        </tr>
-      `;
-    });
-
-    html += "</table>";
-    const win = window.open("", "_blank");
-    win.document.write(html);
-    win.document.close();
-  }
-
-  function obtenerDatosHistoriaClinica() {
-    const data = {};
-    document.querySelectorAll(".container input, .container textarea, .container select")
-      .forEach(campo => {
-        const nombre = campo.id || campo.name;
-        if (!nombre) return;
-
-        if (campo.type === "checkbox") {
-          if (!data[nombre]) data[nombre] = [];
-          if (campo.checked) data[nombre].push(campo.value || true);
-        } else {
-          data[nombre] = campo.value;
-        }
-      });
-    return data;
-  }
-
-  function validarCamposObligatorios() {
-    const errores = [];
-    const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
-    if (!nombre) errores.push("Nombres y apellidos");
-    const edad = document.getElementById("paciente_edad")?.value || "";
-    if (!edad) errores.push("Edad");
-    const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
-    if (tipoID.length === 0) errores.push("Tipo de identificación");
-    const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
-    if (!numDoc) errores.push("Número de identificación");
-    const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
-    if (!fechaNac) errores.push("Fecha de nacimiento");
-    if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
-
-    if (errores.length > 0) {
-      alert(
-        "⚠️ No se puede enviar la historia clínica.\n\n" +
-        "Faltan los siguientes campos obligatorios:\n\n" +
-        errores.map(e => "• " + e).join("\n")
-      );
-      return false;
-    }
-    return true;
-  }
-
-  function enviarAN8N() {
-    if (!validarCamposObligatorios()) return;
-
-    const todosLosDientes = [
-      18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
-      48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
-    ];
-
-    const odontogramaCompleto = {};
-    todosLosDientes.forEach(num => {
-      odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
-    });
-
-    Object.entries(reporte).forEach(([diente, caras]) => {
-      Object.entries(caras).forEach(([cara, preexistencia]) => {
-        const region = obtenerRegion(diente, cara);
-        if (region) odontogramaCompleto[diente][region] = String(preexistencia || "").toUpperCase();
-      });
-    });
-
-    const datosHistoria = obtenerDatosHistoriaClinica();
-    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-    document.getElementById("usuarioN8N").value = usuario;
-
-    const payload = {
-      historia_clinica: datosHistoria,
-      odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,
-      fecha_envio: new Date().toISOString(),
-      usuario_logueado: usuario
-    };
-
-    document.getElementById("dataN8N").value = JSON.stringify(payload);
-    document.getElementById("formN8N").submit();
-    alert("Información enviada correctamente a N8N");
-  }
-
-  // ==============================
-  // ✅ PROFESIONALES
-  // ==============================
-  const PROFESIONALES_BASE = ["LEIDI FERNANDA SILVA OROPEZA"];
-  const LS_PROF_KEY = "profesionales_custom";
-  function _normProf(s) { return String(s || "").trim().replace(/\s+/g, " ").toUpperCase(); }
-  function _cargarProfesionalesCustom() {
-    try { const raw = localStorage.getItem(LS_PROF_KEY); const arr = raw ? JSON.parse(raw) : []; return Array.isArray(arr) ? arr : []; }
-    catch (e) { return []; }
-  }
-  function _guardarProfesionalesCustom(arr) { try { localStorage.setItem(LS_PROF_KEY, JSON.stringify(arr)); } catch(e) {} }
-  function _getProfesionalesUnicos() {
-    const base = PROFESIONALES_BASE.map(_normProf);
-    const custom = _cargarProfesionalesCustom().map(_normProf);
-    const set = new Set([...base, ...custom].filter(Boolean));
-    return Array.from(set).sort((a,b) => a.localeCompare(b, "es"));
-  }
-  function _poblarDatalistProfesionales() {
-    const dl = document.getElementById("profesionales_list");
-    if (!dl) return;
-    const items = _getProfesionalesUnicos();
-    dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
-  }
-  function agregarProfesionalDesdeCampo() {
-    const input = document.getElementById("evo_profesional");
-    if (!input) return;
-    const val = _normProf(input.value);
-    if (!val) { alert("⚠️ Escribe el nombre del profesional para agregar."); return; }
-    const actuales = _getProfesionalesUnicos();
-    if (actuales.includes(val)) { alert("✅ Ese profesional ya existe en la lista."); return; }
-    const custom = _cargarProfesionalesCustom().map(_normProf);
-    custom.push(val);
-    _guardarProfesionalesCustom(Array.from(new Set(custom)));
-    _poblarDatalistProfesionales();
-    alert("✅ Profesional agregado al listado.");
-  }
-  document.addEventListener("DOMContentLoaded", _poblarDatalistProfesionales);
-
-  // ==============================
-  // ✅ ODONTOGRAMA FULLSCREEN
-  // ==============================
-  (function(){
-    const wrapper = document.getElementById("odontograma-wrapper");
-    if (!wrapper) return;
-
-    let isFS = false;
-    let exitBtn = null;
-
-    function crearBotonSalir(){
-      if (exitBtn) return;
-      exitBtn = document.createElement("button");
-      exitBtn.id = "btnExitOdonFS";
-      exitBtn.type = "button";
-      exitBtn.textContent = "Salir ✕";
-      exitBtn.addEventListener("click", salirFullscreen);
-      document.body.appendChild(exitBtn);
-    }
-    function quitarBotonSalir(){ if (exitBtn) exitBtn.remove(); exitBtn = null; }
-    function entrarFullscreen(){
-      if (isFS) return;
-      isFS = true;
-      wrapper.classList.add("fullscreen");
-      crearBotonSalir();
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.overflow = "hidden";
-      wrapper.scrollTop = 0; wrapper.scrollLeft = 0;
-      setTimeout(ajustarLineaMedia, 50);
-    }
-    function salirFullscreen(){
-      if (!isFS) return;
-      isFS = false;
-      wrapper.classList.remove("fullscreen");
-      quitarBotonSalir();
-      document.documentElement.style.overflow = "";
-      document.body.style.overflow = "";
-      setTimeout(ajustarLineaMedia, 50);
-    }
-    function toggleFullscreen(){ if (isFS) salirFullscreen(); else entrarFullscreen(); }
-
-    wrapper.addEventListener("dblclick", (e) => { e.preventDefault(); toggleFullscreen(); });
-
-    let lastTap = 0;
-    wrapper.addEventListener("touchend", (e) => {
-      const now = Date.now();
-      if (now - lastTap < 300) { e.preventDefault(); toggleFullscreen(); }
-      lastTap = now;
-    }, { passive: false });
-
-    document.addEventListener("keydown", (e) => { if (e.key === "Escape") salirFullscreen(); });
-  })();
-
-  // =====================================================================
-  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - CON FIX DE COLUMNAS: *_path
-  // =====================================================================
-  let documentos = [];
-  let _docEditId = null;
-  let _docVistaActual = null;
-  let _cedulaActual = "";
-
-  const _IMG_TRANSPARENTE =
-    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO1p0wAAAABJRU5ErkJggg==";
-
-  function _normalizarDataURLFirma(valor) {
-    if (!valor) return "";
-    let v = String(valor).trim();
-
-    // si viene urlencoded
-    try { v = decodeURIComponent(v); } catch(e) {}
-
-    // si viene con espacios, se dañan los +
-    v = v.replace(/\s/g, "+");
-
-    // si ya es dataURL completo
-    if (v.startsWith("data:image")) return v;
-
-    // si parece base64 "puro"
-    if (/^[A-Za-z0-9+/]+=*$/.test(v) && v.length > 100) {
-      return "data:image/png;base64," + v;
-    }
-    return "";
-  }
-
-  const DOC_TEMPLATES = {
-    GENERICA: ({paciente, doc, procedimiento, profesional, fecha}) => `
-CONSENTIMIENTO INFORMADO
-
-Paciente: ${paciente} - Identificación: ${doc}
-Procedimiento: ${procedimiento}
-Profesional: ${profesional}
-Fecha: ${fecha}
-
-Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
-He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.
-`.trim()
-  };
-
-  // Canvas firmas
-  const _docFirmas = {};
-  function _initCanvasDoc(canvasId){
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-
-    _docFirmas[canvasId] = { drawing:false, lastX:0, lastY:0 };
-
-    function pos(e){
-      const r = canvas.getBoundingClientRect();
-      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-      return { x: clientX - r.left, y: clientY - r.top };
-    }
-    function start(e){
-      e.preventDefault();
-      const p = pos(e);
-      _docFirmas[canvasId].drawing = true;
-      _docFirmas[canvasId].lastX = p.x;
-      _docFirmas[canvasId].lastY = p.y;
-    }
-    function move(e){
-      if (!_docFirmas[canvasId].drawing) return;
-      e.preventDefault();
-      const p = pos(e);
-      ctx.beginPath();
-      ctx.moveTo(_docFirmas[canvasId].lastX, _docFirmas[canvasId].lastY);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      _docFirmas[canvasId].lastX = p.x;
-      _docFirmas[canvasId].lastY = p.y;
-    }
-    function end(e){
-      e.preventDefault();
-      _docFirmas[canvasId].drawing = false;
-    }
-
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", end);
-
-    canvas.addEventListener("touchstart", start, { passive:false });
-    canvas.addEventListener("touchmove", move, { passive:false });
-    canvas.addEventListener("touchend", end, { passive:false });
-  }
-
-  function limpiarFirmaDocumento(tipo){
-    const id = (tipo === "PAC") ? "doc_firmaPaciente" : "doc_firmaProfesional";
-    const canvas = document.getElementById(id);
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0,0,canvas.width, canvas.height);
-  }
-
-  function _getFirmaDataURLDoc(canvasId){
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return "";
-    const ctx = canvas.getContext("2d");
-    const pixels = ctx.getImageData(0,0,canvas.width, canvas.height).data;
-    let hasInk = false;
-    for (let i=3; i<pixels.length; i+=4){
-      if (pixels[i] !== 0) { hasInk = true; break; }
-    }
-    return hasInk ? canvas.toDataURL("image/png") : "";
-  }
-
-  function _pintarFirmaEnCanvas(canvas, dataURL) {
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const fijo = _normalizarDataURLFirma(dataURL);
-    if (!fijo) return;
-
-    const img = new Image();
-    img.onload = () => {
-      const w = canvas.width || 420;
-      const h = canvas.height || 160;
-      ctx.clearRect(0, 0, w, h);
-      ctx.drawImage(img, 0, 0, w, h);
-    };
-    img.onerror = () => console.warn("❌ Firma inválida:", fijo.slice(0, 80));
-    img.src = fijo;
-  }
-
-  function _setFirmaDocDesdeDataURL(canvasId, dataURL) {
-    const canvas = document.getElementById(canvasId);
-    _pintarFirmaEnCanvas(canvas, dataURL);
-  }
-
-  function nuevoDocumento(){
-    _docEditId = null;
-    document.getElementById("doc_id").value = uuid();
-    document.getElementById("doc_tipo").value = "CONSENTIMIENTO";
-    document.getElementById("doc_fecha").value = _hoyISO();
-    document.getElementById("doc_procedimiento").value = "";
-    document.getElementById("doc_profesional").value = "";
-    document.getElementById("doc_template").value = "AUTO";
-    document.getElementById("doc_texto").value = "";
-    limpiarFirmaDocumento("PAC");
-    limpiarFirmaDocumento("PRO");
-
-    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
-    if (paciente && doc) {
-      document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
-        paciente, doc, procedimiento:"", profesional:"", fecha:_hoyISO()
-      });
-    }
-  }
-
-  function renderDocumentos(){
-    const tbody = document.getElementById("tabla_documentos");
-    const empty = document.getElementById("docs_empty");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    if (!documentos || documentos.length === 0) {
-      if (empty) empty.style.display = "block";
-      return;
-    }
-    if (empty) empty.style.display = "none";
-
-    documentos.forEach((d) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(d.id || "")}
-        </td>
-        <td>${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</td>
-        <td>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</td>
-        <td>${escapeHtml(d.procedimiento || "")}</td>
-        <td>${escapeHtml(d.profesional || "")}</td>
-        <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-            data-action="ver" data-id="${escapeHtml(d.id || "")}">Ver</button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  document.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-action][data-id]");
-    if (!btn) return;
-    const action = btn.getAttribute("data-action");
-    const id = btn.getAttribute("data-id");
-
-    if (action === "ver") return verDocumento(id);
-    if (action === "editar") return editarDocumento(id);
-    if (action === "eliminar") return eliminarDocumentoSupabase(id);
-  });
-
-  function _docById(id){
-    return (documentos || []).find(x => String(x.id) === String(id));
-  }
-
-  function abrirModalVerDoc(){
-    const m = document.getElementById("modalVerDoc");
-    if (m) m.style.display = "block";
-  }
-  function cerrarModalVerDoc(){
-    const m = document.getElementById("modalVerDoc");
-    if (m) m.style.display = "none";
-    _docVistaActual = null;
-  }
-
-  // ✅ FIX: leer desde firma_paciente_path / firma_profesional_path
-  function verDocumento(id){
-    const d = _docById(id);
-    if (!d) { alert("Documento no encontrado."); return; }
-
-    _docVistaActual = d;
-
-    document.getElementById("verDoc_id").textContent = d.id || "";
-    document.getElementById("verDoc_fecha").textContent = _soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || "");
-    document.getElementById("verDoc_tipo").textContent = d.tipo || "CONSENTIMIENTO";
-    document.getElementById("verDoc_procedimiento").textContent = d.procedimiento || "";
-    document.getElementById("verDoc_profesional").textContent = d.profesional || "";
-    document.getElementById("verDoc_texto").textContent = d.texto || "";
-
-    // ✅ leer firmas desde lo que cargamos (ya normalizado)
-    const fp   = _normalizarDataURLFirma(d.firma_paciente || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional || "");
-
-    const imgPac = document.getElementById("verDoc_firmaPaciente");
-    const imgPro = document.getElementById("verDoc_firmaProfesional");
-
-    imgPac.src = fp || _IMG_TRANSPARENTE;
-    imgPro.src = fpro || _IMG_TRANSPARENTE;
-
-    imgPac.style.opacity = fp ? "1" : ".25";
-    imgPro.style.opacity = fpro ? "1" : ".25";
-
-    abrirModalVerDoc();
-  }
-
-  // ✅ FIX: cargar al canvas desde *_path
-  function editarDocumento(id){
-    const d = _docById(id);
-    if (!d) { alert("Documento no encontrado."); return; }
-
-    _docEditId = d.id;
-
-    document.getElementById("doc_id").value = d.id || "";
-    document.getElementById("doc_tipo").value = "CONSENTIMIENTO";
-    document.getElementById("doc_fecha").value = _soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || _hoyISO());
-    document.getElementById("doc_procedimiento").value = d.procedimiento || "";
-    document.getElementById("doc_profesional").value = d.profesional || "";
-    document.getElementById("doc_template").value = d.template_key || d.template || "AUTO";
-    document.getElementById("doc_texto").value = d.texto || "";
-
-    limpiarFirmaDocumento("PAC");
-    limpiarFirmaDocumento("PRO");
-
-    setTimeout(() => {
-      _setFirmaDocDesdeDataURL("doc_firmaPaciente", d.firma_paciente_path || "");
-      _setFirmaDocDesdeDataURL("doc_firmaProfesional", d.firma_profesional_path || "");
-    }, 250);
-  }
-
-  async function sha256Hex(text) {
-    const enc = new TextEncoder().encode(text);
-    const buf = await crypto.subtle.digest("SHA-256", enc);
-    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, "0")).join("");
-  }
-
-  // ✅ FIX: mapear desde Supabase con *_path
-  // ============================================================
-  // ✅✅✅ DOCUMENTOS (CONSENTIMIENTOS) - AJUSTADO A TU TABLA REAL
-  // Columnas en Supabase:
-  // firma_paciente_path, firma_profesional_path
-  // ============================================================
-
-  async function cargarDocumentosPacienteDesdeSupabase(cedula){
-    documentos = [];
-    renderDocumentos();
-    if (!cedula) return;
+  async function cargarProfesionalesDesdeSupabase() {
+    const sel = document.getElementById("doc_profesional");
+    if (!sel) return;
 
     let tries = 0;
     while (!window.supabase && tries < 40) {
@@ -2433,1099 +1606,1288 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (!window.supabase) return;
 
     try {
+      // Intenta primero tabla "profesionales" (recomendado)
+      let data = null, error = null;
+
+      const r1 = await window.supabase
+        .from("profesionales")
+        .select("nombre, activo")
+        .eq("activo", true)
+        .order("nombre", { ascending: true });
+
+      data = r1.data; error = r1.error;
+
+      // Fallback: si no existe esa tabla, usa "profiles" filtrando roles
+      if (error) {
+        const r2 = await window.supabase
+          .from("profiles")
+          .select("full_name, role, activo")
+          .in("role", ["admin", "doctor", "auxiliar"])
+          .eq("activo", true)
+          .order("full_name", { ascending: true });
+
+        data = (r2.data || []).map(x => ({ nombre: x.full_name || "", activo: true }));
+        error = r2.error;
+      }
+
+      if (error) throw error;
+
+      const items = (data || [])
+        .map(x => String(x.nombre || "").trim())
+        .filter(Boolean);
+
+      const actual = sel.value || "";
+      sel.innerHTML = `<option value="">Seleccione profesional...</option>` +
+        items.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+
+      // mantener selección si ya había
+      if (actual && items.includes(actual)) sel.value = actual;
+
+    } catch (e) {
+      console.warn("⚠️ Error cargando profesionales:", e);
+    }
+  }
+  document.addEventListener("DOMContentLoaded", cargarProfesionalesDesdeSupabase);
+
+  // ==============================
+  // ✅ CAMPOS DOCUMENTO: defaults
+  // ==============================
+  function _setDocDefaults() {
+    const id = document.getElementById("doc_id");
+    const f  = document.getElementById("doc_fecha");
+    if (id && !id.value) id.value = uuid();
+    if (f && !f.value) f.value = _hoyISO();
+  }
+  document.addEventListener("DOMContentLoaded", _setDocDefaults);
+
+  // ==============================
+  // ✅ FIRMAS EN CANVAS (DOCUMENTOS)
+  // ==============================
+  function _setupFirmaCanvas(canvasId){
+    const c = document.getElementById(canvasId);
+    if (!c) return null;
+    const ctx = c.getContext("2d");
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+    ctx.strokeStyle = "#111827";
+
+    let drawing = false;
+    let last = null;
+
+    function pos(e){
+      const r = c.getBoundingClientRect();
+      const isTouch = !!e.touches?.length;
+      const clientX = isTouch ? e.touches[0].clientX : e.clientX;
+      const clientY = isTouch ? e.touches[0].clientY : e.clientY;
+      return { x: clientX - r.left, y: clientY - r.top };
+    }
+
+    function down(e){
+      drawing = true;
+      last = pos(e);
+      e.preventDefault();
+    }
+    function move(e){
+      if (!drawing) return;
+      const p = pos(e);
+      ctx.beginPath();
+      ctx.moveTo(last.x, last.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.stroke();
+      last = p;
+      e.preventDefault();
+    }
+    function up(){
+      drawing = false;
+      last = null;
+    }
+
+    c.addEventListener("mousedown", down);
+    c.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+
+    c.addEventListener("touchstart", down, { passive:false });
+    c.addEventListener("touchmove", move, { passive:false });
+    window.addEventListener("touchend", up);
+
+    return {
+      canvas: c,
+      clear: () => {
+        ctx.clearRect(0,0,c.width,c.height);
+      },
+      toDataURL: () => c.toDataURL("image/png"),
+      isBlank: () => {
+        const tmp = document.createElement("canvas");
+        tmp.width = c.width; tmp.height = c.height;
+        return tmp.toDataURL() === c.toDataURL();
+      }
+    };
+  }
+
+  const _firmaDocPAC = _setupFirmaCanvas("doc_firmaPaciente");
+  const _firmaDocPRO = _setupFirmaCanvas("doc_firmaProfesional");
+
+  function limpiarFirmaDocumento(tipo){
+    if (tipo === "PAC") _firmaDocPAC?.clear();
+    if (tipo === "PRO") _firmaDocPRO?.clear();
+  }
+
+  // ==============================
+  // ✅ SUPABASE HELPERS (sesión / usuario)
+  // ==============================
+  async function _getSessionSafe(){
+    try{
+      const { data: { session } } = await window.supabase.auth.getSession();
+      return session || null;
+    }catch(e){ return null; }
+  }
+
+  async function _getUsuarioLogueado(){
+    // 1) localStorage (si ya lo guardas)
+    try{
+      const u = localStorage.getItem("usuario_logueado");
+      if (u) return u;
+    }catch(e){}
+
+    // 2) session email
+    const session = await _getSessionSafe();
+    const email = session?.user?.email || "";
+    if (email) {
+      try { localStorage.setItem("usuario_logueado", email); } catch(e){}
+      return email;
+    }
+    return "";
+  }
+
+  // ==============================
+  // ✅ TABLAS SUPABASE (ajusta si tus nombres difieren)
+  // ==============================
+  const TBL_HISTORIA = "historia_clinica";                 // 1 fila por cédula
+  const TBL_EVOS     = "evoluciones";                      // (si lo usas aquí)
+  const TBL_DOCS     = "documentos_consentimiento";        // documentos por cédula
+  const TBL_TPLS     = "plantillas_consentimiento";        // plantillas por usuario
+
+  // ==============================
+  // ✅ BUSCAR HISTORIA (por cédula)
+  // ==============================
+  async function buscarHistoria(){
+    const cedula = (document.getElementById("buscar_cedula")?.value || "").trim();
+    if (!cedula) { alert("Ingresa una identificación para buscar."); return; }
+    document.getElementById("paciente_numdoc").value = cedula;
+
+    try{
       const { data, error } = await window.supabase
-        .from("consentimientos")
+        .from(TBL_HISTORIA)
         .select("*")
         .eq("cedula_paciente", cedula)
-        .order("creado_en", { ascending: false });
+        .maybeSingle();
 
       if (error) throw error;
 
-      documentos = (data || []).map(x => ({
-        id: x.id ?? x.documento_id ?? x.doc_id ?? "",
-        tipo: x.tipo ?? "CONSENTIMIENTO",
-        cedula_paciente: x.cedula_paciente ?? "",
-        paciente_nombre: x.paciente_nombre ?? "",
-        procedimiento: x.procedimiento ?? "",
-        profesional: x.profesional ?? "",
-        template_key: x.template_key ?? x.template ?? "AUTO",
-        texto: x.texto ?? "",
+      if (!data){
+        alert("No existe historia clínica para esta cédula. Puedes crear una nueva.");
+        // limpia pero deja cédula
+        _limpiarFormularioManteniendoCedula(cedula);
+        // igual carga docs (vacío) por si acaso
+        await cargarDocumentosPaciente(cedula);
+        await cargarEvolucionesPaciente(cedula);
+        return;
+      }
 
-        // ✅ OJO: TU TABLA REAL
-        firma_paciente: x.firma_paciente_path ?? x.firma_paciente ?? "",
-        firma_profesional: x.firma_profesional_path ?? x.firma_profesional ?? "",
+      // ✅ cargar campos (solo los que existan)
+      _cargarHistoriaEnFormulario(data);
 
-        firmado_en: x.firmado_en ?? null,
-        creado_en: x.creado_en ?? x.created_at ?? null,
-        creado_por: x.creado_por ?? null,
-        hash_documento: x.hash_documento ?? null
-      })).filter(d => String(d.id).trim() !== "");
+      // cargar docs/evoluciones
+      await cargarDocumentosPaciente(cedula);
+      await cargarEvolucionesPaciente(cedula);
 
-      renderDocumentos();
-    } catch (e) {
-      console.warn("⚠️ No se pudieron cargar documentos:", e);
-      documentos = [];
-      renderDocumentos();
+      // si tienes odontograma guardado como json:
+      if (data.odontograma_json) {
+        try{
+          const obj = (typeof data.odontograma_json === "string")
+            ? JSON.parse(data.odontograma_json)
+            : data.odontograma_json;
+          window.odontogramaData = obj || {};
+          // si tu odontograma ya tiene render, invócalo:
+          if (typeof window.aplicarOdontogramaGuardado === "function") {
+            window.aplicarOdontogramaGuardado(window.odontogramaData);
+          }
+        }catch(e){}
+      }
+
+    }catch(e){
+      console.error(e);
+      alert("Error buscando historia clínica. Revisa consola.");
     }
   }
+  window.buscarHistoria = buscarHistoria;
 
-  // ✅ FIX: guardar en Supabase usando firma_paciente_path / firma_profesional_path
-  async function guardarDocumentoSupabase(){
-    const cedula_paciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
-    const paciente_nombre = (document.getElementById("paciente_nombre")?.value || "").trim();
+  function _limpiarFormularioManteniendoCedula(cedula){
+    // Básicos
+    const ids = [
+      "paciente_nombre","paciente_edad","paciente_lugardoc","paciente_nacimiento","paciente_lugarnac",
+      "paciente_direccion","Ciudad_de_Residencia","EPS_Paciente","paciente_ocupacion",
+      "paciente_tel","paciente_ciudad","paciente_cel","paciente_email","paciente_estadocivil",
+      "padre_nombre","madre_nombre","padre_tel","madre_tel","padre_eps","madre_eps","padre_tipo","madre_tipo",
+      "emergencia_nombre","emergencia_parentesco","emergencia_tel","emergencia_cel",
+      "grave_cual","otra_cual","medicamentos_cuales","med_dosis","alergia_meds",
+      "numero_hijos","tiempo_embarazo","motivo_consulta"
+    ];
+    ids.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = "";
+    });
 
-    if (!cedula_paciente || !paciente_nombre) {
-      alert("⚠️ Primero debes cargar/buscar el paciente (nombre y cédula).");
-      return;
-    }
+    // cédula
+    const nd = document.getElementById("paciente_numdoc");
+    if (nd) nd.value = cedula || "";
 
-    const id = (document.getElementById("doc_id")?.value || "").trim() || uuid();
-    const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
-    const profesional = (document.getElementById("doc_profesional")?.value || "").trim();
-    const template_key = (document.getElementById("doc_template")?.value || "AUTO").trim();
-    const texto = (document.getElementById("doc_texto")?.value || "").trim();
-    const fecha = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
+    // checkboxes: desmarcar
+    document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
 
-    if (!procedimiento) { alert("⚠️ Falta el procedimiento."); return; }
-    if (!profesional) { alert("⚠️ Falta el profesional."); return; }
-    if (!texto) { alert("⚠️ El texto está vacío."); return; }
+    // firmas doc
+    _firmaDocPAC?.clear();
+    _firmaDocPRO?.clear();
 
-    // ✅ firmas desde canvas
-    const firma_paciente_dataurl = _getFirmaDataURLDoc("doc_firmaPaciente");
-    const firma_profesional_dataurl = _getFirmaDataURLDoc("doc_firmaProfesional");
+    // tablas
+    const te = document.getElementById("tabla_evoluciones"); if (te) te.innerHTML = "";
+    const td = document.getElementById("tabla_documentos");  if (td) td.innerHTML = "";
 
-    if (!firma_paciente_dataurl) { alert("⚠️ Falta la firma del paciente."); return; }
-    if (!firma_profesional_dataurl) { alert("⚠️ Falta la firma del profesional."); return; }
+    // reset doc id
+    const doc_id = document.getElementById("doc_id");
+    if (doc_id) doc_id.value = uuid();
+    const doc_fecha = document.getElementById("doc_fecha");
+    if (doc_fecha) doc_fecha.value = _hoyISO();
 
-    const creado_por = localStorage.getItem("usuario_logueado") || "desconocido";
-    const firmado_en = new Date(fecha + "T00:00:00").toISOString();
-    const creado_en = new Date().toISOString();
+    // odontograma: reset si tienes función
+    if (typeof window.resetOdontograma === "function") window.resetOdontograma();
+    window.odontogramaData = {};
+  }
 
-    const hash_documento = await sha256Hex(
-      JSON.stringify({
-        id, cedula_paciente, paciente_nombre,
-        procedimiento, profesional, template_key, texto,
-        firma_paciente_dataurl, firma_profesional_dataurl,
-        firmado_en
-      })
-    );
+  function _cargarHistoriaEnFormulario(data){
+    // Mapea campos conocidos. Ajusta nombres si tu tabla usa otros.
+    const map = {
+      paciente_nombre: "paciente_nombre",
+      paciente_edad: "paciente_edad",
+      paciente_numdoc: "cedula_paciente",
+      paciente_lugardoc: "paciente_lugardoc",
+      paciente_nacimiento: "paciente_nacimiento",
+      paciente_lugarnac: "paciente_lugarnac",
+      paciente_direccion: "paciente_direccion",
+      Ciudad_de_Residencia: "Ciudad_de_Residencia",
+      EPS_Paciente: "EPS_Paciente",
+      paciente_ocupacion: "paciente_ocupacion",
+      paciente_tel: "paciente_tel",
+      paciente_ciudad: "paciente_ciudad",
+      paciente_cel: "paciente_cel",
+      paciente_email: "paciente_email",
+      paciente_estadocivil: "paciente_estadocivil",
 
-    // ✅✅✅ AQUÍ ESTÁ EL FIX: NOMBRES EXACTOS DE TU TABLA
-    const row = {
-      id,
-      cedula_paciente,
-      paciente_nombre,
-      procedimiento,
-      profesional,
-      template_key,
-      texto,
+      padre_nombre:"padre_nombre",
+      madre_nombre:"madre_nombre",
+      padre_tel:"padre_tel",
+      madre_tel:"madre_tel",
+      padre_eps:"padre_eps",
+      madre_eps:"madre_eps",
+      padre_tipo:"padre_tipo",
+      madre_tipo:"madre_tipo",
 
-      // ✅ En tu tabla se llaman *_path
-      firma_paciente_path: firma_paciente_dataurl,
-      firma_profesional_path: firma_profesional_dataurl,
+      emergencia_nombre:"emergencia_nombre",
+      emergencia_parentesco:"emergencia_parentesco",
+      emergencia_tel:"emergencia_tel",
+      emergencia_cel:"emergencia_cel",
 
-      firmado_en,
-      creado_en,
-      creado_por,
-      user_agent: navigator.userAgent,
-      hash_documento
+      grave_cual:"grave_cual",
+      otra_cual:"otra_cual",
+      medicamentos_cuales:"medicamentos_cuales",
+      med_dosis:"med_dosis",
+      alergia_meds:"alergia_meds",
+
+      numero_hijos:"numero_hijos",
+      tiempo_embarazo:"tiempo_embarazo",
+      motivo_consulta:"motivo_consulta"
     };
 
-    try {
-      let tries = 0;
-      while (!window.supabase && tries < 40) {
-        await new Promise(r => setTimeout(r, 100));
-        tries++;
-      }
-      if (!window.supabase) throw new Error("Supabase no disponible");
+    Object.entries(map).forEach(([inputId, key]) => {
+      const el = document.getElementById(inputId);
+      if (!el) return;
+      const v = data?.[key];
+      if (v === undefined || v === null) return;
+      el.value = String(v);
+    });
 
+    // checkboxes: si guardas arrays en texto "a,b,c" o json
+    const checksMap = [
+      { name:"idtipo", key:"idtipo" },
+      { name:"hijos", key:"hijos" },
+      { name:"grave", key:"grave" },
+      { name:"condiciones", key:"condiciones" },
+      { name:"coagulacion", key:"coagulacion" },
+      { name:"anticoagulantes", key:"anticoagulantes" },
+      { name:"toma_medicamentos", key:"toma_medicamentos" },
+      { name:"alcohol", key:"alcohol" },
+      { name:"fuma", key:"fuma" },
+      { name:"drogas", key:"drogas" },
+      { name:"embarazos_partos", key:"embarazos_partos" },
+      { name:"embarazada", key:"embarazada" },
+      { name:"anticonceptivos", key:"anticonceptivos" },
+      { name:"histerectomia_menopausia", key:"histerectomia_menopausia" },
+      { name:"dolor[]", key:"dolor" },
+      { name:"tratamientos", key:"tratamientos" }
+    ];
+
+    checksMap.forEach(({name, key}) => {
+      const val = data?.[key];
+      if (val === undefined || val === null) return;
+
+      let arr = [];
+      if (Array.isArray(val)) arr = val;
+      else {
+        // intenta JSON
+        try{
+          const j = JSON.parse(val);
+          if (Array.isArray(j)) arr = j;
+          else arr = String(val).split(",").map(s=>s.trim()).filter(Boolean);
+        }catch(e){
+          arr = String(val).split(",").map(s=>s.trim()).filter(Boolean);
+        }
+      }
+
+      document.querySelectorAll(`input[type="checkbox"][name="${name}"]`).forEach(cb => {
+        cb.checked = arr.includes(cb.value);
+      });
+    });
+  }
+
+  // ==============================
+  // ✅ DOCUMENTOS: CRUD
+  // ==============================
+  function nuevoDocumento(){
+    const ced = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    if (!ced) { alert("Primero carga/busca el paciente (cédula)."); return; }
+
+    document.getElementById("doc_id").value = uuid();
+    document.getElementById("doc_tipo").value = "CONSENTIMIENTO";
+    document.getElementById("doc_fecha").value = _hoyISO();
+    document.getElementById("doc_procedimiento").value = "";
+    document.getElementById("doc_template").value = "AUTO";
+    document.getElementById("doc_texto").value = "";
+    // profesional: no forzar
+    _firmaDocPAC?.clear();
+    _firmaDocPRO?.clear();
+
+    // autogenerar texto si quieres
+    _autocompletarTextoDocumento();
+  }
+  window.nuevoDocumento = nuevoDocumento;
+
+  function _getDocForm(){
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    return {
+      doc_id: (document.getElementById("doc_id")?.value || "").trim(),
+      cedula_paciente: cedula,
+      doc_tipo: (document.getElementById("doc_tipo")?.value || "").trim(),
+      doc_fecha: (document.getElementById("doc_fecha")?.value || "").trim(),
+      doc_procedimiento: (document.getElementById("doc_procedimiento")?.value || "").trim(),
+      doc_profesional: (document.getElementById("doc_profesional")?.value || "").trim(),
+      doc_template: (document.getElementById("doc_template")?.value || "").trim(),
+      doc_texto: (document.getElementById("doc_texto")?.value || ""),
+      firma_paciente: _firmaDocPAC?.toDataURL() || "",
+      firma_profesional: _firmaDocPRO?.toDataURL() || ""
+    };
+  }
+
+  function _validarDocForm(doc){
+    if (!doc.cedula_paciente) return "Falta la cédula del paciente.";
+    if (!doc.doc_id) return "Falta el ID del documento.";
+    if (!doc.doc_fecha) return "Falta la fecha del documento.";
+    if (!doc.doc_procedimiento) return "Falta el procedimiento.";
+    if (!doc.doc_profesional) return "Falta el profesional.";
+    if (!doc.doc_texto.trim()) return "El texto del documento está vacío.";
+    if (_firmaDocPAC?.isBlank()) return "Falta la firma del paciente.";
+    if (_firmaDocPRO?.isBlank()) return "Falta la firma del profesional.";
+    return "";
+  }
+
+  async function guardarDocumentoSupabase(){
+    try{
+      const doc = _getDocForm();
+      const msg = _validarDocForm(doc);
+      if (msg) { alert("⚠️ " + msg); return; }
+
+      const session = await _getSessionSafe();
+      const usuario = await _getUsuarioLogueado();
+
+      const payload = {
+        id: doc.doc_id,
+        cedula_paciente: doc.cedula_paciente,
+        tipo: doc.doc_tipo,
+        fecha: doc.doc_fecha,
+        procedimiento: doc.doc_procedimiento,
+        profesional: doc.doc_profesional,
+        template: doc.doc_template,
+        texto: doc.doc_texto,
+        firma_paciente: doc.firma_paciente,
+        firma_profesional: doc.firma_profesional,
+        creado_por: usuario || session?.user?.email || null,
+        actualizado_en: new Date().toISOString()
+      };
+
+      // upsert por id
       const { error } = await window.supabase
-        .from("consentimientos")
-        .upsert(row, { onConflict: "id" });
+        .from(TBL_DOCS)
+        .upsert(payload, { onConflict: "id" });
 
       if (error) throw error;
 
-      alert("✅ Documento guardado en Supabase.");
-      await cargarDocumentosPacienteDesdeSupabase(cedula_paciente);
+      alert("✅ Documento guardado.");
+      await cargarDocumentosPaciente(doc.cedula_paciente);
 
-      document.getElementById("doc_id").value = id;
-      _docEditId = id;
-    } catch (e) {
-      // ✅ ahora sí verás el error real
-      console.warn("❌ Error guardando documento:", e);
-      alert("❌ No se pudo guardar. Error:\n\n" + (e?.message || JSON.stringify(e)));
+    }catch(e){
+      console.error(e);
+      alert("Error guardando documento. Revisa consola.");
+    }
+  }
+  window.guardarDocumentoSupabase = guardarDocumentoSupabase;
+
+  async function cargarDocumentosPaciente(cedula){
+    const tb = document.getElementById("tabla_documentos");
+    const empty = document.getElementById("docs_empty");
+    if (!tb) return;
+
+    tb.innerHTML = "";
+    if (empty) empty.style.display = "none";
+
+    if (!cedula) return;
+
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_DOCS)
+        .select("id, fecha, tipo, procedimiento, profesional")
+        .eq("cedula_paciente", cedula)
+        .order("fecha", { ascending:false });
+
+      if (error) throw error;
+
+      const rows = data || [];
+      if (!rows.length) {
+        if (empty) empty.style.display = "block";
+        return;
+      }
+
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.id)}</td>
+          <td>${escapeHtml(r.fecha || "")}</td>
+          <td>${escapeHtml(r.tipo || "")}</td>
+          <td>${escapeHtml(r.procedimiento || "")}</td>
+          <td>${escapeHtml(r.profesional || "")}</td>
+          <td style="white-space:nowrap;">
+            <button type="button" onclick="verDocumento('${escapeHtml(r.id)}')" class="btn btn-buscar" style="width:auto; padding:8px 10px;">Ver</button>
+            <button type="button" onclick="cargarDocumentoEnEditor('${escapeHtml(r.id)}')" class="btn btn-agenda" style="width:auto; padding:8px 10px;">Editar</button>
+            <button type="button" onclick="eliminarDocumento('${escapeHtml(r.id)}')" class="btn" style="width:auto; padding:8px 10px; background:#e53935;">Eliminar</button>
+          </td>
+        </tr>
+      `).join("");
+
+    }catch(e){
+      console.error(e);
+      alert("Error cargando documentos. Revisa consola.");
     }
   }
 
-  async function eliminarDocumentoSupabase(id){
-    const cedula_paciente = (document.getElementById("paciente_numdoc")?.value || "").trim();
-    if (!id) return;
+  async function cargarDocumentoEnEditor(id){
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_DOCS)
+        .select("*")
+        .eq("id", id)
+        .single();
 
-    const ok = confirm("¿Eliminar este documento?");
-    if (!ok) return;
+      if (error) throw error;
 
-    try {
-      let tries = 0;
-      while (!window.supabase && tries < 40) {
-        await new Promise(r => setTimeout(r, 100));
-        tries++;
-      }
-      if (!window.supabase) throw new Error("Supabase no disponible");
+      document.getElementById("doc_id").value = data.id || "";
+      document.getElementById("doc_tipo").value = data.tipo || "CONSENTIMIENTO";
+      document.getElementById("doc_fecha").value = data.fecha || _hoyISO();
+      document.getElementById("doc_procedimiento").value = data.procedimiento || "";
+      document.getElementById("doc_profesional").value = data.profesional || "";
+      document.getElementById("doc_template").value = data.template || "AUTO";
+      document.getElementById("doc_texto").value = data.texto || "";
 
+      // firmas: re-dibujar desde dataURL
+      _firmaDocPAC?.clear();
+      _firmaDocPRO?.clear();
+      if (data.firma_paciente) _drawDataURLToCanvas("doc_firmaPaciente", data.firma_paciente);
+      if (data.firma_profesional) _drawDataURLToCanvas("doc_firmaProfesional", data.firma_profesional);
+
+      window.scrollTo({ top: document.getElementById("seccionDocumentos").offsetTop - 10, behavior:"smooth" });
+
+    }catch(e){
+      console.error(e);
+      alert("Error cargando documento en editor.");
+    }
+  }
+  window.cargarDocumentoEnEditor = cargarDocumentoEnEditor;
+
+  function _drawDataURLToCanvas(canvasId, dataURL){
+    const c = document.getElementById(canvasId);
+    if (!c || !dataURL) return;
+    const ctx = c.getContext("2d");
+    const img = new Image();
+    img.onload = () => {
+      ctx.clearRect(0,0,c.width,c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+    };
+    img.src = dataURL;
+  }
+
+  async function eliminarDocumento(id){
+    if (!confirm("¿Seguro que deseas eliminar este documento?")) return;
+    try{
       const { error } = await window.supabase
-        .from("consentimientos")
+        .from(TBL_DOCS)
         .delete()
         .eq("id", id);
 
       if (error) throw error;
 
       alert("✅ Documento eliminado.");
-      await cargarDocumentosPacienteDesdeSupabase(cedula_paciente);
-      nuevoDocumento();
-    } catch (e) {
-      console.warn("❌ Error eliminando documento:", e);
-      alert("❌ No se pudo eliminar. Revisa consola.");
+      const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+      await cargarDocumentosPaciente(cedula);
+
+    }catch(e){
+      console.error(e);
+      alert("Error eliminando documento.");
     }
   }
+  window.eliminarDocumento = eliminarDocumento;
 
   // ==============================
-  // ✅ IMPRIMIR / DESCARGAR HTML (FIX *_path)
+  // ✅ MODAL VER DOCUMENTO
   // ==============================
- function imprimirDocumento(){
-  if (!_docVistaActual) return;
-  const d = _docVistaActual;
-const pacienteNombre = (d.paciente_nombre || document.getElementById("paciente_nombre")?.value || "").trim();
-const pacienteCedula = (d.cedula_paciente || document.getElementById("paciente_numdoc")?.value || "").trim();
-const profesionalNombre = (d.profesional || "").trim();
+  async function verDocumento(id){
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_DOCS)
+        .select("*")
+        .eq("id", id)
+        .single();
 
+      if (error) throw error;
 
-  const fp = _normalizarDataURLFirma(d.firma_paciente || d.firma_paciente_path || "");
-  const fpro = _normalizarDataURLFirma(d.firma_profesional || d.firma_profesional_path || "");
+      document.getElementById("verDoc_id").textContent = data.id || "";
+      document.getElementById("verDoc_fecha").textContent = data.fecha || "";
+      document.getElementById("verDoc_tipo").textContent = data.tipo || "";
+      document.getElementById("verDoc_procedimiento").textContent = data.procedimiento || "";
+      document.getElementById("verDoc_profesional").textContent = data.profesional || "";
+      document.getElementById("verDoc_texto").textContent = data.texto || "";
 
-  const html = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8"/>
-<title>Documento ${escapeHtml(d.id || "")}</title>
-<style>
-  body{ font-family: system-ui, Segoe UI, Arial; padding:20px; color:#111; }
-  .header{ display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-  .logo{
-  height:110px;
-  max-width:220px;
-  object-fit:contain;
-}
+      const imgP = document.getElementById("verDoc_firmaPaciente");
+      const imgR = document.getElementById("verDoc_firmaProfesional");
+      if (imgP) imgP.src = data.firma_paciente || "";
+      if (imgR) imgR.src = data.firma_profesional || "";
 
-  .meta{ font-size:13px; line-height:1.5; margin:10px 0 14px; }
-  pre{ white-space:pre-wrap; border:1px solid #ddd; border-radius:10px; padding:14px; font-size:13px; }
+      // guarda “doc actual” para imprimir/descargar
+      window._docActualVer = data;
 
-  .box{ border:1px solid #ddd; border-radius:10px; padding:10px; }
-  img.firma{ width:100%; height:160px; object-fit:contain; border:1px solid #eee; border-radius:8px; display:block; }
-  .nofirma{ opacity:.6; padding:20px 0; text-align:center; }
-
-  @media print{
-  body{ padding:0; }
-  .logo{
-    height:130px;
-    max-width:260px;
-  }
-}
-.grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:14px; }
-
-.sigbox{
-  border:1px solid #ddd;
-  border-radius:10px;
-  padding:12px;
-}
-
-.sigbox img{
-  width:100%;
-  height:150px;
-  object-fit:contain;
-  display:block;
-}
-
-.sigline{
-  border-top:2px solid #000;
-  margin:10px 0 6px;
-}
-
-.sigtext{
-  font-size:13px;
-  text-align:center;
-  line-height:1.25;
-}
-
-</style>
-</head>
-<body>
-
-  <div class="header">
-    <div>
-      <h2 style="margin:0;">${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
-      <div class="meta">
-        <div><b>ID:</b> ${escapeHtml(d.id || "")}</div>
-        <div><b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</div>
-        <div><b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}</div>
-        <div><b>Profesional:</b> ${escapeHtml(d.profesional || "")}</div>
-      </div>
-    </div>
-
-    <img class="logo" src="${LOGO_CLINICA}" alt="Logo Clínica">
-  </div>
-
-  <pre>${escapeHtml(d.texto || "")}</pre>
-
- <div class="grid">
-  <div class="sigbox">
-    ${fp ? `<img id="imgPac" src="${fp}">` : `<div class="nofirma">Sin firma</div>`}
-    <div class="sigline"></div>
-    <div class="sigtext">
-      <b>Paciente:</b> ${escapeHtml(pacienteCedula)} ${escapeHtml(pacienteNombre.toUpperCase())}
-    </div>
-  </div>
-
-  <div class="sigbox">
-    ${fpro ? `<img id="imgPro" src="${fpro}">` : `<div class="nofirma">Sin firma</div>`}
-    <div class="sigline"></div>
-    <div class="sigtext">
-      <b>Profesional:</b> ${escapeHtml(profesionalNombre.toUpperCase())}
-    </div>
-  </div>
-</div>
-
-<script>
-(async function(){
-  const imgs = Array.from(document.images || []);
-  const waits = imgs.map(img => {
-    if (img.complete) return Promise.resolve();
-    return new Promise(res => { img.onload = res; img.onerror = res; });
-  });
-  await Promise.all(waits);
-  setTimeout(() => window.print(), 200);
-})();
-<\/script>
-</body>
-</html>`;
-
-  const w = window.open("", "_blank");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
-
-
-  function descargarHTMLDocumento(){
-    if (!_docVistaActual) return;
-    const d = _docVistaActual;
-
-    const fp = _normalizarDataURLFirma(d.firma_paciente_path || "");
-    const fpro = _normalizarDataURLFirma(d.firma_profesional_path || "");
-
-    const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-<title>Documento ${escapeHtml(d.id || "")}</title></head>
-<body style="font-family:system-ui,Segoe UI,Arial;padding:20px;">
-<h2>${escapeHtml(d.tipo || "CONSENTIMIENTO")}</h2>
-<p><b>ID:</b> ${escapeHtml(d.id || "")}<br>
-<b>Fecha:</b> ${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}<br>
-<b>Procedimiento:</b> ${escapeHtml(d.procedimiento || "")}<br>
-<b>Profesional:</b> ${escapeHtml(d.profesional || "")}</p>
-<pre style="white-space:pre-wrap;border:1px solid #ddd;border-radius:10px;padding:14px;">${escapeHtml(d.texto || "")}</pre>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px;">
-  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
-    <b>Firma paciente</b><br>
-    ${fp ? `<img src="${fp}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
-  </div>
-  <div style="border:1px solid #ddd;border-radius:10px;padding:10px;">
-    <b>Firma profesional</b><br>
-    ${fpro ? `<img src="${fpro}" style="width:100%;height:160px;object-fit:contain;border:1px solid #eee;border-radius:8px;">` : `<span style="opacity:.6;">Sin firma</span>`}
-  </div>
-</div>
-</body></html>`;
-
-    const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `documento_${(d.id || "sin_id")}.html`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
-  // Init documentos
-  document.addEventListener("DOMContentLoaded", () => {
-    _initCanvasDoc("doc_firmaPaciente");
-    _initCanvasDoc("doc_firmaProfesional");
-    nuevoDocumento();
-  });
-
-  // ==============================
-  // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
-  // ==============================
-  async function buscarHistoria() {
-    const cedula = document.getElementById("buscar_cedula").value.trim();
-    if (!cedula) { alert("Ingrese una cédula"); return; }
-
-    _cedulaActual = cedula;
-
-    documentos = [];
-    renderDocumentos();
-    nuevoDocumento();
-
-    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
-
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      if (!data.existe) {
-        evoluciones = [];
-        renderEvoluciones();
-        alert("No existe historia clínica para este paciente");
-        return;
-      }
-
-      const h = data.historia || {};
-      const od = data.odontograma || {};
-      evoluciones = normalizarEvolucionesDeWebhook(data);
-      renderEvoluciones();
-      // ✅ cargar historia / odontograma / evoluciones SIEMPRE
-      document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
-      document.getElementById("paciente_edad").value = h["Edad"] ?? "";
-      document.getElementById("paciente_numdoc").value = data.id ?? cedula;
-      document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
-      document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
-      document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
-      document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
-
-      // ✅ FIX: id sin espacios
-      document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
-
-      document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
-      document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
-      document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
-      document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
-      document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
-      document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
-      document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
-      document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
-      document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
-
-      let tiposID = [];
-      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
-      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
-
-      let hijos = [];
-      try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
-      document.querySelectorAll("input[name='hijos']").forEach(c => { c.checked = hijos.includes(c.value); });
-
-      document.getElementById("padre_nombre").value = h["Nombre padre"] ?? "";
-      document.getElementById("madre_nombre").value = h["Nombre madre"] ?? "";
-      document.getElementById("padre_tel").value = h["Teléfono padre"] ?? "";
-      document.getElementById("madre_tel").value = h["Teléfono madre"] ?? "";
-      document.getElementById("padre_eps").value = h["EPS padre"] ?? "";
-      document.getElementById("madre_eps").value = h["EPS madre"] ?? "";
-
-      document.getElementById("emergencia_nombre").value = h["Emergencia nombre"] ?? "";
-      document.getElementById("emergencia_parentesco").value = h["Emergencia parentesco"] ?? "";
-      document.getElementById("emergencia_tel").value = h["Emergencia teléfono"] ?? "";
-      document.getElementById("emergencia_cel").value = h["Emergencia celular"] ?? "";
-
-      document.querySelectorAll("input[name='grave']").forEach(c => { c.checked = (h["Enfermedad grave"] ?? []).includes(c.value); });
-      document.getElementById("grave_cual").value = h["Enfermedad grave cuál"] ?? "";
-      document.getElementById("otra_cual").value = h["Otra condición cuál"] ?? "";
-      document.getElementById("medicamentos_cuales").value = h["Medicamentos cuáles"] ?? "";
-      document.getElementById("med_dosis").value = h["Medicamentos dosis"] ?? "";
-      document.getElementById("alergia_meds").value = h["Alergias medicamentos"] ?? "";
-
-      document.getElementById("numero_hijos").value = h["Número hijos"] ?? "";
-      document.getElementById("tiempo_embarazo").value = h["Tiempo embarazo"] ?? "";
-
-      let condiciones = [];
-      try { condiciones = JSON.parse(h["Condiciones"] || "[]"); } catch(e) { condiciones = []; }
-      document.querySelectorAll("input[name='condiciones']").forEach(c => { c.checked = condiciones.includes(c.value); });
-
-      let coagulacion = [];
-      try { coagulacion = JSON.parse(h["coagulacion"] || "[]"); } catch(e) { coagulacion = []; }
-      document.querySelectorAll("input[name='coagulacion']").forEach(c => { c.checked = coagulacion.includes(c.value); });
-
-      let anticoagulantes = [];
-      try { anticoagulantes = JSON.parse(h["anticoagulantes"] || "[]"); } catch(e) { anticoagulantes = []; }
-      document.querySelectorAll("input[name='anticoagulantes']").forEach(c => { c.checked = anticoagulantes.includes(c.value); });
-
-      let toma_medicamentos = [];
-      try { toma_medicamentos = JSON.parse(h["toma_medicamentos"] || "[]"); } catch(e) { toma_medicamentos = []; }
-      document.querySelectorAll("input[name='toma_medicamentos']").forEach(c => { c.checked = toma_medicamentos.includes(c.value); });
-
-      let alcohol = [];
-      try { alcohol = JSON.parse(h["alcohol"] || "[]"); } catch(e) { alcohol = []; }
-      document.querySelectorAll("input[name='alcohol']").forEach(c => { c.checked = alcohol.includes(c.value); });
-
-      let fuma = [];
-      try { fuma = JSON.parse(h["fuma"] || "[]"); } catch(e) { fuma = []; }
-      document.querySelectorAll("input[name='fuma']").forEach(c => { c.checked = fuma.includes(c.value); });
-
-      let dolor = [];
-      try {
-        let raw = h["dolor"];
-        if (Array.isArray(raw)) dolor = raw;
-        else if (typeof raw === "string") {
-          raw = raw.replace(/\\"/g, '"');
-          dolor = JSON.parse(raw);
-        }
-      } catch(e) { dolor = []; }
-
-      document.querySelectorAll("input[name='dolor[]']").forEach(c => {
-        c.checked = dolor.includes(c.value);
-      });
-
-      document.getElementById("motivo_consulta").value = h["Motivo consulta"] ?? "";
-      document.querySelectorAll("input[name='tratamientos']").forEach(c => {
-        c.checked = (h["Tratamientos"] ?? []).includes(c.value);
-      });
-      // odontograma (tu mismo mapping)
-      document.querySelectorAll(".cara, .centro").forEach(c => c.style.background = "white");
-      reporte = {};
-
-      Object.entries(od).forEach(([diente, regiones]) => {
-        Object.entries(regiones).forEach(([region, estado]) => {
-          if (!estado) return;
-          const estadoNormalizado = estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase();
-          const color = preexistencias[estadoNormalizado];
-          if (!color) return;
-
-          let cara = null;
-          switch(region) {
-            case "Mesial":     cara = "derecha"; break;
-            case "Distal":     cara = "izquierda"; break;
-            case "Oclusal":    cara = "centro"; break;
-            case "Vestibular":
-              cara = (diente >= 11 && diente <= 28) ? "superior" : "inferior";
-              break;
-            case "Lingual":    cara = "superior"; break;
-            case "Palatino":   cara = "inferior"; break;
-          }
-          if (!cara) return;
-
-          const selector = `.diente[data-numero='${diente}'] .${cara}`;
-          const elem = document.querySelector(selector);
-          if (!elem) return;
-
-          elem.style.background = color;
-          if (!reporte[diente]) reporte[diente] = {};
-          reporte[diente][cara] = estadoNormalizado;
-        });
-      });
-
-      // ✅ cargar documentos del paciente
-      await cargarDocumentosPacienteDesdeSupabase(cedula);
-
-      // preparar doc nuevo
-      document.getElementById("doc_id").value = uuid();
-      document.getElementById("doc_fecha").value = _hoyISO();
-      document.getElementById("doc_profesional").value = "";
-      document.getElementById("doc_procedimiento").value = "";
-      document.getElementById("doc_template").value = "AUTO";
-      document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
-        paciente: (document.getElementById("paciente_nombre").value || "").trim(),
-        doc: (document.getElementById("paciente_numdoc").value || "").trim(),
-        procedimiento: "",
-        profesional: "",
-        fecha: _hoyISO()
-      });
-
-      alert("Historia clínica cargada con éxito");
-    } catch (err) {
-      console.error(err);
-      alert("Error consultando N8N");
+      document.getElementById("modalVerDoc").style.display = "block";
+    }catch(e){
+      console.error(e);
+      alert("Error abriendo documento.");
     }
   }
-
-  // ============================================================
-// ✅✅✅ PLANTILLAS DE CONSENTIMIENTOS (SUPABASE)
-// Tabla: consentimiento_plantillas
-// ============================================================
-let plantillas = [];
-let _tplEditId = null;
-
-function abrirModalPlantillas(){
-  const m = document.getElementById("modalPlantillas");
-  if (m) m.style.display = "block";
-  cargarPlantillasDesdeSupabase();
-}
-function cerrarModalPlantillas(){
-  const m = document.getElementById("modalPlantillas");
-  if (m) m.style.display = "none";
-}
-
-function nuevaPlantillaUI(){
-  _tplEditId = null;
-  document.getElementById("tpl_id").value = "";
-  document.getElementById("tpl_nombre").value = "";
-  document.getElementById("tpl_procedimiento").value = "GENERICA";
-  document.getElementById("tpl_contenido").value =
-`CONSENTIMIENTO INFORMADO
-
-Paciente: {{PACIENTE}} - Identificación: {{CEDULA}}
-Procedimiento: {{PROCEDIMIENTO}}
-Profesional: {{PROFESIONAL}}
-Fecha: {{FECHA}}
-
-Declaro que he recibido explicación clara del procedimiento, beneficios, riesgos, alternativas y consecuencias de no realizarlo.
-He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libre e informada la realización del procedimiento descrito.`;
-}
-
-async function cargarPlantillasDesdeSupabase(){
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  try{
-    const { data, error } = await window.supabase
-      .from("consentimiento_plantillas")
-      .select("*")
-      .eq("activo", true)
-      .order("creado_en", { ascending:false });
-
-    if (error) throw error;
-
-    plantillas = (data || []).map(x => ({
-      id: x.id,
-      nombre: x.nombre || "",
-      procedimiento: (x.procedimiento || "GENERICA").toUpperCase(),
-      contenido: x.contenido || "",
-      creado_en: x.creado_en || null,
-      activo: x.activo !== false
-    }));
-
-    renderListaPlantillas();
-    poblarSelectPlantillas();
-  }catch(e){
-    console.warn("❌ Error cargando plantillas:", e);
-    plantillas = [];
-    renderListaPlantillas();
-    poblarSelectPlantillas();
-  }
-}
-
-function renderListaPlantillas(){
-  const tbody = document.getElementById("tabla_plantillas");
-  const empty = document.getElementById("tpl_empty");
-  if (!tbody) return;
-
-  const q = (document.getElementById("tpl_buscar")?.value || "").trim().toUpperCase();
-
-  const lista = (plantillas || []).filter(p => {
-    if (!q) return true;
-    return (p.nombre || "").toUpperCase().includes(q) || (p.procedimiento || "").toUpperCase().includes(q);
-  });
-
-  tbody.innerHTML = "";
-  if (!lista.length){
-    if (empty) empty.style.display = "block";
-    return;
-  }
-  if (empty) empty.style.display = "none";
-
-  lista.forEach(p => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${escapeHtml(p.nombre)}</td>
-      <td>${escapeHtml(p.procedimiento)}</td>
-      <td style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-          onclick="editarPlantillaUI('${escapeHtml(p.id)}')">Editar</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-function editarPlantillaUI(id){
-  const p = (plantillas || []).find(x => String(x.id) === String(id));
-  if (!p) return;
-
-  _tplEditId = p.id;
-  document.getElementById("tpl_id").value = p.id;
-  document.getElementById("tpl_nombre").value = p.nombre || "";
-  document.getElementById("tpl_procedimiento").value = p.procedimiento || "GENERICA";
-  document.getElementById("tpl_contenido").value = p.contenido || "";
-}
-
-async function guardarPlantillaSupabase(){
-  const nombre = (document.getElementById("tpl_nombre")?.value || "").trim();
-  const procedimiento = (document.getElementById("tpl_procedimiento")?.value || "GENERICA").trim().toUpperCase();
-  const contenido = (document.getElementById("tpl_contenido")?.value || "").trim();
-
-  if (!nombre) { alert("⚠️ Falta el nombre de la plantilla."); return; }
-  if (!procedimiento) { alert("⚠️ Falta el procedimiento."); return; }
-  if (!contenido) { alert("⚠️ El contenido está vacío."); return; }
-
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) { alert("Supabase no disponible"); return; }
-
-  const row = {
-    id: _tplEditId || undefined,
-    nombre,
-    procedimiento,
-    contenido,
-    activo: true
-  };
-
-  try{
-    const { error } = await window.supabase
-      .from("consentimiento_plantillas")
-      .upsert(row, { onConflict: "id" });
-
-    if (error) throw error;
-
-    alert("✅ Plantilla guardada.");
-    await cargarPlantillasDesdeSupabase();
-  }catch(e){
-    console.warn("❌ Error guardando plantilla:", e);
-    alert("❌ No se pudo guardar la plantilla.\n\n" + (e?.message || JSON.stringify(e)));
-  }
-}
-
-async function eliminarPlantillaSupabase(){
-  const id = _tplEditId || (document.getElementById("tpl_id")?.value || "").trim();
-  if (!id) { alert("⚠️ Selecciona una plantilla primero."); return; }
-
-  const ok = confirm("¿Eliminar esta plantilla?");
-  if (!ok) return;
-
-  try{
-    const { error } = await window.supabase
-      .from("consentimiento_plantillas")
-      .update({ activo:false })
-      .eq("id", id);
-
-    if (error) throw error;
-
-    alert("✅ Plantilla eliminada.");
-    _tplEditId = null;
-    nuevaPlantillaUI();
-    await cargarPlantillasDesdeSupabase();
-  }catch(e){
-    console.warn("❌ Error eliminando plantilla:", e);
-    alert("❌ No se pudo eliminar.\n\n" + (e?.message || JSON.stringify(e)));
-  }
-}
-
-// ✅ Mete plantillas en el select doc_template
-function poblarSelectPlantillas(){
-  const sel = document.getElementById("doc_template");
-  if (!sel) return;
-
-  // Mantener AUTO y GENERICA (por compatibilidad)
-  const base = [
-    { value:"AUTO", label:"Automática (según procedimiento)" },
-    { value:"GENERICA", label:"Genérica" }
-  ];
-
-  // Plantillas de Supabase
-  const dyn = (plantillas || []).map(p => ({
-    value: "TPL:" + p.id,
-    label: `${p.nombre} (${p.procedimiento})`
-  }));
-
-  sel.innerHTML = base.map(x => `<option value="${escapeHtml(x.value)}">${escapeHtml(x.label)}</option>`).join("")
-    + dyn.map(x => `<option value="${escapeHtml(x.value)}">${escapeHtml(x.label)}</option>`).join("");
-}
-
-// ✅ Reemplaza variables en contenido
-function aplicarVariablesPlantilla(texto){
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const cedula   = (document.getElementById("paciente_numdoc")?.value || "").trim();
-  const procedimiento = (document.getElementById("doc_procedimiento")?.value || "").trim();
-  const profesional   = (document.getElementById("doc_profesional")?.value || "").trim();
-  const fecha         = (document.getElementById("doc_fecha")?.value || _hoyISO()).trim();
-
-  return String(texto || "")
-    .replaceAll("{{PACIENTE}}", paciente)
-    .replaceAll("{{CEDULA}}", cedula)
-    .replaceAll("{{PROCEDIMIENTO}}", procedimiento)
-    .replaceAll("{{PROFESIONAL}}", profesional)
-    .replaceAll("{{FECHA}}", fecha);
-}
-
-// ✅ Cuando cambie el select, aplicar plantilla
-document.addEventListener("DOMContentLoaded", () => {
-  const sel = document.getElementById("doc_template");
-  if (sel){
-    sel.addEventListener("change", () => {
-      aplicarPlantillaSeleccionada();
-    });
-  }
-});
-
-function aplicarPlantillaSeleccionada(){
-  const sel = document.getElementById("doc_template");
-  if (!sel) return;
-
-  const val = sel.value;
-
-  // AUTO: si quieres, lo dejamos igual que antes (usa GENÉRICA por defecto)
-  if (val === "AUTO"){
-    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
-    document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
-      paciente, doc,
-      procedimiento: (document.getElementById("doc_procedimiento")?.value || "").trim(),
-      profesional: (document.getElementById("doc_profesional")?.value || "").trim(),
-      fecha: (document.getElementById("doc_fecha")?.value || _hoyISO()).trim()
-    });
-    return;
-  }
-
-  if (val === "GENERICA"){
-    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-    const doc = (document.getElementById("paciente_numdoc")?.value || "").trim();
-    document.getElementById("doc_texto").value = DOC_TEMPLATES.GENERICA({
-      paciente, doc,
-      procedimiento: (document.getElementById("doc_procedimiento")?.value || "").trim(),
-      profesional: (document.getElementById("doc_profesional")?.value || "").trim(),
-      fecha: (document.getElementById("doc_fecha")?.value || _hoyISO()).trim()
-    });
-    return;
-  }
-
-  // Plantilla Supabase
-  if (val.startsWith("TPL:")){
-    const id = val.slice(4);
-    const p = (plantillas || []).find(x => String(x.id) === String(id));
-    if (!p) return;
-    document.getElementById("doc_texto").value = aplicarVariablesPlantilla(p.contenido);
-  }
-}
-
-function probarPlantillaEnDocumento(){
-  const contenido = (document.getElementById("tpl_contenido")?.value || "").trim();
-  if (!contenido) { alert("⚠️ El contenido está vacío."); return; }
-  document.getElementById("doc_texto").value = aplicarVariablesPlantilla(contenido);
-  alert("✅ Plantilla aplicada al documento (campo Texto).");
-}
-
-  // Exponer funciones usadas en HTML
-  window.buscarHistoria = buscarHistoria;
-  window.enviarAN8N = enviarAN8N;
-  window.mostrarReporte = mostrarReporte;
-
-  window.nuevoDocumento = nuevoDocumento;
-  window.guardarDocumentoSupabase = guardarDocumentoSupabase;
-  window.eliminarDocumentoSupabase = eliminarDocumentoSupabase;
   window.verDocumento = verDocumento;
-  window.editarDocumento = editarDocumento;
+
+  function cerrarModalVerDoc(){
+    document.getElementById("modalVerDoc").style.display = "none";
+    window._docActualVer = null;
+  }
   window.cerrarModalVerDoc = cerrarModalVerDoc;
-  window.abrirModalVerDoc = abrirModalVerDoc;
-  window.imprimirDocumento = imprimirDocumento;
-  window.descargarHTMLDocumento = descargarHTMLDocumento;
-  window.limpiarFirmaDocumento = limpiarFirmaDocumento;
-  window.cargarDocumentosPacienteDesdeSupabase = cargarDocumentosPacienteDesdeSupabase;
-  window.cerrarSesion = cerrarSesion;
 
-  window.agregarEvolucion = agregarEvolucion;
-  window.eliminarEvolucion = eliminarEvolucion;
-  window.limpiarEvolucionForm = limpiarEvolucionForm;
+  function _docHTMLImprimible(doc){
+    const logo = LOGO_CLINICA || "";
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
 
-  window.agregarProfesionalDesdeCampo = agregarProfesionalDesdeCampo;
-  window.abrirModalPlantillas = abrirModalPlantillas;
-window.cerrarModalPlantillas = cerrarModalPlantillas;
-window.nuevaPlantillaUI = nuevaPlantillaUI;
-window.editarPlantillaUI = editarPlantillaUI;
-window.guardarPlantillaSupabase = guardarPlantillaSupabase;
-window.eliminarPlantillaSupabase = eliminarPlantillaSupabase;
-window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
-window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
-window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
-
-async function capturarOdontogramaPNG(){
-  const el = document.getElementById("odontograma-wrapper");
-  if (!el || !window.html2canvas) return "";
-  const canvas = await html2canvas(el, { scale: 2, backgroundColor: "#ffffff" });
-  return canvas.toDataURL("image/png");
-}
-
-async function imprimirHistoriaClinica(){
-  // Si quieres obligar a que tenga campos mínimos:
-  // if (!validarCamposObligatorios()) return;
-
-  // 1) Datos del formulario
-  const datos = obtenerDatosHistoriaClinica();
-
-  // 2) Armar odontograma completo (igual a enviarAN8N)
-  const todosLosDientes = [
-    18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
-    48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
-  ];
-  const odontogramaCompleto = {};
-  todosLosDientes.forEach(num => {
-    odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
-  });
-  Object.entries(reporte || {}).forEach(([diente, caras]) => {
-    Object.entries(caras).forEach(([cara, preexistencia]) => {
-      const region = obtenerRegion(diente, cara);
-      if (region) odontogramaCompleto[diente][region] = String(preexistencia || "").toUpperCase();
-    });
-  });
-
-  // 3) (Opcional) capturar odontograma visual
-  const odontogramaImg = await capturarOdontogramaPNG(); // si no instalaste html2canvas, devuelve ""
-
-  // 4) Construir HTML imprimible
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const cedula   = (document.getElementById("paciente_numdoc")?.value || "").trim();
-  const fechaImp = new Date().toISOString().slice(0,10);
-
-  const html = `
+    return `
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Historia Clínica - ${escapeHtml(cedula)}</title>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Documento ${escapeHtml(doc?.id || "")}</title>
 <style>
-  body{ font-family: system-ui, Segoe UI, Arial; color:#111; padding:18px; }
-  h1{ margin:0 0 8px; font-size:20px; }
-  h2{ margin:18px 0 10px; font-size:16px; }
-  h3{ margin:14px 0 8px; font-size:14px; }
-  .muted{ color:#666; font-size:12px; }
-  .top{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
-  .logo{ height:80px; object-fit:contain; }
-  .box{ border:1px solid #ddd; border-radius:10px; padding:12px; margin-top:10px; }
-  .t{ width:100%; border-collapse:collapse; font-size:12px; }
-  .t th,.t td{ border:1px solid #ddd; padding:8px; vertical-align:top; }
-  .t thead th{ background:#f3f6fb; }
-  .kv .k{ width:240px; font-weight:700; background:#fafafa; }
-  img.odon{ width:100%; max-width:900px; border:1px solid #ddd; border-radius:10px; }
-  @media print{
-    body{ padding:0; }
-    .noPrint{ display:none !important; }
-    .box{ break-inside:avoid; }
-    table{ break-inside:auto; }
-    tr{ break-inside:avoid; break-after:auto; }
-  }
+  body{ font-family:system-ui,Segoe UI,Arial; margin:24px; color:#111827; }
+  .top{ display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .logo{ height:64px; object-fit:contain; }
+  h1{ margin:16px 0 8px; font-size:18px; }
+  .meta{ font-size:14px; line-height:1.6; }
+  .box{ border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-top:12px; }
+  pre{ white-space:pre-wrap; font-family: ui-monospace, Menlo, Consolas, monospace; }
+  .sigwrap{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:12px; }
+  .sig img{ width:100%; height:160px; object-fit:contain; border:1px solid #e5e7eb; border-radius:12px; }
+  .small{ font-size:12px; color:#6b7280; margin-top:10px; }
 </style>
 </head>
 <body>
+  <div class="top">
+    <div>
+      <div style="font-weight:800; font-size:18px;">Consentimiento informado</div>
+      <div class="small">Generado desde Historia Clínica</div>
+    </div>
+    ${logo ? `<img class="logo" src="${logo}" alt="Logo">` : ``}
+  </div>
 
-<div class="top">
-  <div>
-    <h1>Historia Clínica Odontológica</h1>
-    <div class="muted">
-      Paciente: <b>${escapeHtml(paciente)}</b> &nbsp;|&nbsp;
-      Identificación: <b>${escapeHtml(cedula)}</b> &nbsp;|&nbsp;
-      Fecha impresión: <b>${escapeHtml(fechaImp)}</b>
+  <h1>Información</h1>
+  <div class="box meta">
+    <div><b>ID:</b> ${escapeHtml(doc?.id || "")}</div>
+    <div><b>Fecha:</b> ${escapeHtml(doc?.fecha || "")}</div>
+    <div><b>Tipo:</b> ${escapeHtml(doc?.tipo || "")}</div>
+    <div><b>Procedimiento:</b> ${escapeHtml(doc?.procedimiento || "")}</div>
+    <div><b>Profesional:</b> ${escapeHtml(doc?.profesional || "")}</div>
+    <div><b>Paciente:</b> ${escapeHtml(paciente)} (${escapeHtml(cedula)})</div>
+  </div>
+
+  <h1>Texto</h1>
+  <div class="box">
+    <pre>${escapeHtml(doc?.texto || "")}</pre>
+  </div>
+
+  <h1>Firmas</h1>
+  <div class="sigwrap">
+    <div class="sig">
+      <div style="font-weight:700; margin-bottom:6px;">Firma paciente</div>
+      <img src="${doc?.firma_paciente || ""}" alt="Firma paciente"/>
+    </div>
+    <div class="sig">
+      <div style="font-weight:700; margin-bottom:6px;">Firma profesional</div>
+      <img src="${doc?.firma_profesional || ""}" alt="Firma profesional"/>
     </div>
   </div>
-  <img class="logo" src="${LOGO_CLINICA}" alt="Logo">
-</div>
+</body>
+</html>`;
+  }
 
-<div class="box">
-  <h2>Datos básicos</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombres y apellidos", datos.paciente_nombre)}
-      ${_tableRow("Edad", datos.paciente_edad)}
-      ${_tableRow("Tipo identificación", _siNo(datos.idtipo))}
-      ${_tableRow("No. documento", datos.paciente_numdoc)}
-      ${_tableRow("Lugar expedición", datos.paciente_lugardoc)}
-      ${_tableRow("Fecha nacimiento", datos.paciente_nacimiento)}
-      ${_tableRow("Lugar nacimiento", datos.paciente_lugarnac)}
-      ${_tableRow("Dirección", datos.paciente_direccion)}
-      ${_tableRow("Ciudad residencia", datos.Ciudad_de_Residencia)}
-      ${_tableRow("EPS", datos.EPS_Paciente)}
-      ${_tableRow("Ocupación", datos.paciente_ocupacion)}
-      ${_tableRow("Teléfono", datos.paciente_tel)}
-      ${_tableRow("Celular", datos.paciente_cel)}
-      ${_tableRow("Correo", datos.paciente_email)}
-      ${_tableRow("Estado civil", datos.paciente_estadocivil)}
-      ${_tableRow("Hijos", _siNo(datos.hijos))}
-    </tbody>
-  </table>
-</div>
+  function imprimirDocumento(){
+    const doc = window._docActualVer;
+    if (!doc) return;
 
-<div class="box">
-  <h2>Acudiente</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombre padre", datos.padre_nombre)}
-      ${_tableRow("Teléfono padre", datos.padre_tel)}
-      ${_tableRow("EPS padre", datos.padre_eps)}
-      ${_tableRow("Tipo (padre)", datos.padre_tipo)}
-      ${_tableRow("Nombre madre", datos.madre_nombre)}
-      ${_tableRow("Teléfono madre", datos.madre_tel)}
-      ${_tableRow("EPS madre", datos.madre_eps)}
-      ${_tableRow("Tipo (madre)", datos.madre_tipo)}
-    </tbody>
-  </table>
-</div>
+    const w = window.open("", "_blank");
+    w.document.open();
+    w.document.write(_docHTMLImprimible(doc));
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+  window.imprimirDocumento = imprimirDocumento;
 
-<div class="box">
-  <h2>Emergencia</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombre", datos.emergencia_nombre)}
-      ${_tableRow("Parentesco", datos.emergencia_parentesco)}
-      ${_tableRow("Teléfono", datos.emergencia_tel)}
-      ${_tableRow("Celular", datos.emergencia_cel)}
-    </tbody>
-  </table>
-</div>
+  function descargarHTMLDocumento(){
+    const doc = window._docActualVer;
+    if (!doc) return;
 
-<div class="box">
-  <h2>Historia médica</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Enfermedad grave", _siNo(datos.grave))}
-      ${_tableRow("¿Cuál?", datos.grave_cual)}
-      ${_tableRow("Condiciones", _siNo(datos.condiciones))}
-      ${_tableRow("Otra condición ¿Cuál?", datos.otra_cual)}
-      ${_tableRow("Coagulación", _siNo(datos.coagulacion))}
-      ${_tableRow("Anticoagulantes", _siNo(datos.anticoagulantes))}
-      ${_tableRow("Toma medicamentos", _siNo(datos.toma_medicamentos))}
-      ${_tableRow("Medicamentos ¿Cuáles?", datos.medicamentos_cuales)}
-      ${_tableRow("Dosis y frecuencia", datos.med_dosis)}
-      ${_tableRow("Alergia a medicamentos", datos.alergia_meds)}
-      ${_tableRow("Alcohol", _siNo(datos.alcohol))}
-      ${_tableRow("Fuma", _siNo(datos.fuma))}
-      ${_tableRow("Drogas", _siNo(datos.drogas))}
-    </tbody>
-  </table>
-</div>
+    const html = _docHTMLImprimible(doc);
+    const blob = new Blob([html], { type:"text/html;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `documento_${(doc.id||"")}.html`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  }
+  window.descargarHTMLDocumento = descargarHTMLDocumento;
 
-<div class="box">
-  <h2>Historia odontológica</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Motivo consulta", datos.motivo_consulta)}
-      ${_tableRow("Dolor", _siNo(datos["dolor[]"]))}
-      ${_tableRow("Tratamientos recibidos", _siNo(datos.tratamientos))}
-    </tbody>
-  </table>
-</div>
+  // ==============================
+  // ✅ PLANTILLAS: MODAL + CRUD
+  // ==============================
+  function abrirModalPlantillas(){
+    document.getElementById("modalPlantillas").style.display = "block";
+    renderListaPlantillas();
+  }
+  window.abrirModalPlantillas = abrirModalPlantillas;
 
-<div class="box">
+  function cerrarModalPlantillas(){
+    document.getElementById("modalPlantillas").style.display = "none";
+  }
+  window.cerrarModalPlantillas = cerrarModalPlantillas;
+
+  function nuevaPlantillaUI(){
+    document.getElementById("tpl_id").value = "";
+    document.getElementById("tpl_nombre").value = "";
+    document.getElementById("tpl_procedimiento").value = "";
+    document.getElementById("tpl_contenido").value = "";
+  }
+  window.nuevaPlantillaUI = nuevaPlantillaUI;
+
+  async function renderListaPlantillas(){
+    const tb = document.getElementById("tabla_plantillas");
+    const empty = document.getElementById("tpl_empty");
+    if (!tb) return;
+
+    tb.innerHTML = "";
+    if (empty) empty.style.display = "none";
+
+    const q = (document.getElementById("tpl_buscar")?.value || "").trim().toLowerCase();
+    const session = await _getSessionSafe();
+    const usuario = (await _getUsuarioLogueado()) || session?.user?.email || "";
+
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_TPLS)
+        .select("id, nombre, procedimiento, creado_por")
+        .eq("creado_por", usuario)
+        .order("nombre", { ascending:true });
+
+      if (error) throw error;
+
+      let rows = data || [];
+      if (q){
+        rows = rows.filter(r =>
+          String(r.nombre||"").toLowerCase().includes(q) ||
+          String(r.procedimiento||"").toLowerCase().includes(q)
+        );
+      }
+
+      if (!rows.length){
+        if (empty) empty.style.display = "block";
+        return;
+      }
+
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.nombre||"")}</td>
+          <td>${escapeHtml(r.procedimiento||"")}</td>
+          <td style="white-space:nowrap;">
+            <button type="button" onclick="cargarPlantilla('${escapeHtml(r.id)}')" style="
+              border:none; background:#0D47A1; color:#fff; font-weight:700; border-radius:10px;
+              padding:8px 10px; cursor:pointer;">Editar</button>
+            <button type="button" onclick="borrarPlantilla('${escapeHtml(r.id)}')" style="
+              border:none; background:#e53935; color:#fff; font-weight:700; border-radius:10px;
+              padding:8px 10px; cursor:pointer;">Eliminar</button>
+          </td>
+        </tr>
+      `).join("");
+
+    }catch(e){
+      console.error(e);
+      alert("Error cargando plantillas.");
+    }
+  }
+  window.renderListaPlantillas = renderListaPlantillas;
+
+  async function guardarPlantillaSupabase(){
+    const session = await _getSessionSafe();
+    const usuario = (await _getUsuarioLogueado()) || session?.user?.email || "";
+
+    const id = (document.getElementById("tpl_id")?.value || "").trim() || uuid();
+    const nombre = (document.getElementById("tpl_nombre")?.value || "").trim();
+    const proc = (document.getElementById("tpl_procedimiento")?.value || "").trim();
+    const cont = (document.getElementById("tpl_contenido")?.value || "");
+
+    if (!nombre) { alert("Falta el nombre de la plantilla."); return; }
+    if (!proc) { alert("Falta el procedimiento asociado."); return; }
+    if (!cont.trim()) { alert("El contenido está vacío."); return; }
+
+    try{
+      const payload = {
+        id,
+        nombre,
+        procedimiento: proc,
+        contenido: cont,
+        creado_por: usuario,
+        actualizado_en: new Date().toISOString()
+      };
+
+      const { error } = await window.supabase
+        .from(TBL_TPLS)
+        .upsert(payload, { onConflict:"id" });
+
+      if (error) throw error;
+
+      document.getElementById("tpl_id").value = id;
+      alert("✅ Plantilla guardada.");
+      renderListaPlantillas();
+
+    }catch(e){
+      console.error(e);
+      alert("Error guardando plantilla.");
+    }
+  }
+  window.guardarPlantillaSupabase = guardarPlantillaSupabase;
+
+  async function cargarPlantilla(id){
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_TPLS)
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) throw error;
+
+      document.getElementById("tpl_id").value = data.id || "";
+      document.getElementById("tpl_nombre").value = data.nombre || "";
+      document.getElementById("tpl_procedimiento").value = data.procedimiento || "";
+      document.getElementById("tpl_contenido").value = data.contenido || "";
+
+    }catch(e){
+      console.error(e);
+      alert("Error cargando plantilla.");
+    }
+  }
+  window.cargarPlantilla = cargarPlantilla;
+
+  async function borrarPlantilla(id){
+    if (!confirm("¿Seguro que deseas eliminar esta plantilla?")) return;
+    try{
+      const { error } = await window.supabase
+        .from(TBL_TPLS)
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+
+      alert("✅ Plantilla eliminada.");
+      renderListaPlantillas();
+      nuevaPlantillaUI();
+
+    }catch(e){
+      console.error(e);
+      alert("Error eliminando plantilla.");
+    }
+  }
+  window.borrarPlantilla = borrarPlantilla;
+
+  async function eliminarPlantillaSupabase(){
+    const id = (document.getElementById("tpl_id")?.value || "").trim();
+    if (!id) { alert("No hay plantilla cargada."); return; }
+    return borrarPlantilla(id);
+  }
+  window.eliminarPlantillaSupabase = eliminarPlantillaSupabase;
+
+  function _applyVars(template, vars){
+    let out = String(template || "");
+    Object.entries(vars || {}).forEach(([k,v]) => {
+      out = out.replaceAll(`{{${k}}}`, String(v ?? ""));
+    });
+    return out;
+  }
+
+  async function probarPlantillaEnDocumento(){
+    const tpl = (document.getElementById("tpl_contenido")?.value || "");
+    if (!tpl.trim()) { alert("La plantilla está vacía."); return; }
+
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    const proc = (document.getElementById("doc_procedimiento")?.value || "").trim() || (document.getElementById("tpl_procedimiento")?.value || "").trim();
+    const prof = (document.getElementById("doc_profesional")?.value || "").trim();
+    const fecha = (document.getElementById("doc_fecha")?.value || "").trim() || _hoyISO();
+
+    const txt = _applyVars(tpl, {
+      PACIENTE: paciente,
+      CEDULA: cedula,
+      PROCEDIMIENTO: proc,
+      PROFESIONAL: prof,
+      FECHA: fecha
+    });
+
+    document.getElementById("doc_texto").value = txt;
+    document.getElementById("doc_procedimiento").value = proc;
+    alert("✅ Plantilla aplicada en el documento (editor).");
+  }
+  window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
+
+  // ==============================
+  // ✅ AUTO PLANTILLA SEGÚN PROCEDIMIENTO (AUTO/GENERICA)
+  // ==============================
+  async function _autocompletarTextoDocumento(){
+    const modo = (document.getElementById("doc_template")?.value || "AUTO").trim();
+    const proc = (document.getElementById("doc_procedimiento")?.value || "").trim();
+    const docText = document.getElementById("doc_texto");
+
+    if (!docText) return;
+    if (docText.value.trim()) return; // si ya escribió, no sobrescribir
+
+    // Si no hay procedimiento, no generar
+    if (!proc) return;
+
+    const session = await _getSessionSafe();
+    const usuario = (await _getUsuarioLogueado()) || session?.user?.email || "";
+
+    try{
+      let rows = [];
+
+      if (modo === "AUTO") {
+        const r = await window.supabase
+          .from(TBL_TPLS)
+          .select("*")
+          .eq("creado_por", usuario)
+          .eq("procedimiento", proc)
+          .order("actualizado_en", { ascending:false });
+
+        if (r.error) throw r.error;
+        rows = r.data || [];
+      }
+
+      // fallback: GENERICA o no encontró específica
+      if (!rows.length) {
+        const r2 = await window.supabase
+          .from(TBL_TPLS)
+          .select("*")
+          .eq("creado_por", usuario)
+          .eq("procedimiento", "GENERICA")
+          .order("actualizado_en", { ascending:false });
+
+        if (r2.error) throw r2.error;
+        rows = r2.data || [];
+      }
+
+      if (!rows.length) {
+        // fallback final: texto base
+        docText.value =
+`CONSENTIMIENTO INFORMADO
+
+Yo, {{PACIENTE}} identificado(a) con {{CEDULA}}, declaro que he recibido información clara sobre el procedimiento: {{PROCEDIMIENTO}}, sus beneficios, riesgos, alternativas y cuidados posteriores.
+
+Profesional: {{PROFESIONAL}}
+Fecha: {{FECHA}}
+
+Acepto voluntariamente la realización del procedimiento.`;
+      } else {
+        docText.value = rows[0].contenido || "";
+      }
+
+      // reemplazar variables
+      const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+      const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+      const prof = (document.getElementById("doc_profesional")?.value || "").trim();
+      const fecha = (document.getElementById("doc_fecha")?.value || "").trim() || _hoyISO();
+
+      docText.value = _applyVars(docText.value, {
+        PACIENTE: paciente,
+        CEDULA: cedula,
+        PROCEDIMIENTO: proc,
+        PROFESIONAL: prof,
+        FECHA: fecha
+      });
+
+    }catch(e){
+      console.warn("No se pudo autocompletar documento:", e);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const p = document.getElementById("doc_procedimiento");
+    const t = document.getElementById("doc_template");
+    const f = document.getElementById("doc_fecha");
+    const pr = document.getElementById("doc_profesional");
+    [p,t,f,pr].forEach(el => el?.addEventListener("change", _autocompletarTextoDocumento));
+    [p,pr].forEach(el => el?.addEventListener("blur", _autocompletarTextoDocumento));
+  });
+
+  // ==============================
+  // ✅ EVOLUCIONES: tabla en historia (solo listar)
+  // ==============================
+  function _soloFechaYYYYMMDD(s){
+    if (!s) return "";
+    try { return String(s).slice(0,10); } catch(e){ return ""; }
+  }
+  function _soloHoraHHMM(s){
+    if (!s) return "";
+    try { return String(s).slice(0,5); } catch(e){ return ""; }
+  }
+
+  async function cargarEvolucionesPaciente(cedula){
+    const tb = document.getElementById("tabla_evoluciones");
+    if (!tb) return;
+    tb.innerHTML = "";
+    if (!cedula) return;
+
+    try{
+      const { data, error } = await window.supabase
+        .from(TBL_EVOS)
+        .select("id, fecha, hora, profesional, procedimiento, detalle")
+        .eq("cedula_paciente", cedula)
+        .order("fecha", { ascending:false })
+        .order("hora", { ascending:false });
+
+      if (error) throw error;
+
+      const rows = data || [];
+      tb.innerHTML = rows.map(r => `
+        <tr>
+          <td>${escapeHtml(r.id || "")}</td>
+          <td>${escapeHtml(_soloFechaYYYYMMDD(r.fecha || ""))}</td>
+          <td>${escapeHtml(_soloHoraHHMM(r.hora || ""))}</td>
+          <td>${escapeHtml(String(r.profesional||"").toUpperCase())}</td>
+          <td>${escapeHtml(String(r.procedimiento||"").toUpperCase())}</td>
+          <td style="white-space:pre-wrap;">${escapeHtml(r.detalle || "")}</td>
+          <td style="white-space:nowrap;">
+            <button type="button" class="btn btn-agenda" style="width:auto; padding:8px 10px;"
+              onclick="abrirModalEvoluciones()">Abrir</button>
+          </td>
+        </tr>
+      `).join("");
+
+    }catch(e){
+      console.error(e);
+      // no alert aquí para no molestar
+    }
+  }
+
+  // ==============================
+  // ✅ RECOLECTAR CHECKBOXES
+  // ==============================
+  function getCheckValues(name){
+    return Array.from(document.querySelectorAll(`input[type="checkbox"][name="${name}"]:checked`))
+      .map(cb => cb.value);
+  }
+
+  // ==============================
+  // ✅ ODONTOGRAMA: aquí asumo que ya tienes el JS del odontograma en otra parte.
+  // Si no, déjame y te lo pego completo. Por ahora solo aseguro un objeto global:
+  // ==============================
+  window.odontogramaData = window.odontogramaData || {};
+
+  // ==============================
+  // ✅ GUARDAR HISTORIA + ENVIAR A N8N
+  // ==============================
+  async function enviarAN8N(){
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    if (!cedula) { alert("⚠️ Falta la cédula del paciente."); return; }
+
+    // ⚠️ IMPORTANTE:
+    // odontogramaCompleto debe existir según tu odontograma.
+    // Aquí intento construirlo desde window.odontogramaData, si tu estructura ya es FDI -> caras.
+    const odontogramaCompleto = window.odontogramaData || {};
+
+    // payload historia
+    const payloadHistoria = {
+      // identificador
+      cedula_paciente: cedula,
+
+      // básicos
+      paciente_nombre: (document.getElementById("paciente_nombre")?.value || "").trim(),
+      paciente_edad: (document.getElementById("paciente_edad")?.value || "").trim(),
+      idtipo: getCheckValues("idtipo"),
+      paciente_lugardoc: (document.getElementById("paciente_lugardoc")?.value || "").trim(),
+      paciente_nacimiento: (document.getElementById("paciente_nacimiento")?.value || "").trim(),
+      paciente_lugarnac: (document.getElementById("paciente_lugarnac")?.value || "").trim(),
+      paciente_direccion: (document.getElementById("paciente_direccion")?.value || "").trim(),
+      Ciudad_de_Residencia: (document.getElementById("Ciudad_de_Residencia")?.value || "").trim(),
+      EPS_Paciente: (document.getElementById("EPS_Paciente")?.value || "").trim(),
+      paciente_ocupacion: (document.getElementById("paciente_ocupacion")?.value || "").trim(),
+      paciente_tel: (document.getElementById("paciente_tel")?.value || "").trim(),
+      paciente_ciudad: (document.getElementById("paciente_ciudad")?.value || "").trim(),
+      paciente_cel: (document.getElementById("paciente_cel")?.value || "").trim(),
+      paciente_email: (document.getElementById("paciente_email")?.value || "").trim(),
+      paciente_estadocivil: (document.getElementById("paciente_estadocivil")?.value || "").trim(),
+      hijos: getCheckValues("hijos"),
+
+      // acudiente
+      padre_nombre: (document.getElementById("padre_nombre")?.value || "").trim(),
+      madre_nombre: (document.getElementById("madre_nombre")?.value || "").trim(),
+      padre_tel: (document.getElementById("padre_tel")?.value || "").trim(),
+      madre_tel: (document.getElementById("madre_tel")?.value || "").trim(),
+      padre_eps: (document.getElementById("padre_eps")?.value || "").trim(),
+      madre_eps: (document.getElementById("madre_eps")?.value || "").trim(),
+      padre_tipo: (document.getElementById("padre_tipo")?.value || "").trim(),
+      madre_tipo: (document.getElementById("madre_tipo")?.value || "").trim(),
+
+      // emergencia
+      emergencia_nombre: (document.getElementById("emergencia_nombre")?.value || "").trim(),
+      emergencia_parentesco: (document.getElementById("emergencia_parentesco")?.value || "").trim(),
+      emergencia_tel: (document.getElementById("emergencia_tel")?.value || "").trim(),
+      emergencia_cel: (document.getElementById("emergencia_cel")?.value || "").trim(),
+
+      // historia médica
+      grave: getCheckValues("grave"),
+      grave_cual: (document.getElementById("grave_cual")?.value || "").trim(),
+      condiciones: getCheckValues("condiciones"),
+      otra_cual: (document.getElementById("otra_cual")?.value || "").trim(),
+
+      coagulacion: getCheckValues("coagulacion"),
+      anticoagulantes: getCheckValues("anticoagulantes"),
+      toma_medicicamentos: getCheckValues("toma_medicamentos"),
+      medicamentos_cuales: (document.getElementById("medicamentos_cuales")?.value || "").trim(),
+      med_dosis: (document.getElementById("med_dosis")?.value || "").trim(),
+      alergia_meds: (document.getElementById("alergia_meds")?.value || "").trim(),
+
+      alcohol: getCheckValues("alcohol"),
+      fuma: getCheckValues("fuma"),
+      drogas: getCheckValues("drogas"),
+
+      // mujeres
+      embarazos_partos: getCheckValues("embarazos_partos"),
+      numero_hijos: (document.getElementById("numero_hijos")?.value || "").trim(),
+      embarazada: getCheckValues("embarazada"),
+      tiempo_embarazo: (document.getElementById("tiempo_embarazo")?.value || "").trim(),
+      anticonceptivos: getCheckValues("anticonceptivos"),
+      histerectomia_menopausia: getCheckValues("histerectomia_menopausia"),
+
+      // odontológica
+      motivo_consulta: (document.getElementById("motivo_consulta")?.value || "").trim(),
+      dolor: getCheckValues('dolor[]'),
+      tratamientos: getCheckValues("tratamientos"),
+
+      // odontograma
+      odontograma_json: odontogramaCompleto,
+
+      actualizado_en: new Date().toISOString()
+    };
+
+    try{
+      // ✅ 1) Guardar/actualizar en Supabase
+      const session = await _getSessionSafe();
+      const usuario = await _getUsuarioLogueado();
+
+      const row = {
+        ...payloadHistoria,
+        creado_por: usuario || session?.user?.email || null
+      };
+
+      const { error } = await window.supabase
+        .from(TBL_HISTORIA)
+        .upsert(row, { onConflict: "cedula_paciente" });
+
+      if (error) throw error;
+
+      // ✅ 2) Preparar HTML “bonito” para enviar/guardar (opcional)
+      const evos = []; // si quieres incluirlas en el envío: carga primero desde supabase
+      const htmlResumen =
+        `<div>
+          <h2>Historia Clínica Odontológica</h2>
+          <div><b>Paciente:</b> ${escapeHtml(row.paciente_nombre)} (${escapeHtml(row.cedula_paciente)})</div>
+          <div><b>Edad:</b> ${escapeHtml(row.paciente_edad)}</div>
+          <hr/>
+          ${_odontogramaToHTML(odontogramaCompleto)}
+          <hr/>
+          ${_evolucionesToHTML(evos)}
+        </div>`;
+
+      // ✅ 3) Enviar a N8N (tu form oculto)
+      const usuario_logueado = usuario || session?.user?.email || "";
+
+      const dataN8N = {
+        historia: payloadHistoria,
+        html_resumen: htmlResumen,
+        usuario_logueado
+      };
+
+      document.getElementById("dataN8N").value = JSON.stringify(dataN8N);
+      document.getElementById("usuarioN8N").value = usuario_logueado;
+
+      document.getElementById("formN8N").submit();
+
+      alert("✅ Historia guardada y enviada.");
+
+      // refrescar docs/evoluciones por si algo cambió
+      await cargarDocumentosPaciente(cedula);
+      await cargarEvolucionesPaciente(cedula);
+
+    }catch(e){
+      console.error(e);
+      alert("Error guardando/enviando. Revisa consola.");
+    }
+  }
+  window.enviarAN8N = enviarAN8N;
+
+  // ==============================
+  // ✅ IMPRIMIR HISTORIA CLÍNICA (con html2canvas)
+  // ==============================
+  async function imprimirHistoriaClinica(){
+    const cedula = (document.getElementById("paciente_numdoc")?.value || "").trim();
+    if (!cedula) { alert("⚠️ Primero carga/busca el paciente."); return; }
+
+    // ✅ arma un HTML imprimible con los datos actuales
+    const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
+    const edad = (document.getElementById("paciente_edad")?.value || "").trim();
+
+    const odontogramaCompleto = window.odontogramaData || {};
+
+    const html =
+`<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Historia ${cedula}</title>
+<style>
+  body{ font-family:system-ui,Segoe UI,Arial; margin:24px; color:#111827; }
+  .top{ display:flex; justify-content:space-between; align-items:center; gap:16px; }
+  .logo{ height:64px; object-fit:contain; }
+  h1{ margin:16px 0 8px; font-size:20px; }
+  h2{ margin:16px 0 8px; font-size:16px; }
+  .box{ border:1px solid #e5e7eb; border-radius:12px; padding:14px; margin-top:12px; }
+  .muted{ color:#6b7280; }
+  table.t{ width:100%; border-collapse:collapse; }
+  table.t th, table.t td{ border:1px solid #e5e7eb; padding:8px; font-size:13px; }
+  table.t thead tr{ background:#f3f4f6; }
+  td.k{ width:260px; font-weight:700; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div>
+      <div style="font-weight:900; font-size:20px;">Historia Clínica Odontológica</div>
+      <div class="muted">Generada desde el sistema</div>
+    </div>
+    ${LOGO_CLINICA ? `<img class="logo" src="${LOGO_CLINICA}" alt="Logo"/>` : ``}
+  </div>
+
+  <h1>Paciente</h1>
+  <div class="box">
+    <div><b>Nombre:</b> ${escapeHtml(paciente)}</div>
+    <div><b>Cédula:</b> ${escapeHtml(cedula)}</div>
+    <div><b>Edad:</b> ${escapeHtml(edad)}</div>
+  </div>
+
   <h2>Odontograma</h2>
-  ${odontogramaImg ? `<div style="margin:10px 0;"><img class="odon" src="${odontogramaImg}" alt="Odontograma"></div>` : ""}
-  ${_odontogramaToHTML(odontogramaCompleto)}
-</div>
+  <div class="box">
+    ${_odontogramaToHTML(odontogramaCompleto)}
+  </div>
 
-<div class="box">
-  ${_evolucionesToHTML(evoluciones)}
-</div>
+  <div class="muted" style="margin-top:16px;">
+    (Usa “Imprimir” y guarda como PDF desde el navegador.)
+  </div>
+</body>
+</html>`;
 
-<script>
-(async function(){
-  const imgs = Array.from(document.images || []);
-  const waits = imgs.map(img => img.complete ? Promise.resolve() : new Promise(r => { img.onload=r; img.onerror=r; }));
-  await Promise.all(waits);
-  setTimeout(() => window.print(), 200);
-})();
-<\/script>
+    const w = window.open("", "_blank");
+    w.document.open();
+    w.document.write(html);
+    w.document.close();
+    w.focus();
+    w.print();
+  }
+  window.imprimirHistoriaClinica = imprimirHistoriaClinica;
 
-</body></html>
-`;
-
-  // 5) Abrir y imprimir
-  const w = window.open("", "_blank");
-  w.document.open();
-  w.document.write(html);
-  w.document.close();
-}
-
-window.imprimirHistoriaClinica = imprimirHistoriaClinica;
-function _fmt(val){
-  if (val === null || val === undefined) return "";
-  if (Array.isArray(val)) return val.join(", ");
-  return String(val);
-}
-
-function _siNo(arr){
-  const v = Array.isArray(arr) ? arr.join(", ") : String(arr || "");
-  return v || "";
-}
-
-function _tableRow(k, v){
-  return `<tr><td class="k">${escapeHtml(k)}</td><td>${escapeHtml(_fmt(v))}</td></tr>`;
-}
-
-function _odontogramaToHTML(odontogramaCompleto){
-  let html = `
-    <h3>Odontograma (FDI)</h3>
-    <table class="t">
-      <thead>
-        <tr>
-          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th>
-          <th>Vestibular</th><th>Lingual</th><th>Palatino</th>
-        </tr>
-      </thead><tbody>
-  `;
-
-  Object.entries(odontogramaCompleto || {}).forEach(([diente, r]) => {
-    html += `
-      <tr>
-        <td>${escapeHtml(diente)}</td>
-        <td>${escapeHtml((r.Mesial||"").toUpperCase())}</td>
-        <td>${escapeHtml((r.Distal||"").toUpperCase())}</td>
-        <td>${escapeHtml((r.Oclusal||"").toUpperCase())}</td>
-        <td>${escapeHtml((r.Vestibular||"").toUpperCase())}</td>
-        <td>${escapeHtml((r.Lingual||"").toUpperCase())}</td>
-        <td>${escapeHtml((r.Palatino||"").toUpperCase())}</td>
-      </tr>
-    `;
+  // ==============================
+  // ✅ CERRAR MODALES CON ESC
+  // ==============================
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      try { cerrarModalVerDoc(); } catch(err){}
+      try { cerrarModalPlantillas(); } catch(err){}
+      try { cerrarModalEvoluciones(); } catch(err){}
+    }
   });
 
-  html += `</tbody></table>`;
-  return html;
-}
-
-function _evolucionesToHTML(evos){
-  const lista = Array.isArray(evos) ? evos : [];
-  if (!lista.length) return `<h3>Evoluciones</h3><div class="muted">Sin evoluciones registradas.</div>`;
-
-  let html = `
-    <h3>Evoluciones</h3>
-    <table class="t">
-      <thead>
-        <tr>
-          <th>Fecha</th><th>Hora</th><th>Profesional</th><th>Procedimiento</th><th>Detalle</th>
-        </tr>
-      </thead><tbody>
-  `;
-
-  lista.forEach(e => {
-    const fecha = _soloFechaYYYYMMDD(e.fecha || e.evo_fecha || "");
-    const hora  = _soloHoraHHMM(e.hora || e.evo_hora || "");
-    html += `
-      <tr>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(e.profesional || "").toUpperCase())}</td>
-        <td>${escapeHtml(String(e.procedimiento || e.evo_tipo || "").toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(e.detalle || "")}</td>
-      </tr>
-    `;
+  // ==============================
+  // ✅ INIT: si viene ?cedula= en la URL
+  // ==============================
+  document.addEventListener("DOMContentLoaded", async () => {
+    const u = new URL(location.href);
+    const ced = (u.searchParams.get("cedula") || "").trim();
+    if (ced){
+      const bc = document.getElementById("buscar_cedula");
+      if (bc) bc.value = ced;
+      await buscarHistoria();
+    }
   });
 
-  html += `</tbody></table>`;
-  return html;
-}
- 
 </script>
+
 </body>
 </html>
-
-
-
 
 
 
