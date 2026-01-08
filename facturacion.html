@@ -497,16 +497,6 @@
           <b>$ <input id="cuota_moderadora" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
         </div>
 
-        <!-- ✅ NUEVO: Abono / Saldo pendiente -->
-        <div>
-          <span>Abono</span>
-          <b>$ <input id="abono" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
-        </div>
-        <div>
-          <span>Saldo pendiente</span>
-          <b class="mono">$ <span id="saldo">0</span></b>
-        </div>
-
         <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
           <span>Total</span><b>$ <span id="total">0</span></b>
         </div>
@@ -612,6 +602,88 @@
     </div>
   </div>
 
+
+  <div class="modal" id="modal-abonos" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="title">Abonos de la factura</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" id="btn-refresh-abonos" type="button">🔄 Actualizar</button>
+          <button class="btn danger" id="btn-cerrar-modal-abonos" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tools">
+          <div class="ctrl" style="min-width:220px;">
+            <label>Fecha</label>
+            <input id="abono_fecha" type="date">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>Monto</label>
+            <input id="abono_monto" type="number" min="0" step="100" placeholder="0">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>Método</label>
+            <select id="abono_metodo">
+              <option value="Efectivo" selected>Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Nequi">Nequi</option>
+              <option value="Daviplata">Daviplata</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="ctrl" style="min-width:260px;">
+            <label>Referencia (opcional)</label>
+            <input id="abono_referencia" type="text" placeholder="Ej: #transferencia, voucher, etc.">
+          </div>
+          <div class="ctrl" style="flex:1 1 320px; min-width:260px;">
+            <label>Observación (opcional)</label>
+            <input id="abono_observacion" type="text" placeholder="Nota del abono">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btn-agregar-abono" type="button">➕ Agregar abono</button>
+          </div>
+        </div>
+
+        <div class="modal-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Fecha</th>
+                <th style="width:160px;">Monto</th>
+                <th style="width:180px;">Método</th>
+                <th>Referencia</th>
+                <th>Observación</th>
+                <th style="width:120px;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-abonos">
+              <tr><td colspan="6" class="empty">Selecciona una factura...</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-summary">
+          <div class="summary-chip">
+            Total factura: <b>$ <span id="abonos_total_factura">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Total abonado: <b>$ <span id="abonos_total_abonado">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Saldo: <b>$ <span id="abonos_saldo">0</span></b>
+          </div>
+        </div>
+
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Nota: Para guardar abonos en Supabase crea la tabla <b>abonos</b>. Si no existe, el sistema te mostrará un aviso.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -637,7 +709,9 @@
       facturaGuardada: null,
       _debounce: null,
       _lastCedula: "",
-      facturas: []
+      facturas: [],
+      abonos: [],
+      facturaAbonos: null
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1050,12 +1124,7 @@ async function validarPermisoDesdeTabla(){
 
       const total = Math.max(0, (subtotal + iva_valor) - copago - cuota);
 
-      // ✅ NUEVO: abono (pago parcial) y saldo pendiente
-      const abonoRaw = Math.max(0, num($("abono")?.value));
-      const abono = Math.min(total, abonoRaw);
-      const saldo = Math.max(0, total - abono);
-
-      return { subtotal, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total, abono, saldo };
+      return { subtotal, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
     }
 
     function recalcularTotales(){
@@ -1063,14 +1132,6 @@ async function validarPermisoDesdeTabla(){
       $("subtotal").textContent = money(t.subtotal);
       $("iva_valor").textContent = money(t.iva_valor);
       $("total").textContent = money(t.total);
-
-      // ✅ NUEVO: reflejar abono y saldo (y limitar abono a máximo total)
-      if ($("abono")){
-        if (!Number.isFinite(Number($("abono").value))) $("abono").value = "0";
-        const ab = Math.min(t.total, Math.max(0, num($("abono").value)));
-        if (String(ab) !== String(num($("abono").value))) $("abono").value = String(ab);
-      }
-      if ($("saldo")) $("saldo").textContent = money(t.saldo);
     }
 
     function formatFechaHuman(iso){
@@ -1258,8 +1319,6 @@ async function validarPermisoDesdeTabla(){
             <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
-            <div class="line"><span>Abono</span><b class="mono">$ ${money(totals.abono || 0)}</b></div>
-            <div class="line"><span>Saldo pendiente</span><b class="mono">$ ${money(totals.saldo || 0)}</b></div>
             <div class="line grand"><span>TOTAL</span><b class="mono">$ ${money(totals.total)}</b></div>
           </div>
         </div>
@@ -1307,26 +1366,11 @@ async function validarPermisoDesdeTabla(){
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
       const observacion = ($("observacion")?.value || "").trim() || null;
 
-      let pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
+      const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
       const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
-      let fecha_pago = pagada ? new Date().toISOString() : null;
+      const fecha_pago = pagada ? new Date().toISOString() : null;
 
       const totals = calcularTotalesObj();
-
-      // ✅ NUEVO: si hay abono, ajustar estado de pago automáticamente
-      // - Si abono < total -> Pendiente
-      // - Si abono >= total -> Pagada
-      if ((totals.abono || 0) > 0){
-        if ((totals.saldo || 0) > 0){
-          pagada = false;
-          fecha_pago = null;
-          if ($("pagada")) $("pagada").value = "no";
-        } else {
-          pagada = true;
-          fecha_pago = new Date().toISOString();
-          if ($("pagada")) $("pagada").value = "si";
-        }
-      }
 
       setStatus("Guardando factura...");
 
@@ -1340,8 +1384,6 @@ async function validarPermisoDesdeTabla(){
           eps,
           numero_factura,
           valor_total: totals.total,
-          abono: totals.abono,
-          saldo_pendiente: totals.saldo,
           copago: totals.copago,
           cuota_moderadora: totals.cuota_moderadora,
           profesional,
@@ -1381,8 +1423,6 @@ async function validarPermisoDesdeTabla(){
             eps,
             numero_factura,
             valor_total: totals.total,
-          abono: totals.abono,
-          saldo_pendiente: totals.saldo,
             copago: totals.copago,
             cuota_moderadora: totals.cuota_moderadora,
             profesional
@@ -1404,8 +1444,6 @@ async function validarPermisoDesdeTabla(){
           fac.iva_porcentaje = totals.iva_pct;
           fac.iva_valor = totals.iva_valor;
           fac.subtotal = totals.subtotal;
-          fac.abono = totals.abono;
-          fac.saldo_pendiente = totals.saldo;
 
           fac.pagada = pagada;
           fac.fecha_pago = fecha_pago;
@@ -1462,21 +1500,6 @@ async function validarPermisoDesdeTabla(){
 
         const totals = calcularTotalesObj();
 
-      // ✅ NUEVO: si hay abono, ajustar estado de pago automáticamente
-      // - Si abono < total -> Pendiente
-      // - Si abono >= total -> Pagada
-      if ((totals.abono || 0) > 0){
-        if ((totals.saldo || 0) > 0){
-          pagada = false;
-          fecha_pago = null;
-          if ($("pagada")) $("pagada").value = "no";
-        } else {
-          pagada = true;
-          fecha_pago = new Date().toISOString();
-          if ($("pagada")) $("pagada").value = "si";
-        }
-      }
-
         state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
         state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
         state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
@@ -1520,6 +1543,234 @@ async function validarPermisoDesdeTabla(){
       $("modal-facturas").classList.remove("show");
       $("modal-facturas").setAttribute("aria-hidden", "true");
     }
+
+
+
+    /* ✅ SUPABASE (Recomendado): crear tabla 'abonos'
+      - id (bigint, identity) PK
+      - factura_id (bigint) FK -> facturas.id (ON DELETE CASCADE)
+      - fecha (date) NOT NULL
+      - monto (numeric) NOT NULL
+      - metodo_pago (text) NULL
+      - referencia (text) NULL
+      - observacion (text) NULL
+      - created_at (timestamptz) default now()
+    */
+
+    function openModalAbonos(){
+      $("modal-abonos").classList.add("show");
+      $("modal-abonos").setAttribute("aria-hidden", "false");
+    }
+    function closeModalAbonos(){
+      $("modal-abonos").classList.remove("show");
+      $("modal-abonos").setAttribute("aria-hidden", "true");
+    }
+
+    function updateResumenAbonos({ totalFactura = 0, totalAbonado = 0 }){
+      $("abonos_total_factura").textContent = money(totalFactura);
+      $("abonos_total_abonado").textContent = money(totalAbonado);
+      const saldo = Math.max(0, Number(totalFactura || 0) - Number(totalAbonado || 0));
+      $("abonos_saldo").textContent = money(saldo);
+    }
+
+    async function abrirAbonosFactura(facturaId){
+      state.facturaAbonos = facturaId;
+      // Defaults en UI
+      if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
+      if ($("abono_monto")) $("abono_monto").value = "";
+      if ($("abono_metodo")) $("abono_metodo").value = "Efectivo";
+      if ($("abono_referencia")) $("abono_referencia").value = "";
+      if ($("abono_observacion")) $("abono_observacion").value = "";
+
+      openModalAbonos();
+      await listarAbonos();
+    }
+
+    function renderAbonosTabla(rows){
+      const tbody = $("tbody-abonos");
+      tbody.innerHTML = "";
+
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
+        return;
+      }
+
+      for (const a of rows){
+        const tr = document.createElement("tr");
+        const fecha = formatFechaHuman(a.fecha || a.created_at);
+        const monto = money(a.monto || 0);
+        const metodo = a.metodo_pago || "—";
+        const ref = a.referencia || "—";
+        const obs = a.observacion || "—";
+
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">$ ${escapeHtml(monto)}</td>
+          <td class="mono">${escapeHtml(metodo)}</td>
+          <td class="mono">${escapeHtml(ref)}</td>
+          <td>${escapeHtml(obs)}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn danger small" data-act="del">Eliminar</button>
+          </td>
+        `;
+
+        tr.querySelector('[data-act="del"]').addEventListener("click", async () => {
+          const ok = window.confirm("¿Eliminar este abono?");
+          if (!ok) return;
+          await eliminarAbono(a.id);
+        });
+
+        tbody.appendChild(tr);
+      }
+    }
+
+    async function listarAbonos(){
+      const facturaId = state.facturaAbonos;
+      if (!facturaId){
+        renderAbonosTabla([]);
+        updateResumenAbonos({ totalFactura: 0, totalAbonado: 0 });
+        return;
+      }
+
+      try{
+        setStatus("Cargando abonos...");
+
+        const { data: fac, error: ef } = await supabase
+          .from("facturas")
+          .select("id, valor_total")
+          .eq("id", facturaId)
+          .single();
+
+        if (ef) throw ef;
+
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("id, factura_id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+          .eq("factura_id", facturaId)
+          .order("fecha", { ascending: true });
+
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const missingTable =
+            msg.includes("relation") && msg.includes("does not exist");
+
+          setStatus("");
+
+          if (missingTable){
+            toast("Falta la tabla 'abonos' en Supabase.
+Crea la tabla para usar abonos.", "warn");
+            $("tbody-abonos").innerHTML = `<tr><td colspan="6" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
+            updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
+            return;
+          }
+          throw error;
+        }
+
+        state.abonos = data || [];
+        renderAbonosTabla(state.abonos);
+
+        const totalAbonado = (state.abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
+        updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado });
+
+        setStatus("");
+
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudieron cargar abonos:
+" + (err?.message || "Error"), "err");
+        renderAbonosTabla([]);
+      }
+    }
+
+    async function agregarAbono(){
+      const facturaId = state.facturaAbonos;
+      if (!facturaId){
+        toast("Primero selecciona una factura.", "warn");
+        return;
+      }
+
+      const fecha = ($("abono_fecha")?.value || "").trim() || hoyISO();
+      const monto = Math.max(0, num($("abono_monto")?.value));
+      const metodo_pago = ($("abono_metodo")?.value || "Efectivo").trim();
+      const referencia = ($("abono_referencia")?.value || "").trim() || null;
+      const observacion = ($("abono_observacion")?.value || "").trim() || null;
+
+      if (!monto || monto <= 0){
+        toast("El monto del abono debe ser mayor a 0.", "warn");
+        return;
+      }
+
+      setStatus("Guardando abono...");
+
+      try{
+        const payload = {
+          factura_id: facturaId,
+          fecha,
+          monto,
+          metodo_pago,
+          referencia,
+          observacion
+        };
+
+        const { error } = await supabase
+          .from("abonos")
+          .insert([payload]);
+
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const missingTable =
+            msg.includes("relation") && msg.includes("does not exist");
+
+          setStatus("");
+
+          if (missingTable){
+            toast("Falta la tabla 'abonos' en Supabase.
+Crea la tabla para usar abonos.", "warn");
+            return;
+          }
+          throw error;
+        }
+
+        setStatus("");
+        toast("Abono guardado ✅", "ok");
+        if ($("abono_monto")) $("abono_monto").value = "";
+        if ($("abono_referencia")) $("abono_referencia").value = "";
+        if ($("abono_observacion")) $("abono_observacion").value = "";
+
+        await listarAbonos();
+
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo guardar abono:
+" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function eliminarAbono(abonoId){
+      if (!abonoId) return;
+      try{
+        setStatus("Eliminando abono...");
+
+        const { error } = await supabase
+          .from("abonos")
+          .delete()
+          .eq("id", abonoId);
+
+        if (error) throw error;
+
+        setStatus("");
+        toast("Abono eliminado ✅", "ok");
+        await listarAbonos();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo eliminar abono:
+" + (err?.message || "Error"), "err");
+      }
+    }
+
 
     function updateResumenFacturas(rows){
       const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
@@ -1650,6 +1901,7 @@ async function validarPermisoDesdeTabla(){
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
             <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
+            <button class="btn small" data-act="abonos">💰 Abonos</button>
           </td>
         `;
 
@@ -1664,6 +1916,10 @@ async function validarPermisoDesdeTabla(){
 
         tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           await togglePagadaFactura(f);
+        });
+
+        tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
+          await abrirAbonosFactura(f.id);
         });
 
         tbody.appendChild(tr);
@@ -1781,8 +2037,6 @@ async function validarPermisoDesdeTabla(){
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
 
-        if ($("abono")) $("abono").value = Number((fac.abono ?? fac.abono_valor ?? 0) || 0);
-
         state.facturaGuardada = fac;
         $("btn-imprimir").disabled = false;
 
@@ -1837,22 +2091,10 @@ async function validarPermisoDesdeTabla(){
           ? Number(fac.valor_total || 0)
           : Math.max(0, (subtotal + iva_valor) - copago - cuota);
 
-        // ✅ NUEVO: abono y saldo (si existen columnas en BD)
-        const abonoDB = (fac.abono !== undefined && fac.abono !== null)
-          ? Number(fac.abono || 0)
-          : ((fac.abono_valor !== undefined && fac.abono_valor !== null) ? Number(fac.abono_valor || 0) : 0);
-
-        const abono = Math.min(total, Math.max(0, abonoDB));
-        const saldoDB = (fac.saldo_pendiente !== undefined && fac.saldo_pendiente !== null)
-          ? Number(fac.saldo_pendiente || 0)
-          : ((fac.saldo !== undefined && fac.saldo !== null) ? Number(fac.saldo || 0) : Math.max(0, total - abono));
-
-        const saldo = Math.max(0, saldoDB);
-
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total, abono, saldo }
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total }
         });
 
         const w = window.open("", "_blank", "width=900,height=700");
@@ -1944,6 +2186,7 @@ async function validarPermisoDesdeTabla(){
       try{
         $("year").textContent = new Date().getFullYear();
         $("fecha").value = hoyISO();
+        if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
         $("numero_factura").value = generarNumeroFactura();
 
         if ($("pagada")) $("pagada").value = "si";
@@ -1955,8 +2198,6 @@ async function validarPermisoDesdeTabla(){
 
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
-
-        if ($("abono")) $("abono").addEventListener("input", recalcularTotales);
 
         $("iva_porcentaje").addEventListener("input", recalcularTotales);
         $("iva_aplica").addEventListener("change", syncIVAUI);
@@ -1978,6 +2219,14 @@ async function validarPermisoDesdeTabla(){
         $("modal-facturas").addEventListener("click", (e) => {
           if (e.target === $("modal-facturas")) closeModal();
         });
+
+        // ✅ Abonos
+        $("btn-cerrar-modal-abonos").addEventListener("click", closeModalAbonos);
+        $("modal-abonos").addEventListener("click", (e) => {
+          if (e.target === $("modal-abonos")) closeModalAbonos();
+        });
+        $("btn-refresh-abonos").addEventListener("click", listarAbonos);
+        $("btn-agregar-abono").addEventListener("click", agregarAbono);
 
         $("btn-refresh-facturas").addEventListener("click", listarFacturas);
         $("btn-buscar-facturas").addEventListener("click", listarFacturas);
