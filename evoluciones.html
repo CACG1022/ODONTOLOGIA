@@ -549,8 +549,6 @@
   // ==============================
   // CONFIG
   // ==============================
-  const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-
   const WEBHOOK_BUSCAR_HISTORIA =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
@@ -575,37 +573,32 @@
     }
   }
 
-  // Intenta detectar el nombre en distintas estructuras posibles del webhook
+  // ✅ El webhook lo devuelve como: "Nombre y apellido"
   function extraerNombrePaciente(data) {
-    // Ejemplos comunes:
-    // data.nombre_paciente
-    // data.paciente.nombre / data.paciente.nombre_completo
-    // data.historia.paciente.nombre
-    // data.historia.nombre_paciente
+    // 1) Caso exacto según lo que dices (con mayúsculas y espacios)
+    const directo = data?.["Nombre y apellido"];
+    if (String(directo || "").trim()) return String(directo).trim();
+
+    // 2) Variantes por si el webhook cambia (por seguridad)
     const candidatos = [
+      data?.["Nombre y Apellido"],
+      data?.["nombre y apellido"],
+      data?.["NOMBRE Y APELLIDO"],
+      data?.nombre_apellido,
+      data?.nombre_y_apellido,
+      data?.nombreCompleto,
+      data?.nombre_completo,
       data?.nombre_paciente,
+      data?.paciente?.["Nombre y apellido"],
       data?.paciente?.nombre,
       data?.paciente?.nombre_completo,
-      data?.paciente?.nombreCompleto,
-      data?.paciente?.full_name,
+      data?.historia?.["Nombre y apellido"],
       data?.historia?.nombre_paciente,
-      data?.historia?.paciente?.nombre,
-      data?.historia?.paciente?.nombre_completo,
-      data?.historia?.paciente?.nombreCompleto,
-      data?.historiaClinica?.nombre_paciente,
-      data?.historiaClinica?.paciente?.nombre,
+      data?.historia?.paciente?.nombre
     ];
 
     for (const c of candidatos) {
       const s = String(c || "").trim();
-      if (s) return s;
-    }
-
-    // A veces viene en un arreglo tipo data.paciente = [{...}]
-    const p0 = Array.isArray(data?.paciente) ? data.paciente[0] : null;
-    if (p0) {
-      const s =
-        String(p0?.nombre_completo || p0?.nombreCompleto || p0?.nombre || "").trim();
       if (s) return s;
     }
 
@@ -725,8 +718,6 @@
 
     setup();
 
-    let lastX = 0, lastY = 0;
-
     function getPos(evt) {
       const rect = canvas.getBoundingClientRect();
       const dpr = window.devicePixelRatio || 1;
@@ -750,9 +741,8 @@
       evt.preventDefault();
       firmas[id].drawing = true;
       const p = getPos(evt);
-      lastX = p.x; lastY = p.y;
       ctx.beginPath();
-      ctx.moveTo(lastX, lastY);
+      ctx.moveTo(p.x, p.y);
     }
 
     function move(evt) {
@@ -761,7 +751,6 @@
       const p = getPos(evt);
       ctx.lineTo(p.x, p.y);
       ctx.stroke();
-      lastX = p.x; lastY = p.y;
       firmas[id].hasInk = true;
     }
 
@@ -1107,7 +1096,7 @@
       const resp = await fetch(url);
       const data = await resp.json();
 
-      // ✅ Mostrar nombre si el webhook lo trae
+      // ✅ Mostrar nombre desde: "Nombre y apellido"
       const nombre = extraerNombrePaciente(data);
       mostrarNombrePaciente(nombre);
 
@@ -1155,8 +1144,6 @@
 </script>
 </body>
 </html>
-
-
 
 
 
