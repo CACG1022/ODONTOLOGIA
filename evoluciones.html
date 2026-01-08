@@ -1130,6 +1130,138 @@
     await cargarProfesionalesDesdeSupabase();
   });
 
+   const WEBHOOK_HISTORIA = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+
+  // Si en evoluciones.html también tienes escapeHtml / normalizarEvoluciones, perfecto.
+  // Si no, define mínimo esto:
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function _soloFechaYYYYMMDD(valor) {
+    if (!valor) return "";
+    if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
+    return String(valor);
+  }
+  function _soloHoraHHMM(valor) {
+    if (!valor) return "";
+    const s = String(valor);
+    if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
+    return s;
+  }
+
+  // ✅ Normaliza evoluciones como lo haces en historias-clinicas (versión corta)
+  function normalizarEvolucionesDeWebhook(data) {
+    let raw = data?.evoluciones;
+
+    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
+      raw = raw.evoluciones;
+    }
+    if (typeof raw === "string") {
+      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
+    }
+    if (!Array.isArray(raw)) raw = [];
+
+    return raw.map((e) => ({
+      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? "",
+      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
+      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
+      profesional: e.profesional ?? e.evo_profesional ?? "",
+      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
+      detalle: e.detalle ?? e.evo_detalle ?? ""
+    }));
+  }
+
+  // ✅ Render de la tabla en evoluciones.html
+  function renderEvolucionesTabla(lista) {
+    const tbody = document.getElementById("tabla_evoluciones");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    (lista || []).forEach((evo) => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${escapeHtml(evo.id || "")}</td>
+        <td>${escapeHtml(evo.fecha || "")}</td>
+        <td>${escapeHtml(evo.hora || "")}</td>
+        <td>${escapeHtml(String(evo.profesional || "").toUpperCase())}</td>
+        <td>${escapeHtml(String(evo.procedimiento || "").toUpperCase())}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(evo.detalle || "")}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ✅ Carga automática al abrir el modal
+  async function cargarPacienteYEvolucionesPorCedula(cedula) {
+    if (!cedula) return;
+
+    // (Opcional) mostrar cedula en algún campo
+    const inpCed = document.getElementById("evo_cedula");
+    if (inpCed) inpCed.value = cedula;
+
+    try {
+      const url = WEBHOOK_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
+      const resp = await fetch(url);
+      const data = await resp.json();
+
+      if (!data?.existe) {
+        renderEvolucionesTabla([]);
+        const inpNom = document.getElementById("evo_paciente");
+        if (inpNom) inpNom.value = "";
+        alert("No existe historia clínica para este paciente.");
+        return;
+      }
+
+      // ✅ nombre del paciente (ajusta la key si tu webhook devuelve otra)
+      const h = data.historia || {};
+      const nombre = (h["Nombre y apellido"] || h["paciente_nombre"] || "").trim();
+
+      const inpNom = document.getElementById("evo_paciente");
+      if (inpNom) inpNom.value = nombre;
+
+      // ✅ evoluciones
+      const evols = normalizarEvolucionesDeWebhook(data);
+      renderEvolucionesTabla(evols);
+
+    } catch (e) {
+      console.error("Error cargando paciente/evoluciones:", e);
+      alert("Error consultando evoluciones.");
+    }
+  }
+
+  function getCedulaDesdeURLoLS() {
+    // 1) querystring
+    const params = new URLSearchParams(location.search);
+    const cedulaURL = (params.get("cedula") || "").trim();
+    if (cedulaURL) return cedulaURL;
+
+    // 2) localStorage
+    try {
+      const pacienteLS = JSON.parse(localStorage.getItem("paciente_actual_evoluciones") || "null");
+      const cedulaLS = (pacienteLS?.cedula || "").trim();
+      if (cedulaLS) return cedulaLS;
+    } catch(e) {}
+
+    return "";
+  }
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    const cedula = getCedulaDesdeURLoLS();
+    if (cedula) {
+      await cargarPacienteYEvolucionesPorCedula(cedula);
+    } else {
+      // Si quieres, avisa que no llegó la cédula
+      console.warn("No llegó cédula a evoluciones.html");
+    }
+  });
+
   // Exponer
   window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
   window.agregarEvolucion = agregarEvolucion;
