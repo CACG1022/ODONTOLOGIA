@@ -1086,18 +1086,6 @@ async function validarPermisoDesdeTabla(){
       const correoPac = fac?.paciente_correo ? escapeHtml(fac.paciente_correo) : "—";
       const pagadaTxt = pagoLabel(fac?.pagada);
       const refPago = fac?.referencia_pago ? escapeHtml(fac.referencia_pago) : "—";
-      // ✅ Abonos y estado de pago (PENDIENTE / PAGO PARCIAL / PAGADA)
-      const totalAbonado = (abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
-      const saldoPendiente = Math.max(0, Number(totals?.total || 0) - totalAbonado);
-      const estadoFromDB = (fac && (fac.estado_pago || fac.estadoPago || fac.estado))
-        ? String(fac.estado_pago || fac.estadoPago || fac.estado)
-        : null;
-      const estadoCalculado = (saldoPendiente === 0)
-        ? "PAGADA"
-        : (totalAbonado > 0 ? "PAGO PARCIAL" : "PENDIENTE");
-      const estadoInicial = (estadoFromDB && ["PENDIENTE","PAGO PARCIAL","PAGADA"].includes(estadoFromDB.toUpperCase()))
-        ? estadoFromDB.toUpperCase()
-        : estadoCalculado;
       return `
 <!DOCTYPE html>
 <html lang="es" data-factura-id="${escapeHtml(fac?.id || "")}" data-estado="${escapeHtml(estadoFinal)}" data-saldo="${String(saldoPendiente)}">
@@ -1306,7 +1294,7 @@ async function validarPermisoDesdeTabla(){
     }
   });
 })();
-</script>
+<\/script>
 </body>
 </html>`;
     }
@@ -2298,8 +2286,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
-
-
 
 
 
