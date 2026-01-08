@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-factura-id="${escapeHtml(fac?.id || "")}" data-estado="${escapeHtml(estadoInicial)}" data-saldo="${String(saldoPendiente)}">
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -1220,22 +1220,6 @@ async function validarPermisoDesdeTabla(){
       const pagadaTxt = pagoLabel(fac?.pagada);
       const refPago = fac?.referencia_pago ? escapeHtml(fac.referencia_pago) : "—";
 
-      // ✅ Abonos y estado de pago (PENDIENTE / PAGO PARCIAL / PAGADA)
-      const totalAbonado = (abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
-      const saldoPendiente = Math.max(0, Number(totals?.total || 0) - totalAbonado);
-
-      const estadoFromDB = (fac && (fac.estado_pago || fac.estadoPago || fac.estado))
-        ? String(fac.estado_pago || fac.estadoPago || fac.estado)
-        : null;
-
-      const estadoCalculado = (saldoPendiente === 0)
-        ? "PAGADA"
-        : (totalAbonado > 0 ? "PAGO PARCIAL" : "PENDIENTE");
-
-      const estadoInicial = (estadoFromDB && ["PENDIENTE","PAGO PARCIAL","PAGADA"].includes(estadoFromDB.toUpperCase()))
-        ? estadoFromDB.toUpperCase()
-        : estadoCalculado;
-
       return `
 <!DOCTYPE html>
 <html lang="es">
@@ -1338,13 +1322,7 @@ async function validarPermisoDesdeTabla(){
           <div class="kv"><div class="k">Tipo usuario</div><div class="v">${tipo}</div></div>
           <div class="kv"><div class="k">EPS</div><div class="v">${eps}</div></div>
           <div class="kv"><div class="k">Método de pago</div><div class="v">${mp}</div></div>
-          <div class="kv"><div class="k">Estado de pago</div><div class="v">
-              <select id="estado_factura_sel" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-weight:700;">
-                <option value="PENDIENTE">PENDIENTE</option>
-                <option value="PAGO PARCIAL">PAGO PARCIAL</option>
-                <option value="PAGADA">PAGADA</option>
-              </select>
-            </div></div>
+          <div class="kv"><div class="k">Estado de pago</div><div class="v">${escapeHtml(pagadaTxt)}</div></div>
 
           <div class="kv" style="grid-column: span 2;"><div class="k">Referencia</div><div class="v">${refPago}</div></div>
           <div class="kv"><div class="k">¿Aplica IVA?</div><div class="v">${totals.iva_aplica ? "Sí" : "No"}</div></div>
@@ -1416,54 +1394,6 @@ async function validarPermisoDesdeTabla(){
       </div>
     </div>
   </div>
-
-<script>
-(function(){
-  const root = document.documentElement;
-  const facturaId = root.dataset.facturaId || "";
-  const estadoInicial = (root.dataset.estado || "PENDIENTE").toUpperCase();
-  let saldo = Number(root.dataset.saldo || 0);
-
-  const sel = document.getElementById("estado_factura_sel");
-  if (!sel) return;
-
-  // Inicializar
-  sel.value = estadoInicial;
-  const optPagada = Array.from(sel.options).find(o => o.value === "PAGADA");
-  if (optPagada) optPagada.disabled = saldo > 0;
-
-  sel.addEventListener("change", () => {
-    const estado = (sel.value || "PENDIENTE").toUpperCase();
-
-    if (estado === "PAGADA" && saldo > 0){
-      alert("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.");
-      sel.value = root.dataset.estado || estadoInicial;
-      return;
-    }
-
-    root.dataset.estado = estado;
-    window.parent.postMessage({ type: "estado_factura_change", factura_id: facturaId, estado }, "*");
-  });
-
-  // Permite que el padre actualice estado/saldo dinámicamente (por ejemplo tras agregar abonos)
-  window.addEventListener("message", (e) => {
-    const d = e.data || {};
-    if (d.type !== "estado_factura_set") return;
-    if (d.factura_id && String(d.factura_id) !== String(facturaId)) return;
-
-    if (typeof d.saldo !== "undefined"){
-      saldo = Number(d.saldo || 0);
-      root.dataset.saldo = String(saldo);
-      if (optPagada) optPagada.disabled = saldo > 0;
-    }
-    if (d.estado){
-      const est = String(d.estado).toUpperCase();
-      root.dataset.estado = est;
-      sel.value = est;
-    }
-  });
-})();
-</script>
 </body>
 </html>`;
     }
@@ -1832,82 +1762,6 @@ async function validarPermisoDesdeTabla(){
     }
 
 
-    // ✅ Estado de factura (PENDIENTE / PAGO PARCIAL / PAGADA)
-    async function setEstadoFactura({ facturaId, estado, saldoPendiente = null, silent = false }){
-      if (!facturaId) return;
-
-      const est = String(estado || "PENDIENTE").toUpperCase();
-      const pagadaBool = (est === "PAGADA");
-
-      // Validación: no permitir PAGADA si saldo > 0
-      if (pagadaBool && saldoPendiente !== null && Number(saldoPendiente) > 0){
-        if (!silent) toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
-        return;
-      }
-
-      try{
-        // Intentamos guardar en columna opcional estado_pago si existe, y también el boolean pagada.
-        let { error } = await supabase
-          .from("facturas")
-          .update({ pagada: pagadaBool, estado_pago: est })
-          .eq("id", facturaId);
-
-        // Si la columna estado_pago no existe, reintentamos solo con pagada.
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const missingCol = msg.includes("column") && msg.includes("estado_pago");
-          if (missingCol){
-            const r2 = await supabase
-              .from("facturas")
-              .update({ pagada: pagadaBool })
-              .eq("id", facturaId);
-            error = r2.error;
-          }
-        }
-
-        if (error) throw error;
-
-        // Si está abierta la vista de factura, sincronizamos el select dentro del iframe
-        if (state.facturaVer && String(state.facturaVer) === String(facturaId)){
-          const frame = $("vf_iframe");
-          if (frame && frame.contentWindow){
-            frame.contentWindow.postMessage({ type: "estado_factura_set", factura_id: facturaId, estado: est, saldo: saldoPendiente }, "*");
-          }
-        }
-
-        // Refrescar listado si está abierto (para ver cambios de "Pagada"/"Pendiente" en la tabla)
-        // Nota: en la tabla principal solo existe pagada (bool) en el dataset actual.
-        if (typeof renderFacturasModal === "function"){
-          // no-op: renderFacturasModal se llama desde cargarFacturas()
-        }
-
-      } catch(err){
-        console.error(err);
-        if (!silent) toast("No se pudo actualizar el estado:
-" + (err?.message || "Error"), "err");
-      }
-    }
-
-    // Escuchar cambios de estado desde el iframe de "Ver factura"
-    window.addEventListener("message", async (e) => {
-      const d = e.data || {};
-      if (d.type !== "estado_factura_change") return;
-
-      const facturaId = d.factura_id;
-      const estado = d.estado;
-
-      // Para validar saldo, tomamos el que venga del iframe si está disponible en el DOM del iframe
-      let saldo = null;
-      try{
-        const frame = $("vf_iframe");
-        if (frame && frame.contentDocument){
-          const ds = frame.contentDocument.documentElement?.dataset?.saldo;
-          if (ds !== undefined) saldo = Number(ds);
-        }
-      } catch(_){}
-
-      await setEstadoFactura({ facturaId, estado, saldoPendiente: saldo });
-    });
 
     /* ✅ SUPABASE (Recomendado): crear tabla 'abonos'
       - id (bigint, identity) PK
@@ -2033,15 +1887,6 @@ async function validarPermisoDesdeTabla(){
 
         const totalAbonado = (state.abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
         updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado });
-
-        // ✅ Auto-actualizar estado: si saldo llega a 0 -> PAGADA. Si no, PAGO PARCIAL/PENDIENTE.
-        const totalFacturaNum = Number(fac?.valor_total || 0);
-        const saldoPendiente = Math.max(0, totalFacturaNum - Number(totalAbonado || 0));
-        const estadoAuto = (saldoPendiente === 0)
-          ? "PAGADA"
-          : (Number(totalAbonado || 0) > 0 ? "PAGO PARCIAL" : "PENDIENTE");
-
-        await setEstadoFactura({ facturaId, estado: estadoAuto, saldoPendiente, silent: true });
 
         setStatus("");
 
@@ -2675,6 +2520,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
+
 
 
 
