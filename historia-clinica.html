@@ -408,7 +408,27 @@ function _evolucionesToHTML(evos){
   height: calc(100vh - 70px) !important; /* resta el header */
 }
 
-  </style>
+  
+/* ✅ BOTONERA SUPERIOR UNIFICADA */
+.botones-top{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap:12px;
+  margin-top:12px;
+}
+
+.botones-top .btn{
+  background:#0D47A1 !important;
+  color:#fff !important;
+  font-weight:700;
+}
+@media (max-width:900px){
+  .botones-top{
+    grid-template-columns:1fr;
+  }
+}
+
+</style>
 </head>
 
 <body>
@@ -428,26 +448,14 @@ function _evolucionesToHTML(evos){
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
       </div>
 
-      <div class="ctrl">
-        <button type="button" onclick="irInicio()" class="btn btn-inicio">IR A INICIO</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="irAEvoluciones()" class="btn btn-agenda">EVOLUCIONES</button>
-      </div>
-
-      <div class="ctrl">
-        <button id="btnGuardarEnviarHistoria" type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="irAConsentimientos()" class="btn btn-agendar">CONSENTIMIENTOS INFORMADOS</button>
-      </div>
-
-      <div class="ctrl">
-        <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
-      </div>
+    <div class="botones-top">
+      <button type="button" onclick="irInicio()" class="btn">IR A INICIO</button>
+      <button type="button" onclick="cerrarSesion()" class="btn">Cerrar sesión</button>
+      <button type="button" onclick="irAEvoluciones()" class="btn">EVOLUCIONES</button>
+      <button id="btnGuardarEnviarHistoria" type="button" onclick="enviarAN8N()" class="btn">GUARDAR Y ENVIAR</button>
+      <button type="button" onclick="irAConsentimientos()" class="btn">CONSENTIMIENTOS INFORMADOS</button>
+      <button type="button" onclick="irPlanTratamiento()" class="btn">PLAN DE TRATAMIENTO</button>
+    </div>
     </div>
 
     <div class="ctrl print-wrap">
@@ -3536,6 +3544,7 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
+
 
 
 
