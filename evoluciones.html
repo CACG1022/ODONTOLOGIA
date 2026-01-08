@@ -6,7 +6,7 @@
   <title>Evoluciones - Historia Clínica Odontológica</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- 🔐 SUPABASE + LOGIN (igual lógica del original) -->
+  <!-- 🔐 SUPABASE + LOGIN -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -79,7 +79,7 @@
     });
 
     // ==============================
-    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle) - IGUAL AL ORIGINAL
+    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
     // ==============================
     let _srEvo = null;
     let _srEvoOn = false;
@@ -262,8 +262,6 @@
     }
     .btn-buscar{ background:#0D47A1; }
     .btn-agenda{ background:#009688; }
-    .btn-inicio{ background:#E3E3E3; color:#009688; font-weight:700; }
-    .btn-salir{ background:#009688; }
 
     .tabla-evo{ width:100%; border-collapse:collapse; }
     .tabla-evo th,.tabla-evo td{ padding:10px; border:1px solid var(--line); vertical-align:top; }
@@ -281,7 +279,7 @@
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
 
     /* ✅ Firmas */
-    .firma-wrapper{ display:none; }  /* oculto por defecto */
+    .firma-wrapper{ display:none; }
     .firma-wrapper.show{ display:block; }
 
     .firma-box{
@@ -358,9 +356,7 @@
       font-size:13px;
       width:auto;
     }
-    .modal-body{
-      padding:14px;
-    }
+    .modal-body{ padding:14px; }
     .modal-body img{
       width:100%;
       height:auto;
@@ -368,6 +364,19 @@
       border-radius:12px;
       background:#fff;
     }
+
+    /* ✅ Bloque nombre paciente */
+    .paciente-box{
+      margin-top:14px;
+      padding:12px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      background:#fbfdff;
+      display:none;
+    }
+    .paciente-box.show{ display:block; }
+    .paciente-box .t1{ font-size:12px; color:var(--muted); margin-bottom:6px; }
+    .paciente-box .t2{ font-size:16px; font-weight:800; color:var(--brand); }
   </style>
 </head>
 
@@ -384,12 +393,20 @@
           inputmode="numeric" pattern="[0-9]+"
           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
       </div>
+
       <div class="ctrl">
         <label>&nbsp;</label>
         <button type="button" class="btn btn-buscar" onclick="buscarEvolucionesPorCedula()">
           Buscar evoluciones
         </button>
       </div>
+    </div>
+
+    <!-- ✅ NOMBRE DEL PACIENTE (aparece después de buscar) -->
+    <div id="pacienteBox" class="paciente-box">
+      <div class="t1">Paciente</div>
+      <div id="pacienteNombre" class="t2">—</div>
+    </div>
 
     <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
       Nota: Esto consulta evoluciones desde el mismo webhook de N8N que usa tu historia clínica.
@@ -530,16 +547,70 @@
 
 <script>
   // ==============================
-  // CONFIG (urls originales)
+  // CONFIG
   // ==============================
   const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-  const URL_INICIO = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
   const WEBHOOK_BUSCAR_HISTORIA =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
 
   const WEBHOOK_GUARDAR_EVOLUCION =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
+
+  // ==============================
+  // ✅ UI: NOMBRE DEL PACIENTE
+  // ==============================
+  function mostrarNombrePaciente(nombre) {
+    const box = document.getElementById("pacienteBox");
+    const el = document.getElementById("pacienteNombre");
+    if (!box || !el) return;
+
+    const clean = String(nombre || "").trim();
+    if (clean) {
+      el.textContent = clean;
+      box.classList.add("show");
+    } else {
+      el.textContent = "—";
+      box.classList.remove("show");
+    }
+  }
+
+  // Intenta detectar el nombre en distintas estructuras posibles del webhook
+  function extraerNombrePaciente(data) {
+    // Ejemplos comunes:
+    // data.nombre_paciente
+    // data.paciente.nombre / data.paciente.nombre_completo
+    // data.historia.paciente.nombre
+    // data.historia.nombre_paciente
+    const candidatos = [
+      data?.nombre_paciente,
+      data?.paciente?.nombre,
+      data?.paciente?.nombre_completo,
+      data?.paciente?.nombreCompleto,
+      data?.paciente?.full_name,
+      data?.historia?.nombre_paciente,
+      data?.historia?.paciente?.nombre,
+      data?.historia?.paciente?.nombre_completo,
+      data?.historia?.paciente?.nombreCompleto,
+      data?.historiaClinica?.nombre_paciente,
+      data?.historiaClinica?.paciente?.nombre,
+    ];
+
+    for (const c of candidatos) {
+      const s = String(c || "").trim();
+      if (s) return s;
+    }
+
+    // A veces viene en un arreglo tipo data.paciente = [{...}]
+    const p0 = Array.isArray(data?.paciente) ? data.paciente[0] : null;
+    if (p0) {
+      const s =
+        String(p0?.nombre_completo || p0?.nombreCompleto || p0?.nombre || "").trim();
+      if (s) return s;
+    }
+
+    return "";
+  }
 
   // ==============================
   // UTILIDADES
@@ -594,7 +665,6 @@
     if (next) {
       wrap.classList.add("show");
       btn.textContent = "Ocultar firmas";
-      // si al mostrar no estaban inicializadas, asegurar init y resize
       try {
         _ensureFirmasInit();
         _refreshCanvasSizes();
@@ -711,7 +781,6 @@
     canvas.addEventListener("touchend", end, { passive: false });
     canvas.addEventListener("touchcancel", end, { passive: false });
 
-    // resize mantenido
     window.addEventListener("resize", () => {
       const dataUrl = canvas.toDataURL("image/png");
       setup();
@@ -751,7 +820,6 @@
   }
 
   function obtenerFirmaBase64(id) {
-    // Si está oculto, igual puede haber firma (no obligatoria)
     _ensureFirmasInit();
     const f = firmas[id];
     if (!f?.canvas) return "";
@@ -774,7 +842,6 @@
   }
 
   function closeFirmaModal(evt) {
-    // si se llamó con click afuera, evt existe
     const modal = document.getElementById("modalFirma");
     if (!modal) return;
     modal.classList.remove("show");
@@ -873,11 +940,8 @@
     if (t) t.value = "";
     if (d) d.value = "";
 
-    // NO borramos firmas automáticamente porque pueden ser opcionales,
-    // pero sí es lo más común al limpiar:
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
-    // además, ocultamos de vuelta el bloque
     toggleFirmas(false);
   }
 
@@ -983,7 +1047,6 @@
 
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
 
-    // ✅ firmas opcionales: solo se envían si fueron dibujadas
     const firmaPaciente = obtenerFirmaBase64("firma_paciente");
     const firmaProfesional = obtenerFirmaBase64("firma_profesional");
 
@@ -994,8 +1057,8 @@
       profesional,
       procedimiento: tipo,
       detalle,
-      firma_paciente: firmaPaciente,         // "" si no hay
-      firma_profesional: firmaProfesional,   // "" si no hay
+      firma_paciente: firmaPaciente,
+      firma_profesional: firmaProfesional,
       cedula_paciente: cedula,
       usuario,
       ts: new Date().toISOString()
@@ -1032,6 +1095,9 @@
     if (!cedula) { alert("Ingrese una cédula"); return; }
 
     _cedulaActual = cedula;
+
+    // reset UI
+    mostrarNombrePaciente("");
     evoluciones = [];
     renderEvoluciones();
 
@@ -1040,6 +1106,10 @@
     try {
       const resp = await fetch(url);
       const data = await resp.json();
+
+      // ✅ Mostrar nombre si el webhook lo trae
+      const nombre = extraerNombrePaciente(data);
+      mostrarNombrePaciente(nombre);
 
       if (!data?.existe) {
         evoluciones = [];
@@ -1061,18 +1131,17 @@
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
-    // firmas se inicializan, pero no se muestran hasta el botón.
     _ensureFirmasInit();
-
     limpiarEvolucionForm();
+
+    // por defecto oculto
+    mostrarNombrePaciente("");
+
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
   });
 
   // Exponer
-  window.cerrarSesion = cerrarSesion;
-  window.irInicio = irInicio;
-
   window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
   window.agregarEvolucion = agregarEvolucion;
   window.eliminarEvolucion = eliminarEvolucion;
@@ -1086,6 +1155,7 @@
 </script>
 </body>
 </html>
+
 
 
 
