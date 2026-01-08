@@ -198,9 +198,9 @@
 
   <style>
     .btn:disabled{
-  opacity: .55;
-  cursor: not-allowed;
-}
+      opacity: .55;
+      cursor: not-allowed;
+    }
 
     :root{
       --ink:#19324d;
@@ -384,6 +384,67 @@
     .paciente-box.show{ display:block; }
     .paciente-box .t1{ font-size:12px; color:var(--muted); margin-bottom:6px; }
     .paciente-box .t2{ font-size:16px; font-weight:800; color:var(--brand); }
+
+    /* ✅ Documento Evolución (modal) */
+    .doc-wrap{
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:16px;
+      background:#fff;
+    }
+    .doc-title{
+      font-weight:900;
+      color:var(--brand);
+      font-size:18px;
+      margin:0 0 10px;
+    }
+    .doc-meta{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px 14px;
+      font-size:13px;
+      color:var(--ink);
+      margin-bottom:12px;
+    }
+    .doc-meta .k{ color:var(--muted); font-size:12px; margin-bottom:2px; }
+    .doc-box{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+      background:#fbfdff;
+    }
+    .doc-box .k{ color:var(--muted); font-size:12px; margin-bottom:6px; }
+    .doc-box .v{ white-space:pre-wrap; font-size:14px; }
+    .doc-firmas{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:12px;
+    }
+    @media (max-width:680px){ .doc-meta, .doc-firmas{ grid-template-columns:1fr; } }
+    .doc-firma{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px;
+      background:#fff;
+    }
+    .doc-firma .k{ color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .doc-firma img{
+      width:100%;
+      height:auto;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fff;
+    }
+    .doc-nofirma{
+      font-size:12px;
+      color:var(--muted);
+      padding:10px;
+      border:1px dashed var(--line);
+      border-radius:10px;
+      background:#fbfdff;
+      text-align:center;
+    }
   </style>
 </head>
 
@@ -548,6 +609,19 @@
     </div>
     <div class="modal-body">
       <img id="modalFirmaImg" alt="Firma" />
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Modal para ver evolución como documento -->
+<div id="modalEvoDoc" class="modal" onclick="closeEvoDocModal(event)">
+  <div class="modal-card" onclick="event.stopPropagation()">
+    <div class="modal-head">
+      <div id="modalEvoDocTitulo" class="modal-title">Evolución</div>
+      <button class="modal-close" type="button" onclick="closeEvoDocModal()">Cerrar</button>
+    </div>
+    <div class="modal-body">
+      <div id="modalEvoDocBody" class="doc-wrap"></div>
     </div>
   </div>
 </div>
@@ -907,6 +981,101 @@
   }
 
   // ==============================
+  // ✅ MODAL VER EVOLUCIÓN COMO DOCUMENTO
+  // ==============================
+  function openEvolucionDoc(idx) {
+    const modal = document.getElementById("modalEvoDoc");
+    const body = document.getElementById("modalEvoDocBody");
+    const title = document.getElementById("modalEvoDocTitulo");
+    if (!modal || !body || !title) return;
+
+    const evo = evoluciones?.[idx];
+    if (!evo) return;
+
+    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+    const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
+    const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
+    const profesional = evo.profesional ?? evo.evo_profesional ?? "";
+    const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
+    const detalle = evo.detalle ?? evo.evo_detalle ?? "";
+
+    const fp = evo.firma_paciente || "";
+    const fpr = evo.firma_profesional || "";
+
+    const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
+    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+
+    title.textContent = "Evolución (Documento)";
+
+    body.innerHTML = `
+      <div class="doc-title">Evolución clínica odontológica</div>
+
+      <div class="doc-meta">
+        <div class="doc-box">
+          <div class="k">Paciente</div>
+          <div class="v">${escapeHtml(paciente || "—")}</div>
+        </div>
+        <div class="doc-box">
+          <div class="k">Cédula</div>
+          <div class="v">${escapeHtml(cedula || "—")}</div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">ID Evolución</div>
+          <div class="v" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+            ${escapeHtml(idEvo)}
+          </div>
+        </div>
+        <div class="doc-box">
+          <div class="k">Fecha / Hora</div>
+          <div class="v">${escapeHtml((fecha || "—") + " " + (hora || ""))}</div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">Profesional</div>
+          <div class="v">${escapeHtml(String(profesional).toUpperCase())}</div>
+        </div>
+        <div class="doc-box">
+          <div class="k">Procedimiento</div>
+          <div class="v">${escapeHtml(String(procedimiento).toUpperCase())}</div>
+        </div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Detalle / Observaciones</div>
+        <div class="v">${escapeHtml(detalle)}</div>
+      </div>
+
+      <div class="doc-firmas">
+        <div class="doc-firma">
+          <div class="k">Firma del paciente</div>
+          ${
+            fp
+              ? `<img src="${fp}" alt="Firma del paciente" />`
+              : `<div class="doc-nofirma">Sin firma del paciente</div>`
+          }
+        </div>
+        <div class="doc-firma">
+          <div class="k">Firma del profesional</div>
+          ${
+            fpr
+              ? `<img src="${fpr}" alt="Firma del profesional" />`
+              : `<div class="doc-nofirma">Sin firma del profesional</div>`
+          }
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("show");
+  }
+
+  function closeEvoDocModal(evt) {
+    const modal = document.getElementById("modalEvoDoc");
+    if (!modal) return;
+    modal.classList.remove("show");
+  }
+
+  // ==============================
   // ✅ PROCEDIMIENTOS DESDE SUPABASE
   // ==============================
   async function cargarProcedimientosDesdeSupabase() {
@@ -1093,17 +1262,26 @@
         <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
         <td>${btnFirmas}</td>
-        <td style="display:flex; gap:8px; flex-wrap:wrap;">
+        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button
             type="button"
             class="btn btn-buscar"
             style="padding:8px 10px; width:auto;"
             disabled
-           title="No permitido"
-           >
+            title="No permitido"
+          >
             Eliminar
           </button>
 
+          <button
+            type="button"
+            class="btn btn-agenda"
+            style="padding:8px 10px; width:auto;"
+            onclick="openEvolucionDoc(${idx})"
+            title="Ver evolución como documento"
+          >
+            Ver
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -1235,44 +1413,44 @@
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
-  _ensureFirmasInit();
-  limpiarEvolucionForm();
-  mostrarNombrePaciente("");
+    _ensureFirmasInit();
+    limpiarEvolucionForm();
+    mostrarNombrePaciente("");
 
-  await cargarProcedimientosDesdeSupabase();
-  await cargarProfesionalesDesdeSupabase();
+    await cargarProcedimientosDesdeSupabase();
+    await cargarProfesionalesDesdeSupabase();
 
-  // ✅ AUTO-CARGA si hay paciente seleccionado desde historias-clinicas
-  await autoloadEvolucionesSiHayPaciente();
-});
+    // ✅ AUTO-CARGA si hay paciente seleccionado desde historias-clinicas
+    await autoloadEvolucionesSiHayPaciente();
+  });
 
- function getCedulaAuto() {
-  // 1) si vienes por URL: evoluciones.html?cedula=123
-  const params = new URLSearchParams(window.location.search);
-  const q = (params.get("cedula") || "").trim();
-  if (q) return q;
+  function getCedulaAuto() {
+    // 1) si vienes por URL: evoluciones.html?cedula=123
+    const params = new URLSearchParams(window.location.search);
+    const q = (params.get("cedula") || "").trim();
+    if (q) return q;
 
-  // 2) si vienes por localStorage (desde historias-clinicas.html)
-  const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
-  if (ls) return ls;
+    // 2) si vienes por localStorage (desde historias-clinicas.html)
+    const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
+    if (ls) return ls;
 
-  // 3) fallback: lo que esté escrito en el input
-  const inp = (document.getElementById("cedula_paciente")?.value || "").trim();
-  return inp;
-}
+    // 3) fallback: lo que esté escrito en el input
+    const inp = (document.getElementById("cedula_paciente")?.value || "").trim();
+    return inp;
+  }
 
-async function autoloadEvolucionesSiHayPaciente() {
-  const ced = getCedulaAuto();
-  if (!ced) return;
+  async function autoloadEvolucionesSiHayPaciente() {
+    const ced = getCedulaAuto();
+    if (!ced) return;
 
-  // pinta la cédula arriba
-  const inp = document.getElementById("cedula_paciente");
-  if (inp) inp.value = ced;
+    // pinta la cédula arriba
+    const inp = document.getElementById("cedula_paciente");
+    if (inp) inp.value = ced;
 
-  // set variable global y dispara búsqueda
-  _cedulaActual = ced;
-  await buscarEvolucionesPorCedula();
-}
+    // set variable global y dispara búsqueda
+    _cedulaActual = ced;
+    await buscarEvolucionesPorCedula();
+  }
 
   // Exponer
   window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
@@ -1285,6 +1463,9 @@ async function autoloadEvolucionesSiHayPaciente() {
 
   window.openFirmaModal = openFirmaModal;
   window.closeFirmaModal = closeFirmaModal;
+
+  window.openEvolucionDoc = openEvolucionDoc;
+  window.closeEvoDocModal = closeEvoDocModal;
 </script>
 </body>
 </html>
