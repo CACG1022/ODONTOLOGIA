@@ -23,7 +23,8 @@
       HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
     };
 
-    const MODULO = "historia_clinica";
+    // ✅ AHORA SÍ: este módulo debe coincidir con "modulo" en la tabla modulos_permisos
+    const MODULO = "evoluciones";
 
     async function verificarSesion() {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1448,6 +1449,7 @@
 </script>
 </body>
 </html>
+
 
 
 
