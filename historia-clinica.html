@@ -442,7 +442,7 @@ function _evolucionesToHTML(evos){
         <button id="btnGuardarEnviarHistoria" type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
       </div>
       <div class="ctrl">
-        <button type="button" onclick="irAgendar()" class="btn btn-agendar">AGENDAR</button>
+        <button type="button" onclick="irAConsentimientos()" class="btn btn-agendar">CONSENTIMIENTOS INFORMADOS</button>
       </div>
 
       <div class="ctrl">
@@ -1336,6 +1336,12 @@ Fecha: {{FECHA}}
     el.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
+
+  function irAConsentimientos() {
+    const el = document.getElementById("seccionDocumentos");
+    if (!el) { alert("❌ No se encontró la sección de CONSENTIMIENTOS INFORMADOS."); return; }
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   function irPlanTratamiento() {
     const cedula = (
@@ -3153,6 +3159,8 @@ window.addEventListener("message", (ev) => {
   window.cargarDocumentosPacienteDesdeSupabase = cargarDocumentosPacienteDesdeSupabase;
   window.cerrarSesion = cerrarSesion;
 
+  window.irAConsentimientos = irAConsentimientos;
+
   
   window.eliminarEvolucion = eliminarEvolucion;
 
@@ -3528,6 +3536,18 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
