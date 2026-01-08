@@ -3395,7 +3395,17 @@ function _evolucionesToHTML(evos){
   html += `</tbody></table>`;
   return html;
 }
- 
+ function toggleEvolucionesFullscreen(){
+  const modal = document.getElementById("modalEvoluciones");
+  const btn = document.getElementById("btnToggleEvoFS");
+  if (!modal) return;
+
+  modal.classList.toggle("fullscreen");
+  const isFS = modal.classList.contains("fullscreen");
+  if (btn) btn.textContent = isFS ? "Restaurar 🗗" : "Maximizar ⛶";
+}
+window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
+
 </script>
 <!-- ✅ MODAL EVOLUCIONES (ventana modal con iframe) -->
 <div id="modalEvoluciones" style="
@@ -3408,6 +3418,21 @@ function _evolucionesToHTML(evos){
     display:flex; flex-direction:column;
   ">
     <div style="
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:14px 16px;
+  background:#eef6ff;
+  border-bottom:1px solid #e7edf5;
+  gap:16px;
+">
+  <!-- IZQUIERDA: TÍTULO -->
+  <div style="font-weight:800; color:#2a5d84; font-size:16px;">
+    Evoluciones del paciente
+  </div>
+
+  <!-- DERECHA: BOTONES -->
+  <div style="
   display:flex;
   justify-content:space-between;
   align-items:center;
@@ -3438,6 +3463,7 @@ function _evolucionesToHTML(evos){
     </button>
   </div>
 </div>
+
 
     </div>
 
