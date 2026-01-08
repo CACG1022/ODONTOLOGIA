@@ -281,7 +281,7 @@
       border: 1px solid var(--line); background: #F5F5F5; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
       font-size: 18px;
-      color: #111; /* ✅ ANTES ESTABA TRANSPARENT */
+      color: #111;
     }
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
 
@@ -654,22 +654,18 @@
     }
   }
 
-  // ✅ Normaliza posibles formas del webhook (objeto, array, {data:{...}}, etc)
   function unwrapWebhookRespuesta(data) {
     if (Array.isArray(data)) return data[0] ?? {};
     if (data && typeof data === "object" && data.data && typeof data.data === "object") return data.data;
     return data ?? {};
   }
 
-  // ✅ El webhook lo devuelve como: "Nombre y apellido" (pero puede variar)
   function extraerNombrePaciente(raw) {
     const data = unwrapWebhookRespuesta(raw);
 
-    // 1) Caso exacto
     const directo = data?.["Nombre y apellido"];
     if (String(directo || "").trim()) return String(directo).trim();
 
-    // 2) Variantes comunes
     const candidatos = [
       data?.["Nombre y Apellido"],
       data?.["nombre y apellido"],
@@ -696,13 +692,12 @@
   }
 
   // ==============================
-  // ✅ FIX: FETCH SEGURO (cuando n8n no responde JSON)
+  // ✅ FIX: FETCH SEGURO
   // ==============================
   async function fetchJSONSeguro(url) {
     const resp = await fetch(url, { cache: "no-store" });
     const text = await resp.text();
 
-    // intenta JSON
     try {
       return { ok: true, data: JSON.parse(text), status: resp.status, raw: text };
     } catch (e) {
@@ -750,7 +745,7 @@
   }
 
   // ==============================
-  // ✅ TOGGLE FIRMAS (FIX: init cuando ya está visible)
+  // ✅ TOGGLE FIRMAS
   // ==============================
   function toggleFirmas(forceState) {
     const wrap = document.getElementById("firmaWrapper");
@@ -764,7 +759,6 @@
       wrap.classList.add("show");
       btn.textContent = "Ocultar firmas";
 
-      // ✅ Espera a que el display:block aplique y haya layout real (ancho/alto)
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           try {
@@ -780,7 +774,7 @@
   }
 
   // ==============================
-  // ✅ FIRMA EN CANVAS (mouse + touch)
+  // ✅ FIRMA EN CANVAS
   // ==============================
   let _firmasIniciadas = false;
 
@@ -791,8 +785,6 @@
 
   function _resizeCanvasToCSS(canvas) {
     const rect = canvas.getBoundingClientRect();
-
-    // ✅ FIX: si está hidden o aún sin layout, no redimensionar a 1x1
     if (!rect.width || !rect.height || rect.width < 5 || rect.height < 5) return false;
 
     const dpr = window.devicePixelRatio || 1;
@@ -819,7 +811,7 @@
     if (!f?.canvas || !f?.ctx) return;
 
     const ok = _resizeCanvasToCSS(f.canvas);
-    if (!ok) return; // aún no hay tamaño real
+    if (!ok) return;
 
     _paintWhiteBg(f.ctx, f.canvas);
     f.ctx.lineWidth = 3;
@@ -836,7 +828,6 @@
     firmas[id].canvas = canvas;
     firmas[id].ctx = ctx;
 
-    // no forzamos size si está oculto; se ajusta al mostrar
     _setupFirmaCanvas(id);
 
     function getPos(evt) {
@@ -860,7 +851,7 @@
 
     function start(evt) {
       evt.preventDefault();
-      _setupFirmaCanvas(id); // ✅ por si se abrió justo antes de dibujar
+      _setupFirmaCanvas(id);
 
       firmas[id].drawing = true;
       const p = getPos(evt);
@@ -894,7 +885,6 @@
     canvas.addEventListener("touchcancel", end, { passive: false });
 
     window.addEventListener("resize", () => {
-      // si hay firma, preserva
       const f = firmas[id];
       if (!f?.canvas || !f?.ctx) return;
 
@@ -945,7 +935,6 @@
     if (!f?.canvas || !f?.ctx) return;
 
     _setupFirmaCanvas(id);
-    // si estaba oculto y sin layout, no rompe; al mostrar se setea bien
     if (f.canvas.width > 1 && f.canvas.height > 1) {
       _paintWhiteBg(f.ctx, f.canvas);
     }
@@ -1168,7 +1157,6 @@
     if (t) t.value = "";
     if (d) d.value = "";
 
-    // ✅ solo limpia si ya se usaron/mostraron
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
     toggleFirmas(false);
@@ -1181,7 +1169,6 @@
 
     let evol = data?.evoluciones;
 
-    // algunos webhooks envían: {evoluciones:{evoluciones:[...]}}
     if (evol && !Array.isArray(evol) && typeof evol === "object" && Array.isArray(evol.evoluciones)) {
       evol = evol.evoluciones;
     }
@@ -1211,7 +1198,6 @@
 
     tbody.innerHTML = "";
 
-    // ✅ NUEVO: si no hay evoluciones, mostrar mensaje y NO dar error
     if (!evoluciones || evoluciones.length === 0) {
       tbody.innerHTML = `
         <tr>
@@ -1357,7 +1343,6 @@
 
     _cedulaActual = cedula;
 
-    // reset UI
     mostrarNombrePaciente("");
     evoluciones = [];
     renderEvoluciones();
@@ -1367,23 +1352,18 @@
     try {
       const r = await fetchJSONSeguro(url);
 
-      // ✅ Si NO es JSON (o viene vacío/html), tratar como "sin evoluciones" y no mostrar error
       if (!r.ok) {
         evoluciones = [];
         renderEvoluciones();
-        // Si quieres alert, descomenta:
-        // alert("Paciente sin evoluciones");
         return;
       }
 
       const raw = r.data;
       const data = unwrapWebhookRespuesta(raw);
 
-      // ✅ Mostrar nombre aunque la historia no exista (si viene)
       const nombre = extraerNombrePaciente(raw);
       mostrarNombrePaciente(nombre);
 
-      // ✅ existe puede venir en distintos niveles
       const existe = (data?.existe !== undefined) ? !!data.existe
                    : (raw?.existe !== undefined) ? !!raw.existe
                    : (data?.historia?.existe !== undefined) ? !!data.historia.existe
@@ -1392,21 +1372,48 @@
       if (!existe) {
         evoluciones = [];
         renderEvoluciones();
-        // Si quieres alert, descomenta:
-        // alert("Paciente sin evoluciones");
         return;
       }
 
       evoluciones = normalizarEvolucionesDeWebhook(raw);
       renderEvoluciones();
 
-      // ✅ Si existe historia pero no hay evoluciones, mostrar "Paciente sin evoluciones"
-      // (ya lo hace renderEvoluciones con la fila informativa)
-      //alert("Evoluciones cargadas con éxito");
     } catch (err) {
       console.error(err);
       alert("Error consultando N8N: " + (err?.message || err));
     }
+  }
+
+  // ==============================
+  // ✅ AUTOLOAD CONTROLADO (NUEVO)
+  // ==============================
+  function getCedulaAuto() {
+    const params = new URLSearchParams(window.location.search);
+
+    // ✅ Solo autoload si viene explícitamente auto=1
+    const auto = (params.get("auto") || "").trim();
+    if (auto !== "1") return "";
+
+    // 1) si vienes por URL: evoluciones.html?auto=1&cedula=123
+    const q = (params.get("cedula") || "").trim();
+    if (q) return q;
+
+    // 2) si vienes por localStorage (desde historias-clinicas.html)
+    const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
+    if (ls) return ls;
+
+    return "";
+  }
+
+  async function autoloadEvolucionesSiHayPaciente() {
+    const ced = getCedulaAuto();
+    if (!ced) return;
+
+    const inp = document.getElementById("cedula_paciente");
+    if (inp) inp.value = ced;
+
+    _cedulaActual = ced;
+    await buscarEvolucionesPorCedula();
   }
 
   // ==============================
@@ -1420,37 +1427,9 @@
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
 
-    // ✅ AUTO-CARGA si hay paciente seleccionado desde historias-clinicas
+    // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
   });
-
-  function getCedulaAuto() {
-    // 1) si vienes por URL: evoluciones.html?cedula=123
-    const params = new URLSearchParams(window.location.search);
-    const q = (params.get("cedula") || "").trim();
-    if (q) return q;
-
-    // 2) si vienes por localStorage (desde historias-clinicas.html)
-    const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
-    if (ls) return ls;
-
-    // 3) fallback: lo que esté escrito en el input
-    const inp = (document.getElementById("cedula_paciente")?.value || "").trim();
-    return inp;
-  }
-
-  async function autoloadEvolucionesSiHayPaciente() {
-    const ced = getCedulaAuto();
-    if (!ced) return;
-
-    // pinta la cédula arriba
-    const inp = document.getElementById("cedula_paciente");
-    if (inp) inp.value = ced;
-
-    // set variable global y dispara búsqueda
-    _cedulaActual = ced;
-    await buscarEvolucionesPorCedula();
-  }
 
   // Exponer
   window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
