@@ -1127,9 +1127,9 @@
       const options = (data || []).map(p => {
         const nombre = (p.nombre || "").trim();
         const cedula = (p.cedula || "").trim();
-        const valor = `${cedula} ${nombre}`.trim();
-        const label = nombre;
-        return `<option value="${escapeHtml(valor)}">${escapeHtml(label)}</option>`;
+        const valor = nombre;   // ✅ solo nombre
+        return `<option value="${escapeHtml(valor)}">${escapeHtml(nombre)}</option>`;
+
       }).join("");
 
       selEvo.innerHTML = placeholder + options;
