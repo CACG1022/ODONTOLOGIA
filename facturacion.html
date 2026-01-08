@@ -324,7 +324,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Facturación</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación6</h1>
     </div>
     <div class="meta">
       <div class="chip">
@@ -614,111 +614,8 @@
         </div>
       </div>
       <div class="modal-body">
-        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:flex-start;">
-          <div style="flex:1; min-width:320px;">
-            <div class="card" style="margin:0;">
-              <div class="grid" style="grid-template-columns:repeat(2,minmax(0,1fr));">
-                <div class="ctrl">
-                  <label>Fecha</label>
-                  <div class="mono" id="vf_fecha">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>No. factura</label>
-                  <div class="mono" id="vf_numero">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>Paciente</label>
-                  <div id="vf_paciente">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>Cédula</label>
-                  <div class="mono" id="vf_cedula">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>Tipo usuario</label>
-                  <div id="vf_tipo_usuario">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>EPS</label>
-                  <div id="vf_eps">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>Método de pago</label>
-                  <div id="vf_metodo">—</div>
-                </div>
-                <div class="ctrl">
-                  <label>Estado de pago</label>
-                  <div id="vf_estado">—</div>
-                </div>
-                <div class="ctrl" style="grid-column:1 / -1;">
-                  <label>Referencia / Comprobante</label>
-                  <div id="vf_referencia">—</div>
-                </div>
-                <div class="ctrl" style="grid-column:1 / -1;">
-                  <label>Observación</label>
-                  <div id="vf_observacion">—</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card" style="margin-top:12px;">
-              <div class="title" style="margin-bottom:8px;">Detalle</div>
-              <div class="table-wrap">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th style="width:120px;">CUPS</th>
-                      <th>Procedimiento</th>
-                      <th style="width:70px;">Cant</th>
-                      <th style="width:120px;">V/Unit</th>
-                      <th style="width:130px;">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody-vf-detalle">
-                    <tr><td colspan="5" class="empty">—</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="summary" style="margin-top:10px;">
-                <div class="pill">Subtotal: <b><span id="vf_subtotal">$ 0</span></b></div>
-                <div class="pill">IVA: <b><span id="vf_iva">$ 0</span></b></div>
-                <div class="pill">Total: <b><span id="vf_total">$ 0</span></b></div>
-              </div>
-            </div>
-          </div>
-
-          <div style="flex:1; min-width:320px;">
-            <div class="card" style="margin:0;">
-              <div class="title" style="margin-bottom:8px;">Abonos</div>
-
-              <div class="table-wrap">
-                <table class="table">
-                  <thead>
-                    <tr>
-                      <th style="width:110px;">Fecha</th>
-                      <th style="width:130px;">Monto</th>
-                      <th style="width:140px;">Método</th>
-                      <th style="width:160px;">Referencia</th>
-                      <th>Observación</th>
-                    </tr>
-                  </thead>
-                  <tbody id="tbody-vf-abonos">
-                    <tr><td colspan="5" class="empty">—</td></tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <div class="summary" style="margin-top:10px;">
-                <div class="pill">Total abonado: <b><span id="vf_total_abonado">$ 0</span></b></div>
-                <div class="pill">Saldo pendiente: <b><span id="vf_saldo">$ 0</span></b></div>
-              </div>
-
-              <div class="mono" style="margin-top:10px; color:var(--muted);">
-                Tip: puedes registrar más abonos desde el botón “💰 Abonos” en la lista de facturas.
-              </div>
-            </div>
-          </div>
+        <div class="vf-frame" style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+          <iframe id="vf_iframe" title="Factura" style="width:100%; height:80vh; border:0; background:#fff;" sandbox="allow-same-origin allow-scripts"></iframe>
         </div>
 
       </div>
@@ -1290,7 +1187,7 @@ async function validarPermisoDesdeTabla(){
       return "—";
     }
 
-    function buildInvoiceHTML({ fac, detalle, totals }){
+    function buildInvoiceHTML({ fac, detalle, totals, abonos }){
       const rows = (detalle || []).map(it => `
         <tr>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
@@ -1300,6 +1197,18 @@ async function validarPermisoDesdeTabla(){
           <td class="tr mono">$ ${money(it.valor_total || 0)}</td>
         </tr>
       `).join("");
+
+      const abRows = (abonos || []).map(a => `
+        <tr>
+          <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
+          <td class="tr mono">$ ${money(a.monto || 0)}</td>
+          <td>${escapeHtml(a.metodo_pago || "—")}</td>
+          <td class="mono">${escapeHtml(a.referencia || "—")}</td>
+        </tr>
+      `).join("");
+
+      const totalAbonado = (abonos || []).reduce((acc, a) => acc + Number(a.monto || 0), 0);
+      const saldoPendiente = Math.max(0, Number(totals?.total || 0) - totalAbonado);
 
       const eps = fac?.eps ? escapeHtml(fac.eps) : "—";
       const tipo = fac?.tipo_usuario ? escapeHtml(fac.tipo_usuario) : "—";
@@ -1378,6 +1287,9 @@ async function validarPermisoDesdeTabla(){
     .sheet{ border-radius: 0; border: 1px solid var(--line); }
     .no-print{ display:none !important; }
   }
+
+  .section-title{ font-weight:800; font-size:13px; margin: 2px 0 8px; }
+  .mini-totals{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
 </style>
 </head>
 <body>
@@ -1444,6 +1356,31 @@ async function validarPermisoDesdeTabla(){
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
             <div class="line grand"><span>TOTAL</span><b class="mono">$ ${money(totals.total)}</b></div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="pad">
+        <div class="section-title">Abonos</div>
+        <div class="box">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Fecha</th>
+                <th style="width:140px;" class="tr">Monto</th>
+                <th style="width:170px;">Método</th>
+                <th>Referencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${abRows || `<tr><td colspan="4" class="muted">— Sin abonos registrados —</td></tr>`}
+            </tbody>
+          </table>
+
+          <div class="mini-totals">
+            <div class="line"><span>Total abonado</span><b class="mono">$ ${money(totalAbonado)}</b></div>
+            <div class="line grand"><span>Saldo pendiente</span><b class="mono">$ ${money(saldoPendiente)}</b></div>
           </div>
         </div>
       </div>
@@ -1624,6 +1561,22 @@ async function validarPermisoDesdeTabla(){
 
         if (error) throw error;
 
+        // 2) Abonos (si existe tabla)
+        let abonos = [];
+        try{
+          const { data: ab, error: ea } = await supabase
+            .from("abonos")
+            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+            .eq("factura_id", state.facturaGuardada.id)
+            .order("fecha", { ascending: true });
+
+          if (!ea) abonos = ab || [];
+          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
+        }catch(e){
+          console.warn("No se pudieron cargar abonos:", e?.message || e);
+        }
+
+
         const totals = calcularTotalesObj();
 
         state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
@@ -1636,7 +1589,8 @@ async function validarPermisoDesdeTabla(){
         const html = buildInvoiceHTML({
           fac: state.facturaGuardada,
           detalle: det || [],
-          totals
+          totals,
+          abonos
         });
 
         const w = window.open("", "_blank", "width=900,height=700");
@@ -1767,40 +1721,36 @@ async function validarPermisoDesdeTabla(){
           console.warn("Tabla abonos no disponible:", ea?.message || ea);
         }
 
-        // Pintar cabecera
-        $("vf_fecha").textContent = formatFechaHuman(f.fecha);
-        $("vf_numero").textContent = f.numero_factura || f.no_factura || f.numero || f.id;
-        $("vf_paciente").textContent = f.paciente_nombre || f.nombre_paciente || "—";
-        $("vf_cedula").textContent = f.paciente_cedula || f.cedula_paciente || "—";
-        $("vf_tipo_usuario").textContent = f.tipo_usuario || "—";
-        $("vf_eps").textContent = f.eps || "—";
-        $("vf_metodo").textContent = f.metodo_pago || "—";
-        $("vf_estado").textContent = f.estado_pago || f.pago_estado || "—";
-        $("vf_referencia").textContent = f.referencia_pago || f.referencia || "—";
-        $("vf_observacion").textContent = f.observacion || "—";
-
-        // Pintar detalle + totales
-        renderVerFacturaDetalle(det || []);
-
+        // Renderizar factura con el mismo formato de impresión (incluye abonos y saldo)
         const subtotal = Number(f.subtotal ?? 0);
-        const iva = Number(f.iva_valor ?? f.iva ?? 0);
-        const total = Number(f.total ?? 0);
+        const iva_valor = Number(f.iva_valor ?? f.iva ?? 0);
 
-        $("vf_subtotal").textContent = "$ " + moneyNumber(subtotal);
-        $("vf_iva").textContent = "$ " + moneyNumber(iva);
-        $("vf_total").textContent = "$ " + moneyNumber(total);
+        const aplicaRaw = (f.iva_aplica ?? f.aplica_iva ?? f.aplicaIVA ?? "Sí");
+        const iva_aplica = (typeof aplicaRaw === "boolean")
+          ? aplicaRaw
+          : String(aplicaRaw).toLowerCase().startsWith("s");
 
-        // Pintar abonos + saldo
-        const abonosRows = (ab && !ea) ? ab : [];
-        renderVerFacturaAbonos(abonosRows);
+        const iva_pct = Number(f.iva_pct ?? f.iva_porcentaje ?? 0) || (iva_aplica ? 19 : 0);
 
-        const totalAbonado = abonosRows.reduce((acc, x) => acc + Number(x.monto || 0), 0);
-        const saldo = total - totalAbonado;
+        const copago = Number(f.copago ?? 0);
+        const cuota = Number(f.cuota_moderadora ?? 0);
 
-        $("vf_total_abonado").textContent = "$ " + moneyNumber(totalAbonado);
-        $("vf_saldo").textContent = "$ " + moneyNumber(saldo);
+        const total = (f.valor_total !== undefined && f.valor_total !== null)
+          ? Number(f.valor_total || 0)
+          : (f.total !== undefined && f.total !== null)
+            ? Number(f.total || 0)
+            : Math.max(0, (subtotal + iva_valor) - copago - cuota);
 
-        // Abrir modal
+        const htmlDoc = buildInvoiceHTML({
+          fac: f,
+          detalle: det || [],
+          totals: { subtotal, iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
+          abonos: (ab || [])
+        });
+
+        const frame = $("vf_iframe");
+        if (frame) frame.srcdoc = htmlDoc;
+
         openModalVerFactura();
         setStatus("");
 
@@ -2337,6 +2287,21 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
 
         if (e2) throw e2;
 
+        // Abonos (si existe tabla)
+        let abonos = [];
+        try{
+          const { data: ab, error: ea } = await supabase
+            .from("abonos")
+            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+            .eq("factura_id", facturaId)
+            .order("fecha", { ascending: true });
+          if (!ea) abonos = ab || [];
+          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
+        }catch(e){
+          console.warn("No se pudieron cargar abonos:", e?.message || e);
+        }
+
+
         const subtotal = (fac.subtotal !== undefined && fac.subtotal !== null)
           ? Number(fac.subtotal || 0)
           : (det || []).reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
@@ -2361,7 +2326,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total }
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
+          abonos
         });
 
         const w = window.open("", "_blank", "width=900,height=700");
@@ -2554,6 +2520,10 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
