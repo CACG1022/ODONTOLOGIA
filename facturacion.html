@@ -418,15 +418,7 @@
           </select>
         </div>
 
-        
         <div class="ctrl" style="grid-column: span 2;">
-          <label>Abono / Monto recibido</label>
-          <input id="abono" type="number" min="0" step="100" value="0" style="text-align:right;" placeholder="0">
-          <div style="margin-top:6px; font-size:12px; color:var(--muted);" class="mono">
-            Saldo: $ <span id="saldo_pendiente">0</span>
-          </div>
-        </div>
-<div class="ctrl" style="grid-column: span 2;">
           <label>Referencia / Comprobante (opcional)</label>
           <input id="referencia_pago" type="text" placeholder="Ej: #transferencia, voucher, último 4 dígitos, etc.">
         </div>
@@ -505,16 +497,7 @@
           <b>$ <input id="cuota_moderadora" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
         </div>
 
-        
-        <div>
-          <span>Abono</span>
-          <b>$ <span id="abono_mostrado">0</span></b>
-        </div>
-        <div>
-          <span>Saldo pendiente</span>
-          <b>$ <span id="saldo_mostrado">0</span></b>
-        </div>
-<div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
+        <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
           <span>Total</span><b>$ <span id="total">0</span></b>
         </div>
       </div>
@@ -645,7 +628,7 @@
       _debounce: null,
       _lastCedula: "",
       facturas: [],
-      _abonoTouched: false
+      abonosPorFactura: {} // { factura_id: { total_abonado, saldo } }
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1061,57 +1044,11 @@ async function validarPermisoDesdeTabla(){
       return { subtotal, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
     }
 
-
-    function clamp(n, min, max){
-      const x = Number(n);
-      if (!Number.isFinite(x)) return min;
-      return Math.min(max, Math.max(min, x));
-    }
-
-    function getAbonoInput(){
-      const inp = $("abono");
-      if (!inp) return 0;
-      return num(inp.value);
-    }
-
-    function calcularPagoObj(total){
-      const abono = clamp(getAbonoInput(), 0, Math.max(0, total));
-      const saldo = Math.max(0, total - abono);
-      return { abono, saldo };
-    }
-
-    function syncAbonoUI(totals){
-      const inp = $("abono");
-      if (!inp) return;
-
-      // Si el usuario no ha tocado el campo, lo mantenemos en "pago completo"
-      if (!state._abonoTouched){
-        inp.value = String(Math.round(Number(totals.total || 0)));
-      }
-
-      const pago = calcularPagoObj(totals.total);
-
-      if ($("abono_mostrado")) $("abono_mostrado").textContent = money(pago.abono);
-      if ($("saldo_mostrado")) $("saldo_mostrado").textContent = money(pago.saldo);
-      if ($("saldo_pendiente")) $("saldo_pendiente").textContent = money(pago.saldo);
-
-      // Auto-ajuste de estado (sin romper el control manual):
-      if ($("pagada")){
-        if (pago.saldo > 0){
-          $("pagada").value = "no";
-        } else {
-          $("pagada").value = "si";
-        }
-      }
-    }
-
     function recalcularTotales(){
       const t = calcularTotalesObj();
       $("subtotal").textContent = money(t.subtotal);
       $("iva_valor").textContent = money(t.iva_valor);
       $("total").textContent = money(t.total);
-
-      syncAbonoUI(t);
     }
 
     function formatFechaHuman(iso){
@@ -1299,8 +1236,6 @@ async function validarPermisoDesdeTabla(){
             <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
-            <div class="line"><span>Abono</span><b class="mono">$ ${money(totals.monto_pagado || 0)}</b></div>
-            <div class="line"><span>Saldo pendiente</span><b class="mono">$ ${money(totals.saldo_pendiente || 0)}</b></div>
             <div class="line grand"><span>TOTAL</span><b class="mono">$ ${money(totals.total)}</b></div>
           </div>
         </div>
@@ -1348,20 +1283,11 @@ async function validarPermisoDesdeTabla(){
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
       const observacion = ($("observacion")?.value || "").trim() || null;
 
+      const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
       const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
-
-      const totals = calcularTotalesObj();
-      const pago = calcularPagoObj(totals.total);
-
-      // Si hay saldo pendiente, la factura queda como "Pendiente" (aunque se haya recibido abono)
-      const pagada = (pago.saldo <= 0);
-
-      // fecha_pago solo si queda pagada
       const fecha_pago = pagada ? new Date().toISOString() : null;
 
-      const monto_pagado = pago.abono;
-      const saldo_pendiente = pago.saldo;
-      const ultimo_abono_fecha = (monto_pagado > 0) ? new Date().toISOString() : null;
+      const totals = calcularTotalesObj();
 
       setStatus("Guardando factura...");
 
@@ -1375,9 +1301,6 @@ async function validarPermisoDesdeTabla(){
           eps,
           numero_factura,
           valor_total: totals.total,
-          monto_pagado,
-          saldo_pendiente,
-          ultimo_abono_fecha,
           copago: totals.copago,
           cuota_moderadora: totals.cuota_moderadora,
           profesional,
@@ -1438,9 +1361,6 @@ async function validarPermisoDesdeTabla(){
           fac.iva_porcentaje = totals.iva_pct;
           fac.iva_valor = totals.iva_valor;
           fac.subtotal = totals.subtotal;
-          fac.monto_pagado = monto_pagado;
-          fac.saldo_pendiente = saldo_pendiente;
-          fac.ultimo_abono_fecha = ultimo_abono_fecha;
 
           fac.pagada = pagada;
           fac.fecha_pago = fecha_pago;
@@ -1496,9 +1416,6 @@ async function validarPermisoDesdeTabla(){
         if (error) throw error;
 
         const totals = calcularTotalesObj();
-        const pago = calcularPagoObj(totals.total);
-        totals.monto_pagado = pago.abono;
-        totals.saldo_pendiente = pago.saldo;
 
         state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
         state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
@@ -1549,6 +1466,152 @@ async function validarPermisoDesdeTabla(){
       $("total_facturado").textContent = money(total);
       $("count_facturas").textContent = String((rows || []).length);
     }
+
+    // ✅ ABONOS:
+    // Permite registrar pagos parciales ("abonos") a una factura/tratamiento.
+    // Requiere (opcional) una tabla 'abonos' en Supabase con al menos:
+    // - factura_id (FK o uuid/int), monto (numeric), fecha (timestamptz o date),
+    // - metodo_pago (text), referencia_pago (text), usuario_email (text)
+    // Si la tabla/columnas no existen, el módulo seguirá funcionando y mostrará aviso.
+    function isMissingTableOrColumn(err){
+      const msg = String(err?.message || err || "").toLowerCase();
+      return (
+        msg.includes("does not exist") ||
+        msg.includes("not exist") ||
+        msg.includes("relation") ||
+        msg.includes("column")
+      );
+    }
+
+    async function cargarAbonosParaFacturas(rows){
+      state.abonosPorFactura = {};
+      const facs = rows || [];
+      const ids = facs.map(f => f.id).filter(Boolean);
+      if (!ids.length) return;
+
+      try{
+        // Traemos abonos solo para estas facturas
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("factura_id, monto")
+          .in("factura_id", ids);
+
+        if (error) throw error;
+
+        const sum = {};
+        for (const a of (data || [])){
+          const fid = a.factura_id;
+          const m = Number(a.monto || 0);
+          if (!fid) continue;
+          sum[fid] = (sum[fid] || 0) + (Number.isFinite(m) ? m : 0);
+        }
+
+        for (const f of facs){
+          const abonado = Number(sum[f.id] || 0);
+          const total = Number(f.valor_total || 0);
+          const saldo = Math.max(0, total - abonado);
+          state.abonosPorFactura[f.id] = { total_abonado: abonado, saldo };
+        }
+      } catch(err){
+        console.warn("No se pudieron cargar abonos (tabla/columnas pueden no existir):", err);
+        // Dejamos en cero para no romper el módulo
+        for (const f of facs){
+          const total = Number(f.valor_total || 0);
+          state.abonosPorFactura[f.id] = { total_abonado: 0, saldo: Math.max(0, total) };
+        }
+      }
+    }
+
+    async function abonarFactura(f){
+      try{
+        const meta = state.abonosPorFactura?.[f.id] || { total_abonado: 0, saldo: Math.max(0, Number(f.valor_total||0)) };
+        const saldoActual = Number(meta.saldo || 0);
+
+        if (saldoActual <= 0){
+          toast("Esta factura ya no tiene saldo pendiente.", "warn");
+          return;
+        }
+
+        let montoRaw = window.prompt(`Ingresa el valor del abono (saldo actual: $ ${money(saldoActual)}):`, "");
+        if (montoRaw === null) return;
+
+        // Permitir que digiten con separadores
+        montoRaw = String(montoRaw).replace(/[^\d.,]/g, "").replaceAll(".", "").replace(",", ".");
+        const monto = Math.max(0, Number(montoRaw || 0));
+
+        if (!Number.isFinite(monto) || monto <= 0){
+          toast("Valor de abono inválido.", "warn");
+          return;
+        }
+        if (monto > saldoActual){
+          toast("El abono no puede ser mayor al saldo pendiente.", "warn");
+          return;
+        }
+
+        // Método y referencia (si no es efectivo, pedimos referencia)
+        let metodo = window.prompt("Método de pago del abono (Efectivo/Transferencia/Tarjeta/Nequi/Daviplata/Otro):", "Efectivo");
+        if (metodo === null) return;
+        metodo = (metodo || "Efectivo").trim();
+
+        let referencia = null;
+        if (metodo && metodo.toLowerCase() !== "efectivo"){
+          referencia = window.prompt("Referencia / comprobante (obligatorio para este método):", "");
+          if (referencia === null) return;
+          referencia = referencia.trim();
+          if (!referencia){
+            toast("La referencia es obligatoria para este método.", "warn");
+            return;
+          }
+        } else {
+          // efectivo: opcional
+          referencia = window.prompt("Referencia / nota (opcional):", "") ?? null;
+          if (referencia !== null) referencia = String(referencia).trim() || null;
+        }
+
+        const fp = window.prompt("Fecha del abono (YYYY-MM-DD):", hoyISO());
+        if (fp === null) return;
+        const fechaAbono = parseDateYYYYMMDD(fp);
+        if (!fechaAbono){
+          toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
+          return;
+        }
+
+        setStatus("Registrando abono...");
+
+        const payload = {
+          factura_id: f.id,
+          monto: monto,
+          fecha: toISODateTimeFromYYYYMMDD(fechaAbono),
+          metodo_pago: metodo || null,
+          referencia_pago: referencia || null,
+          usuario_email: (state.session?.user?.email || null)
+        };
+
+        const { error } = await supabase
+          .from("abonos")
+          .insert([payload]);
+
+        if (error){
+          setStatus("");
+          if (isMissingTableOrColumn(error)){
+            toast("No se pudo registrar abono: falta tabla/columnas 'abonos' en Supabase.", "warn");
+            return;
+          }
+          throw error;
+        }
+
+        setStatus("");
+        toast("Abono registrado ✅", "ok");
+        await listarFacturas();
+
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo registrar abono:
+" + (err?.message || "Error"), "err");
+      }
+    }
+
 
     // ✅ CORREGIDO COMPLETO:
     // - Columna "Pago" = ESTADO
@@ -1640,89 +1703,6 @@ async function validarPermisoDesdeTabla(){
       }
     }
 
-
-    async function abonarFactura(f){
-      try{
-        const totalNum = Number(f.valor_total || 0);
-
-        // Leer valores actuales (si no vinieron en listado, intentamos consultarlos)
-        let montoPagado = (f.monto_pagado !== undefined && f.monto_pagado !== null) ? Number(f.monto_pagado || 0) : null;
-        let saldo = (f.saldo_pendiente !== undefined && f.saldo_pendiente !== null) ? Number(f.saldo_pendiente || 0) : null;
-
-        if (montoPagado === null || saldo === null){
-          const { data: facDB, error: e0 } = await supabase
-            .from("facturas")
-            .select("id, valor_total, monto_pagado, saldo_pendiente, pagada")
-            .eq("id", f.id)
-            .single();
-          if (!e0 && facDB){
-            montoPagado = (facDB.monto_pagado !== undefined && facDB.monto_pagado !== null) ? Number(facDB.monto_pagado || 0) : (facDB.pagada === true ? Number(facDB.valor_total || 0) : 0);
-            saldo = (facDB.saldo_pendiente !== undefined && facDB.saldo_pendiente !== null) ? Number(facDB.saldo_pendiente || 0) : Math.max(0, Number(facDB.valor_total || 0) - montoPagado);
-          }
-        }
-
-        if (montoPagado === null) montoPagado = (f.pagada === true) ? totalNum : 0;
-        if (saldo === null) saldo = Math.max(0, totalNum - montoPagado);
-
-        if (saldo <= 0){
-          toast("Esta factura ya está pagada.", "warn");
-          return;
-        }
-
-        const val = window.prompt(`Ingrese el valor del abono (saldo actual: $ ${money(saldo)}):`, String(Math.min(50000, saldo)));
-        if (val === null) return;
-
-        const abono = Math.max(0, num(val));
-        if (!abono){
-          toast("Abono inválido.", "warn");
-          return;
-        }
-
-        const nuevoMonto = Math.max(0, Math.min(totalNum, montoPagado + abono));
-        const nuevoSaldo = Math.max(0, totalNum - nuevoMonto);
-        const quedaPagada = (nuevoSaldo <= 0);
-
-        setStatus("Registrando abono...");
-
-        const payload = {
-          monto_pagado: nuevoMonto,
-          saldo_pendiente: nuevoSaldo,
-          ultimo_abono_fecha: new Date().toISOString(),
-          pagada: quedaPagada,
-          fecha_pago: quedaPagada ? new Date().toISOString() : null
-        };
-
-        const { error } = await supabase
-          .from("facturas")
-          .update(payload)
-          .eq("id", f.id);
-
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const isColumnMissing =
-            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-
-          setStatus("");
-
-          if (isColumnMissing){
-            toast("Para abonos faltan columnas en Supabase: monto_pagado / saldo_pendiente / ultimo_abono_fecha.", "warn");
-            return;
-          }
-          throw error;
-        }
-
-        setStatus("");
-        toast(quedaPagada ? "Abono registrado ✅ (Factura pagada)" : "Abono registrado ✅", "ok");
-        await listarFacturas();
-
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo registrar abono:
-" + (err?.message || "Error"), "err");
-      }
-    }
-
     function renderFacturasTabla(rows){
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
@@ -1740,34 +1720,24 @@ async function validarPermisoDesdeTabla(){
         const numf = f.numero_factura || "—";
         const nom = f.paciente_nombre || "—";
         const ced = f.paciente_cedula || "—";
-        const totalNum = Number(f.valor_total || 0);
-        const total = money(totalNum);
-
-        const mpRaw = (f.monto_pagado !== undefined && f.monto_pagado !== null)
-          ? Number(f.monto_pagado || 0)
-          : ((f.abono !== undefined && f.abono !== null) ? Number(f.abono || 0) : ((f.pagada === true) ? totalNum : 0));
-
-        const monto_pagado = Math.max(0, Math.min(totalNum, mpRaw));
-        const saldo_pendiente = (f.saldo_pendiente !== undefined && f.saldo_pendiente !== null)
-          ? Math.max(0, Number(f.saldo_pendiente || 0))
-          : Math.max(0, totalNum - monto_pagado);
-
-        const totalCell = `$ ${escapeHtml(total)}${
-          (monto_pagado > 0 || saldo_pendiente > 0)
-            ? `<div class="mono" style="margin-top:4px; color:var(--muted);">Abono: $ ${money(monto_pagado)} • Saldo: $ ${money(saldo_pendiente)}</div>`
-            : ""
-        }`;
+        const total = money(f.valor_total || 0);
 
         const estadoPago = pagoLabel(f.pagada);
-        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
+const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
+
+const ab = state.abonosPorFactura?.[f.id] || { total_abonado: 0, saldo: Math.max(0, Number(f.valor_total||0)) };
+const abonadoTxt = money(ab.total_abonado || 0);
+const saldoTxt = money(ab.saldo || 0);
+const pagoExtra = `Abonos: $ ${abonadoTxt}
+Saldo: $ ${saldoTxt}`;
 
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
           <td class="mono">${escapeHtml(numf)}</td>
           <td>${escapeHtml(nom)}</td>
           <td class="mono">${escapeHtml(ced)}</td>
-          <td class="mono">${escapeHtml(estadoPago)}</td>
-          <td class="mono">${totalCell}</td>
+          <td class="mono"><div>${escapeHtml(estadoPago)}</div><div style="margin-top:6px; font-size:11px; color:var(--muted); white-space:pre-line;">${escapeHtml(pagoExtra)}</div></td>
+          <td class="mono">$ ${escapeHtml(total)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
@@ -1785,11 +1755,12 @@ async function validarPermisoDesdeTabla(){
           await imprimirFacturaPorId(f.id);
         });
 
-                tr.querySelector('[data-act="abonar"]').addEventListener("click", async () => {
-          await abonarFactura(f);
-        });
 
-tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
+
+tr.querySelector('[data-act="abonar"]').addEventListener("click", async () => {
+  await abonarFactura(f);
+});
+        tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           await togglePagadaFactura(f);
         });
 
@@ -1798,13 +1769,6 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
 
       updateResumenFacturas(rows);
     }
-
-    function getFacturasSelectCols(includeAbonos = true){
-      const base = "id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, fecha_pago, referencia_pago";
-      const extra = includeAbonos ? ", monto_pagado, saldo_pendiente, ultimo_abono_fecha" : "";
-      return base + extra;
-    }
-
 
     function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
     function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
@@ -1821,7 +1785,7 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
 
         let query = supabase
           .from("facturas")
-          .select(getFacturasSelectCols(true))
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, fecha_pago, referencia_pago")
           .order("fecha", { ascending: false })
           .limit(limit);
 
@@ -1841,45 +1805,11 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           }
         }
 
-        let { data, error } = await query;
-
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const isColumnMissing =
-            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-
-          if (isColumnMissing){
-            // Fallback si aún no existen columnas de abonos en Supabase
-            let q2 = supabase
-              .from("facturas")
-              .select("*")
-              .order("fecha", { ascending: false })
-              .limit(limit);
-
-            if (desde){
-              q2 = q2.gte("fecha", dateStartISO(desde));
-            }
-            if (hasta){
-              q2 = q2.lte("fecha", dateEndISO(hasta));
-            }
-            if (q){
-              const isNum = /^[0-9]+$/.test(q);
-              if (isNum){
-                q2 = q2.ilike("paciente_cedula", `%${q}%`);
-              } else {
-                q2 = q2.ilike("numero_factura", `%${q}%`);
-              }
-            }
-
-            const r2 = await q2;
-            if (r2.error) throw r2.error;
-            data = r2.data;
-          } else {
-            throw error;
-          }
-        }
+        const { data, error } = await query;
+        if (error) throw error;
 
         state.facturas = data || [];
+        await cargarAbonosParaFacturas(state.facturas);
         renderFacturasTabla(state.facturas);
 
       } catch(err){
@@ -1949,15 +1879,6 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
 
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
-        if ($("abono")){
-          const totalFac = Number(fac.valor_total || 0);
-          const mp = (fac.monto_pagado !== undefined && fac.monto_pagado !== null)
-            ? Number(fac.monto_pagado || 0)
-            : ((fac.abono !== undefined && fac.abono !== null) ? Number(fac.abono || 0) : ((fac.pagada === true) ? totalFac : 0));
-          $("abono").value = String(Math.max(0, Math.min(totalFac, mp)));
-          state._abonoTouched = false;
-        }
-
 
         state.facturaGuardada = fac;
         $("btn-imprimir").disabled = false;
@@ -2012,20 +1933,11 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
         const total = (fac.valor_total !== undefined && fac.valor_total !== null)
           ? Number(fac.valor_total || 0)
           : Math.max(0, (subtotal + iva_valor) - copago - cuota);
-        const mpRaw = (fac.monto_pagado !== undefined && fac.monto_pagado !== null)
-          ? Number(fac.monto_pagado || 0)
-          : ((fac.abono !== undefined && fac.abono !== null) ? Number(fac.abono || 0) : ((fac.pagada === true) ? total : 0));
-
-        const monto_pagado = Math.max(0, Math.min(total, mpRaw));
-        const saldo_pendiente = (fac.saldo_pendiente !== undefined && fac.saldo_pendiente !== null)
-          ? Math.max(0, Number(fac.saldo_pendiente || 0))
-          : Math.max(0, total - monto_pagado);
-
 
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, monto_pagado, saldo_pendiente, total }
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total }
         });
 
         const w = window.open("", "_blank", "width=900,height=700");
@@ -2073,8 +1985,6 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
           "Referencia pago": f.referencia_pago || "",
           "Total": Number(f.valor_total || 0),
-          "Monto pagado (abonos)": (f.monto_pagado !== undefined && f.monto_pagado !== null) ? Number(f.monto_pagado || 0) : "",
-          "Saldo pendiente": (f.saldo_pendiente !== undefined && f.saldo_pendiente !== null) ? Number(f.saldo_pendiente || 0) : "",
           "Copago": Number(f.copago || 0),
           "Cuota moderadora": Number(f.cuota_moderadora || 0),
         }));
@@ -2130,9 +2040,7 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
 
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
-        $("abono")?.addEventListener("input", () => { state._abonoTouched = true; recalcularTotales(); });
 
-        
         $("iva_porcentaje").addEventListener("input", recalcularTotales);
         $("iva_aplica").addEventListener("change", syncIVAUI);
 
@@ -2191,6 +2099,8 @@ tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
+
 
 
 
