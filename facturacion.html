@@ -1470,6 +1470,8 @@ async function validarPermisoDesdeTabla(){
 
         state.facturaGuardada = fac;
         $("btn-imprimir").disabled = false;
+        if ($("btn-abonos")) $("btn-abonos").disabled = false;
+        if ($("btn-abonos")) $("btn-abonos").disabled = false;
 
         setStatus("");
         toast("Factura guardada ✅", "ok");
@@ -1657,8 +1659,7 @@ async function validarPermisoDesdeTabla(){
           setStatus("");
 
           if (missingTable){
-            toast("Falta la tabla 'abonos' en Supabase.
-Crea la tabla para usar abonos.", "warn");
+            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
             $("tbody-abonos").innerHTML = `<tr><td colspan="6" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
             updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
             return;
@@ -1677,8 +1678,7 @@ Crea la tabla para usar abonos.", "warn");
       } catch(err){
         console.error(err);
         setStatus("");
-        toast("No se pudieron cargar abonos:
-" + (err?.message || "Error"), "err");
+        toast("No se pudieron cargar abonos:\n" + (err?.message || "Error"), "err");
         renderAbonosTabla([]);
       }
     }
@@ -1725,8 +1725,7 @@ Crea la tabla para usar abonos.", "warn");
           setStatus("");
 
           if (missingTable){
-            toast("Falta la tabla 'abonos' en Supabase.
-Crea la tabla para usar abonos.", "warn");
+            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
             return;
           }
           throw error;
@@ -1743,8 +1742,7 @@ Crea la tabla para usar abonos.", "warn");
       } catch(err){
         console.error(err);
         setStatus("");
-        toast("No se pudo guardar abono:
-" + (err?.message || "Error"), "err");
+        toast("No se pudo guardar abono:\n" + (err?.message || "Error"), "err");
       }
     }
 
@@ -1766,8 +1764,7 @@ Crea la tabla para usar abonos.", "warn");
       } catch(err){
         console.error(err);
         setStatus("");
-        toast("No se pudo eliminar abono:
-" + (err?.message || "Error"), "err");
+        toast("No se pudo eliminar abono:\n" + (err?.message || "Error"), "err");
       }
     }
 
@@ -2204,6 +2201,15 @@ Crea la tabla para usar abonos.", "warn");
 
         $("btn-guardar").addEventListener("click", guardarFactura);
         $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
+        if ($("btn-abonos")) {
+          $("btn-abonos").addEventListener("click", async () => {
+            if (!state.facturaGuardada?.id){
+              toast("Primero guarda la factura", "warn");
+              return;
+            }
+            await abrirAbonosFactura(state.facturaGuardada.id);
+          });
+        }
 
         $("btn-logout").addEventListener("click", cerrarSesion);
         $("paciente_cedula").addEventListener("input", onCedulaInput);
@@ -2265,6 +2271,9 @@ Crea la tabla para usar abonos.", "warn");
   </script>
 </body>
 </html>
+
+
+
 
 
 
