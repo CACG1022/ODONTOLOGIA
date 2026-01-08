@@ -435,7 +435,7 @@ function _evolucionesToHTML(evos){
         <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
       </div>
       <div class="ctrl">
-        <button type="button" onclick="irAgendamiento()" class="btn btn-agenda">VER AGENDA</button>
+        <button type="button" onclick="irAEvoluciones()" class="btn btn-agenda">EVOLUCIONES</button>
       </div>
 
       <div class="ctrl">
@@ -881,7 +881,7 @@ function _evolucionesToHTML(evos){
     </div>
   </section>
   <!-- ✅ EVOLUCIONES -->
-  <section class="card">
+  <section class="card" id="seccionEvoluciones">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
 
     <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
@@ -891,7 +891,7 @@ function _evolucionesToHTML(evos){
     class="btn btn-agenda"
     style="max-width:260px;"
   >
-    Ver/agregar evoluciones
+    Evoluciones
   </button>
 </div>
 
@@ -1326,7 +1326,16 @@ Fecha: {{FECHA}}
 
   function irInicio() { window.location.href = URL_INICIO; }
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
-  function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
+  
+  function irAEvoluciones() {
+    const el = document.getElementById("seccionEvoluciones");
+    if (!el) {
+      alert("⚠️ No se encontró la sección de evoluciones.");
+      return;
+    }
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
 
   function irPlanTratamiento() {
     const cedula = (
@@ -3519,6 +3528,16 @@ window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
   
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 
