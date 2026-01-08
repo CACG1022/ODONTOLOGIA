@@ -627,8 +627,7 @@
       facturaGuardada: null,
       _debounce: null,
       _lastCedula: "",
-      facturas: [],
-      abonosPorFactura: {} // { factura_id: { total_abonado, saldo } }
+      facturas: []
     };
 
     const $ = (id) => document.getElementById(id);
@@ -1467,152 +1466,6 @@ async function validarPermisoDesdeTabla(){
       $("count_facturas").textContent = String((rows || []).length);
     }
 
-    // ✅ ABONOS:
-    // Permite registrar pagos parciales ("abonos") a una factura/tratamiento.
-    // Requiere (opcional) una tabla 'abonos' en Supabase con al menos:
-    // - factura_id (FK o uuid/int), monto (numeric), fecha (timestamptz o date),
-    // - metodo_pago (text), referencia_pago (text), usuario_email (text)
-    // Si la tabla/columnas no existen, el módulo seguirá funcionando y mostrará aviso.
-    function isMissingTableOrColumn(err){
-      const msg = String(err?.message || err || "").toLowerCase();
-      return (
-        msg.includes("does not exist") ||
-        msg.includes("not exist") ||
-        msg.includes("relation") ||
-        msg.includes("column")
-      );
-    }
-
-    async function cargarAbonosParaFacturas(rows){
-      state.abonosPorFactura = {};
-      const facs = rows || [];
-      const ids = facs.map(f => f.id).filter(Boolean);
-      if (!ids.length) return;
-
-      try{
-        // Traemos abonos solo para estas facturas
-        const { data, error } = await supabase
-          .from("abonos")
-          .select("factura_id, monto")
-          .in("factura_id", ids);
-
-        if (error) throw error;
-
-        const sum = {};
-        for (const a of (data || [])){
-          const fid = a.factura_id;
-          const m = Number(a.monto || 0);
-          if (!fid) continue;
-          sum[fid] = (sum[fid] || 0) + (Number.isFinite(m) ? m : 0);
-        }
-
-        for (const f of facs){
-          const abonado = Number(sum[f.id] || 0);
-          const total = Number(f.valor_total || 0);
-          const saldo = Math.max(0, total - abonado);
-          state.abonosPorFactura[f.id] = { total_abonado: abonado, saldo };
-        }
-      } catch(err){
-        console.warn("No se pudieron cargar abonos (tabla/columnas pueden no existir):", err);
-        // Dejamos en cero para no romper el módulo
-        for (const f of facs){
-          const total = Number(f.valor_total || 0);
-          state.abonosPorFactura[f.id] = { total_abonado: 0, saldo: Math.max(0, total) };
-        }
-      }
-    }
-
-    async function abonarFactura(f){
-      try{
-        const meta = state.abonosPorFactura?.[f.id] || { total_abonado: 0, saldo: Math.max(0, Number(f.valor_total||0)) };
-        const saldoActual = Number(meta.saldo || 0);
-
-        if (saldoActual <= 0){
-          toast("Esta factura ya no tiene saldo pendiente.", "warn");
-          return;
-        }
-
-        let montoRaw = window.prompt(`Ingresa el valor del abono (saldo actual: $ ${money(saldoActual)}):`, "");
-        if (montoRaw === null) return;
-
-        // Permitir que digiten con separadores
-        montoRaw = String(montoRaw).replace(/[^\d.,]/g, "").replaceAll(".", "").replace(",", ".");
-        const monto = Math.max(0, Number(montoRaw || 0));
-
-        if (!Number.isFinite(monto) || monto <= 0){
-          toast("Valor de abono inválido.", "warn");
-          return;
-        }
-        if (monto > saldoActual){
-          toast("El abono no puede ser mayor al saldo pendiente.", "warn");
-          return;
-        }
-
-        // Método y referencia (si no es efectivo, pedimos referencia)
-        let metodo = window.prompt("Método de pago del abono (Efectivo/Transferencia/Tarjeta/Nequi/Daviplata/Otro):", "Efectivo");
-        if (metodo === null) return;
-        metodo = (metodo || "Efectivo").trim();
-
-        let referencia = null;
-        if (metodo && metodo.toLowerCase() !== "efectivo"){
-          referencia = window.prompt("Referencia / comprobante (obligatorio para este método):", "");
-          if (referencia === null) return;
-          referencia = referencia.trim();
-          if (!referencia){
-            toast("La referencia es obligatoria para este método.", "warn");
-            return;
-          }
-        } else {
-          // efectivo: opcional
-          referencia = window.prompt("Referencia / nota (opcional):", "") ?? null;
-          if (referencia !== null) referencia = String(referencia).trim() || null;
-        }
-
-        const fp = window.prompt("Fecha del abono (YYYY-MM-DD):", hoyISO());
-        if (fp === null) return;
-        const fechaAbono = parseDateYYYYMMDD(fp);
-        if (!fechaAbono){
-          toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
-          return;
-        }
-
-        setStatus("Registrando abono...");
-
-        const payload = {
-          factura_id: f.id,
-          monto: monto,
-          fecha: toISODateTimeFromYYYYMMDD(fechaAbono),
-          metodo_pago: metodo || null,
-          referencia_pago: referencia || null,
-          usuario_email: (state.session?.user?.email || null)
-        };
-
-        const { error } = await supabase
-          .from("abonos")
-          .insert([payload]);
-
-        if (error){
-          setStatus("");
-          if (isMissingTableOrColumn(error)){
-            toast("No se pudo registrar abono: falta tabla/columnas 'abonos' en Supabase.", "warn");
-            return;
-          }
-          throw error;
-        }
-
-        setStatus("");
-        toast("Abono registrado ✅", "ok");
-        await listarFacturas();
-
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo registrar abono:
-" + (err?.message || "Error"), "err");
-      }
-    }
-
-
     // ✅ CORREGIDO COMPLETO:
     // - Columna "Pago" = ESTADO
     // - Botón = ACCIÓN
@@ -1723,25 +1576,18 @@ async function validarPermisoDesdeTabla(){
         const total = money(f.valor_total || 0);
 
         const estadoPago = pagoLabel(f.pagada);
-const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
-
-const ab = state.abonosPorFactura?.[f.id] || { total_abonado: 0, saldo: Math.max(0, Number(f.valor_total||0)) };
-const abonadoTxt = money(ab.total_abonado || 0);
-const saldoTxt = money(ab.saldo || 0);
-const pagoExtra = `Abonos: $ ${abonadoTxt}
-Saldo: $ ${saldoTxt}`;
+        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
 
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
           <td class="mono">${escapeHtml(numf)}</td>
           <td>${escapeHtml(nom)}</td>
           <td class="mono">${escapeHtml(ced)}</td>
-          <td class="mono"><div>${escapeHtml(estadoPago)}</div><div style="margin-top:6px; font-size:11px; color:var(--muted); white-space:pre-line;">${escapeHtml(pagoExtra)}</div></td>
+          <td class="mono">${escapeHtml(estadoPago)}</td>
           <td class="mono">$ ${escapeHtml(total)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
-            <button class="btn small" data-act="abonar">💰 Abonar</button>
             <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
           </td>
         `;
@@ -1755,11 +1601,6 @@ Saldo: $ ${saldoTxt}`;
           await imprimirFacturaPorId(f.id);
         });
 
-
-
-tr.querySelector('[data-act="abonar"]').addEventListener("click", async () => {
-  await abonarFactura(f);
-});
         tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           await togglePagadaFactura(f);
         });
@@ -1809,7 +1650,6 @@ tr.querySelector('[data-act="abonar"]').addEventListener("click", async () => {
         if (error) throw error;
 
         state.facturas = data || [];
-        await cargarAbonosParaFacturas(state.facturas);
         renderFacturasTabla(state.facturas);
 
       } catch(err){
@@ -2099,6 +1939,10 @@ tr.querySelector('[data-act="abonar"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
