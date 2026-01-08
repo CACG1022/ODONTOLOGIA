@@ -84,133 +84,7 @@
     }
   });
 
-    // ==============================
-// ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
-// ==============================
-let _srEvo = null;
-let _srEvoOn = false;
-
-function _soportaDictado() {
-  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-}
-
-function _appendEnTextarea(textarea, texto) {
-  if (!textarea) return;
-
-  const actual = textarea.value || "";
-  const add = (texto || "").trim();
-  if (!add) return;
-
-  // Agregar sin reemplazar, con separador inteligente
-  const sep = actual.trim().length ? (actual.endsWith("\n") ? "" : "\n") : "";
-  textarea.value = actual + sep + add;
-
-  // cursor al final
-  textarea.focus();
-  textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
-}
-
-function iniciarDictadoEvoDetalle() {
-  const ta = document.getElementById("evo_detalle");
-  const btn = document.getElementById("btnDictadoEvoDetalle");
-  const hint = document.getElementById("dictadoHintEvo");
-
-  if (!_soportaDictado()) {
-    alert("⚠️ Tu navegador no soporta dictado por voz. Usa Chrome o Edge.");
-    return;
-  }
-
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  _srEvo = new SR();
-
-  _srEvo.lang = "es-CO";         // puedes cambiar a "es-ES", "es-MX", etc.
-  _srEvo.continuous = true;      // seguir escuchando
-  _srEvo.interimResults = true;  // mostrar parciales (no los agregamos hasta que sean finales)
-
-  let bufferFinal = "";
-
-  _srEvo.onstart = () => {
-    _srEvoOn = true;
-    if (btn) btn.classList.add("on");
-    if (hint) hint.style.display = "block";
-  };
-
-  _srEvo.onresult = (event) => {
-    let textoFinal = "";
-
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      const res = event.results[i];
-      const t = (res[0]?.transcript || "").trim();
-      if (!t) continue;
-
-      if (res.isFinal) {
-        textoFinal += (textoFinal ? " " : "") + t;
-      }
-    }
-
-    if (textoFinal) {
-      // lo vamos acumulando y lo insertamos de una vez por cada "final"
-      bufferFinal += (bufferFinal ? " " : "") + textoFinal;
-
-      // ✅ agrega al textarea SIN borrar lo que ya existe
-      _appendEnTextarea(ta, bufferFinal);
-      bufferFinal = "";
-    }
-  };
-
-  _srEvo.onerror = (e) => {
-    console.warn("Dictado error:", e);
-    // Errores típicos: "not-allowed" (sin permiso), "no-speech"
-    if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
-      alert("⚠️ Permiso de micrófono denegado. Habilítalo en el navegador.");
-      detenerDictadoEvoDetalle();
-    }
-  };
-
-  _srEvo.onend = () => {
-    // Si estaba encendido y el navegador lo corta, intentamos reanudar
-    // (útil cuando continuous=true pero Chrome a veces lo detiene)
-    if (_srEvoOn) {
-      try { _srEvo.start(); } catch (err) {}
-      return;
-    }
-    if (btn) btn.classList.remove("on");
-    if (hint) hint.style.display = "none";
-  };
-
-  try {
-    _srEvo.start();
-  } catch (e) {
-    console.warn("No se pudo iniciar dictado:", e);
-  }
-}
-
-function detenerDictadoEvoDetalle() {
-  const btn = document.getElementById("btnDictadoEvoDetalle");
-  const hint = document.getElementById("dictadoHintEvo");
-
-  _srEvoOn = false;
-
-  if (_srEvo) {
-    try { _srEvo.onend = null; } catch(e) {}
-    try { _srEvo.stop(); } catch(e) {}
-    _srEvo = null;
-  }
-
-  if (btn) btn.classList.remove("on");
-  if (hint) hint.style.display = "none";
-}
-
-function toggleDictadoEvoDetalle() {
-  if (_srEvoOn) detenerDictadoEvoDetalle();
-  else iniciarDictadoEvoDetalle();
-}
-
-// opcional: detener dictado si cambias de página o cierras
-window.addEventListener("beforeunload", () => {
-  try { detenerDictadoEvoDetalle(); } catch(e) {}
-});
-window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
+ 
 
 function _fmt(val){
   if (val === null || val === undefined) return "";
@@ -958,63 +832,17 @@ function _evolucionesToHTML(evos){
   <section class="card">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
 
-    <div class="grid g-3">
-      <div class="ctrl">
-        <label for="evo_fecha">Fecha</label>
-        <input id="evo_fecha" type="date" disabled>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_hora">Hora</label>
-        <input id="evo_hora" type="time" readonly>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_profesional">Profesional</label>
-        <div class="inline" style="gap:10px;">
-       <select id="evo_profesional">
-        <option value="">Seleccione profesional...</option>
-        </select>
-          </div>
-      </div>
-
-
-      <div class="ctrl">
-        <label for="evo_tipo">Procedimiento</label>
-        <div class="inline" style="gap:10px;">
-          <input id="evo_tipo" type="text" list="procedimientos_list_supabase" placeholder="Buscar o escribir procedimiento..." autocomplete="off" style="flex:1;" />
-        </div>
-      </div>
-
-      <div class="ctrl full">
-  <label for="evo_detalle">Detalle / Observaciones</label>
-
-  <div class="vwrap">
-    <div class="vfield">
-      <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
-    </div>
-
-    <button
-      id="btnDictadoEvoDetalle"
-      type="button"
-      class="vbtn"
-      title="Dictar por voz"
-      aria-label="Dictar por voz"
-      onclick="toggleDictadoEvoDetalle()"
-    >🎤</button>
-  </div>
-
-  <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
-    🎙️ Dictando... habla normal. (Se agregará al final del texto)
-  </div>
+    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
+  <button
+    type="button"
+    onclick="abrirModalEvoluciones()"
+    class="btn btn-agenda"
+    style="max-width:260px;"
+  >
+    Evoluciones
+  </button>
 </div>
 
-    </div>
-
-    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">Agregar evolución</button>
-      <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">Limpiar</button>
-    </div>
 
     <div class="rowline"></div>
 
@@ -1580,82 +1408,9 @@ async function cargarProfesionalesDesdeSupabase() {
   // ==============================
   let evoluciones = [];
 
-  function limpiarEvolucionForm() {
-    const f = document.getElementById("evo_fecha");
-    const h = document.getElementById("evo_hora");
-    const p = document.getElementById("evo_profesional");
-    const t = document.getElementById("evo_tipo");
-    const d = document.getElementById("evo_detalle");
-
-    if (f) f.value = _hoyISO();
-    if (h) h.value = _horaHHMM();
-    if (p) p.value = "";
-    if (t) t.value = "";
-    if (d) d.value = "";
-  }
-
   function generarEvolucionId() { return uuid(); }
 
-  async function agregarEvolucion() {
-    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
-    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
-    const profesional = document.getElementById("evo_profesional").value.trim();
-    const tipo = document.getElementById("evo_tipo").value.trim();
-    const detalle = document.getElementById("evo_detalle").value.trim();
-
-    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
-    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-
-    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-    const cedula = (
-      document.getElementById("paciente_numdoc")?.value ||
-      document.getElementById("buscar_cedula")?.value ||
-      ""
-    ).trim();
-
-    if (!cedula) {
-      alert("⚠️ Primero debes tener la cédula del paciente.");
-      return;
-    }
-
-    const item = {
-      id: generarEvolucionId(),
-      fecha,
-      hora,
-      profesional,
-      procedimiento: tipo,
-      detalle,
-      cedula_paciente: cedula,
-      usuario,
-      ts: new Date().toISOString()
-    };
-
-    evoluciones.unshift(item);
-    renderEvoluciones();
-    limpiarEvolucionForm();
-
-    try {
-      const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
-      const payload = {
-        evento: "agregar_evolucion",
-        cedula: cedula,
-        evolucion: item,
-        fecha_envio: new Date().toISOString(),
-        usuario_logueado: usuario
-      };
-
-      const resp = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-    } catch (err) {
-      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
-      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
-    }
-  }
+  
 
   function eliminarEvolucion(idx) {
     evoluciones.splice(idx, 1);
@@ -1739,6 +1494,24 @@ async function cargarProfesionalesDesdeSupabase() {
   nuevoDocumento();
   cargarPlantillasDesdeSupabase(); // ✅ NUEVO
   cargarProfesionalesDesdeSupabase();
+  // 1) leer cedula por URL
+  const params = new URLSearchParams(location.search);
+  const cedulaURL = (params.get("cedula") || "").trim();
+
+  // 2) leer paciente completo por localStorage
+  let pacienteLS = null;
+  try {
+    pacienteLS = JSON.parse(localStorage.getItem("paciente_actual_evoluciones") || "null");
+  } catch(e) {}
+
+  const cedula = cedulaURL || (pacienteLS?.cedula || "");
+
+  // ✅ Aquí ya tienes el paciente actual:
+  // pacienteLS.nombre, pacienteLS.edad, etc.
+
+  console.log("Paciente recibido:", { cedula, pacienteLS });
+
+    
 });
 
 
@@ -2706,6 +2479,44 @@ const profesionalNombre = (d.profesional || "").trim();
   setTimeout(() => window.print(), 200);
 })();
 <\/script>
+<!-- ✅ MODAL EVOLUCIONES (ventana modal con iframe) -->
+<div id="modalEvoluciones" style="
+  display:none; position:fixed; inset:0; background:rgba(0,0,0,.45);
+  z-index:1000006; padding:20px;">
+  <div style="
+    max-width:1100px; margin:0 auto; background:#fff; border-radius:14px;
+    border:1px solid #e7edf5; box-shadow:0 10px 30px rgba(0,0,0,.2);
+    overflow:hidden; max-height: calc(100vh - 40px);
+    display:flex; flex-direction:column;
+  ">
+    <div style="
+      display:flex; justify-content:space-between; align-items:center;
+      padding:14px 16px; background:#eef6ff; border-bottom:1px solid #e7edf5; gap:16px;
+    ">
+      <div style="font-weight:800; color:#2a5d84; font-size:16px;">
+        Evoluciones del paciente
+      </div>
+
+      <button type="button" onclick="cerrarModalEvoluciones()" style="
+        border:none; background:#0D47A1; color:#fff; font-weight:700;
+        border-radius:10px; padding:10px 12px; cursor:pointer;
+      ">
+        Cerrar ✕
+      </button>
+    </div>
+
+    <div style="flex:1; background:#fff;">
+      <iframe
+        id="iframeEvoluciones"
+        src="about:blank"
+        style="width:100%; height:calc(100vh - 140px); border:none;"
+        allow="clipboard-read; clipboard-write"
+      ></iframe>
+    </div>
+  </div>
+</div>
+
+
 </body>
 </html>`;
 
@@ -3214,6 +3025,72 @@ function probarPlantillaEnDocumento(){
   alert("✅ Plantilla aplicada al documento (campo Texto).");
 }
 
+  function _getPacienteActualParaEvoluciones(){
+  const cedula = (
+    document.getElementById("paciente_numdoc")?.value ||
+    document.getElementById("buscar_cedula")?.value ||
+    ""
+  ).trim();
+
+  const paciente = {
+    cedula,
+    nombre: (document.getElementById("paciente_nombre")?.value || "").trim(),
+    edad: (document.getElementById("paciente_edad")?.value || "").trim(),
+    telefono: (document.getElementById("paciente_tel")?.value || "").trim(),
+    celular: (document.getElementById("paciente_cel")?.value || "").trim(),
+    email: (document.getElementById("paciente_email")?.value || "").trim()
+  };
+
+  return paciente;
+}
+
+function abrirModalEvoluciones(){
+  const paciente = _getPacienteActualParaEvoluciones();
+
+  if (!paciente.cedula) {
+    alert("⚠️ Primero debes cargar o buscar un paciente (cédula).");
+    return;
+  }
+
+  // ✅ Guardar paciente actual para que evoluciones.html lo cargue automáticamente
+  try {
+    localStorage.setItem("paciente_actual_evoluciones", JSON.stringify(paciente));
+  } catch(e) {}
+
+  // ✅ también pasamos la cédula por querystring (doble seguridad)
+  const url = "https://cacg1022.github.io/ODONTOLOGIA/evoluciones.html?cedula=" + encodeURIComponent(paciente.cedula);
+
+  const modal = document.getElementById("modalEvoluciones");
+  const iframe = document.getElementById("iframeEvoluciones");
+  if (iframe) iframe.src = url;
+
+  if (modal) modal.style.display = "block";
+}
+
+function cerrarModalEvoluciones(){
+  const modal = document.getElementById("modalEvoluciones");
+  const iframe = document.getElementById("iframeEvoluciones");
+  if (iframe) iframe.src = "about:blank";
+  if (modal) modal.style.display = "none";
+}
+
+// ✅ opcional: cerrar modal si evoluciones.html envía un mensaje
+window.addEventListener("message", (ev) => {
+  // Puedes endurecer esto verificando el origen exacto si quieres:
+  // if (ev.origin !== "https://cacg1022.github.io") return;
+
+  if (ev?.data === "cerrar_modal_evoluciones") {
+    cerrarModalEvoluciones();
+  }
+
+  // Si evoluciones.html te avisa que guardó algo y quieres recargar evoluciones:
+  if (ev?.data?.type === "evoluciones_actualizadas" && typeof buscarHistoria === "function") {
+    // recarga del paciente actual (si quieres)
+    // buscarHistoria(); // (OJO: esto dispara fetch a n8n, úsalo solo si lo necesitas)
+  }
+});
+
+
   // Exponer funciones usadas en HTML
   window.buscarHistoria = buscarHistoria;
   window.enviarAN8N = enviarAN8N;
@@ -3232,9 +3109,9 @@ function probarPlantillaEnDocumento(){
   window.cargarDocumentosPacienteDesdeSupabase = cargarDocumentosPacienteDesdeSupabase;
   window.cerrarSesion = cerrarSesion;
 
-  window.agregarEvolucion = agregarEvolucion;
+  
   window.eliminarEvolucion = eliminarEvolucion;
-  window.limpiarEvolucionForm = limpiarEvolucionForm;
+
 
   window.agregarProfesionalDesdeCampo = agregarProfesionalDesdeCampo;
   window.abrirModalPlantillas = abrirModalPlantillas;
@@ -3246,6 +3123,9 @@ window.eliminarPlantillaSupabase = eliminarPlantillaSupabase;
 window.cargarPlantillasDesdeSupabase = cargarPlantillasDesdeSupabase;
 window.probarPlantillaEnDocumento = probarPlantillaEnDocumento;
 window.aplicarPlantillaSeleccionada = aplicarPlantillaSeleccionada;
+  window.abrirModalEvoluciones = abrirModalEvoluciones;
+window.cerrarModalEvoluciones = cerrarModalEvoluciones;
+
 
 async function capturarOdontogramaPNG(){
   const el = document.getElementById("odontograma-wrapper");
