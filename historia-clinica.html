@@ -362,6 +362,23 @@ function _evolucionesToHTML(evos){
     .print-wrap{
   margin-top: 16px; /* ajusta: 8px, 16px, etc */
      }
+/* ✅ FULLSCREEN MODAL EVOLUCIONES */
+#modalEvoluciones.fullscreen{
+  padding: 0 !important;
+}
+
+#modalEvoluciones.fullscreen > div{
+  max-width: none !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  max-height: none !important;
+}
+
+#modalEvoluciones.fullscreen #iframeEvoluciones{
+  height: calc(100vh - 70px) !important; /* resta el header */
+}
 
   </style>
 </head>
@@ -3390,10 +3407,22 @@ function _evolucionesToHTML(evos){
     overflow:hidden; max-height: calc(100vh - 40px);
     display:flex; flex-direction:column;
   ">
-    <div style="
-      display:flex; justify-content:space-between; align-items:center;
-      padding:14px 16px; background:#eef6ff; border-bottom:1px solid #e7edf5; gap:16px;
-    ">
+    <div style="display:flex; gap:10px; align-items:center;">
+  <button type="button" id="btnToggleEvoFS" onclick="toggleEvolucionesFullscreen()" style="
+    border:none; background:#009688; color:#fff; font-weight:700;
+    border-radius:10px; padding:10px 12px; cursor:pointer;
+  ">
+    Maximizar ⛶
+  </button>
+
+  <button type="button" onclick="cerrarModalEvoluciones()" style="
+    border:none; background:#0D47A1; color:#fff; font-weight:700;
+    border-radius:10px; padding:10px 12px; cursor:pointer;
+  ">
+    Cerrar ✕
+  </button>
+</div>
+
       <div style="font-weight:800; color:#2a5d84; font-size:16px;">
         Evoluciones del paciente
       </div>
