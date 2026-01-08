@@ -3046,17 +3046,26 @@ function abrirModalEvoluciones(){
     return;
   }
 
-  // (Opcional) seguir guardando en localStorage por si lo usas allá
+  // opcional: guardar por compatibilidad
   try {
     localStorage.setItem("paciente_actual_evoluciones", JSON.stringify(paciente));
     localStorage.setItem("cedula_paciente_actual", paciente.cedula);
   } catch(e) {}
 
-  const cedula = paciente.cedula;
+  const modal = document.getElementById("modalEvoluciones");
+  const iframe = document.getElementById("iframeEvoluciones");
+  if (!modal || !iframe) {
+    alert("❌ No se encontró modalEvoluciones o iframeEvoluciones en el HTML.");
+    return;
+  }
 
-  // ✅ AQUÍ tu línea
-  window.location.href = `evoluciones.html?auto=1&cedula=${encodeURIComponent(cedula)}`;
+  // ✅ abrir modal
+  modal.style.display = "block";
+
+  // ✅ cargar evoluciones dentro del iframe (sin salir de la historia)
+  iframe.src = `evoluciones.html?auto=1&cedula=${encodeURIComponent(paciente.cedula)}`;
 }
+
 
 
 function cerrarModalEvoluciones(){
