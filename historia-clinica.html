@@ -1456,7 +1456,7 @@ async function cargarProfesionalesDesdeSupabase() {
         <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
         <td style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
+          <button type="button" class="btn btn-buscar" style="padding:8px disabled 10px; width:auto;" onclick="eliminarEvolucion(${idx})">
             Eliminar
           </button>
         </td>
