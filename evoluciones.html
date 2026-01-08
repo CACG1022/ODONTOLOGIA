@@ -616,6 +616,21 @@
   }
 
   // ==============================
+  // ✅ FIX: FETCH SEGURO (cuando n8n no responde JSON)
+  // ==============================
+  async function fetchJSONSeguro(url) {
+    const resp = await fetch(url, { cache: "no-store" });
+    const text = await resp.text();
+
+    // intenta JSON
+    try {
+      return { ok: true, data: JSON.parse(text), status: resp.status, raw: text };
+    } catch (e) {
+      return { ok: false, data: null, status: resp.status, raw: text };
+    }
+  }
+
+  // ==============================
   // UTILIDADES
   // ==============================
   function _uuidFallback() {
@@ -1021,6 +1036,18 @@
 
     tbody.innerHTML = "";
 
+    // ✅ NUEVO: si no hay evoluciones, mostrar mensaje y NO dar error
+    if (!evoluciones || evoluciones.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
+            Paciente sin evoluciones
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
     evoluciones.forEach((evo, idx) => {
       const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
@@ -1147,13 +1174,18 @@
     const url = WEBHOOK_BUSCAR_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
 
     try {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
+      const r = await fetchJSONSeguro(url);
 
-      let raw;
-      try { raw = await resp.json(); }
-      catch { throw new Error("Respuesta del webhook no es JSON"); }
+      // ✅ Si NO es JSON (o viene vacío/html), tratar como "sin evoluciones" y no mostrar error
+      if (!r.ok) {
+        evoluciones = [];
+        renderEvoluciones();
+        // Si quieres alert, descomenta:
+        // alert("Paciente sin evoluciones");
+        return;
+      }
 
+      const raw = r.data;
       const data = unwrapWebhookRespuesta(raw);
 
       // ✅ Mostrar nombre aunque la historia no exista (si viene)
@@ -1169,12 +1201,16 @@
       if (!existe) {
         evoluciones = [];
         renderEvoluciones();
-        alert("No existe historia clínica para este paciente (o no hay evoluciones).");
+        // Si quieres alert, descomenta:
+        // alert("Paciente sin evoluciones");
         return;
       }
 
       evoluciones = normalizarEvolucionesDeWebhook(raw);
       renderEvoluciones();
+
+      // ✅ Si existe historia pero no hay evoluciones, mostrar "Paciente sin evoluciones"
+      // (ya lo hace renderEvoluciones con la fila informativa)
       //alert("Evoluciones cargadas con éxito");
     } catch (err) {
       console.error(err);
@@ -1239,6 +1275,7 @@ async function autoloadEvolucionesSiHayPaciente() {
 </script>
 </body>
 </html>
+
 
 
 
