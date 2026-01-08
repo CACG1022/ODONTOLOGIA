@@ -1186,18 +1186,17 @@
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
-    // ✅ NO inicializamos tamaños de firma aquí (porque está oculto)
-    // Solo preparamos estructura/eventos (lazy)
-    _ensureFirmasInit();
+  _ensureFirmasInit();
+  limpiarEvolucionForm();
+  mostrarNombrePaciente("");
 
-    limpiarEvolucionForm();
+  await cargarProcedimientosDesdeSupabase();
+  await cargarProfesionalesDesdeSupabase();
 
-    // por defecto oculto
-    mostrarNombrePaciente("");
+  // ✅ AUTO-CARGA si hay paciente seleccionado desde historias-clinicas
+  await autoloadEvolucionesSiHayPaciente();
+});
 
-    await cargarProcedimientosDesdeSupabase();
-    await cargarProfesionalesDesdeSupabase();
-  });
  function getCedulaAuto() {
   // 1) si vienes por URL: evoluciones.html?cedula=123
   const params = new URLSearchParams(window.location.search);
