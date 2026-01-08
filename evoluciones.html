@@ -274,7 +274,8 @@
       width: 44px; min-width: 44px; height: 44px; border-radius: 10px;
       border: 1px solid var(--line); background: #F5F5F5; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px; color: transparent;
+      font-size: 18px;
+      color: #111; /* ✅ ANTES ESTABA TRANSPARENT */
     }
     .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
 
@@ -573,13 +574,22 @@
     }
   }
 
-  // ✅ El webhook lo devuelve como: "Nombre y apellido"
-  function extraerNombrePaciente(data) {
-    // 1) Caso exacto según lo que dices (con mayúsculas y espacios)
+  // ✅ Normaliza posibles formas del webhook (objeto, array, {data:{...}}, etc)
+  function unwrapWebhookRespuesta(data) {
+    if (Array.isArray(data)) return data[0] ?? {};
+    if (data && typeof data === "object" && data.data && typeof data.data === "object") return data.data;
+    return data ?? {};
+  }
+
+  // ✅ El webhook lo devuelve como: "Nombre y apellido" (pero puede variar)
+  function extraerNombrePaciente(raw) {
+    const data = unwrapWebhookRespuesta(raw);
+
+    // 1) Caso exacto
     const directo = data?.["Nombre y apellido"];
     if (String(directo || "").trim()) return String(directo).trim();
 
-    // 2) Variantes por si el webhook cambia (por seguridad)
+    // 2) Variantes comunes
     const candidatos = [
       data?.["Nombre y Apellido"],
       data?.["nombre y apellido"],
@@ -645,7 +655,7 @@
   }
 
   // ==============================
-  // ✅ TOGGLE FIRMAS
+  // ✅ TOGGLE FIRMAS (FIX: init cuando ya está visible)
   // ==============================
   function toggleFirmas(forceState) {
     const wrap = document.getElementById("firmaWrapper");
@@ -658,10 +668,16 @@
     if (next) {
       wrap.classList.add("show");
       btn.textContent = "Ocultar firmas";
-      try {
-        _ensureFirmasInit();
-        _refreshCanvasSizes();
-      } catch(e) {}
+
+      // ✅ Espera a que el display:block aplique y haya layout real (ancho/alto)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try {
+            _ensureFirmasInit();
+            _refreshCanvasSizes(true);
+          } catch(e) {}
+        });
+      });
     } else {
       wrap.classList.remove("show");
       btn.textContent = "Agregar firmas";
@@ -680,6 +696,10 @@
 
   function _resizeCanvasToCSS(canvas) {
     const rect = canvas.getBoundingClientRect();
+
+    // ✅ FIX: si está hidden o aún sin layout, no redimensionar a 1x1
+    if (!rect.width || !rect.height || rect.width < 5 || rect.height < 5) return false;
+
     const dpr = window.devicePixelRatio || 1;
     const w = Math.max(1, Math.round(rect.width * dpr));
     const h = Math.max(1, Math.round(rect.height * dpr));
@@ -687,6 +707,7 @@
       canvas.width = w;
       canvas.height = h;
     }
+    return true;
   }
 
   function _paintWhiteBg(ctx, canvas){
@@ -698,6 +719,20 @@
     ctx.restore();
   }
 
+  function _setupFirmaCanvas(id) {
+    const f = firmas[id];
+    if (!f?.canvas || !f?.ctx) return;
+
+    const ok = _resizeCanvasToCSS(f.canvas);
+    if (!ok) return; // aún no hay tamaño real
+
+    _paintWhiteBg(f.ctx, f.canvas);
+    f.ctx.lineWidth = 3;
+    f.ctx.lineCap = "round";
+    f.ctx.lineJoin = "round";
+    f.ctx.strokeStyle = "#111";
+  }
+
   function _initFirma(id) {
     const canvas = document.getElementById(id);
     if (!canvas) return;
@@ -706,17 +741,8 @@
     firmas[id].canvas = canvas;
     firmas[id].ctx = ctx;
 
-    function setup() {
-      _resizeCanvasToCSS(canvas);
-      _paintWhiteBg(ctx, canvas);
-
-      ctx.lineWidth = 3;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = "#111";
-    }
-
-    setup();
+    // no forzamos size si está oculto; se ajusta al mostrar
+    _setupFirmaCanvas(id);
 
     function getPos(evt) {
       const rect = canvas.getBoundingClientRect();
@@ -739,6 +765,8 @@
 
     function start(evt) {
       evt.preventDefault();
+      _setupFirmaCanvas(id); // ✅ por si se abrió justo antes de dibujar
+
       firmas[id].drawing = true;
       const p = getPos(evt);
       ctx.beginPath();
@@ -771,11 +799,20 @@
     canvas.addEventListener("touchcancel", end, { passive: false });
 
     window.addEventListener("resize", () => {
-      const dataUrl = canvas.toDataURL("image/png");
-      setup();
-      const img = new Image();
-      img.onload = () => { ctx.drawImage(img, 0, 0, canvas.width, canvas.height); };
-      img.src = dataUrl;
+      // si hay firma, preserva
+      const f = firmas[id];
+      if (!f?.canvas || !f?.ctx) return;
+
+      const wasInk = !!f.hasInk;
+      const dataUrl = wasInk ? f.canvas.toDataURL("image/png") : "";
+
+      _setupFirmaCanvas(id);
+
+      if (dataUrl) {
+        const img = new Image();
+        img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
+        img.src = dataUrl;
+      }
     });
   }
 
@@ -786,16 +823,24 @@
     _firmasIniciadas = true;
   }
 
-  function _refreshCanvasSizes() {
+  function _refreshCanvasSizes(preserveInk = true) {
     ["firma_paciente", "firma_profesional"].forEach(id => {
       const f = firmas[id];
       if (!f?.canvas || !f?.ctx) return;
-      const dataUrl = f.canvas.toDataURL("image/png");
-      _resizeCanvasToCSS(f.canvas);
-      _paintWhiteBg(f.ctx, f.canvas);
-      const img = new Image();
-      img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
-      img.src = dataUrl;
+
+      const rect = f.canvas.getBoundingClientRect();
+      if (!rect.width || !rect.height || rect.width < 5 || rect.height < 5) return;
+
+      const hadInk = !!f.hasInk;
+      const dataUrl = (preserveInk && hadInk) ? f.canvas.toDataURL("image/png") : "";
+
+      _setupFirmaCanvas(id);
+
+      if (dataUrl) {
+        const img = new Image();
+        img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
+        img.src = dataUrl;
+      }
     });
   }
 
@@ -803,8 +848,12 @@
     _ensureFirmasInit();
     const f = firmas[id];
     if (!f?.canvas || !f?.ctx) return;
-    _resizeCanvasToCSS(f.canvas);
-    _paintWhiteBg(f.ctx, f.canvas);
+
+    _setupFirmaCanvas(id);
+    // si estaba oculto y sin layout, no rompe; al mostrar se setea bien
+    if (f.canvas.width > 1 && f.canvas.height > 1) {
+      _paintWhiteBg(f.ctx, f.canvas);
+    }
     f.hasInk = false;
   }
 
@@ -929,6 +978,7 @@
     if (t) t.value = "";
     if (d) d.value = "";
 
+    // ✅ solo limpia si ya se usaron/mostraron
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
     toggleFirmas(false);
@@ -936,18 +986,22 @@
 
   function generarEvolucionId() { return uuid(); }
 
-  function normalizarEvolucionesDeWebhook(data) {
-    let raw = data?.evoluciones;
+  function normalizarEvolucionesDeWebhook(raw) {
+    const data = unwrapWebhookRespuesta(raw);
 
-    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
-      raw = raw.evoluciones;
-    }
-    if (typeof raw === "string") {
-      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
-    }
-    if (!Array.isArray(raw)) raw = [];
+    let evol = data?.evoluciones;
 
-    return raw.map((e) => ({
+    // algunos webhooks envían: {evoluciones:{evoluciones:[...]}}
+    if (evol && !Array.isArray(evol) && typeof evol === "object" && Array.isArray(evol.evoluciones)) {
+      evol = evol.evoluciones;
+    }
+
+    if (typeof evol === "string") {
+      try { evol = JSON.parse(evol); } catch(e) { evol = []; }
+    }
+    if (!Array.isArray(evol)) evol = [];
+
+    return evol.map((e) => ({
       id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
       fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
       hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
@@ -1094,25 +1148,37 @@
 
     try {
       const resp = await fetch(url);
-      const data = await resp.json();
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-      // ✅ Mostrar nombre desde: "Nombre y apellido"
-      const nombre = extraerNombrePaciente(data);
+      let raw;
+      try { raw = await resp.json(); }
+      catch { throw new Error("Respuesta del webhook no es JSON"); }
+
+      const data = unwrapWebhookRespuesta(raw);
+
+      // ✅ Mostrar nombre aunque la historia no exista (si viene)
+      const nombre = extraerNombrePaciente(raw);
       mostrarNombrePaciente(nombre);
 
-      if (!data?.existe) {
+      // ✅ existe puede venir en distintos niveles
+      const existe = (data?.existe !== undefined) ? !!data.existe
+                   : (raw?.existe !== undefined) ? !!raw.existe
+                   : (data?.historia?.existe !== undefined) ? !!data.historia.existe
+                   : false;
+
+      if (!existe) {
         evoluciones = [];
         renderEvoluciones();
         alert("No existe historia clínica para este paciente (o no hay evoluciones).");
         return;
       }
 
-      evoluciones = normalizarEvolucionesDeWebhook(data);
+      evoluciones = normalizarEvolucionesDeWebhook(raw);
       renderEvoluciones();
       alert("Evoluciones cargadas con éxito");
     } catch (err) {
       console.error(err);
-      alert("Error consultando N8N");
+      alert("Error consultando N8N: " + (err?.message || err));
     }
   }
 
@@ -1120,7 +1186,10 @@
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
+    // ✅ NO inicializamos tamaños de firma aquí (porque está oculto)
+    // Solo preparamos estructura/eventos (lazy)
     _ensureFirmasInit();
+
     limpiarEvolucionForm();
 
     // por defecto oculto
@@ -1128,138 +1197,6 @@
 
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
-  });
-
-   const WEBHOOK_HISTORIA = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
-
-  // Si en evoluciones.html también tienes escapeHtml / normalizarEvoluciones, perfecto.
-  // Si no, define mínimo esto:
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-
-  function _soloFechaYYYYMMDD(valor) {
-    if (!valor) return "";
-    if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
-    return String(valor);
-  }
-  function _soloHoraHHMM(valor) {
-    if (!valor) return "";
-    const s = String(valor);
-    if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
-    return s;
-  }
-
-  // ✅ Normaliza evoluciones como lo haces en historias-clinicas (versión corta)
-  function normalizarEvolucionesDeWebhook(data) {
-    let raw = data?.evoluciones;
-
-    if (raw && !Array.isArray(raw) && typeof raw === "object" && Array.isArray(raw.evoluciones)) {
-      raw = raw.evoluciones;
-    }
-    if (typeof raw === "string") {
-      try { raw = JSON.parse(raw); } catch(e) { raw = []; }
-    }
-    if (!Array.isArray(raw)) raw = [];
-
-    return raw.map((e) => ({
-      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? "",
-      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
-      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
-      profesional: e.profesional ?? e.evo_profesional ?? "",
-      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
-      detalle: e.detalle ?? e.evo_detalle ?? ""
-    }));
-  }
-
-  // ✅ Render de la tabla en evoluciones.html
-  function renderEvolucionesTabla(lista) {
-    const tbody = document.getElementById("tabla_evoluciones");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    (lista || []).forEach((evo) => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(evo.id || "")}</td>
-        <td>${escapeHtml(evo.fecha || "")}</td>
-        <td>${escapeHtml(evo.hora || "")}</td>
-        <td>${escapeHtml(String(evo.profesional || "").toUpperCase())}</td>
-        <td>${escapeHtml(String(evo.procedimiento || "").toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(evo.detalle || "")}</td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  // ✅ Carga automática al abrir el modal
-  async function cargarPacienteYEvolucionesPorCedula(cedula) {
-    if (!cedula) return;
-
-    // (Opcional) mostrar cedula en algún campo
-    const inpCed = document.getElementById("evo_cedula");
-    if (inpCed) inpCed.value = cedula;
-
-    try {
-      const url = WEBHOOK_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
-      const resp = await fetch(url);
-      const data = await resp.json();
-
-      if (!data?.existe) {
-        renderEvolucionesTabla([]);
-        const inpNom = document.getElementById("evo_paciente");
-        if (inpNom) inpNom.value = "";
-        alert("No existe historia clínica para este paciente.");
-        return;
-      }
-
-      // ✅ nombre del paciente (ajusta la key si tu webhook devuelve otra)
-      const h = data.historia || {};
-      const nombre = (h["Nombre y apellido"] || h["paciente_nombre"] || "").trim();
-
-      const inpNom = document.getElementById("evo_paciente");
-      if (inpNom) inpNom.value = nombre;
-
-      // ✅ evoluciones
-      const evols = normalizarEvolucionesDeWebhook(data);
-      renderEvolucionesTabla(evols);
-
-    } catch (e) {
-      console.error("Error cargando paciente/evoluciones:", e);
-      alert("Error consultando evoluciones.");
-    }
-  }
-
-  function getCedulaDesdeURLoLS() {
-    // 1) querystring
-    const params = new URLSearchParams(location.search);
-    const cedulaURL = (params.get("cedula") || "").trim();
-    if (cedulaURL) return cedulaURL;
-
-    // 2) localStorage
-    try {
-      const pacienteLS = JSON.parse(localStorage.getItem("paciente_actual_evoluciones") || "null");
-      const cedulaLS = (pacienteLS?.cedula || "").trim();
-      if (cedulaLS) return cedulaLS;
-    } catch(e) {}
-
-    return "";
-  }
-
-  document.addEventListener("DOMContentLoaded", async () => {
-    const cedula = getCedulaDesdeURLoLS();
-    if (cedula) {
-      await cargarPacienteYEvolucionesPorCedula(cedula);
-    } else {
-      // Si quieres, avisa que no llegó la cédula
-      console.warn("No llegó cédula a evoluciones.html");
-    }
   });
 
   // Exponer
@@ -1276,6 +1213,7 @@
 </script>
 </body>
 </html>
+
 
 
 
