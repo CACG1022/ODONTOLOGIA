@@ -274,6 +274,118 @@
       justify-content:flex-end;
     }
 
+    /* =========================
+       ✅ MODAL (Ver factura)
+       ========================= */
+    .modal-backdrop{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 999;
+    }
+    .modal{
+      width: min(1100px, 100%);
+      max-height: 92vh;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-header{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      background:#fff;
+    }
+    .modal-header .title{
+      font-weight: 900;
+    }
+    .modal-body{
+      padding: 14px;
+      overflow:auto;
+      background:#fff;
+    }
+    .invoice{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+    }
+    .inv-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+    .inv-top h2{
+      margin:0;
+      font-size: 16px;
+      letter-spacing:.2px;
+    }
+    .inv-top .meta{
+      text-align:right;
+      font-size: 12px;
+      color: var(--muted);
+      line-height:1.3;
+    }
+    .inv-grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .ibox{
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 10px;
+      background:#fff;
+      min-height: 54px;
+    }
+    .ibox .k{ font-size: 11px; color: var(--muted); font-weight: 800; }
+    .ibox .v{ margin-top: 6px; font-size: 13px; font-weight: 900; color: var(--text); }
+    .inv-sum{
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      flex-wrap:wrap;
+      margin-top: 10px;
+    }
+    .badge{
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      background:#fff;
+      color: var(--text);
+      display:flex;
+      gap: 8px;
+      align-items:baseline;
+      white-space:nowrap;
+    }
+    .badge .k{ color: var(--muted); font-weight: 900; }
+    @media print{
+      body{ background:#fff; padding:0; }
+      .topbar, .container, #toast{ display:none !important; }
+      .modal-backdrop{ display:block !important; position: static; background: #fff; padding:0; }
+      .modal{ width:100%; max-height:none; border:none; border-radius:0; box-shadow:none; }
+      .modal-header{ display:none; }
+      .modal-body{ padding:0; }
+      .invoice{ border:none; border-radius:0; }
+    }
+
     @media (max-width: 1050px){
       .kpis{ grid-template-columns: repeat(2, 1fr); }
     }
@@ -359,20 +471,23 @@
           <div class="s" id="k_total_mes_s">—</div>
         </div>
 
-        <!-- ✅ AJUSTADO: ahora muestra cantidades + totales ($) de pendientes y pagadas -->
+        <!-- ✅ AJUSTADO: incluye total de SALDO pendiente -->
         <div class="kpi">
           <div class="k">Facturas (filtro)</div>
           <div class="row">
             <div class="line">
               <span>⚠️ Pendientes:</span>
-              <span><b id="k_pendientes">0</b> • <span class="mono">$ <span id="k_total_pendientes">0</span></span></span>
+              <span>
+                <b id="k_pendientes">0</b> •
+                <span class="mono">$ <span id="k_saldo_pendiente_total">0</span></span>
+              </span>
             </div>
             <div class="line">
               <span>✅ Pagadas:</span>
               <span><b id="k_pagadas">0</b> • <span class="mono">$ <span id="k_total_pagadas">0</span></span></span>
             </div>
           </div>
-          <div class="s">Totales calculados con el filtro actual.</div>
+          <div class="s">Pendientes: suma de <b>saldo_pendiente</b> (filtro actual).</div>
         </div>
 
         <div class="kpi">
@@ -431,7 +546,7 @@
             <button class="btn small" id="btn-show-paid" type="button">✅ Solo pagadas</button>
           </div>
 
-          <!-- ✅ NUEVO: total de la vista (según botón: todas/pendientes/pagadas) -->
+          <!-- ✅ total de la vista (según botón: todas/pendientes/pagadas) -->
           <div class="mono" id="view_total_line" style="margin:-2px 0 10px 0; color:var(--muted);">
             Mostrando: — • Total: $ 0
           </div>
@@ -447,10 +562,12 @@
                   <th style="width:140px;">Estado</th>
                   <th style="width:170px;">Método</th>
                   <th style="width:160px;">Total</th>
+                  <th style="width:180px;">Saldo pendiente</th>
+                  <th style="width:170px;">Acciones</th>
                 </tr>
               </thead>
               <tbody id="tbody_facturas">
-                <tr><td colspan="7" class="empty">Cargando...</td></tr>
+                <tr><td colspan="9" class="empty">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -470,6 +587,24 @@
 
   <div id="toast" data-type="ok"></div>
 
+  <!-- ✅ MODAL: VER FACTURA -->
+  <div class="modal-backdrop" id="modalFacturaBackdrop" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalFacturaTitle">
+      <div class="modal-header">
+        <div class="title" id="modalFacturaTitle">Factura</div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+          <button class="btn" id="btnPrintFactura" type="button">🖨 Imprimir</button>
+          <button class="btn danger" id="btnCloseFactura" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div id="facturaPreview" class="invoice">
+          Cargando...
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // =========================
     // ✅ DEBUG GLOBAL (para que NO “se muera” silencioso)
@@ -479,7 +614,7 @@
       try{
         const el = document.getElementById("toast");
         if (el){
-          el.textContent = "Error JS: revisa consola (F12)\n" + (e?.message || "Error");
+          el.textContent = "Error JS: revisa consola (F12)\\n" + (e?.message || "Error");
           el.dataset.type = "err";
           el.classList.add("show");
           clearTimeout(window.__t);
@@ -582,6 +717,17 @@
     function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
     function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
+    // ✅ saldo_pendiente helper (compatibilidad si hay registros viejos sin la columna)
+    function getSaldoPendiente(f){
+      const sp = f?.saldo_pendiente;
+      if (sp === null || sp === undefined || sp === ""){
+        // fallback visual
+        if (f?.pagada === true) return 0;
+        return Number(f?.valor_total || 0);
+      }
+      return Number(sp || 0);
+    }
+
     // =========================
     // ✅ AUTH + ROLE
     // =========================
@@ -677,7 +823,7 @@
 
       await cargarRolActual();
 
-      // ✅ AHORA: permiso depende de modulos_permisos (no hardcode)
+      // ✅ permiso depende de modulos_permisos
       const okPerm = await validarPermisoModulo();
       if (!okPerm) return false;
 
@@ -714,7 +860,7 @@
 
       if (error){
         console.error(error);
-        toast("Error profesionales:\n" + error.message, "err");
+        toast("Error profesionales:\\n" + error.message, "err");
         state.profesionales = [];
         renderProfesionales();
         return;
@@ -748,7 +894,7 @@
       try{
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, pagada, metodo_pago, referencia_pago")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, saldo_pendiente, pagada, metodo_pago, referencia_pago, profesional")
           .order("fecha", { ascending: true });
 
         if (desde) query = query.gte("fecha", dateStartISO(desde));
@@ -764,7 +910,7 @@
       } catch(err){
         console.error("cargarFacturasFiltro:", err);
         setStatus("");
-        toast("No se pudieron cargar facturas (posible RLS o columnas faltantes):\n" + (err?.message || "Error"), "err");
+        toast("No se pudieron cargar facturas (posible RLS o columnas faltantes):\\n" + (err?.message || "Error"), "err");
         state.facturasFiltro = [];
       }
     }
@@ -791,7 +937,7 @@
       } catch(err){
         console.error("cargarDetalleFiltro:", err);
         setStatus("");
-        toast("No se pudo cargar detalle (posible RLS):\n" + (err?.message || "Error"), "err");
+        toast("No se pudo cargar detalle (posible RLS):\\n" + (err?.message || "Error"), "err");
         state.detalleFiltro = [];
       }
     }
@@ -852,11 +998,12 @@
       }
 
       if (!rows.length){
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">No hay facturas para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty">No hay facturas para mostrar.</td></tr>`;
         return;
       }
 
       for (const f of rows){
+        const saldo = getSaldoPendiente(f);
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="mono">${escapeHtml(formatFechaHuman(f.fecha))}</td>
@@ -866,6 +1013,10 @@
           <td>${pagoPill(f.pagada)}</td>
           <td class="mono">${escapeHtml(f.metodo_pago || "—")}</td>
           <td class="mono">$ ${escapeHtml(money(f.valor_total || 0))}</td>
+          <td class="mono">$ ${escapeHtml(money(saldo))}</td>
+          <td>
+            <button class="btn small" type="button" data-action="ver-factura" data-id="${escapeHtml(f.id)}">👁 Ver factura</button>
+          </td>
         `;
         tbody.appendChild(tr);
       }
@@ -881,7 +1032,9 @@
       const pendientes = pendientesRows.length;
       const pagadas = pagadasRows.length;
 
-      const totalPendientes = pendientesRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
+      // ✅ requerido: total en dinero de facturas con saldos pendientes (suma saldo_pendiente)
+      const saldoPendienteTotal = pendientesRows.reduce((acc,f)=> acc + getSaldoPendiente(f), 0);
+
       const totalPagadas = pagadasRows.reduce((acc,f)=> acc + (Number(f.valor_total) || 0), 0);
 
       $("k_total_filtro").textContent = money(totalFiltro);
@@ -893,7 +1046,7 @@
       $("k_pendientes").textContent = String(pendientes);
       $("k_pagadas").textContent = String(pagadas);
 
-      $("k_total_pendientes").textContent = money(totalPendientes);
+      $("k_saldo_pendiente_total").textContent = money(saldoPendienteTotal);
       $("k_total_pagadas").textContent = money(totalPagadas);
 
       const det = state.detalleFiltro || [];
@@ -1008,6 +1161,171 @@
     }
 
     // =========================
+    // ✅ MODAL FACTURA
+    // =========================
+    function openFacturaModal(){
+      const bd = $("modalFacturaBackdrop");
+      bd.style.display = "flex";
+      bd.setAttribute("aria-hidden", "false");
+      document.body.style.overflow = "hidden";
+    }
+    function closeFacturaModal(){
+      const bd = $("modalFacturaBackdrop");
+      bd.style.display = "none";
+      bd.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
+      $("facturaPreview").innerHTML = "—";
+    }
+
+    async function verFacturaPorId(facturaId){
+      const f = (state.facturasFiltro || []).find(x => String(x.id) === String(facturaId));
+      if (!f){
+        toast("No encontré esa factura en el filtro actual.", "warn");
+        return;
+      }
+
+      openFacturaModal();
+      $("facturaPreview").innerHTML = "Cargando...";
+
+      // detalle
+      let detalle = [];
+      try{
+        const { data, error } = await supabase
+          .from("factura_detalle")
+          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", f.id)
+          .order("descripcion", { ascending: true });
+        if (error) throw error;
+        detalle = data || [];
+      }catch(err){
+        console.warn("No se pudo cargar factura_detalle:", err);
+        detalle = [];
+      }
+
+      // abonos (opcional)
+      let abonos = [];
+      try{
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("fecha, monto, metodo, referencia, observacion")
+          .eq("factura_id", f.id)
+          .order("fecha", { ascending: true });
+        if (error) throw error;
+        abonos = data || [];
+      }catch(err){
+        // si no existe la tabla o RLS, no rompemos
+        abonos = [];
+      }
+
+      const total = Number(f.valor_total || 0);
+      const totalAbonos = (abonos || []).reduce((acc,a)=> acc + (Number(a.monto)||0), 0);
+      const saldo = (f.saldo_pendiente === null || f.saldo_pendiente === undefined)
+        ? Math.max(0, total - totalAbonos)
+        : Number(f.saldo_pendiente || 0);
+
+      const estadoTxt = (saldo <= 0 || f.pagada === true) ? "PAGADA" : "PENDIENTE";
+
+      const detalleRows = (detalle || []).length
+        ? (detalle || []).map(it => `
+            <tr>
+              <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+              <td>${escapeHtml(it.descripcion || "—")}</td>
+              <td class="mono">${escapeHtml(it.cantidad ?? 0)}</td>
+              <td class="mono">$ ${escapeHtml(money(it.valor_unitario || 0))}</td>
+              <td class="mono">$ ${escapeHtml(money(it.valor_total || 0))}</td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="5" class="empty">Sin procedimientos.</td></tr>`;
+
+      const abonosRows = (abonos || []).length
+        ? (abonos || []).map(a => `
+            <tr>
+              <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
+              <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
+              <td>${escapeHtml(a.metodo || "—")}</td>
+              <td>${escapeHtml(a.referencia || "—")}</td>
+              <td>${escapeHtml(a.observacion || "—")}</td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="5" class="empty">No hay abonos para esta factura.</td></tr>`;
+
+      $("facturaPreview").innerHTML = `
+        <div class="inv-top">
+          <div>
+            <h2>CLÍNICA ODONTOLÓGICA — FACTURA</h2>
+            <div class="mono" style="margin-top:6px;">
+              N° Factura: <b>${escapeHtml(f.numero_factura || "—")}</b><br/>
+              Fecha: <b>${escapeHtml(formatFechaHuman(f.fecha))}</b>
+            </div>
+          </div>
+          <div class="meta">
+            Estado: <b>${escapeHtml(estadoTxt)}</b><br/>
+            Método: <b>${escapeHtml(f.metodo_pago || "—")}</b><br/>
+            Profesional: <b>${escapeHtml(f.profesional || "—")}</b>
+          </div>
+        </div>
+
+        <div class="inv-grid">
+          <div class="ibox" style="grid-column: span 6;">
+            <div class="k">Paciente</div>
+            <div class="v">${escapeHtml(f.paciente_nombre || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">Cédula</div>
+            <div class="v mono">${escapeHtml(f.paciente_cedula || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">Referencia</div>
+            <div class="v mono">${escapeHtml(f.referencia_pago || "—")}</div>
+          </div>
+        </div>
+
+        <div style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;">CUPS</th>
+                <th>Procedimiento</th>
+                <th style="width:90px;">Cant</th>
+                <th style="width:140px;">V/Unit</th>
+                <th style="width:140px;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${detalleRows}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="inv-sum">
+          <div class="badge"><span class="k">Total factura:</span> <span class="mono">$ ${escapeHtml(money(total))}</span></div>
+          <div class="badge"><span class="k">Total abonado:</span> <span class="mono">$ ${escapeHtml(money(totalAbonos))}</span></div>
+          <div class="badge"><span class="k">Saldo pendiente:</span> <span class="mono">$ ${escapeHtml(money(Math.max(0, saldo)))}</span></div>
+        </div>
+
+        <div style="margin-top:12px; border-top:1px solid var(--line); padding-top:12px;">
+          <div style="font-weight:900; margin-bottom:8px;">Abonos</div>
+          <div style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:140px;">Fecha</th>
+                  <th style="width:140px;">Monto</th>
+                  <th style="width:150px;">Método</th>
+                  <th>Referencia</th>
+                  <th>Observación</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${abonosRows}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // =========================
     // ✅ EXPORT EXCEL
     // =========================
     function exportarExcel(){
@@ -1032,13 +1350,21 @@
           "Método de pago": f.metodo_pago || "",
           "Referencia": f.referencia_pago || "",
           "Total": Number(f.valor_total || 0),
+          "Saldo pendiente": Number(getSaldoPendiente(f) || 0),
         }));
 
         const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+        const totalSaldoPendiente = rows
+          .filter(f => f.pagada === false)
+          .reduce((acc,f)=> acc + getSaldoPendiente(f), 0);
 
         const ws = XLSX.utils.json_to_sheet(data);
         const lastRow = data.length + 2;
-        XLSX.utils.sheet_add_aoa(ws, [[], ["TOTAL FACTURADO (FILTRO)", totalFacturado]], { origin: `A${lastRow}` });
+        XLSX.utils.sheet_add_aoa(ws, [
+          [],
+          ["TOTAL FACTURADO (FILTRO)", totalFacturado],
+          ["TOTAL SALDO PENDIENTE (FILTRO)", totalSaldoPendiente]
+        ], { origin: `A${lastRow}` });
 
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Ventas - Facturas (Filtro)"],
@@ -1048,7 +1374,8 @@
           ["Profesional:", profesional || "(todos)"],
           ["Método:", metodo || "(todos)"],
           ["Cantidad:", rows.length],
-          ["Total facturado:", totalFacturado]
+          ["Total facturado:", totalFacturado],
+          ["Total saldo pendiente:", totalSaldoPendiente]
         ]);
 
         const wb = XLSX.utils.book_new();
@@ -1060,7 +1387,7 @@
         toast("Excel descargado ✅", "ok");
       } catch(err){
         console.error(err);
-        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+        toast("No se pudo exportar Excel:\\n" + (err?.message || "Error"), "err");
       }
     }
 
@@ -1118,12 +1445,39 @@
       $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
       $("btn-show-paid").addEventListener("click", ()=>{ state._view="paid"; renderTablaFacturas(); });
 
+      // ✅ acciones de tabla (delegación)
+      $("tbody_facturas").addEventListener("click", async (e)=>{
+        const btn = e.target?.closest?.("button[data-action]");
+        if (!btn) return;
+        const action = btn.getAttribute("data-action");
+        const id = btn.getAttribute("data-id");
+        if (action === "ver-factura"){
+          await verFacturaPorId(id);
+        }
+      });
+
+      // modal events
+      $("btnCloseFactura").addEventListener("click", closeFacturaModal);
+      $("modalFacturaBackdrop").addEventListener("click", (e)=>{
+        if (e.target === $("modalFacturaBackdrop")) closeFacturaModal();
+      });
+      $("btnPrintFactura").addEventListener("click", ()=>{
+        // imprime SOLO cuando modal está abierto (usa @media print)
+        window.print();
+      });
+      window.addEventListener("keydown", (e)=>{
+        if (e.key === "Escape"){
+          const isOpen = $("modalFacturaBackdrop").style.display === "flex";
+          if (isOpen) closeFacturaModal();
+        }
+      });
+
       bindAuthListener();
 
       // default: mes actual
       setRangeMesActual();
 
-      // ✅ Proteger y cargar (ahora valida modulos_permisos)
+      // ✅ Proteger y cargar
       const ok = await proteger();
       if (!ok) return;
 
@@ -1136,12 +1490,11 @@
         init();
       }catch(err){
         console.error("INIT FAILED:", err);
-        toast("Falló init: revisa consola (F12)\n" + (err?.message || "Error"), "err");
+        toast("Falló init: revisa consola (F12)\\n" + (err?.message || "Error"), "err");
       }
     });
   </script>
 </body>
 </html>
-
 
 
