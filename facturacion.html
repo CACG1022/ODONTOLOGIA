@@ -320,7 +320,9 @@
       .actions-bottom{ justify-content:flex-start; }
       .actions-bottom .btns{ width:100%; justify-content:flex-start; }
     }
-  </style>
+  
+  .oculto{display:none!important;}
+</style>
 </head>
 <body>
   <div class="topbar">
@@ -405,14 +407,14 @@
             <option value="Otro">Otro</option>
           </select>
         </div>
-        <div class="ctrl">
+        <div class="ctrl oculto">
           <label>Estado de pago</label>
           <select id="pagada">
             <option value="si" selected>Pagada</option>
             <option value="no">Pendiente</option>
           </select>
         </div>
-        <div class="ctrl" style="grid-column: span 2;">
+        <div class="ctrl oculto" style="grid-column: span 2;">
           <label>Referencia / Comprobante (opcional)</label>
           <input id="referencia_pago" type="text" placeholder="Ej: #transferencia, voucher, último 4 dígitos, etc.">
         </div>
@@ -2333,6 +2335,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
