@@ -1376,7 +1376,8 @@ async function validarPermisoDesdeTabla(){
           observacion,
           pagada,
           fecha_pago,
-          referencia_pago
+          referencia_pago,
+          saldo_pendiente: pagada ? 0 : Number(totals.total || 0)
         };
         let fac = null;
         const { data: fac1, error: e1 } = await supabase
@@ -1397,6 +1398,7 @@ async function validarPermisoDesdeTabla(){
             eps,
             numero_factura,
             valor_total: totals.total,
+            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
             copago: totals.copago,
             cuota_moderadora: totals.cuota_moderadora,
             profesional
@@ -1635,7 +1637,7 @@ async function validarPermisoDesdeTabla(){
         // Intentamos guardar en columna opcional estado_pago si existe, y también el boolean pagada.
         let { error } = await supabase
           .from("facturas")
-          .update({ pagada: pagadaBool, estado_pago: est })
+          .update((() => { const u = { pagada: pagadaBool, estado_pago: est }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
           .eq("id", facturaId);
         // Si la columna estado_pago no existe, reintentamos solo con pagada.
         if (error){
@@ -1644,7 +1646,7 @@ async function validarPermisoDesdeTabla(){
           if (missingCol){
             const r2 = await supabase
               .from("facturas")
-              .update({ pagada: pagadaBool })
+              .update((() => { const u = { pagada: pagadaBool }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
               .eq("id", facturaId);
             error = r2.error;
           }
@@ -1896,6 +1898,34 @@ async function validarPermisoDesdeTabla(){
             if (!f.referencia_pago && facDB?.referencia_pago) f.referencia_pago = facDB.referencia_pago;
           }
         }
+
+        // ✅ Calcular saldo pendiente (si existe la tabla de abonos). Si no existe, lo dejamos como null.
+        const totalFacturaNum = Number(f.valor_total || 0);
+        let saldoPendienteCalc = null;
+        try{
+          const { data: abs, error: eab } = await supabase
+            .from("abonos")
+            .select("monto")
+            .eq("factura_id", f.id);
+          if (eab){
+            const msg = String(eab.message || "").toLowerCase();
+            const missingTable = msg.includes("relation") && msg.includes("does not exist");
+            if (!missingTable) throw eab;
+          } else {
+            const totalAb = (abs || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
+            saldoPendienteCalc = Math.max(0, totalFacturaNum - totalAb);
+          }
+        } catch(errAb){
+          // Si falla por otra razón, no bloqueamos el flujo; solo no calculamos saldo.
+          console.warn("No se pudo calcular saldo pendiente desde abonos:", errAb);
+        }
+        // Si intentan marcar PAGADA pero hay saldo pendiente calculado, no permitirlo.
+        if (nuevo === true && saldoPendienteCalc !== null && Number(saldoPendienteCalc) > 0){
+          toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
+          setStatus("");
+          return;
+        }
+        const saldoPendienteToSave = (nuevo === true) ? 0 : (saldoPendienteCalc !== null ? Number(saldoPendienteCalc) : totalFacturaNum);
         let referencia = null;
         let fechaPagoYYYYMMDD = null;
         if (nuevo === true){
@@ -1923,6 +1953,7 @@ async function validarPermisoDesdeTabla(){
         setStatus("Actualizando pago...");
         const payload = {
           pagada: nuevo,
+          saldo_pendiente: saldoPendienteToSave,
           fecha_pago: nuevo ? toISODateTimeFromYYYYMMDD(fechaPagoYYYYMMDD || hoyISO()) : null,
           referencia_pago: nuevo ? (referencia || null) : null
         };
@@ -1936,7 +1967,7 @@ async function validarPermisoDesdeTabla(){
             msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
           setStatus("");
           if (isColumnMissing){
-            toast("En Supabase faltan columnas: pagada / fecha_pago / referencia_pago en 'facturas'.", "warn");
+            toast("En Supabase faltan columnas: pagada / saldo_pendiente / fecha_pago / referencia_pago en 'facturas'.", "warn");
             return;
           }
           throw error;
@@ -2014,7 +2045,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("tbody-facturas").innerHTML = `<tr><td colspan="7" class="empty">Cargando...</td></tr>`;
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, fecha_pago, referencia_pago")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
           .order("fecha", { ascending: false })
           .limit(limit);
         if (desde){
@@ -2331,6 +2362,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
