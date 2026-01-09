@@ -894,7 +894,7 @@
       try{
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, saldo_pendiente, pagada, metodo_pago, referencia_pago, profesional")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, profesional, tipo_usuario, eps, metodo_pago, referencia_pago, pagada, valor_total, saldo_pendiente, aplica_iva, iva_porcentaje, copago, cuota_moderadora")
           .order("fecha", { ascending: true });
 
         if (desde) query = query.gte("fecha", dateStartISO(desde));
@@ -1570,4 +1570,5 @@
   </script>
 </body>
 </html>
+
 
