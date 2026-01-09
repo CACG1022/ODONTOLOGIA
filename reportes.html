@@ -1243,7 +1243,27 @@
 
       const estadoTxt = (saldo <= 0 || f.pagada === true) ? "PAGADA" : "PENDIENTE";
 
+      
+      const subtotal = (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
+      const aplicaIVA = (f.aplica_iva === true || f.aplica_iva === "Sí" || f.aplica_iva === "Si");
+      const ivaPct = Number(f.iva_porcentaje || f.iva || 0);
+      const ivaValor = aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0;
+      const copago = Number(f.copago || 0);
+      const cuota = Number(f.cuota_moderadora || 0);
+      const totalCalc = subtotal + ivaValor + copago + cuota;
+
       const detalleRows = (detalle || []).length
+        ? (detalle || []).map(it => `
+            <tr>
+              <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+              <td>${escapeHtml(it.descripcion || "—")}</td>
+              <td class="mono">${escapeHtml(it.cantidad ?? 0)}</td>
+              <td class="mono">$ ${escapeHtml(money(it.valor_unitario || 0))}</td>
+              <td class="mono">$ ${escapeHtml(money(it.valor_total || 0))}</td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="5" class="empty">Sin procedimientos.</td></tr>`;
+
         ? (detalle || []).map(it => `
             <tr>
               <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
@@ -1280,6 +1300,42 @@
             Estado: <b>${escapeHtml(estadoTxt)}</b><br/>
             Método: <b>${escapeHtml(f.metodo_pago || "—")}</b><br/>
             Profesional: <b>${escapeHtml(f.profesional || "—")}</b>
+          </div>
+        </div>
+
+        <div class="inv-grid">
+          <div class="ibox" style="grid-column: span 4;">
+            <div class="k">Paciente</div>
+            <div class="v">${escapeHtml(f.paciente_nombre || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 2;">
+            <div class="k">Cédula</div>
+            <div class="v mono">${escapeHtml(f.paciente_cedula || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">Tipo usuario</div>
+            <div class="v">${escapeHtml(f.tipo_usuario || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">EPS</div>
+            <div class="v">${escapeHtml(f.eps || "—")}</div>
+          </div>
+
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">Método de pago</div>
+            <div class="v">${escapeHtml(f.metodo_pago || "—")}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">Estado de pago</div>
+            <div class="v">${escapeHtml(estadoTxt)}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">¿Aplica IVA?</div>
+            <div class="v">${aplicaIVA ? "Sí" : "No"}</div>
+          </div>
+          <div class="ibox" style="grid-column: span 3;">
+            <div class="k">IVA %</div>
+            <div class="v">${escapeHtml(ivaPct)}</div>
           </div>
         </div>
 
@@ -1514,5 +1570,4 @@
   </script>
 </body>
 </html>
-
 
