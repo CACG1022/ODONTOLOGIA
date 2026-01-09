@@ -393,6 +393,28 @@
       .kpis{ grid-template-columns: 1fr; }
       .header{ align-items:flex-start; flex-direction:column; }
     }
+  
+    .totals-card{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      padding: 10px 12px;
+      min-width: 280px;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+    }
+    .totals-card .trow{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap: 14px;
+      padding: 4px 0;
+      font-size: 12.5px;
+      font-weight: 900;
+    }
+    .totals-card .trow span{ color: var(--text); font-weight: 800; }
+    .totals-card .tsep{ border-top: 1px dashed var(--line); margin: 8px 0; }
+    .totals-card .trow.total span{ font-size: 13px; font-weight: 900; }
+    
   </style>
 </head>
 
@@ -1364,7 +1386,15 @@
         </div>
 
         <div class="inv-sum">
-          <div class="badge"><span class="k">Total factura:</span> <span class="mono">$ ${escapeHtml(money(total))}</span></div>
+          <div class="totals-card">
+            <div class="trow"><span>Subtotal</span><b class="mono">$ ${escapeHtml(money(subtotal))}</b></div>
+            <div class="trow"><span>IVA (${escapeHtml(ivaPct)}%)</span><b class="mono">$ ${escapeHtml(money(ivaValor))}</b></div>
+            <div class="trow"><span>Copago</span><b class="mono">$ ${escapeHtml(money(copago))}</b></div>
+            <div class="trow"><span>Cuota moderadora</span><b class="mono">$ ${escapeHtml(money(cuota))}</b></div>
+            <div class="tsep"></div>
+            <div class="trow total"><span>TOTAL</span><b class="mono">$ ${escapeHtml(money(totalCalc))}</b></div>
+          </div>
+
           <div class="badge"><span class="k">Total abonado:</span> <span class="mono">$ ${escapeHtml(money(totalAbonos))}</span></div>
           <div class="badge"><span class="k">Saldo pendiente:</span> <span class="mono">$ ${escapeHtml(money(Math.max(0, saldo)))}</span></div>
         </div>
