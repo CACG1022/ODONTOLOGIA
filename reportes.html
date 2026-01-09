@@ -1205,11 +1205,29 @@
       // abonos (opcional)
       let abonos = [];
       try{
-        const { data, error } = await supabase
+        // ✅ Intento principal: columna metodo_pago (como en facturación)
+        let { data, error } = await supabase
           .from("abonos")
-          .select("fecha, monto, metodo, referencia, observacion")
+          .select("fecha, monto, metodo_pago, referencia, observacion")
           .eq("factura_id", f.id)
           .order("fecha", { ascending: true });
+
+        // ✅ Compatibilidad: algunos esquemas podrían usar 'metodo' en vez de 'metodo_pago'
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const maybeMetodoPagoMissing =
+            msg.includes("column") && msg.includes("metodo_pago");
+          if (maybeMetodoPagoMissing){
+            const r2 = await supabase
+              .from("abonos")
+              .select("fecha, monto, metodo, referencia, observacion")
+              .eq("factura_id", f.id)
+              .order("fecha", { ascending: true });
+            data = r2.data;
+            error = r2.error;
+          }
+        }
+
         if (error) throw error;
         abonos = data || [];
       }catch(err){
@@ -1242,7 +1260,7 @@
             <tr>
               <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
               <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
-              <td>${escapeHtml(a.metodo || "—")}</td>
+              <td>${escapeHtml(a.metodo_pago || a.metodo || "—")}</td>
               <td>${escapeHtml(a.referencia || "—")}</td>
               <td>${escapeHtml(a.observacion || "—")}</td>
             </tr>
