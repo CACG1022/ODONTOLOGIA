@@ -415,6 +415,23 @@
     .totals-card .tsep{ border-top: 1px dashed var(--line); margin: 8px 0; }
     .totals-card .trow.total span{ font-size: 13px; font-weight: 900; }
     
+  
+    .abonos-footer{
+      margin-top: 10px;
+      border-top: 1px dashed var(--line);
+      padding-top: 8px;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-width: 360px;
+    }
+    .abonos-footer .line{
+      display:flex;
+      justify-content:space-between;
+      font-weight:900;
+      font-size:12.5px;
+    }
+    
   </style>
 </head>
 
@@ -1394,9 +1411,6 @@
             <div class="tsep"></div>
             <div class="trow total"><span>TOTAL</span><b class="mono">$ ${escapeHtml(money(totalCalc))}</b></div>
           </div>
-
-          <div class="badge"><span class="k">Total abonado:</span> <span class="mono">$ ${escapeHtml(money(totalAbonos))}</span></div>
-          <div class="badge"><span class="k">Saldo pendiente:</span> <span class="mono">$ ${escapeHtml(money(Math.max(0, saldo)))}</span></div>
         </div>
 
         <div style="margin-top:12px; border-top:1px solid var(--line); padding-top:12px;">
@@ -1418,6 +1432,17 @@
             </table>
           </div>
         </div>
+          <div class="abonos-footer">
+            <div class="line">
+              <span>Total abonado</span>
+              <b class="mono">$ ${escapeHtml(money(totalAbonos))}</b>
+            </div>
+            <div class="line">
+              <span>Saldo pendiente</span>
+              <b class="mono">$ ${escapeHtml(money(Math.max(0, saldo)))}</b>
+            </div>
+          </div>
+
       `;
     }
 
@@ -1592,6 +1617,7 @@
   </script>
 </body>
 </html>
+
 
 
 
