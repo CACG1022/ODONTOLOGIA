@@ -894,7 +894,7 @@
       try{
         let query = supabase
           .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, profesional, tipo_usuario, eps, metodo_pago, referencia_pago, pagada, valor_total, saldo_pendiente, aplica_iva, iva_porcentaje, copago, cuota_moderadora")
+          .select("*")
           .order("fecha", { ascending: true });
 
         if (desde) query = query.gte("fecha", dateStartISO(desde));
@@ -1245,11 +1245,15 @@
 
       
       const subtotal = (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
-      const aplicaIVA = (f.aplica_iva === true || f.aplica_iva === "Sí" || f.aplica_iva === "Si");
+      
+      const aplicaIVARaw = (f.aplica_iva ?? f.aplicaIVA ?? f.iva_aplica ?? f.ivaAplica ?? f.aplicaIVA ?? null);
+      const aplicaIVA = (aplicaIVARaw === true || String(aplicaIVARaw || "").toLowerCase() in ["sí","si","true","1","t","y","yes"]);
+      const ivaPct = Number(f.iva_porcentaje ?? f.iva_pct ?? f.iva_percent ?? f.ivaPorcentaje ?? f.iva ?? 0);
+      const copago = Number(f.copago ?? 0);
+      const cuota = Number(f.cuota_moderadora ?? f.cuotaModeradora ?? f.cuota ?? 0);
+
       const ivaPct = Number(f.iva_porcentaje || f.iva || 0);
       const ivaValor = aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0;
-      const copago = Number(f.copago || 0);
-      const cuota = Number(f.cuota_moderadora || 0);
       const totalCalc = subtotal + ivaValor + copago + cuota;
 
       const detalleRows = (detalle || []).length
@@ -1560,6 +1564,7 @@
   </script>
 </body>
 </html>
+
 
 
 
