@@ -566,11 +566,12 @@
                 <th style="width:160px;">Cédula</th>
                 <th style="width:140px;">Pago</th>
                 <th style="width:160px;">Total</th>
+                <th style="width:170px;">Saldo pendiente</th>
                 <th style="width:260px;">Acciones</th>
               </tr>
             </thead>
             <tbody id="tbody-facturas">
-              <tr><td colspan="7" class="empty">Cargando...</td></tr>
+              <tr><td colspan="8" class="empty">Cargando...</td></tr>
             </tbody>
           </table>
         </div>
@@ -1985,7 +1986,7 @@ async function validarPermisoDesdeTabla(){
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
       if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">No hay facturas para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>`;
         updateResumenFacturas([]);
         return;
       }
@@ -1996,6 +1997,9 @@ async function validarPermisoDesdeTabla(){
         const nom = f.paciente_nombre || "—";
         const ced = f.paciente_cedula || "—";
         const total = money(f.valor_total || 0);
+        const saldoPendRaw = (f.saldo_pendiente != null) ? Number(f.saldo_pendiente) : null;
+        const saldoPendCalc = (saldoPendRaw == null) ? ((f.pagada === true) ? 0 : Number(f.valor_total || 0)) : saldoPendRaw;
+        const saldoPend = money(saldoPendCalc || 0);
         const estadoPago = pagoLabel(f.pagada);
         const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
         tr.innerHTML = `
@@ -2005,6 +2009,7 @@ async function validarPermisoDesdeTabla(){
           <td class="mono">${escapeHtml(ced)}</td>
           <td class="mono">${escapeHtml(estadoPago)}</td>
           <td class="mono">$ ${escapeHtml(total)}</td>
+          <td class="mono">$ ${escapeHtml(saldoPend)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
@@ -2042,7 +2047,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
       const hasta = ($("fecha_hasta")?.value || "").trim();
       const estado = ($("estado_facturas")?.value || "todos").trim();
       try{
-        $("tbody-facturas").innerHTML = `<tr><td colspan="7" class="empty">Cargando...</td></tr>`;
+        $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
         let query = supabase
           .from("facturas")
           .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
@@ -2362,7 +2367,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
-
 
 
 
