@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Facturas generadas</title>
+  <!-- ✅ Librería para exportar Excel (SheetJS) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root{
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding: 8px 10px; font-size: 12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    table{ width:100%; border-collapse: collapse; }
+    th, td{
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .empty{ color: var(--muted); text-align:center; padding: 18px; }
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      max-width: 340px;
+      white-space: pre-wrap;
+    }
+    #toast.show{ opacity: 1; transform: translateY(0); }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+    /* ✅ MODAL FACTURAS */
+    .modal{
+      position: fixed;
+      inset: 0;
+      background: rgba(15,23,42,.45);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding: 18px;
+      z-index: 50;
+    }
+    .modal.show{ display:flex; }
+    .modal-card{
+      width: min(1100px, 100%);
+      background:#fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+
+    /* ✅ MAXIMIZAR MODAL (Facturas generadas) */
+    .modal-card.maximized{
+      width: calc(100vw - 36px);
+      height: calc(100vh - 36px);
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-card.maximized .modal-body{
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      min-height: 0;
+    }
+    .modal-card.maximized .modal-table{
+      flex:1;
+      max-height: none;
+      min-height: 0;
+    }
+    .modal-head{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      background:#fff;
+    }
+    .modal-head .title{ font-weight: 900; }
+    .modal-body{
+      padding: 12px 14px;
+      background:#fff;
+    }
+    .modal-tools{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      margin-bottom: 10px;
+    }
+    .modal-tools .ctrl{ min-width: 220px; }
+    .ctrl label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input, select{
+      width:100%;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background:#fff;
+    }
+    .modal-table{
+      max-height: 60vh;
+      overflow:auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    /* ✅ resumen total facturado */
+    .modal-summary{
+      margin-top: 10px;
+      display:flex;
+      justify-content:flex-end;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .summary-chip{
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      font-size: 12px;
+      color: var(--muted);
+      white-space:nowrap;
+    }
+    .summary-chip b{ color: var(--text); }
+  </style>
+</head>
+<body>
+
+  <div id="toast" data-type="ok"></div>
+
+  <div class="modal" id="modal-facturas" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="title">Facturas generadas</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" id="btn-export-excel" type="button">⬇ Excel</button>
+          <button class="btn" id="btn-refresh-facturas" type="button">🔄 Actualizar</button>
+          <button class="btn" id="btn-max-modal-facturas" type="button" title="Maximizar">⛶</button>
+          <button class="btn danger" id="btn-cerrar-modal" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tools">
+          <div class="ctrl">
+            <label>Buscar (N° factura o cédula)</label>
+            <input id="buscar_facturas" type="text" placeholder="Ej: FAC-2026... o 123456789">
+          </div>
+          <div class="ctrl">
+            <label>Fecha desde</label>
+            <input id="fecha_desde" type="date">
+          </div>
+          <div class="ctrl">
+            <label>Fecha hasta</label>
+            <input id="fecha_hasta" type="date">
+          </div>
+          <div class="ctrl">
+            <label>Estado</label>
+            <select id="estado_facturas">
+              <option value="todos" selected>Todos</option>
+              <option value="pagada">Pagada</option>
+              <option value="pendiente">Pendiente</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>Mostrar</label>
+            <select id="limite_facturas">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btn-buscar-facturas" type="button">🔎 Buscar</button>
+          </div>
+        </div>
+        <div class="modal-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Fecha</th>
+                <th style="width:220px;">N° Factura</th>
+                <th>Paciente</th>
+                <th style="width:160px;">Cédula</th>
+                <th style="width:140px;">Pago</th>
+                <th style="width:160px;">Total</th>
+                <th style="width:170px;">Saldo pendiente</th>
+                <th style="width:260px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-facturas">
+              <tr><td colspan="8" class="empty">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-summary">
+          <div class="summary-chip">
+            Total facturado (filtro): <b>$ <span id="total_facturado">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Cantidad: <b><span id="count_facturas">0</span></b>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Tip: Puedes imprimir una factura desde “🖨 Imprimir” en acciones.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+    const state = {
+      session: null,
+      facturas: [],
+      _debounce: null,
+      _lastCedula: ""
+    };
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
+    }
+    function setStatus(msg){
+      // En el archivo original el status vive en el footer; aquí se mantiene la función para no romper lógica.
+      console.log("STATUS:", msg || "");
+    }
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString("es-CO");
+    }
+    function num(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
+    }
+    function hoyISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return \`\${yyyy}-\${mm}-\${dd}\`;
+    }
+    // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
+    function parseDateYYYYMMDD(s){
+      const v = String(s || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+      const d = new Date(v + "T00:00:00.000Z");
+      if (Number.isNaN(d.getTime())) return null;
+      return v;
+    }
+    function toISODateTimeFromYYYYMMDD(v){
+      return v ? (v + "T00:00:00.000Z") : null;
+    }
+    function formatFechaHuman(iso){
+      if (!iso) return "—";
+      try{
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())){
+          const [y,m,dd] = String(iso).split("-");
+          if (y && m && dd) return \`\${dd}/\${m}/\${y}\`;
+          return String(iso);
+        }
+        return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
+      } catch(e){
+        return String(iso);
+      }
+    }
+    function pagoLabel(pagada){
+      if (pagada === true) return "Pagada";
+      if (pagada === false) return "Pendiente";
+      return "—";
+    }
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+
+    function openModal(){
+      $("modal-facturas").classList.add("show");
+      $("modal-facturas").setAttribute("aria-hidden", "false");
+    }
+    function closeModal(){
+      $("modal-facturas").classList.remove("show");
+      $("modal-facturas").setAttribute("aria-hidden", "true");
+    }
+
+    function updateResumenFacturas(rows){
+      const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+      $("total_facturado").textContent = money(total);
+      $("count_facturas").textContent = String((rows || []).length);
+    }
+
+    // ✅ CORREGIDO COMPLETO:
+    // - Columna "Pago" = ESTADO
+    // - Botón = ACCIÓN
+    // - Si método != Efectivo, pide referencia + fecha pago al marcar Pagada
+    async function togglePagadaFactura(f){
+      try{
+        const actual = (f.pagada === true);
+        const nuevo = !actual;
+        let metodo = (f.metodo_pago || "").toString().trim();
+        // Si no vino en listado, intentamos leerlo
+        if (!metodo){
+          const { data: facDB, error: e0 } = await supabase
+            .from("facturas")
+            .select("id, metodo_pago, referencia_pago")
+            .eq("id", f.id)
+            .single();
+          if (!e0){
+            metodo = (facDB?.metodo_pago || "").toString().trim();
+            if (!f.referencia_pago && facDB?.referencia_pago) f.referencia_pago = facDB.referencia_pago;
+          }
+        }
+
+        // ✅ Calcular saldo pendiente (si existe la tabla de abonos). Si no existe, lo dejamos como null.
+        const totalFacturaNum = Number(f.valor_total || 0);
+        let saldoPendienteCalc = null;
+        try{
+          const { data: abs, error: eab } = await supabase
+            .from("abonos")
+            .select("monto")
+            .eq("factura_id", f.id);
+          if (eab){
+            const msg = String(eab.message || "").toLowerCase();
+            const missingTable = msg.includes("relation") && msg.includes("does not exist");
+            if (!missingTable) throw eab;
+          } else {
+            const totalAb = (abs || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
+            saldoPendienteCalc = Math.max(0, totalFacturaNum - totalAb);
+          }
+        } catch(errAb){
+          // Si falla por otra razón, no bloqueamos el flujo; solo no calculamos saldo.
+          console.warn("No se pudo calcular saldo pendiente desde abonos:", errAb);
+        }
+        // Si intentan marcar PAGADA pero hay saldo pendiente calculado, no permitirlo.
+        if (nuevo === true && saldoPendienteCalc !== null && Number(saldoPendienteCalc) > 0){
+          toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
+          setStatus("");
+          return;
+        }
+        const saldoPendienteToSave = (nuevo === true) ? 0 : (saldoPendienteCalc !== null ? Number(saldoPendienteCalc) : totalFacturaNum);
+        let referencia = null;
+        let fechaPagoYYYYMMDD = null;
+        if (nuevo === true){
+          const isEfectivo = metodo.toLowerCase() === "efectivo";
+          if (!isEfectivo){
+            referencia = window.prompt("Ingresa la referencia / comprobante de pago:", f.referencia_pago || "");
+            if (referencia === null) return;
+            referencia = referencia.trim();
+            if (!referencia){
+              toast("La referencia de pago es obligatoria para este método.", "warn");
+              return;
+            }
+            const fp = window.prompt("Ingresa la fecha de pago (YYYY-MM-DD):", hoyISO());
+            if (fp === null) return;
+            fechaPagoYYYYMMDD = parseDateYYYYMMDD(fp);
+            if (!fechaPagoYYYYMMDD){
+              toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
+              return;
+            }
+          } else {
+            fechaPagoYYYYMMDD = hoyISO();
+            referencia = null; // efectivo: opcional
+          }
+        }
+        setStatus("Actualizando pago...");
+        const payload = {
+          pagada: nuevo,
+          saldo_pendiente: saldoPendienteToSave,
+          fecha_pago: nuevo ? toISODateTimeFromYYYYMMDD(fechaPagoYYYYMMDD || hoyISO()) : null,
+          referencia_pago: nuevo ? (referencia || null) : null
+        };
+        const { error } = await supabase
+          .from("facturas")
+          .update(payload)
+          .eq("id", f.id);
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const isColumnMissing =
+            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+          setStatus("");
+          if (isColumnMissing){
+            toast("En Supabase faltan columnas: pagada / saldo_pendiente / fecha_pago / referencia_pago en 'facturas'.", "warn");
+            return;
+          }
+          throw error;
+        }
+        setStatus("");
+        toast(nuevo ? "Marcada como Pagada ✅" : "Marcada como Pendiente ⚠️", "ok");
+        await listarFacturas();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo actualizar pago:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function cargarFacturaEnFormulario(facturaId){
+      // Esta función existe en el archivo original y se llama desde la tabla.
+      // Aquí se deja sin implementación porque corresponde al formulario principal "Nueva factura".
+      console.warn("cargarFacturaEnFormulario no está incluido en este archivo. facturaId:", facturaId);
+      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+    }
+
+    async function imprimirFacturaPorId(facturaId){
+      // Esta función existe en el archivo original y se llama desde la tabla.
+      // Aquí se deja sin implementación porque corresponde al flujo completo de impresión.
+      console.warn("imprimirFacturaPorId no está incluido en este archivo. facturaId:", facturaId);
+      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+    }
+
+    async function abrirVerFactura(facturaId){
+      // Esta función existe en el archivo original y se llama desde la tabla.
+      // Aquí se deja sin implementación porque corresponde al modal 'Ver factura'.
+      console.warn("abrirVerFactura no está incluido en este archivo. facturaId:", facturaId);
+      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+    }
+
+    async function abrirAbonosFactura(facturaId){
+      // Esta función existe en el archivo original y se llama desde la tabla.
+      // Aquí se deja sin implementación porque corresponde al modal 'Abonos'.
+      console.warn("abrirAbonosFactura no está incluido en este archivo. facturaId:", facturaId);
+      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+    }
+
+    function renderFacturasTabla(rows){
+      const tbody = $("tbody-facturas");
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = \`<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>\`;
+        updateResumenFacturas([]);
+        return;
+      }
+      for (const f of rows){
+        const tr = document.createElement("tr");
+        const fecha = formatFechaHuman(f.fecha);
+        const numf = f.numero_factura || "—";
+        const nom = f.paciente_nombre || "—";
+        const ced = f.paciente_cedula || "—";
+        const total = money(f.valor_total || 0);
+        const saldoPendRaw = (f.saldo_pendiente != null) ? Number(f.saldo_pendiente) : null;
+        const saldoPendCalc = (saldoPendRaw == null) ? ((f.pagada === true) ? 0 : Number(f.valor_total || 0)) : saldoPendRaw;
+        const saldoPend = money(saldoPendCalc || 0);
+        const estadoPago = pagoLabel(f.pagada);
+        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
+        tr.innerHTML = \`
+          <td class="mono">\${escapeHtml(fecha)}</td>
+          <td class="mono">\${escapeHtml(numf)}</td>
+          <td>\${escapeHtml(nom)}</td>
+          <td class="mono">\${escapeHtml(ced)}</td>
+          <td class="mono">\${escapeHtml(estadoPago)}</td>
+          <td class="mono">$ \${escapeHtml(total)}</td>
+          <td class="mono">$ \${escapeHtml(saldoPend)}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn small" data-act="cargar">↩ Cargar</button>
+            <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
+            <button class="btn small" data-act="toggle">\${escapeHtml(btnAccionPagoText)}</button>
+            <button class="btn small" data-act="verfactura">👁 Ver factura</button>
+            <button class="btn small" data-act="abonos">💰 Abonos</button>
+          </td>
+        \`;
+        tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
+          await cargarFacturaEnFormulario(f.id);
+          closeModal();
+        });
+        tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
+          await imprimirFacturaPorId(f.id);
+        });
+        tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
+          await togglePagadaFactura(f);
+        });
+        tr.querySelector('[data-act="verfactura"]').addEventListener("click", async () => {
+          await abrirVerFactura(f.id);
+        });
+        tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
+          await abrirAbonosFactura(f.id);
+        });
+        tbody.appendChild(tr);
+      }
+      updateResumenFacturas(rows);
+    }
+
+    function dateStartISO(d){ return d ? \`\${d}T00:00:00.000\` : null; }
+    function dateEndISO(d){ return d ? \`\${d}T23:59:59.999\` : null; }
+
+    async function listarFacturas(){
+      const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
+      const q = ($("buscar_facturas").value || "").trim();
+      const desde = ($("fecha_desde")?.value || "").trim();
+      const hasta = ($("fecha_hasta")?.value || "").trim();
+      const estado = ($("estado_facturas")?.value || "todos").trim();
+      try{
+        $("tbody-facturas").innerHTML = \`<tr><td colspan="8" class="empty">Cargando...</td></tr>\`;
+        let query = supabase
+          .from("facturas")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
+          .order("fecha", { ascending: false })
+          .limit(limit);
+        if (desde){
+          query = query.gte("fecha", dateStartISO(desde));
+        }
+        if (hasta){
+          query = query.lte("fecha", dateEndISO(hasta));
+        }
+        if (estado === "pagada"){
+          query = query.eq("pagada", true);
+        } else if (estado === "pendiente"){
+          // Incluye false y null (por compatibilidad con registros antiguos)
+          query = query.or("pagada.eq.false,pagada.is.null");
+        }
+        if (q){
+          const isNum = /^[0-9]+$/.test(q);
+          if (isNum){
+            query = query.ilike("paciente_cedula", \`%\${q}%\`);
+          } else {
+            query = query.ilike("numero_factura", \`%\${q}%\`);
+          }
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        state.facturas = data || [];
+        renderFacturasTabla(state.facturas);
+      } catch(err){
+        console.error(err);
+        renderFacturasTabla([]);
+        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    function exportarExcel(){
+      try{
+        const rows = state.facturas || [];
+        if (!rows.length){
+          toast("No hay facturas para exportar con ese filtro.", "warn");
+          return;
+        }
+        const desde = ($("fecha_desde")?.value || "").trim();
+        const hasta = ($("fecha_hasta")?.value || "").trim();
+        const estado = ($("estado_facturas")?.value || "todos").trim();
+        const q = ($("buscar_facturas")?.value || "").trim();
+        const data = rows.map(f => ({
+          "Fecha": formatFechaHuman(f.fecha),
+          "N° Factura": f.numero_factura || "",
+          "Paciente": f.paciente_nombre || "",
+          "Cédula": f.paciente_cedula || "",
+          "Correo": f.paciente_correo || "",
+          "Tipo usuario": f.tipo_usuario || "",
+          "EPS": f.eps || "",
+          "Profesional (valor guardado)": f.profesional || "",
+          "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
+          "Referencia pago": f.referencia_pago || "",
+          "Total": Number(f.valor_total || 0),
+          "Copago": Number(f.copago || 0),
+          "Cuota moderadora": Number(f.cuota_moderadora || 0),
+        }));
+        const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+        const ws = XLSX.utils.json_to_sheet(data);
+        const lastRow = data.length + 2;
+        XLSX.utils.sheet_add_aoa(ws, [
+          [],
+          ["TOTAL FACTURADO", totalFacturado]
+        ], { origin: \`A\${lastRow}\` });
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Facturas"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Filtro búsqueda (N° factura o cédula):", q || "(vacío)"],
+          ["Fecha desde:", desde || "(vacío)"],
+          ["Fecha hasta:", hasta || "(vacío)"],
+          ["Cantidad:", rows.length],
+          ["Total facturado:", totalFacturado]
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+        const slugDesde = desde || "NA";
+        const slugHasta = hasta || "NA";
+        const filename = \`reporte_facturas_\${slugDesde}_a_\${slugHasta}.xlsx\`;
+        XLSX.writeFile(wb, filename);
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    async function proteger(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      state.session = session;
+      return true;
+    }
+
+    async function init(){
+      try{
+        // Abrimos directamente el modal de "Facturas generadas"
+        openModal();
+
+        $("btn-cerrar-modal").addEventListener("click", closeModal);
+        $("modal-facturas").addEventListener("click", (e) => {
+          if (e.target === $("modal-facturas")) closeModal();
+        });
+
+        $("btn-refresh-facturas").addEventListener("click", listarFacturas);
+
+        // ✅ Maximizar / restaurar modal "Facturas generadas"
+        if ($("btn-max-modal-facturas")){
+          $("btn-max-modal-facturas").addEventListener("click", () => {
+            const card = document.querySelector("#modal-facturas .modal-card");
+            if (!card) return;
+            const isMax = card.classList.toggle("maximized");
+            $("btn-max-modal-facturas").textContent = isMax ? "🗗" : "⛶";
+            $("btn-max-modal-facturas").title = isMax ? "Restaurar" : "Maximizar";
+          });
+        }
+
+        $("btn-buscar-facturas").addEventListener("click", listarFacturas);
+        $("limite_facturas").addEventListener("change", listarFacturas);
+        $("fecha_desde").addEventListener("change", listarFacturas);
+        $("fecha_hasta").addEventListener("change", listarFacturas);
+        if ($("estado_facturas")) $("estado_facturas").addEventListener("change", listarFacturas);
+        $("buscar_facturas").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") listarFacturas();
+        });
+        $("btn-export-excel").addEventListener("click", exportarExcel);
+
+        const ok = await proteger();
+        if (!ok) return;
+
+        await listarFacturas();
+      } catch (err){
+        console.error("INIT ERROR:", err);
+        toast("Error inicializando:\n" + (err?.message || err), "err");
+      }
+    }
+
+    // ✅ ARRANQUE ROBUSTO
+    if (document.readyState === "loading"){
+      window.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+  </script>
+</body>
+</html>
