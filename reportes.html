@@ -894,7 +894,7 @@
       try{
         let query = supabase
           .from("facturas")
-          .select("*")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, tipo_usuario, eps, profesional, metodo_pago, observacion, pagada, fecha_pago, referencia_pago, subtotal, iva_aplica, iva_porcentaje, iva_valor, copago, cuota_moderadora, valor_total, saldo_pendiente")
           .order("fecha", { ascending: true });
 
         if (desde) query = query.gte("fecha", dateStartISO(desde));
@@ -1013,9 +1013,9 @@
           <td>${pagoPill(f.pagada)}</td>
           <td class="mono">${escapeHtml(f.metodo_pago || "—")}</td>
           <td class="mono">$ ${escapeHtml(money(f.valor_total || 0))}</td>
-          <td class="mono">$ ${escapeHtml(money(saldo))}</td>
+          <td class="mono">$ ${escapeHtml(money(f.saldo_pendiente ?? (f.pagada===false ? f.valor_total : 0) || 0))}</td>
           <td>
-            <button class="btn small" type="button" data-action="ver-factura" data-id="${escapeHtml(f.id)}">👁 Ver factura</button>
+            <button class="btn small" type="button" data-action="ver" data-id="${escapeHtml(f.id)}">👁 Ver factura</button>
           </td>
         `;
         tbody.appendChild(tr);
@@ -1244,17 +1244,15 @@
       const estadoTxt = (saldo <= 0 || f.pagada === true) ? "PAGADA" : "PENDIENTE";
 
       
-      const subtotal = (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
       
-      const aplicaIVARaw = (f.aplica_iva ?? f.aplicaIVA ?? f.iva_aplica ?? f.ivaAplica ?? f.aplicaIVA ?? null);
-      const aplicaIVA = (aplicaIVARaw === true || String(aplicaIVARaw || "").toLowerCase() in ["sí","si","true","1","t","y","yes"]);
-      const ivaPct = Number(f.iva_porcentaje ?? f.iva_pct ?? f.iva_percent ?? f.ivaPorcentaje ?? f.iva ?? 0);
+      const subtotal = Number(f.subtotal ?? 0) || (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
+      const aplicaIVA = (f.iva_aplica === true);
+      const ivaPct = Number(f.iva_porcentaje ?? 0);
+      const ivaValor = Number(f.iva_valor ?? 0) || (aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0);
       const copago = Number(f.copago ?? 0);
-      const cuota = Number(f.cuota_moderadora ?? f.cuotaModeradora ?? f.cuota ?? 0);
+      const cuota = Number(f.cuota_moderadora ?? 0);
+      const totalCalc = Number(f.valor_total ?? 0) || (subtotal + ivaValor + copago + cuota);
 
-      const ivaPct = Number(f.iva_porcentaje || f.iva || 0);
-      const ivaValor = aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0;
-      const totalCalc = subtotal + ivaValor + copago + cuota;
 
       const detalleRows = (detalle || []).length
 
@@ -1564,7 +1562,6 @@
   </script>
 </body>
 </html>
-
 
 
 
