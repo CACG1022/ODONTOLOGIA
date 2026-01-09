@@ -399,7 +399,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Reporte de ventas2</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Reporte de ventas</h1>
     </div>
     <div class="meta">
       <div class="chip">
@@ -1013,7 +1013,7 @@
           <td>${pagoPill(f.pagada)}</td>
           <td class="mono">${escapeHtml(f.metodo_pago || "—")}</td>
           <td class="mono">$ ${escapeHtml(money(f.valor_total || 0))}</td>
-          <td class="mono">$ ${escapeHtml(money(f.saldo_pendiente ?? (f.pagada===false ? f.valor_total : 0) || 0))}</td>
+          <td class="mono">$ ${escapeHtml(money(saldo))}</td>
           <td>
             <button class="btn small" type="button" data-action="ver" data-id="${escapeHtml(f.id)}">👁 Ver factura</button>
           </td>
@@ -1562,6 +1562,7 @@
   </script>
 </body>
 </html>
+
 
 
 
