@@ -921,6 +921,15 @@ async function verFormula(id){
 
   // cargar datos en el área de impresión
   $("modalPrintContainer").innerHTML = $("printArea").outerHTML;
+// 🔧 FORZAR VISIBILIDAD (printArea viene con display:none)
+// logo de la clínica
+ 
+  // 🔧 Mostrar el contenido copiado (printArea viene oculto)
+const pa = document.querySelector("#modalPrintContainer #printArea");
+if (pa){
+  pa.style.display = "block";
+}
+
   document.getElementById("pLogo").src = LOGO_URL;
 
 
