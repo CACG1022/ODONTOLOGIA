@@ -361,7 +361,7 @@
       state.userEmail = session.user?.email || "";
       return session;
     }
-
+  
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
