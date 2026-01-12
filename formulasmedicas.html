@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fórmula2 Médica - Clínica Dra. Leidi Silva</title>
+  <title>Fórmula Médica - Clínica Dra. Leidi Silva</title>
 
   <!-- Fuente bonita (opcional) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -257,6 +257,8 @@
 
     /* ======== PRINT ======== */
     @media print{
+  .modal-actions, .btn-imprimir, .btn-cerrar{ display:none !important; }
+
       body{ background:#fff; padding:0; }
       /* Cuando se imprime desde el modal, ocultar el printArea original para evitar una página extra */
       body.printing-modal .print-original{ display:none !important; }
@@ -1071,7 +1073,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción4</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
         </div>
       </div>
 
@@ -1373,6 +1375,11 @@ window.cerrarModalFormula = cerrarModalFormula;
     <div id="modalPrintContainer"></div>
   </div>
 </div>
+
+  </div>
+</body>
+</html>
+
 
   </div>
 </body>
