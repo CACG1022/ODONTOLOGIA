@@ -427,23 +427,23 @@
     }
 
     function setPacienteFromRow(row){
-      // Campos del formulario
-      $("paciente_nombre").value = row?.[COL_NOMBRE] ?? "";
-      $("paciente_cedula").value = row?.[COL_CEDULA] ?? "";
-      $("paciente_edad").value = row?.[COL_EDAD] ?? "";
-      $("paciente_tipoid").value = normalizeTipoId(row?.[COL_TIPO_ID] ?? "");
-      $("paciente_lugarexp").value = row?.[COL_LUGAR_EXP] ?? "";
-      $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
+  // Campos del formulario (principales)
+  $("paciente_nombre").value     = row?.[COL_NOMBRE] ?? "";
+  $("paciente_cedula").value     = row?.[COL_CEDULA] ?? "";
+  $("paciente_edad").value       = row?.[COL_EDAD] ?? "";
+  $("paciente_tipoid").value     = normalizeTipoId(row?.[COL_TIPO_ID] ?? "");
+  $("paciente_lugarexp").value   = row?.[COL_LUGAR_EXP] ?? "";
+  $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
 
-      // Opcionales si existen
-      $("paciente_correo").value   = row?.[paciente_email] ?? "";
-      $("paciente_celular").value  = row?.paciente_cel ?? "";
-      $("paciente_telefono").value = row?.paciente_tel ?? "";
-      $("paciente_direccion").value= row?.paciente_direccion ?? "";
-      $("paciente_ciudad").value   = row?.ciudad_de_residencia ?? row?.paciente_ciudad ?? "";
-      $("paciente_eps").value      = row?.EPS_Paciente ?? "";
+  // ✅ Opcionales (tus columnas reales)
+  $("paciente_correo").value     = row?.paciente_email ?? "";
+  $("paciente_celular").value    = (row?.paciente_cel ?? "")?.toString();
+  $("paciente_telefono").value   = (row?.paciente_tel ?? "")?.toString();
+  $("paciente_direccion").value  = row?.paciente_direccion ?? "";
+  $("paciente_ciudad").value     = row?.ciudad_de_residencia ?? "";
+  $("paciente_eps").value        = row?.EPS_Paciente ?? "";
+}
 
-    }
 
     async function buscarPaciente(){
       toast("");
@@ -466,13 +466,20 @@
       // Para evitar error por columnas que no existan, pedimos solo las que sabemos de tu tabla por el reporte, y luego “*” no es buena idea.
       // Entonces: pedimos las básicas y luego intentamos un segundo select con opcionales si quieres.
       let q = supabase.from(HIST_TABLE).select(`
-        "${COL_CEDULA}",
-        "${COL_NOMBRE}",
-        "${COL_EDAD}",
-        "${COL_TIPO_ID}",
-        "${COL_LUGAR_EXP}",
-        "${COL_NAC}"
-      `).limit(1);
+  "${COL_CEDULA}",
+  "${COL_NOMBRE}",
+  "${COL_EDAD}",
+  "${COL_TIPO_ID}",
+  "${COL_LUGAR_EXP}",
+  "${COL_NAC}",
+  paciente_email,
+  paciente_cel,
+  paciente_tel,
+  paciente_direccion,
+  ciudad_de_residencia,
+  "EPS_Paciente"
+`).limit(1);
+
 
       q = isNum ? q.eq(COL_CEDULA, cedulaNum) : q.eq(COL_CEDULA, cedulaRaw);
 
