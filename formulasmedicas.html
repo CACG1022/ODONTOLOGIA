@@ -514,6 +514,9 @@
 
       setPacienteFromRow({ ...row, ...extras });
       toast("Paciente cargado desde historia clínica ✅", "ok");
+      cargarFormulasDelPaciente(row[COL_CEDULA]);
+
+
     }
 
     function addMedRow(prefill = {}){
@@ -868,6 +871,97 @@
       $("firmaPreview").style.display = "none";
     }
 
+async function cargarFormulasDelPaciente(cedula){
+  const tbody = $("tbFormulasPaciente");
+  tbody.innerHTML = `<tr><td colspan="4" class="mono">Cargando...</td></tr>`;
+
+  const { data, error } = await supabase
+    .from("formulas_medicas")
+    .select("*")
+    .eq("paciente_cedula", cedula)
+    .order("created_at", { ascending: false });
+
+  if (error){
+    console.error(error);
+    tbody.innerHTML = `<tr><td colspan="4">Error cargando fórmulas</td></tr>`;
+    return;
+  }
+
+  if (!data.length){
+    tbody.innerHTML = `<tr><td colspan="4" class="mono">No hay fórmulas registradas</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = "";
+  data.forEach(f => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${f.fecha_hora || ""}</td>
+      <td>${f.diagnostico || "—"}</td>
+      <td>${f.profesional_email || ""}</td>
+      <td>
+        <button class="btn primary" onclick="verFormula('${f.id}')">Ver</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function verFormula(id){
+  const { data, error } = await supabase
+    .from("formulas_medicas")
+    .select("*")
+    .eq("id", id)
+    .single();
+
+  if (error){
+    alert("Error cargando fórmula");
+    return;
+  }
+
+  // cargar datos en el área de impresión
+  $("modalPrintContainer").innerHTML = $("printArea").outerHTML;
+
+  // rellenar contenido
+  document.getElementById("pFechaHora").textContent = data.fecha_hora || "";
+  document.getElementById("pPaciente").textContent = data.paciente_nombre || "";
+  document.getElementById("pCedula").textContent = data.paciente_cedula || "";
+  document.getElementById("pContacto").textContent =
+    `${data.paciente_celular || ""} ${data.paciente_correo || ""}`;
+
+  document.getElementById("pDiagnostico").textContent = data.diagnostico || "—";
+  document.getElementById("pAlergias").textContent = data.alergias || "—";
+  document.getElementById("pObserv").textContent = data.observaciones || "—";
+
+  const tb = document.getElementById("pMeds");
+  tb.innerHTML = "";
+  (data.medicamentos || []).forEach(m => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${m.medicamento || ""}</td>
+      <td>${m.concentracion || ""}</td>
+      <td>${m.forma || ""}</td>
+      <td>${m.dosis || ""}</td>
+      <td>${m.frecuencia || ""}</td>
+      <td>${m.duracion || ""}</td>
+      <td>${m.indicaciones || ""}</td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  if (data.firma_png){
+    document.getElementById("pFirma").src = data.firma_png;
+    document.getElementById("pFirmaWrap").style.display = "block";
+  }
+
+  $("modalFormula").style.display = "flex";
+}
+
+function cerrarModalFormula(){
+  $("modalFormula").style.display = "none";
+}
+
+    
     init();
   </script>
 </head>
@@ -1126,6 +1220,63 @@
         </div>
       </div>
     </div>
+
+
+    <!-- ===============================
+     HISTORIAL DE FÓRMULAS MÉDICAS
+================================ -->
+<div class="card">
+  <div class="title">Fórmulas médicas del paciente</div>
+
+  <div style="overflow:auto;">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Diagnóstico</th>
+          <th>Profesional</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tbFormulasPaciente">
+        <tr>
+          <td colspan="4" class="mono">Busca un paciente para ver sus fórmulas médicas</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL VER FÓRMULA -->
+<div id="modalFormula" style="
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  z-index:9999;
+  align-items:center;
+  justify-content:center;
+">
+  <div style="
+    background:#fff;
+    width:min(900px,95%);
+    max-height:90vh;
+    overflow:auto;
+    border-radius:18px;
+    padding:18px;
+  ">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+      <b>Vista de fórmula médica</b>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn danger" onclick="cerrarModalFormula()">✖ Cerrar</button>
+      </div>
+    </div>
+
+    <!-- reutiliza el área de impresión -->
+    <div id="modalPrintContainer"></div>
+  </div>
+</div>
 
   </div>
 </body>
