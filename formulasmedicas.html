@@ -900,6 +900,23 @@ async function cargarFormulasDelPaciente(cedula){
     return;
   }
 
+  // ✅ Buscar nombre del profesional desde tabla "profesionales" usando el correo
+  const emails = [...new Set((data || []).map(f => f.profesional_email).filter(Boolean))];
+  const profMap = {};
+  if (emails.length){
+    const { data: profs, error: errProf } = await supabase
+      .from("profesionales")
+      .select("correo,nombre")
+      .in("correo", emails);
+
+    if (errProf){
+      console.warn("No se pudo cargar profesionales:", errProf);
+    } else {
+      (profs || []).forEach(p => { if (p && p.correo) profMap[p.correo] = p.nombre; });
+    }
+  }
+
+
   if (!data.length){
     tbody.innerHTML = `<tr><td colspan="4" class="mono">No hay fórmulas registradas</td></tr>`;
     return;
@@ -911,7 +928,7 @@ async function cargarFormulasDelPaciente(cedula){
     tr.innerHTML = `
       <td>${f.fecha_hora || ""}</td>
       <td>${f.diagnostico || "—"}</td>
-      <td>${f.profesional_email || ""}</td>
+      <td>${escapeHtml(profMap[f.profesional_email] || f.profesional_email || "")}</td>
       <td>
         <button class="btn primary" onclick="verFormula('${f.id}')">Ver</button>
       </td>
@@ -1039,7 +1056,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción-2</p>
         </div>
       </div>
 
@@ -1345,4 +1362,3 @@ window.cerrarModalFormula = cerrarModalFormula;
   </div>
 </body>
 </html>
-
