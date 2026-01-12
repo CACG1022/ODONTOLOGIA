@@ -915,58 +915,81 @@ async function verFormula(id){
     .single();
 
   if (error){
+    console.error(error);
     alert("Error cargando fórmula");
     return;
   }
 
-  // cargar datos en el área de impresión
+  // Copiar estructura de impresión
   $("modalPrintContainer").innerHTML = $("printArea").outerHTML;
-// 🔧 FORZAR VISIBILIDAD (printArea viene con display:none)
-// logo de la clínica
- 
-  // 🔧 Mostrar el contenido copiado (printArea viene oculto)
-const pa = document.querySelector("#modalPrintContainer #printArea");
-if (pa){
-  pa.style.display = "block";
-}
 
+  const pa = document.querySelector("#modalPrintContainer #printArea");
+  if (pa){
+    pa.style.display = "block";
+  }
+
+  // Logo
   document.getElementById("pLogo").src = LOGO_URL;
 
-
-  // rellenar contenido
+  // =========================
+  // DATOS DEL PACIENTE
+  // =========================
   document.getElementById("pFechaHora").textContent = data.fecha_hora || "";
   document.getElementById("pPaciente").textContent = data.paciente_nombre || "";
-  document.getElementById("pCedula").textContent = data.paciente_cedula || "";
-  document.getElementById("pContacto").textContent =
-    `${data.paciente_celular || ""} ${data.paciente_correo || ""}`;
+  document.getElementById("pCedula").textContent =
+    `${data.paciente_tipo_id || ""} ${data.paciente_cedula || ""}`;
 
+  document.getElementById("pContacto").textContent =
+    `${data.paciente_celular || ""}${(data.paciente_celular && data.paciente_correo) ? " | " : ""}${data.paciente_correo || ""}`;
+
+  // =========================
+  // CLÍNICO
+  // =========================
   document.getElementById("pDiagnostico").textContent = data.diagnostico || "—";
   document.getElementById("pAlergias").textContent = data.alergias || "—";
   document.getElementById("pObserv").textContent = data.observaciones || "—";
 
+  // =========================
+  // MEDICAMENTOS
+  // =========================
   const tb = document.getElementById("pMeds");
   tb.innerHTML = "";
-  (data.medicamentos || []).forEach(m => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${m.medicamento || ""}</td>
-      <td>${m.concentracion || ""}</td>
-      <td>${m.forma || ""}</td>
-      <td>${m.dosis || ""}</td>
-      <td>${m.frecuencia || ""}</td>
-      <td>${m.duracion || ""}</td>
-      <td>${m.indicaciones || ""}</td>
-    `;
-    tb.appendChild(tr);
-  });
 
+  if (!data.medicamentos || !data.medicamentos.length){
+    tb.innerHTML = `<tr><td colspan="7">—</td></tr>`;
+  } else {
+    data.medicamentos.forEach(m => {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${m.medicamento || ""}</td>
+        <td>${m.concentracion || ""}</td>
+        <td>${m.forma || ""}</td>
+        <td>${m.dosis || ""}</td>
+        <td>${m.frecuencia || ""}</td>
+        <td>${m.duracion || ""}</td>
+        <td>${m.indicaciones || ""}</td>
+      `;
+      tb.appendChild(tr);
+    });
+  }
+
+  // =========================
+  // FIRMA
+  // =========================
   if (data.firma_png){
     document.getElementById("pFirma").src = data.firma_png;
     document.getElementById("pFirmaWrap").style.display = "block";
+  } else {
+    document.getElementById("pFirmaWrap").style.display = "none";
   }
 
+  document.getElementById("pProfesional").textContent =
+    `${data.profesional_email || ""} (${data.profesional_role || ""})`;
+
+  // Mostrar modal
   $("modalFormula").style.display = "flex";
 }
+
 
 function cerrarModalFormula(){
   $("modalFormula").style.display = "none";
