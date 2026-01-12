@@ -323,14 +323,15 @@
     // paciente_tel, paciente_cel, paciente_email, paciente_direccion, paciente_ciudad
     // OJO: estas no necesariamente existen en la tabla de supabase; por eso las leemos si están.
     const OPTIONAL_COLS = [
-      "paciente_tel",
-      "paciente_cel",
-      "paciente_email",
-      "paciente_direccion",
-      "paciente_ciudad",
-      "EPS_Paciente",
-      "Ciudad_de_Residencia"
-    ];
+  "paciente_tel",
+  "paciente_cel",
+  "paciente_email",
+  "paciente_direccion",
+  "ciudad_de_residencia",
+  "EPS_Paciente",
+  "paciente_ciudad" // por si lo usas en otra versión
+];
+
 
     const state = {
       session: null,
@@ -438,12 +439,13 @@
       $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
 
       // Opcionales si existen
-      $("paciente_correo").value = row?.paciente_email ?? row?.paciente_email ?? "";
-      $("paciente_celular").value = row?.paciente_cel ?? row?.paciente_celular ?? "";
-      $("paciente_telefono").value = row?.paciente_tel ?? row?.paciente_telefono ?? "";
-      $("paciente_direccion").value = row?.paciente_direccion ?? "";
-      $("paciente_ciudad").value = row?.paciente_ciudad ?? row?.Ciudad_de_Residencia ?? "";
-      $("paciente_eps").value = row?.EPS_Paciente ?? "";
+      $("paciente_correo").value   = row?.paciente_email ?? "";
+      $("paciente_celular").value  = row?.paciente_cel ?? "";
+      $("paciente_telefono").value = row?.paciente_tel ?? "";
+      $("paciente_direccion").value= row?.paciente_direccion ?? "";
+      $("paciente_ciudad").value   = row?.ciudad_de_residencia ?? row?.paciente_ciudad ?? "";
+      $("paciente_eps").value      = row?.EPS_Paciente ?? "";
+
     }
 
     async function buscarPaciente(){
