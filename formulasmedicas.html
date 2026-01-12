@@ -257,8 +257,10 @@
 
     /* ======== PRINT ======== */
     @media print{
-  .modal-actions, .btn-imprimir, .btn-cerrar{ display:none !important; }
+  /* Ocultar botones Imprimir y Cerrar en la impresión */
+  #modalFormula button{ display:none !important; }
 
+  
       body{ background:#fff; padding:0; }
       /* Cuando se imprime desde el modal, ocultar el printArea original para evitar una página extra */
       body.printing-modal .print-original{ display:none !important; }
@@ -290,7 +292,11 @@
       .p-sig img{ width: 240px; height:auto; border-bottom: 1px solid #222; padding-bottom: 6px; }
       .p-sig .lbl{ text-align:center; font-size: 12px; margin-top: 6px; }
     }
-  </style>
+  
+      /* Alinear nombre del profesional a la izquierda (solo debajo de la firma) */
+      #pFirmaWrap #pProfesional{ display:block; width:100%; text-align:left; }
+
+    </style>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -1073,7 +1079,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción5</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción6</p>
         </div>
       </div>
 
@@ -1380,7 +1386,3 @@ window.cerrarModalFormula = cerrarModalFormula;
 </body>
 </html>
 
-
-  </div>
-</body>
-</html>
