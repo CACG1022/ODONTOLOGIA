@@ -316,19 +316,16 @@
     const COL_TIPO_ID  = "Tipo identificacion";
     const COL_LUGAR_EXP= "Lugar exp";
     const COL_NAC      = "Fecha de nacimiento";
-    // y de tu historia clínica HTML:
-    // paciente_tel, paciente_cel, paciente_email, paciente_direccion, paciente_ciudad
-    // OJO: estas no necesariamente existen en la tabla de supabase; por eso las leemos si están.
-    const OPTIONAL_COLS = [
-  "paciente_tel",
-  "paciente_cel",
-  "paciente_email",
-  "paciente_direccion",
-  "ciudad_de_residencia",
-  "EPS_Paciente",
-  "paciente_ciudad" // por si lo usas en otra versión
-];
 
+    const OPTIONAL_COLS = [
+      "paciente_tel",
+      "paciente_cel",
+      "paciente_email",
+      "paciente_direccion",
+      "ciudad_de_residencia",
+      "EPS_Paciente",
+      "paciente_ciudad"
+    ];
 
     const state = {
       session: null,
@@ -369,7 +366,6 @@
           .select("role")
           .eq("id", userId)
           .single();
-
         if (error) return null;
         return data?.role || null;
       }catch{
@@ -427,23 +423,20 @@
     }
 
     function setPacienteFromRow(row){
-  // Campos del formulario (principales)
-  $("paciente_nombre").value     = row?.[COL_NOMBRE] ?? "";
-  $("paciente_cedula").value     = row?.[COL_CEDULA] ?? "";
-  $("paciente_edad").value       = row?.[COL_EDAD] ?? "";
-  $("paciente_tipoid").value     = normalizeTipoId(row?.[COL_TIPO_ID] ?? "");
-  $("paciente_lugarexp").value   = row?.[COL_LUGAR_EXP] ?? "";
-  $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
+      $("paciente_nombre").value     = row?.[COL_NOMBRE] ?? "";
+      $("paciente_cedula").value     = row?.[COL_CEDULA] ?? "";
+      $("paciente_edad").value       = row?.[COL_EDAD] ?? "";
+      $("paciente_tipoid").value     = normalizeTipoId(row?.[COL_TIPO_ID] ?? "");
+      $("paciente_lugarexp").value   = row?.[COL_LUGAR_EXP] ?? "";
+      $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
 
-  // ✅ Opcionales (tus columnas reales)
-  $("paciente_correo").value     = row?.paciente_email ?? "";
-  $("paciente_celular").value    = (row?.paciente_cel ?? "")?.toString();
-  $("paciente_telefono").value   = (row?.paciente_tel ?? "")?.toString();
-  $("paciente_direccion").value  = row?.paciente_direccion ?? "";
-  $("paciente_ciudad").value     = row?.ciudad_de_residencia ?? "";
-  $("paciente_eps").value        = row?.EPS_Paciente ?? "";
-}
-
+      $("paciente_correo").value     = row?.paciente_email ?? "";
+      $("paciente_celular").value    = (row?.paciente_cel ?? "")?.toString();
+      $("paciente_telefono").value   = (row?.paciente_tel ?? "")?.toString();
+      $("paciente_direccion").value  = row?.paciente_direccion ?? "";
+      $("paciente_ciudad").value     = row?.ciudad_de_residencia ?? "";
+      $("paciente_eps").value        = row?.EPS_Paciente ?? "";
+    }
 
     async function buscarPaciente(){
       toast("");
@@ -458,28 +451,23 @@
         return;
       }
 
-      // Intento: cédula numérica
       const cedulaNum = Number(cedulaRaw);
       const isNum = !Number.isNaN(cedulaNum);
 
-      // SELECT: columnas “seguras” + opcionales (si existen, supabase no falla si no están? OJO: si no existe columna, sí falla)
-      // Para evitar error por columnas que no existan, pedimos solo las que sabemos de tu tabla por el reporte, y luego “*” no es buena idea.
-      // Entonces: pedimos las básicas y luego intentamos un segundo select con opcionales si quieres.
       let q = supabase.from(HIST_TABLE).select(`
-  "${COL_CEDULA}",
-  "${COL_NOMBRE}",
-  "${COL_EDAD}",
-  "${COL_TIPO_ID}",
-  "${COL_LUGAR_EXP}",
-  "${COL_NAC}",
-  paciente_email,
-  paciente_cel,
-  paciente_tel,
-  paciente_direccion,
-  ciudad_de_residencia,
-  "EPS_Paciente"
-`).limit(1);
-
+        "${COL_CEDULA}",
+        "${COL_NOMBRE}",
+        "${COL_EDAD}",
+        "${COL_TIPO_ID}",
+        "${COL_LUGAR_EXP}",
+        "${COL_NAC}",
+        paciente_email,
+        paciente_cel,
+        paciente_tel,
+        paciente_direccion,
+        ciudad_de_residencia,
+        "EPS_Paciente"
+      `).limit(1);
 
       q = isNum ? q.eq(COL_CEDULA, cedulaNum) : q.eq(COL_CEDULA, cedulaRaw);
 
@@ -493,14 +481,12 @@
 
       if (!data || !data.length){
         toast("No encontré historia clínica con esa cédula. Puedes llenar los datos manualmente.", "warn");
-        // set cedula al menos
         $("paciente_cedula").value = cedulaRaw;
         return;
       }
 
       const row = data[0];
 
-      // Intento extra: leer columnas opcionales sin romper si fallan
       let extras = {};
       try{
         const { data: d2 } = await supabase
@@ -510,13 +496,13 @@
           .eq(COL_CEDULA, isNum ? cedulaNum : cedulaRaw);
 
         if (d2 && d2[0]) extras = d2[0];
-      }catch(e){ /* si falla, no pasa nada */ }
+      }catch(e){}
 
       setPacienteFromRow({ ...row, ...extras });
       toast("Paciente cargado desde historia clínica ✅", "ok");
+
+      // ✅ cargar historial de fórmulas del paciente
       cargarFormulasDelPaciente(row[COL_CEDULA]);
-
-
     }
 
     function addMedRow(prefill = {}){
@@ -572,7 +558,6 @@
         });
 
         tr.querySelector('[data-del="1"]').addEventListener("click", ()=> removeMedRow(i));
-
         tb.appendChild(tr);
       });
     }
@@ -595,7 +580,6 @@
       const ctx = canvas.getContext("2d");
 
       function resizeCanvas(){
-        // Mantener nitidez
         const rect = canvas.getBoundingClientRect();
         const dpr = window.devicePixelRatio || 1;
         canvas.width = Math.max(1, Math.floor(rect.width * dpr));
@@ -637,7 +621,6 @@
       function end(){
         drawing = false;
         last = null;
-        // Guardar snapshot base64
         state.firmaDataUrl = canvas.toDataURL("image/png");
         $("firmaPreview").src = state.firmaDataUrl;
         $("firmaPreview").style.display = state.firmaDataUrl ? "block" : "none";
@@ -652,7 +635,6 @@
       window.addEventListener("touchend", end);
 
       $("btnLimpiarFirma").addEventListener("click", ()=>{
-        // limpiar
         ctx.clearRect(0,0,canvas.width,canvas.height);
         state.firmaDataUrl = "";
         $("firmaPreview").src = "";
@@ -700,7 +682,6 @@
 
     async function guardarFormula(){
       toast("");
-
       const { paciente, receta } = buildPayload();
 
       if (!paciente.cedula){
@@ -734,7 +715,7 @@
         paciente_ciudad: paciente.ciudad || null,
         paciente_eps: paciente.eps || null,
 
-        fecha_hora: receta.fecha_hora,               // texto legible
+        fecha_hora: receta.fecha_hora,
         diagnostico: receta.diagnostico || null,
         alergias: receta.alergias || null,
         observaciones: receta.observaciones || null,
@@ -763,37 +744,79 @@
         $("formula_id").value = data?.id || "";
         toast("Fórmula guardada ✅ (ID: " + (data?.id || "") + ")", "ok");
 
-        // Preparar impresión
-        buildPrintArea();
+        // ✅ recargar historial cuando guardas
+        cargarFormulasDelPaciente(paciente.cedula);
 
       } finally{
         $("btnGuardar").disabled = false;
       }
     }
 
-    function buildPrintArea(){
-      const { paciente, receta } = buildPayload();
+    function imprimir(){
+      window.print();
+    }
 
-      $("pLogo").src = LOGO_URL;
-      $("pFechaHora").textContent = receta.fecha_hora || "";
-      $("pPaciente").textContent = `${paciente.nombre || ""}`;
-      $("pCedula").textContent = `${paciente.tipo_id ? paciente.tipo_id + " " : ""}${paciente.cedula || ""}`;
-      $("pContacto").textContent =
-        `${paciente.celular ? "Cel: " + paciente.celular : ""}${(paciente.celular && paciente.correo) ? " | " : ""}${paciente.correo ? "Email: " + paciente.correo : ""}`;
+    // =====================================================
+    // ✅ NUEVO: CARGAR LISTADO DE FÓRMULAS POR PACIENTE
+    // =====================================================
+    async function cargarFormulasDelPaciente(cedula){
+      const tbody = $("tbFormulasPaciente");
+      if (!tbody) return;
 
-      $("pDiagnostico").textContent = receta.diagnostico || "—";
-      $("pAlergias").textContent = receta.alergias || "—";
-      $("pObserv").textContent = receta.observaciones || "—";
+      tbody.innerHTML = `<tr><td colspan="4" class="mono">Cargando...</td></tr>`;
 
-      const tb = $("pMeds");
-      tb.innerHTML = "";
-      const meds = (receta.medicamentos || []);
-      if (!meds.length){
-        tb.innerHTML = `<tr><td colspan="7">—</td></tr>`;
-      } else {
-        meds.forEach(m=>{
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
+      const { data, error } = await supabase
+        .from("formulas_medicas")
+        .select("id, fecha_hora, diagnostico, profesional_email, created_at")
+        .eq("paciente_cedula", cedula)
+        .order("created_at", { ascending: false });
+
+      if (error){
+        console.error(error);
+        tbody.innerHTML = `<tr><td colspan="4">Error cargando fórmulas</td></tr>`;
+        return;
+      }
+
+      if (!data || !data.length){
+        tbody.innerHTML = `<tr><td colspan="4" class="mono">No hay fórmulas registradas</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      data.forEach(f => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(f.fecha_hora || "")}</td>
+          <td>${escapeHtml(f.diagnostico || "—")}</td>
+          <td>${escapeHtml(f.profesional_email || "")}</td>
+          <td>
+            <button type="button" class="btn primary" onclick="verFormula('${f.id}')">Ver</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // =====================================================
+    // ✅ FIX REAL: VER FÓRMULA COMPLETA EN MODAL (SIN CLONAR printArea)
+    // =====================================================
+    async function verFormula(id){
+      const { data, error } = await supabase
+        .from("formulas_medicas")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error){
+        console.error(error);
+        alert("Error cargando fórmula");
+        return;
+      }
+
+      const meds = Array.isArray(data.medicamentos) ? data.medicamentos : [];
+      const medsRows = meds.length
+        ? meds.map(m => `
+          <tr>
             <td>${escapeHtml(m.medicamento || "")}</td>
             <td>${escapeHtml(m.concentracion || "")}</td>
             <td>${escapeHtml(m.forma || "")}</td>
@@ -801,56 +824,138 @@
             <td>${escapeHtml(m.frecuencia || "")}</td>
             <td>${escapeHtml(m.duracion || "")}</td>
             <td>${escapeHtml(m.indicaciones || "")}</td>
-          `;
-          tb.appendChild(tr);
-        });
-      }
+          </tr>
+        `).join("")
+        : `<tr><td colspan="7">—</td></tr>`;
 
-      if (state.firmaDataUrl){
-        $("pFirma").src = state.firmaDataUrl;
-        $("pFirmaWrap").style.display = "block";
-      } else {
-        $("pFirmaWrap").style.display = "none";
-      }
+      // ✅ Render limpio dentro del modal (sin IDs duplicados)
+      $("modalPrintContainer").innerHTML = `
+        <div style="padding:14px;">
+          <div style="display:flex;gap:12px;align-items:center;border-bottom:1px solid #e5e7eb;padding-bottom:10px;margin-bottom:10px;">
+            <img src="${LOGO_URL}" alt="Logo" style="width:90px;height:auto;">
+            <div>
+              <div style="font-weight:900;font-size:16px;">FÓRMULA MÉDICA</div>
+              <div style="color:#555;font-size:12px;">Clínica Dra. Leidi Silva</div>
+              <div style="color:#555;font-size:12px;margin-top:4px;">Fecha y hora: <b>${escapeHtml(data.fecha_hora || "")}</b></div>
+            </div>
+          </div>
 
-      $("pProfesional").textContent = `${state.userEmail || ""} (${state.role || ""})`;
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin-bottom:10px;">
+            <div style="display:flex;flex-wrap:wrap;gap:10px;font-size:12px;">
+              <div><b>Paciente:</b> ${escapeHtml(data.paciente_nombre || "")}</div>
+              <div><b>Identificación:</b> ${escapeHtml(data.paciente_cedula || "")}</div>
+              <div><b>Contacto:</b> ${escapeHtml(data.paciente_celular || "")}${(data.paciente_celular && data.paciente_correo) ? " | " : ""}${escapeHtml(data.paciente_correo || "")}</div>
+            </div>
+          </div>
+
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin-bottom:10px;font-size:12px;">
+            <div style="font-weight:800;margin-bottom:6px;">Diagnóstico / Motivo</div>
+            <div>${escapeHtml(data.diagnostico || "—")}</div>
+
+            <div style="height:10px;"></div>
+            <div><b>Alergias:</b> ${escapeHtml(data.alergias || "—")}</div>
+
+            <div style="height:10px;"></div>
+            <div style="font-weight:800;margin-bottom:6px;">Observaciones</div>
+            <div>${escapeHtml(data.observaciones || "—")}</div>
+          </div>
+
+          <div style="border:1px solid #e5e7eb;border-radius:12px;padding:10px;margin-bottom:10px;">
+            <div style="font-weight:800;margin-bottom:8px;font-size:12px;">Medicamentos</div>
+            <table style="width:100%;border-collapse:collapse;font-size:12px;">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Medicamento</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Concentración</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Forma</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Dosis</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Frecuencia</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Duración</th>
+                  <th style="border:1px solid #e5e7eb;padding:8px;background:#f8fafc;">Indicaciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${medsRows}
+              </tbody>
+            </table>
+          </div>
+
+          ${data.firma_png ? `
+            <div style="display:flex;justify-content:flex-end;margin-top:10px;">
+              <div style="text-align:center;">
+                <img src="${data.firma_png}" alt="Firma" style="width:240px;height:auto;border-bottom:1px solid #111;padding-bottom:6px;">
+                <div style="font-size:12px;margin-top:6px;">Firma del profesional</div>
+                <div style="font-size:12px;color:#555;">${escapeHtml(data.profesional_email || "")} (${escapeHtml(data.profesional_role || "")})</div>
+              </div>
+            </div>
+          ` : `
+            <div style="font-size:12px;color:#555;margin-top:8px;">
+              <b>Profesional:</b> ${escapeHtml(data.profesional_email || "")} (${escapeHtml(data.profesional_role || "")})<br>
+              <i>Sin firma registrada.</i>
+            </div>
+          `}
+        </div>
+      `;
+
+      $("modalFormula").style.display = "flex";
     }
 
-    function imprimir(){
-      buildPrintArea();
-      window.print();
+    function cerrarModalFormula(){
+      $("modalFormula").style.display = "none";
+    }
+
+    // ✅ Imprimir SOLO el contenido del modal (sin depender de CSS global)
+    function imprimirModalFormula(){
+      const contenido = $("modalPrintContainer").innerHTML || "";
+      const w = window.open("", "_blank", "width=900,height=700");
+      if (!w) return;
+
+      w.document.open();
+      w.document.write(`
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>Imprimir Fórmula</title>
+            <style>
+              body{font-family: Inter, Arial, sans-serif; padding:18px;}
+              table{width:100%;border-collapse:collapse;}
+              th,td{border:1px solid #e5e7eb;padding:8px;font-size:12px;text-align:left;}
+              th{background:#f8fafc;}
+            </style>
+          </head>
+          <body>
+            ${contenido}
+            <script>
+              window.onload = function(){ window.print(); window.close(); }
+            </script>
+          </body>
+        </html>
+      `);
+      w.document.close();
     }
 
     async function init(){
-      // logo y reloj
       $("logoTop").src = LOGO_URL;
       tickClock();
       setInterval(tickClock, 1000);
 
-      // sesión
       const session = await verificarSesion();
       if (!session) return;
 
-      // rol
       state.role = (await cargarRolDesdeProfiles(session.user.id)) || "user";
       setHeader();
 
-      // acceso
       const ok = await validarAcceso();
       if (!ok) return;
 
-      // detectar tabla historias
       HIST_TABLE = await detectarTablaHistorias();
       $("tablaDetectada").textContent = HIST_TABLE ? `Tabla historias: ${HIST_TABLE}` : "No se detectó tabla de historias clínicas.";
 
-      // init meds
       state.meds = [];
       renderMeds();
 
-      // firma
       initFirma();
 
-      // eventos
       $("btnBuscar").addEventListener("click", buscarPaciente);
       $("btnAddMed").addEventListener("click", ()=> addMedRow());
       $("btnGuardar").addEventListener("click", guardarFormula);
@@ -862,142 +967,17 @@
         window.location.href = LOGIN_URL;
       });
 
-      // Enter en búsqueda
       $("buscar_cedula").addEventListener("keydown", (e)=>{
         if (e.key === "Enter"){ e.preventDefault(); buscarPaciente(); }
       });
 
-      // firma preview invisible al inicio
       $("firmaPreview").style.display = "none";
     }
 
-async function cargarFormulasDelPaciente(cedula){
-  const tbody = $("tbFormulasPaciente");
-  tbody.innerHTML = `<tr><td colspan="4" class="mono">Cargando...</td></tr>`;
-
-  const { data, error } = await supabase
-    .from("formulas_medicas")
-    .select("*")
-    .eq("paciente_cedula", cedula)
-    .order("created_at", { ascending: false });
-
-  if (error){
-    console.error(error);
-    tbody.innerHTML = `<tr><td colspan="4">Error cargando fórmulas</td></tr>`;
-    return;
-  }
-
-  if (!data.length){
-    tbody.innerHTML = `<tr><td colspan="4" class="mono">No hay fórmulas registradas</td></tr>`;
-    return;
-  }
-
-  tbody.innerHTML = "";
-  data.forEach(f => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${f.fecha_hora || ""}</td>
-      <td>${f.diagnostico || "—"}</td>
-      <td>${f.profesional_email || ""}</td>
-      <td>
-        <button class="btn primary" onclick="verFormula('${f.id}')">Ver</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function verFormula(id){
-  const { data, error } = await supabase
-    .from("formulas_medicas")
-    .select("*")
-    .eq("id", id)
-    .single();
-
-  if (error){
-    console.error(error);
-    alert("Error cargando fórmula");
-    return;
-  }
-
-  // Copiar estructura de impresión
-  $("modalPrintContainer").innerHTML = $("printArea").outerHTML;
-
-  const pa = document.querySelector("#modalPrintContainer #printArea");
-  if (pa){
-    pa.style.display = "block";
-  }
-
-  // Logo
-  document.getElementById("pLogo").src = LOGO_URL;
-
-  // =========================
-  // DATOS DEL PACIENTE
-  // =========================
-  document.getElementById("pFechaHora").textContent = data.fecha_hora || "";
-  document.getElementById("pPaciente").textContent = data.paciente_nombre || "";
-  document.getElementById("pCedula").textContent =
-    `${data.paciente_tipo_id || ""} ${data.paciente_cedula || ""}`;
-
-  document.getElementById("pContacto").textContent =
-    `${data.paciente_celular || ""}${(data.paciente_celular && data.paciente_correo) ? " | " : ""}${data.paciente_correo || ""}`;
-
-  // =========================
-  // CLÍNICO
-  // =========================
-  document.getElementById("pDiagnostico").textContent = data.diagnostico || "—";
-  document.getElementById("pAlergias").textContent = data.alergias || "—";
-  document.getElementById("pObserv").textContent = data.observaciones || "—";
-
-  // =========================
-  // MEDICAMENTOS
-  // =========================
-  const tb = document.getElementById("pMeds");
-  tb.innerHTML = "";
-
-  if (!data.medicamentos || !data.medicamentos.length){
-    tb.innerHTML = `<tr><td colspan="7">—</td></tr>`;
-  } else {
-    data.medicamentos.forEach(m => {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${m.medicamento || ""}</td>
-        <td>${m.concentracion || ""}</td>
-        <td>${m.forma || ""}</td>
-        <td>${m.dosis || ""}</td>
-        <td>${m.frecuencia || ""}</td>
-        <td>${m.duracion || ""}</td>
-        <td>${m.indicaciones || ""}</td>
-      `;
-      tb.appendChild(tr);
-    });
-  }
-
-  // =========================
-  // FIRMA
-  // =========================
-  if (data.firma_png){
-    document.getElementById("pFirma").src = data.firma_png;
-    document.getElementById("pFirmaWrap").style.display = "block";
-  } else {
-    document.getElementById("pFirmaWrap").style.display = "none";
-  }
-
-  document.getElementById("pProfesional").textContent =
-    `${data.profesional_email || ""} (${data.profesional_role || ""})`;
-
-  // Mostrar modal
-  $("modalFormula").style.display = "flex";
-}
-
-
-function cerrarModalFormula(){
-  $("modalFormula").style.display = "none";
-}
-
-    // 🔓 Exponer funciones para botones inline
-window.verFormula = verFormula;
-window.cerrarModalFormula = cerrarModalFormula;
+    // ✅ Exponer funciones para onclick inline (por usar module)
+    window.verFormula = verFormula;
+    window.cerrarModalFormula = cerrarModalFormula;
+    window.imprimirModalFormula = imprimirModalFormula;
 
     init();
   </script>
@@ -1200,121 +1180,65 @@ window.cerrarModalFormula = cerrarModalFormula;
       <div class="hint">La firma se guarda como imagen (base64 PNG) dentro del registro.</div>
     </div>
 
-    <!-- ====== AREA IMPRESIÓN ====== -->
-    <div id="printArea">
-      <div class="p-head">
-        <img id="pLogo" alt="Logo">
-        <div style="flex:1;">
-          <p class="p-title">FÓRMULA MÉDICA</p>
-          <p class="p-sub">Clínica Dra. Leidi Silva</p>
-          <p class="p-sub">Fecha y hora: <b id="pFechaHora"></b></p>
-        </div>
-      </div>
-
-      <div class="p-box">
-        <div class="p-row">
-          <div><b>Paciente:</b> <span id="pPaciente"></span></div>
-          <div><b>Identificación:</b> <span id="pCedula"></span></div>
-          <div><b>Contacto:</b> <span id="pContacto"></span></div>
-        </div>
-      </div>
-
-      <div class="p-box">
-        <div class="p-row"><div><b>Diagnóstico / Motivo:</b></div></div>
-        <div style="font-size:12px; margin-top:6px;" id="pDiagnostico"></div>
-        <div style="height:8px;"></div>
-        <div class="p-row">
-          <div><b>Alergias:</b> <span id="pAlergias"></span></div>
-        </div>
-        <div style="height:8px;"></div>
-        <div class="p-row"><div><b>Observaciones:</b></div></div>
-        <div style="font-size:12px; margin-top:6px;" id="pObserv"></div>
-      </div>
-
-      <div class="p-box">
-        <div style="font-weight:800; margin-bottom:8px;">Medicamentos</div>
-        <table class="p-table">
-          <thead>
-            <tr>
-              <th>Medicamento</th>
-              <th>Concentración</th>
-              <th>Forma</th>
-              <th>Dosis</th>
-              <th>Frecuencia</th>
-              <th>Duración</th>
-              <th>Indicaciones</th>
-            </tr>
-          </thead>
-          <tbody id="pMeds"></tbody>
-        </table>
-      </div>
-
-      <div class="p-sig" id="pFirmaWrap" style="display:none;">
-        <div>
-          <img id="pFirma" alt="Firma">
-          <div class="lbl">Firma del profesional</div>
-          <div class="lbl" id="pProfesional"></div>
-        </div>
-      </div>
-    </div>
-
+    <!-- ====== AREA IMPRESIÓN (ORIGINAL) ====== -->
+    <div id="printArea"></div>
 
     <!-- ===============================
-     HISTORIAL DE FÓRMULAS MÉDICAS
-================================ -->
-<div class="card">
-  <div class="title">Fórmulas médicas del paciente</div>
+      HISTORIAL DE FÓRMULAS MÉDICAS
+    ================================ -->
+    <div class="card">
+      <div class="title">Fórmulas médicas del paciente</div>
 
-  <div style="overflow:auto;">
-    <table>
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Diagnóstico</th>
-          <th>Profesional</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody id="tbFormulasPaciente">
-        <tr>
-          <td colspan="4" class="mono">Busca un paciente para ver sus fórmulas médicas</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
-
-<!-- MODAL VER FÓRMULA -->
-<div id="modalFormula" style="
-  display:none;
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.55);
-  z-index:9999;
-  align-items:center;
-  justify-content:center;
-">
-  <div style="
-    background:#fff;
-    width:min(900px,95%);
-    max-height:90vh;
-    overflow:auto;
-    border-radius:18px;
-    padding:18px;
-  ">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <b>Vista de fórmula médica</b>
-      <div style="display:flex; gap:8px;">
-        <button class="btn" onclick="window.print()">🖨 Imprimir</button>
-        <button class="btn danger" onclick="cerrarModalFormula()">✖ Cerrar</button>
+      <div style="overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Diagnóstico</th>
+              <th>Profesional</th>
+              <th>Acción</th>
+            </tr>
+          </thead>
+          <tbody id="tbFormulasPaciente">
+            <tr>
+              <td colspan="4" class="mono">Busca un paciente para ver sus fórmulas médicas</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
-    <!-- reutiliza el área de impresión -->
-    <div id="modalPrintContainer"></div>
-  </div>
-</div>
+    <!-- MODAL VER FÓRMULA -->
+    <div id="modalFormula" style="
+      display:none;
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      z-index:9999;
+      align-items:center;
+      justify-content:center;
+    ">
+      <div style="
+        background:#fff;
+        width:min(900px,95%);
+        max-height:90vh;
+        overflow:auto;
+        border-radius:18px;
+        padding:18px;
+      ">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+          <b>Vista de fórmula médica</b>
+          <div style="display:flex; gap:8px;">
+            <button class="btn" onclick="imprimirModalFormula()">🖨 Imprimir</button>
+            <button class="btn danger" onclick="cerrarModalFormula()">✖ Cerrar</button>
+          </div>
+        </div>
+
+        <div id="modalPrintContainer"></div>
+      </div>
+    </div>
 
   </div>
 </body>
 </html>
+
