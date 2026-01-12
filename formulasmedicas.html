@@ -439,7 +439,7 @@
       $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
 
       // Opcionales si existen
-      $("paciente_correo").value   = row?.paciente_email ?? "";
+      $("paciente_correo").value   = row?.[paciente_email] ?? "";
       $("paciente_celular").value  = row?.paciente_cel ?? "";
       $("paciente_telefono").value = row?.paciente_tel ?? "";
       $("paciente_direccion").value= row?.paciente_direccion ?? "";
