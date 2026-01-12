@@ -921,6 +921,8 @@ async function verFormula(id){
 
   // cargar datos en el área de impresión
   $("modalPrintContainer").innerHTML = $("printArea").outerHTML;
+  document.getElementById("pLogo").src = LOGO_URL;
+
 
   // rellenar contenido
   document.getElementById("pFechaHora").textContent = data.fecha_hora || "";
@@ -961,7 +963,10 @@ function cerrarModalFormula(){
   $("modalFormula").style.display = "none";
 }
 
-    
+    // 🔓 Exponer funciones para botones inline
+window.verFormula = verFormula;
+window.cerrarModalFormula = cerrarModalFormula;
+
     init();
   </script>
 </head>
