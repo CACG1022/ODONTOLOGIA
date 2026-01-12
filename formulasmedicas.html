@@ -361,7 +361,7 @@
       state.userEmail = session.user?.email || "";
       return session;
     }
-  
+
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
@@ -827,7 +827,7 @@
 
     
 
-    function imprimirModalFormula(){
+    window.imprimirModalFormula = function(){
       // Imprime SOLO la vista del modal (evita 2 páginas por duplicación de #printArea)
       document.body.classList.add('printing-modal');
       window.print();
@@ -1028,8 +1028,23 @@ async function verFormula(id){
     if (firmaImg) firmaImg.src = "";
   }
 
+  // Nombre del profesional (desde tabla profesionales por correo)
+  let profesionalNombre = data.profesional_email || "";
+  if (data.profesional_email){
+    const { data: profData, error: profErr } = await supabase
+      .from("profesionales")
+      .select("nombre,correo")
+      .eq("correo", data.profesional_email)
+      .maybeSingle();
+
+    if (!profErr && profData && profData.nombre){
+      profesionalNombre = profData.nombre;
+    }
+  }
+
   if (profLbl){
-    profLbl.textContent = `${data.profesional_email || ""} (${data.profesional_role || ""})`;
+    const rol = (data.profesional_role || "").trim();
+    profLbl.textContent = rol ? `${profesionalNombre} (${rol})` : `${profesionalNombre}`;
   }
 
   $("modalFormula").style.display = "flex";
@@ -1056,7 +1071,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción3</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
         </div>
       </div>
 
