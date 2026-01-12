@@ -258,6 +258,10 @@
     /* ======== PRINT ======== */
     @media print{
       body{ background:#fff; padding:0; }
+      /* Cuando se imprime desde el modal, ocultar el printArea original para evitar una página extra */
+      body.printing-modal .print-original{ display:none !important; }
+      body.printing-modal #modalPrintContainer #printArea{ display:block !important; }
+
       .wrap{ width:100%; margin:0; }
       .top, .no-print{ display:none !important; }
       #printArea{ display:block; padding: 18px; font-family: var(--font); }
@@ -821,7 +825,16 @@
       window.print();
     }
 
-    async function init(){
+    
+
+    function imprimirModalFormula(){
+      // Imprime SOLO la vista del modal (evita 2 páginas por duplicación de #printArea)
+      document.body.classList.add('printing-modal');
+      window.print();
+      // Al cerrar el cuadro de impresión, limpiamos la clase
+      setTimeout(()=>document.body.classList.remove('printing-modal'), 800);
+    }
+async function init(){
       // logo y reloj
       $("logoTop").src = LOGO_URL;
       tickClock();
@@ -1319,7 +1332,7 @@ window.cerrarModalFormula = cerrarModalFormula;
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
       <b>Vista de fórmula médica</b>
       <div style="display:flex; gap:8px;">
-        <button class="btn" onclick="window.print()">🖨 Imprimir</button>
+        <button class="btn" onclick="imprimirModalFormula()">🖨 Imprimir</button>
         <button class="btn danger" onclick="cerrarModalFormula()">✖ Cerrar</button>
       </div>
     </div>
