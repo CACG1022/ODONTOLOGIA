@@ -1,0 +1,1126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Fórmula Médica - Clínica Dra. Leidi Silva</title>
+
+  <!-- Fuente bonita (opcional) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#64748b;
+      --line: rgba(15, 23, 42, .12);
+      --brand:#2563eb;
+      --brand2:#1d4ed8;
+      --ok:#16a34a;
+      --danger:#dc2626;
+      --shadow: 0 18px 40px rgba(15,23,42,.10);
+      --radius: 18px;
+      --font: "Inter", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: var(--font);
+      color: var(--text);
+      background:
+        radial-gradient(900px 500px at 25% 15%, rgba(37, 99, 235, .08), transparent 55%),
+        radial-gradient(700px 420px at 85% 75%, rgba(2, 132, 199, .07), transparent 60%),
+        linear-gradient(180deg, #ffffff, var(--bg));
+      padding: 22px 14px;
+    }
+
+    .wrap{
+      width:min(1100px, 100%);
+      margin: 0 auto;
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+    }
+
+    .top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, #fff, #fbfcff);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    .brand{
+      display:flex;
+      gap: 12px;
+      align-items:center;
+      min-width: 260px;
+    }
+    .brand img{
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      filter: drop-shadow(0 10px 18px rgba(15,23,42,.18));
+    }
+    .brand h1{
+      margin:0;
+      font-size: 16px;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+    }
+    .brand p{
+      margin:6px 0 0;
+      color: var(--muted);
+      font-size: 12.5px;
+      line-height: 1.2;
+    }
+
+    .meta{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      justify-content:flex-end;
+      flex-wrap: wrap;
+    }
+
+    .chip{
+      border: 1px solid var(--line);
+      background:#fff;
+      border-radius: 999px;
+      padding: 8px 12px;
+      box-shadow: 0 8px 18px rgba(15,23,42,.06);
+      display:flex;
+      flex-direction:column;
+      gap: 4px;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+    .chip b{ color: var(--text); }
+
+    .btn{
+      border: 1px solid var(--line);
+      background:#fff;
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 10px 18px rgba(15,23,42,.06);
+    }
+    .btn:hover{ filter: brightness(.98); transform: translateY(-1px); }
+    .btn.primary{
+      background: var(--brand);
+      border-color: var(--brand);
+      color:#fff;
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.ok{
+      background: var(--ok);
+      border-color: var(--ok);
+      color:#fff;
+    }
+    .btn.danger{
+      background: #fff;
+      border-color: rgba(220,38,38,.30);
+      color: var(--danger);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 12px;
+    }
+
+    .card{
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+
+    .title{
+      margin:0 0 10px;
+      font-size: 14px;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: .2px;
+      text-transform: uppercase;
+    }
+
+    .ctrl{ display:flex; flex-direction:column; gap: 7px; }
+    .ctrl label{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 800;
+      letter-spacing: .2px;
+    }
+
+    input, textarea, select{
+      width:100%;
+      border: 1px solid rgba(15,23,42,.18);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      outline: none;
+      background:#fff;
+      font-family: var(--font);
+      color: var(--text);
+    }
+    textarea{ min-height: 90px; resize: vertical; }
+
+    .mono{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      font-size: 12px;
+      color: var(--muted);
+      white-space: pre-wrap;
+    }
+
+    .row-actions{
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    table{
+      width:100%;
+      border-collapse: collapse;
+      overflow:hidden;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.10);
+    }
+    th, td{
+      border-bottom: 1px solid rgba(15,23,42,.10);
+      padding: 10px;
+      vertical-align: top;
+      text-align:left;
+      font-size: 13px;
+    }
+    thead th{
+      background:#f8fafc;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+    }
+    td input, td textarea{
+      padding: 10px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+    .t-actions{ width: 130px; white-space: nowrap; }
+
+    .hint{
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .sig-wrap{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+    canvas{
+      width: 100%;
+      height: 150px;
+      border-radius: 14px;
+      border: 1px solid rgba(15,23,42,.18);
+      background: #fff;
+      touch-action: none;
+    }
+
+    .status{
+      min-height: 18px;
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    /* Área lista para imprimir */
+    #printArea{
+      display:none;
+    }
+
+    @media (max-width: 900px){
+      .brand{ min-width: unset; }
+    }
+
+    /* ======== PRINT ======== */
+    @media print{
+      body{ background:#fff; padding:0; }
+      .wrap{ width:100%; margin:0; }
+      .top, .no-print{ display:none !important; }
+      #printArea{ display:block; padding: 18px; font-family: var(--font); }
+      .p-head{
+        display:flex; align-items:center; justify-content:space-between; gap: 14px;
+        border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 10px;
+      }
+      .p-head img{ width: 90px; height:auto; }
+      .p-title{ font-weight: 900; font-size: 16px; margin:0; }
+      .p-sub{ color:#555; margin: 4px 0 0; font-size: 12px; }
+
+      .p-box{ border:1px solid #ddd; border-radius: 10px; padding: 10px; margin: 10px 0; }
+      .p-row{ display:flex; gap: 10px; flex-wrap:wrap; font-size: 12px; }
+      .p-row b{ min-width: 140px; display:inline-block; }
+
+      .p-table{ width:100%; border-collapse: collapse; font-size: 12px; }
+      .p-table th, .p-table td{ border:1px solid #ddd; padding: 8px; }
+      .p-table th{ background:#f4f4f4; }
+
+      .p-sig{
+        margin-top: 14px;
+        display:flex; justify-content:flex-end;
+      }
+      .p-sig img{ width: 240px; height:auto; border-bottom: 1px solid #222; padding-bottom: 6px; }
+      .p-sig .lbl{ text-align:center; font-size: 12px; margin-top: 6px; }
+    }
+  </style>
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ✅ Supabase (igual que tus páginas)
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
+
+    // ✅ Acceso recomendado (ajusta si quieres permitir auxiliar)
+    const ALLOWED_ROLES = ["admin","doctor"];
+
+    // ✅ Candidatos para tabla de historias clínicas (como tu reporte)
+    const TABLE_CANDIDATES = [
+      "HISTORIAS CLINICAS",
+      "HISTORIAS_CLINICAS",
+      "historias_clinicas",
+      "Historias Clinicas"
+    ];
+    let HIST_TABLE = null;
+
+    // Columnas usadas desde tu historia clínica (según tu HTML actual)
+    const COL_CEDULA   = "Numero de Identificacion";
+    const COL_NOMBRE   = "Nombre y apellido";
+    const COL_EDAD     = "Edad";
+    const COL_TIPO_ID  = "Tipo identificacion";
+    const COL_LUGAR_EXP= "Lugar exp";
+    const COL_NAC      = "Fecha de nacimiento";
+    // y de tu historia clínica HTML:
+    // paciente_tel, paciente_cel, paciente_email, paciente_direccion, paciente_ciudad
+    // OJO: estas no necesariamente existen en la tabla de supabase; por eso las leemos si están.
+    const OPTIONAL_COLS = [
+      "paciente_tel",
+      "paciente_cel",
+      "paciente_email",
+      "paciente_direccion",
+      "paciente_ciudad",
+      "EPS_Paciente",
+      "Ciudad_de_Residencia"
+    ];
+
+    const state = {
+      session: null,
+      role: null,
+      userEmail: "",
+      firmaDataUrl: "",
+      meds: []
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("status");
+      if (!el) return;
+      el.style.color = (type==="err") ? "#b91c1c" : (type==="warn" ? "#92400e" : "#64748b");
+      el.textContent = msg || "";
+    }
+
+    async function verificarSesion(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return null;
+      }
+      state.session = session;
+      state.userEmail = session.user?.email || "";
+      return session;
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = LOGIN_URL;
+    });
+
+    async function cargarRolDesdeProfiles(userId){
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) return null;
+        return data?.role || null;
+      }catch{
+        return null;
+      }
+    }
+
+    async function validarAcceso(){
+      const role = (state.role || "user").toString().trim().toLowerCase();
+      if (!ALLOWED_ROLES.includes(role)){
+        alert("🚫 Acceso restringido: Solo Admin o Doctor.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
+      return true;
+    }
+
+    async function detectarTablaHistorias(){
+      for (const t of TABLE_CANDIDATES){
+        const { error } = await supabase
+          .from(t)
+          .select(`"${COL_CEDULA}"`, { head: true, count: "exact" })
+          .limit(1);
+        if (!error) return t;
+      }
+      return null;
+    }
+
+    function setHeader(){
+      $("logoTop").src = LOGO_URL;
+      $("user-email").textContent = state.userEmail || "Usuario";
+      $("user-role").textContent = state.role ? `Rol: ${state.role}` : "Rol: (sin rol)";
+    }
+
+    function nowISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}`;
+    }
+
+    function tickClock(){
+      const s = nowISO();
+      $("fechaHora").textContent = s;
+      $("fm_fecha_hora").value = s;
+    }
+
+    function normalizeTipoId(v){
+      if (Array.isArray(v)) return v.join(", ");
+      return String(v || "");
+    }
+
+    function setPacienteFromRow(row){
+      // Campos del formulario
+      $("paciente_nombre").value = row?.[COL_NOMBRE] ?? "";
+      $("paciente_cedula").value = row?.[COL_CEDULA] ?? "";
+      $("paciente_edad").value = row?.[COL_EDAD] ?? "";
+      $("paciente_tipoid").value = normalizeTipoId(row?.[COL_TIPO_ID] ?? "");
+      $("paciente_lugarexp").value = row?.[COL_LUGAR_EXP] ?? "";
+      $("paciente_nacimiento").value = row?.[COL_NAC] ?? "";
+
+      // Opcionales si existen
+      $("paciente_correo").value = row?.paciente_email ?? row?.paciente_correo ?? "";
+      $("paciente_celular").value = row?.paciente_cel ?? row?.paciente_celular ?? "";
+      $("paciente_telefono").value = row?.paciente_tel ?? row?.paciente_telefono ?? "";
+      $("paciente_direccion").value = row?.paciente_direccion ?? "";
+      $("paciente_ciudad").value = row?.paciente_ciudad ?? row?.Ciudad_de_Residencia ?? "";
+      $("paciente_eps").value = row?.EPS_Paciente ?? "";
+    }
+
+    async function buscarPaciente(){
+      toast("");
+      const cedulaRaw = ($("buscar_cedula").value || "").trim();
+      if (!cedulaRaw){
+        toast("Escribe una cédula para buscar.", "warn");
+        return;
+      }
+
+      if (!HIST_TABLE){
+        toast("No se detectó la tabla de historias clínicas.", "err");
+        return;
+      }
+
+      // Intento: cédula numérica
+      const cedulaNum = Number(cedulaRaw);
+      const isNum = !Number.isNaN(cedulaNum);
+
+      // SELECT: columnas “seguras” + opcionales (si existen, supabase no falla si no están? OJO: si no existe columna, sí falla)
+      // Para evitar error por columnas que no existan, pedimos solo las que sabemos de tu tabla por el reporte, y luego “*” no es buena idea.
+      // Entonces: pedimos las básicas y luego intentamos un segundo select con opcionales si quieres.
+      let q = supabase.from(HIST_TABLE).select(`
+        "${COL_CEDULA}",
+        "${COL_NOMBRE}",
+        "${COL_EDAD}",
+        "${COL_TIPO_ID}",
+        "${COL_LUGAR_EXP}",
+        "${COL_NAC}"
+      `).limit(1);
+
+      q = isNum ? q.eq(COL_CEDULA, cedulaNum) : q.eq(COL_CEDULA, cedulaRaw);
+
+      const { data, error } = await q;
+
+      if (error){
+        console.error(error);
+        toast("Error buscando paciente: " + (error.message || ""), "err");
+        return;
+      }
+
+      if (!data || !data.length){
+        toast("No encontré historia clínica con esa cédula. Puedes llenar los datos manualmente.", "warn");
+        // set cedula al menos
+        $("paciente_cedula").value = cedulaRaw;
+        return;
+      }
+
+      const row = data[0];
+
+      // Intento extra: leer columnas opcionales sin romper si fallan
+      let extras = {};
+      try{
+        const { data: d2 } = await supabase
+          .from(HIST_TABLE)
+          .select(OPTIONAL_COLS.map(c => `"${c}"`).join(","))
+          .limit(1)
+          .eq(COL_CEDULA, isNum ? cedulaNum : cedulaRaw);
+
+        if (d2 && d2[0]) extras = d2[0];
+      }catch(e){ /* si falla, no pasa nada */ }
+
+      setPacienteFromRow({ ...row, ...extras });
+      toast("Paciente cargado desde historia clínica ✅", "ok");
+    }
+
+    function addMedRow(prefill = {}){
+      const meds = state.meds;
+      meds.push({
+        medicamento: prefill.medicamento || "",
+        concentracion: prefill.concentracion || "",
+        forma: prefill.forma || "",
+        dosis: prefill.dosis || "",
+        frecuencia: prefill.frecuencia || "",
+        duracion: prefill.duracion || "",
+        cantidad: prefill.cantidad || "",
+        indicaciones: prefill.indicaciones || ""
+      });
+      renderMeds();
+    }
+
+    function removeMedRow(i){
+      state.meds.splice(i, 1);
+      renderMeds();
+    }
+
+    function renderMeds(){
+      const tb = $("tbMeds");
+      tb.innerHTML = "";
+
+      if (!state.meds.length){
+        tb.innerHTML = `<tr><td colspan="9" class="mono">Sin medicamentos. Agrega al menos uno si aplica.</td></tr>`;
+        return;
+      }
+
+      state.meds.forEach((m, i) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input data-k="medicamento" value="${escapeHtmlAttr(m.medicamento)}" placeholder="Ej: Amoxicilina"></td>
+          <td><input data-k="concentracion" value="${escapeHtmlAttr(m.concentracion)}" placeholder="Ej: 500 mg"></td>
+          <td><input data-k="forma" value="${escapeHtmlAttr(m.forma)}" placeholder="Ej: cápsulas / jarabe"></td>
+          <td><input data-k="dosis" value="${escapeHtmlAttr(m.dosis)}" placeholder="Ej: 1 cápsula"></td>
+          <td><input data-k="frecuencia" value="${escapeHtmlAttr(m.frecuencia)}" placeholder="Ej: cada 8 horas"></td>
+          <td><input data-k="duracion" value="${escapeHtmlAttr(m.duracion)}" placeholder="Ej: 7 días"></td>
+          <td><input data-k="cantidad" value="${escapeHtmlAttr(m.cantidad)}" placeholder="Ej: 21"></td>
+          <td><textarea data-k="indicaciones" placeholder="Indicaciones adicionales...">${escapeHtml(m.indicaciones)}</textarea></td>
+          <td class="t-actions">
+            <button type="button" class="btn danger" data-del="1">Eliminar</button>
+          </td>
+        `;
+
+        tr.querySelectorAll("input,textarea").forEach(el=>{
+          el.addEventListener("input", ()=>{
+            const k = el.getAttribute("data-k");
+            state.meds[i][k] = el.value;
+          });
+        });
+
+        tr.querySelector('[data-del="1"]').addEventListener("click", ()=> removeMedRow(i));
+
+        tb.appendChild(tr);
+      });
+    }
+
+    function escapeHtml(s){
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeHtmlAttr(s){
+      return escapeHtml(s).replaceAll("\n"," ");
+    }
+
+    // ===== Firma (canvas) =====
+    function initFirma(){
+      const canvas = $("firma");
+      const ctx = canvas.getContext("2d");
+
+      function resizeCanvas(){
+        // Mantener nitidez
+        const rect = canvas.getBoundingClientRect();
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = Math.max(1, Math.floor(rect.width * dpr));
+        canvas.height = Math.max(1, Math.floor(rect.height * dpr));
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+        ctx.lineWidth = 2;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
+        ctx.strokeStyle = "#0f172a";
+      }
+
+      resizeCanvas();
+      window.addEventListener("resize", resizeCanvas);
+
+      let drawing = false;
+      let last = null;
+
+      function posFromEvent(e){
+        const rect = canvas.getBoundingClientRect();
+        const p = (e.touches && e.touches[0]) ? e.touches[0] : e;
+        return { x: p.clientX - rect.left, y: p.clientY - rect.top };
+      }
+
+      function start(e){
+        e.preventDefault();
+        drawing = true;
+        last = posFromEvent(e);
+      }
+      function move(e){
+        if (!drawing) return;
+        e.preventDefault();
+        const p = posFromEvent(e);
+        ctx.beginPath();
+        ctx.moveTo(last.x, last.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+        last = p;
+      }
+      function end(){
+        drawing = false;
+        last = null;
+        // Guardar snapshot base64
+        state.firmaDataUrl = canvas.toDataURL("image/png");
+        $("firmaPreview").src = state.firmaDataUrl;
+        $("firmaPreview").style.display = state.firmaDataUrl ? "block" : "none";
+      }
+
+      canvas.addEventListener("mousedown", start);
+      canvas.addEventListener("mousemove", move);
+      window.addEventListener("mouseup", end);
+
+      canvas.addEventListener("touchstart", start, { passive:false });
+      canvas.addEventListener("touchmove", move, { passive:false });
+      window.addEventListener("touchend", end);
+
+      $("btnLimpiarFirma").addEventListener("click", ()=>{
+        // limpiar
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        state.firmaDataUrl = "";
+        $("firmaPreview").src = "";
+        $("firmaPreview").style.display = "none";
+      });
+    }
+
+    function buildPayload(){
+      const paciente = {
+        nombre: ($("paciente_nombre").value || "").trim(),
+        cedula: ($("paciente_cedula").value || "").trim(),
+        tipo_id: ($("paciente_tipoid").value || "").trim(),
+        lugar_exp: ($("paciente_lugarexp").value || "").trim(),
+        nacimiento: ($("paciente_nacimiento").value || "").trim(),
+        edad: ($("paciente_edad").value || "").trim(),
+        correo: ($("paciente_correo").value || "").trim(),
+        celular: ($("paciente_celular").value || "").trim(),
+        telefono: ($("paciente_telefono").value || "").trim(),
+        direccion: ($("paciente_direccion").value || "").trim(),
+        ciudad: ($("paciente_ciudad").value || "").trim(),
+        eps: ($("paciente_eps").value || "").trim(),
+      };
+
+      const receta = {
+        fecha_hora: ($("fm_fecha_hora").value || "").trim(),
+        diagnostico: ($("diagnostico").value || "").trim(),
+        alergias: ($("alergias").value || "").trim(),
+        observaciones: ($("observaciones").value || "").trim(),
+        medicamentos: state.meds
+          .map(m => ({
+            medicamento: (m.medicamento||"").trim(),
+            concentracion: (m.concentracion||"").trim(),
+            forma: (m.forma||"").trim(),
+            dosis: (m.dosis||"").trim(),
+            frecuencia: (m.frecuencia||"").trim(),
+            duracion: (m.duracion||"").trim(),
+            cantidad: (m.cantidad||"").trim(),
+            indicaciones: (m.indicaciones||"").trim()
+          }))
+          .filter(x => Object.values(x).some(v => String(v||"").trim().length))
+      };
+
+      return { paciente, receta };
+    }
+
+    async function guardarFormula(){
+      toast("");
+
+      const { paciente, receta } = buildPayload();
+
+      if (!paciente.cedula){
+        toast("La cédula del paciente es obligatoria.", "err");
+        return;
+      }
+      if (!paciente.nombre){
+        toast("El nombre del paciente es obligatorio.", "err");
+        return;
+      }
+      if (!receta.fecha_hora){
+        toast("No se pudo obtener fecha/hora.", "err");
+        return;
+      }
+      if (!state.firmaDataUrl){
+        const ok = confirm("No hay firma en el canvas. ¿Deseas guardar SIN firma?");
+        if (!ok) return;
+      }
+
+      const payload = {
+        paciente_cedula: paciente.cedula,
+        paciente_nombre: paciente.nombre,
+        paciente_correo: paciente.correo || null,
+        paciente_celular: paciente.celular || null,
+        paciente_telefono: paciente.telefono || null,
+        paciente_tipo_id: paciente.tipo_id || null,
+        paciente_lugar_exp: paciente.lugar_exp || null,
+        paciente_fecha_nacimiento: paciente.nacimiento || null,
+        paciente_edad: paciente.edad ? Number(paciente.edad) : null,
+        paciente_direccion: paciente.direccion || null,
+        paciente_ciudad: paciente.ciudad || null,
+        paciente_eps: paciente.eps || null,
+
+        fecha_hora: receta.fecha_hora,               // texto legible
+        diagnostico: receta.diagnostico || null,
+        alergias: receta.alergias || null,
+        observaciones: receta.observaciones || null,
+        medicamentos: receta.medicamentos || [],
+
+        firma_png: state.firmaDataUrl || null,
+        profesional_id: state.session?.user?.id || null,
+        profesional_email: state.userEmail || null,
+        profesional_role: state.role || null
+      };
+
+      $("btnGuardar").disabled = true;
+      try{
+        const { data, error } = await supabase
+          .from("formulas_medicas")
+          .insert([payload])
+          .select("id")
+          .single();
+
+        if (error){
+          console.error(error);
+          toast("Error guardando: " + (error.message || ""), "err");
+          return;
+        }
+
+        $("formula_id").value = data?.id || "";
+        toast("Fórmula guardada ✅ (ID: " + (data?.id || "") + ")", "ok");
+
+        // Preparar impresión
+        buildPrintArea();
+
+      } finally{
+        $("btnGuardar").disabled = false;
+      }
+    }
+
+    function buildPrintArea(){
+      const { paciente, receta } = buildPayload();
+
+      $("pLogo").src = LOGO_URL;
+      $("pFechaHora").textContent = receta.fecha_hora || "";
+      $("pPaciente").textContent = `${paciente.nombre || ""}`;
+      $("pCedula").textContent = `${paciente.tipo_id ? paciente.tipo_id + " " : ""}${paciente.cedula || ""}`;
+      $("pContacto").textContent =
+        `${paciente.celular ? "Cel: " + paciente.celular : ""}${(paciente.celular && paciente.correo) ? " | " : ""}${paciente.correo ? "Email: " + paciente.correo : ""}`;
+
+      $("pDiagnostico").textContent = receta.diagnostico || "—";
+      $("pAlergias").textContent = receta.alergias || "—";
+      $("pObserv").textContent = receta.observaciones || "—";
+
+      const tb = $("pMeds");
+      tb.innerHTML = "";
+      const meds = (receta.medicamentos || []);
+      if (!meds.length){
+        tb.innerHTML = `<tr><td colspan="7">—</td></tr>`;
+      } else {
+        meds.forEach(m=>{
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${escapeHtml(m.medicamento || "")}</td>
+            <td>${escapeHtml(m.concentracion || "")}</td>
+            <td>${escapeHtml(m.forma || "")}</td>
+            <td>${escapeHtml(m.dosis || "")}</td>
+            <td>${escapeHtml(m.frecuencia || "")}</td>
+            <td>${escapeHtml(m.duracion || "")}</td>
+            <td>${escapeHtml(m.indicaciones || "")}</td>
+          `;
+          tb.appendChild(tr);
+        });
+      }
+
+      if (state.firmaDataUrl){
+        $("pFirma").src = state.firmaDataUrl;
+        $("pFirmaWrap").style.display = "block";
+      } else {
+        $("pFirmaWrap").style.display = "none";
+      }
+
+      $("pProfesional").textContent = `${state.userEmail || ""} (${state.role || ""})`;
+    }
+
+    function imprimir(){
+      buildPrintArea();
+      window.print();
+    }
+
+    async function init(){
+      // logo y reloj
+      $("logoTop").src = LOGO_URL;
+      tickClock();
+      setInterval(tickClock, 1000);
+
+      // sesión
+      const session = await verificarSesion();
+      if (!session) return;
+
+      // rol
+      state.role = (await cargarRolDesdeProfiles(session.user.id)) || "user";
+      setHeader();
+
+      // acceso
+      const ok = await validarAcceso();
+      if (!ok) return;
+
+      // detectar tabla historias
+      HIST_TABLE = await detectarTablaHistorias();
+      $("tablaDetectada").textContent = HIST_TABLE ? `Tabla historias: ${HIST_TABLE}` : "No se detectó tabla de historias clínicas.";
+
+      // init meds
+      state.meds = [];
+      renderMeds();
+
+      // firma
+      initFirma();
+
+      // eventos
+      $("btnBuscar").addEventListener("click", buscarPaciente);
+      $("btnAddMed").addEventListener("click", ()=> addMedRow());
+      $("btnGuardar").addEventListener("click", guardarFormula);
+      $("btnImprimir").addEventListener("click", imprimir);
+      $("btnInicio").addEventListener("click", ()=> window.location.href = INDEX_URL);
+
+      $("btnLogout").addEventListener("click", async ()=>{
+        try{ await supabase.auth.signOut(); }catch(e){}
+        window.location.href = LOGIN_URL;
+      });
+
+      // Enter en búsqueda
+      $("buscar_cedula").addEventListener("keydown", (e)=>{
+        if (e.key === "Enter"){ e.preventDefault(); buscarPaciente(); }
+      });
+
+      // firma preview invisible al inicio
+      $("firmaPreview").style.display = "none";
+    }
+
+    init();
+  </script>
+</head>
+
+<body>
+  <div class="wrap">
+
+    <!-- TOP BAR -->
+    <div class="top no-print">
+      <div class="brand">
+        <img id="logoTop" alt="Logo clínica">
+        <div>
+          <h1>Fórmula Médica</h1>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="chip">
+          <div>Usuario: <b id="user-email">—</b></div>
+          <div><b id="user-role">—</b></div>
+        </div>
+        <button class="btn" id="btnInicio" type="button">⬅ Inicio</button>
+        <button class="btn danger" id="btnLogout" type="button">Cerrar sesión</button>
+      </div>
+    </div>
+
+    <!-- INFO -->
+    <div class="card no-print">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 6;">
+          <div class="title">Fecha y hora</div>
+          <div class="mono">Actual: <b id="fechaHora">—</b></div>
+          <input type="hidden" id="fm_fecha_hora">
+          <div class="hint mono" id="tablaDetectada">—</div>
+        </div>
+        <div class="ctrl" style="grid-column: span 6;">
+          <div class="title">Acciones</div>
+          <div class="row-actions">
+            <button class="btn" id="btnImprimir" type="button">🖨 Imprimir</button>
+            <button class="btn ok" id="btnGuardar" type="button">💾 Guardar fórmula</button>
+          </div>
+          <div class="status" id="status"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BUSCAR PACIENTE -->
+    <div class="card no-print">
+      <div class="title">Buscar paciente (desde Historia Clínica)</div>
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Cédula</label>
+          <input id="buscar_cedula" type="text" inputmode="numeric" placeholder="Ej: 10229566001">
+        </div>
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>&nbsp;</label>
+          <button class="btn primary" id="btnBuscar" type="button">🔎 Buscar</button>
+        </div>
+        <div class="ctrl" style="grid-column: span 6;">
+          <label>ID Fórmula (si ya guardaste)</label>
+          <input id="formula_id" type="text" readonly placeholder="Aquí aparecerá el ID al guardar">
+        </div>
+      </div>
+      <div class="hint">Si no existe historia clínica, puedes llenar los datos manualmente y guardar la fórmula igual.</div>
+    </div>
+
+    <!-- DATOS PACIENTE -->
+    <div class="card">
+      <div class="title">Datos del paciente</div>
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 6;">
+          <label>Nombre completo</label>
+          <input id="paciente_nombre" type="text" placeholder="Nombres y apellidos">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Cédula</label>
+          <input id="paciente_cedula" type="text" placeholder="No. identificación">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Edad</label>
+          <input id="paciente_edad" type="number" min="0" placeholder="Edad">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Tipo ID</label>
+          <input id="paciente_tipoid" type="text" placeholder="CC / CE / TI...">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Lugar expedición</label>
+          <input id="paciente_lugarexp" type="text" placeholder="Lugar exp">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Fecha de nacimiento</label>
+          <input id="paciente_nacimiento" type="date">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>EPS</label>
+          <input id="paciente_eps" type="text" placeholder="Opcional">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Correo</label>
+          <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Celular</label>
+          <input id="paciente_celular" type="text" placeholder="Ej: 3001234567">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Teléfono</label>
+          <input id="paciente_telefono" type="text" placeholder="Opcional">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 6;">
+          <label>Dirección</label>
+          <input id="paciente_direccion" type="text" placeholder="Dirección de residencia">
+        </div>
+
+        <div class="ctrl" style="grid-column: span 6;">
+          <label>Ciudad</label>
+          <input id="paciente_ciudad" type="text" placeholder="Ciudad">
+        </div>
+      </div>
+    </div>
+
+    <!-- DATOS CLÍNICOS -->
+    <div class="card">
+      <div class="title">Datos clínicos</div>
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 6;">
+          <label>Diagnóstico / Motivo</label>
+          <textarea id="diagnostico" placeholder="Ej: Dolor dental agudo, infección..."></textarea>
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Alergias</label>
+          <textarea id="alergias" placeholder="Ej: Penicilina..."></textarea>
+        </div>
+        <div class="ctrl" style="grid-column: span 3;">
+          <label>Observaciones</label>
+          <textarea id="observaciones" placeholder="Recomendaciones, controles, etc."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDICAMENTOS -->
+    <div class="card">
+      <div class="title">Medicamentos</div>
+
+      <div class="no-print" style="display:flex; justify-content:flex-end; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <button class="btn primary" id="btnAddMed" type="button">➕ Agregar medicamento</button>
+      </div>
+
+      <div style="overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Medicamento</th>
+              <th>Concentración</th>
+              <th>Forma</th>
+              <th>Dosis</th>
+              <th>Frecuencia</th>
+              <th>Duración</th>
+              <th>Cantidad</th>
+              <th>Indicaciones</th>
+              <th class="no-print">Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tbMeds"></tbody>
+        </table>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        Puedes dejar la tabla vacía si la “fórmula” es solo recomendaciones (aunque normalmente se sugiere agregar al menos uno si aplica).
+      </div>
+    </div>
+
+    <!-- FIRMA -->
+    <div class="card">
+      <div class="title">Firma del profesional</div>
+
+      <div class="sig-wrap">
+        <canvas id="firma"></canvas>
+
+        <div class="no-print" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+          <button type="button" class="btn" id="btnLimpiarFirma">🧽 Limpiar firma</button>
+        </div>
+
+        <img id="firmaPreview" alt="Firma guardada" style="display:none; max-width: 320px; border:1px solid rgba(15,23,42,.12); border-radius: 12px; padding: 10px; justify-self:end;">
+      </div>
+
+      <div class="hint">La firma se guarda como imagen (base64 PNG) dentro del registro.</div>
+    </div>
+
+    <!-- ====== AREA IMPRESIÓN ====== -->
+    <div id="printArea">
+      <div class="p-head">
+        <img id="pLogo" alt="Logo">
+        <div style="flex:1;">
+          <p class="p-title">FÓRMULA MÉDICA</p>
+          <p class="p-sub">Clínica Dra. Leidi Silva</p>
+          <p class="p-sub">Fecha y hora: <b id="pFechaHora"></b></p>
+        </div>
+      </div>
+
+      <div class="p-box">
+        <div class="p-row">
+          <div><b>Paciente:</b> <span id="pPaciente"></span></div>
+          <div><b>Identificación:</b> <span id="pCedula"></span></div>
+          <div><b>Contacto:</b> <span id="pContacto"></span></div>
+        </div>
+      </div>
+
+      <div class="p-box">
+        <div class="p-row"><div><b>Diagnóstico / Motivo:</b></div></div>
+        <div style="font-size:12px; margin-top:6px;" id="pDiagnostico"></div>
+        <div style="height:8px;"></div>
+        <div class="p-row">
+          <div><b>Alergias:</b> <span id="pAlergias"></span></div>
+        </div>
+        <div style="height:8px;"></div>
+        <div class="p-row"><div><b>Observaciones:</b></div></div>
+        <div style="font-size:12px; margin-top:6px;" id="pObserv"></div>
+      </div>
+
+      <div class="p-box">
+        <div style="font-weight:800; margin-bottom:8px;">Medicamentos</div>
+        <table class="p-table">
+          <thead>
+            <tr>
+              <th>Medicamento</th>
+              <th>Concentración</th>
+              <th>Forma</th>
+              <th>Dosis</th>
+              <th>Frecuencia</th>
+              <th>Duración</th>
+              <th>Indicaciones</th>
+            </tr>
+          </thead>
+          <tbody id="pMeds"></tbody>
+        </table>
+      </div>
+
+      <div class="p-sig" id="pFirmaWrap" style="display:none;">
+        <div>
+          <img id="pFirma" alt="Firma">
+          <div class="lbl">Firma del profesional</div>
+          <div class="lbl" id="pProfesional"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
