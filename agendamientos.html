@@ -242,7 +242,23 @@
       return m === 0 ? `${h} h` : `${h} h ${m} min`;
     }
 
+    
     // =========================
+    // n8n Webhook
+    // =========================
+    async function enviarCitaAN8N(payload){
+      try{
+        await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/a331764c-dc97-4e11-887c-18338dccb839", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+      } catch(e){
+        console.warn("No se pudo enviar a n8n:", e);
+      }
+    }
+
+// =========================
     // Auth + Roles (TU LOGICA ORIGINAL)
     // =========================
     async function cargarRolDesdeProfiles(userId){
@@ -923,13 +939,25 @@
 };
 
 
+        let citaResult = null;
         if (id){
-          await actualizarCita(id, row);
+          citaResult = await actualizarCita(id, row);
           toast("Cita actualizada.", "ok");
         } else {
-          await crearCita(row);
+          citaResult = await crearCita(row);
           toast("Cita creada.", "ok");
         }
+
+        // 🔔 Enviar a n8n (crear o actualizar)
+        enviarCitaAN8N({
+          accion: id ? "actualizada" : "creada",
+          cita: citaResult,
+          usuario: {
+            id: currentSession.user.id,
+            email: currentSession.user.email
+          },
+          fecha_envio: new Date().toISOString()
+        });
 
         closeModal();
         await reloadCalendarEvents();
@@ -1546,6 +1574,9 @@
   <div id="toast" class="toast">Listo</div>
 </body>
 </html>
+
+
+
 
 
 
