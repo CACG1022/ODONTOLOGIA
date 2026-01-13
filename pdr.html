@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Maps + KMZ/KML + Formulario</title>
+  <title>Google Maps + KML/KMZ + Formulario</title>
   <style>
     html, body { height: 100%; margin: 0; font-family: system-ui, Arial; }
     #map { height: 100%; width: 100%; }
@@ -36,17 +36,16 @@
 
     #panel .btns { display:flex; gap:8px; margin-top: 10px; }
     button {
-      flex: 1;
       padding: 10px;
       border: 0;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 600;
     }
-    #saveBtn { background: #1a73e8; color: #fff; }
-    #cancelBtn { background: #f1f3f4; }
+    #saveBtn { background: #1a73e8; color: #fff; flex: 1; }
+    #cancelBtn { background: #f1f3f4; flex: 1; }
 
-    /* Controles inferiores */
+    /* Barra inferior */
     #bottomBar {
       position: absolute;
       left: 12px;
@@ -56,19 +55,27 @@
       padding: 10px;
       border-radius: 12px;
       box-shadow: 0 6px 18px rgba(0,0,0,.18);
-      width: 360px;
+      width: 520px;
       max-width: calc(100% - 24px);
       display: flex;
+      flex-wrap: wrap;
       gap: 10px;
       align-items: center;
     }
-    #kmlUrl { flex: 1; }
+    #kmlUrl { flex: 1; min-width: 220px; }
     .hint { font-size: 12px; color: #5f6368; margin-top: 6px; }
+    .small { font-size: 12px; color: #5f6368; }
+    .pill {
+      background: #f1f3f4;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+    }
   </style>
 </head>
 
 <body>
-  <!-- Formulario (se muestra cuando tocas el mapa) -->
+  <!-- Formulario -->
   <div id="panel" style="display:none;">
     <h3>Nuevo registro</h3>
 
@@ -97,10 +104,21 @@
     <div class="hint" id="coordHint"></div>
   </div>
 
-  <!-- Barra para cargar KML/KMZ por URL (público) -->
+  <!-- Barra inferior para capa -->
   <div id="bottomBar">
-    <input id="kmlUrl" type="text" placeholder="URL pública de KML/KMZ (recomendado KML)" />
-    <button id="loadKmlBtn" type="button">Cargar</button>
+    <div class="pill">Capa recomendada: KML en GitHub Pages</div>
+
+    <input id="kmlUrl" type="text"
+      placeholder="Pega URL directa a .kml o .kmz (mejor .kml)"
+      value="https://cacg1022.github.io/ODONTOLOGIA/data/capa.kml" />
+
+    <button id="loadKmlBtn" type="button">Cargar URL</button>
+    <button id="loadDefaultBtn" type="button">Cargar capa del repo</button>
+    <button id="clearKmlBtn" type="button">Quitar capa</button>
+
+    <div class="small">
+      Sube tu archivo al repo en <b>ODONTOLOGIA/data/</b> y cambia <b>capa.kml</b> por tu nombre real.
+    </div>
   </div>
 
   <div id="map"></div>
@@ -116,21 +134,24 @@
     // Contador simple para IDs
     let nextId = 1;
 
-    // Guardamos registros en memoria (puedes enviarlos a tu backend)
+    // Guardamos registros en memoria (luego puedes enviarlos a Supabase)
     const registros = [];
+
+    // ⭐ Cambia aquí si tu archivo tiene otro nombre:
+    const DEFAULT_LAYER_URL = "https://cacg1022.github.io/ODONTOLOGIA/data/capa.kml";
 
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 4.7110, lng: -74.0721 }, // Bogotá por defecto
+        center: { lat: 4.7110, lng: -74.0721 }, // Bogotá
         zoom: 12,
         mapTypeId: "roadmap"
       });
 
-      // Evento touch/click en el mapa
+      // Click/touch en el mapa
       map.addListener("click", (e) => {
         pendingLatLng = e.latLng;
 
-        // Marcador temporal donde tocaste
+        // Marcador temporal
         if (tempMarker) tempMarker.setMap(null);
         tempMarker = new google.maps.Marker({
           position: pendingLatLng,
@@ -138,11 +159,10 @@
           title: "Nuevo punto"
         });
 
-        // Preparar formulario
+        // Form
         document.getElementById("idField").value = generarId();
         document.getElementById("nameField").value = "";
 
-        // Fecha y hora por defecto (actual)
         const now = new Date();
         document.getElementById("dateField").value = now.toISOString().slice(0,10);
         document.getElementById("timeField").value = now.toTimeString().slice(0,5);
@@ -153,17 +173,25 @@
         mostrarPanel(true);
       });
 
-      // Botón cargar KML/KMZ por URL
+      // Botones capa
       document.getElementById("loadKmlBtn").addEventListener("click", () => {
         const url = document.getElementById("kmlUrl").value.trim();
-        if (!url) {
-          alert("Pon una URL pública de KML/KMZ.");
-          return;
-        }
+        if (!url) return alert("Pega una URL directa a .kml o .kmz");
         cargarKmlKmz(url);
       });
 
-      // Guardar
+      document.getElementById("loadDefaultBtn").addEventListener("click", () => {
+        document.getElementById("kmlUrl").value = DEFAULT_LAYER_URL;
+        cargarKmlKmz(DEFAULT_LAYER_URL);
+      });
+
+      document.getElementById("clearKmlBtn").addEventListener("click", () => {
+        if (kmlLayer) kmlLayer.setMap(null);
+        kmlLayer = null;
+        alert("Capa removida.");
+      });
+
+      // Guardar registro
       document.getElementById("saveBtn").addEventListener("click", () => {
         if (!pendingLatLng) return;
 
@@ -172,22 +200,16 @@
         const fecha = document.getElementById("dateField").value;
         const hora = document.getElementById("timeField").value;
 
-        if (!nombre) {
-          alert("Por favor escribe un nombre.");
-          return;
-        }
+        if (!nombre) return alert("Por favor escribe un nombre.");
 
         const registro = {
-          id,
-          nombre,
-          fecha,
-          hora,
+          id, nombre, fecha, hora,
           lat: pendingLatLng.lat(),
           lng: pendingLatLng.lng()
         };
         registros.push(registro);
 
-        // Convertimos el marcador temporal en "definitivo" con info
+        // Marcador definitivo
         const marker = new google.maps.Marker({
           position: pendingLatLng,
           map,
@@ -208,14 +230,12 @@
 
         marker.addListener("click", () => info.open({ anchor: marker, map }));
 
-        // Limpiar estado
-        tempMarker.setMap(null);
+        // Limpiar
+        if (tempMarker) tempMarker.setMap(null);
         tempMarker = null;
         pendingLatLng = null;
-
         mostrarPanel(false);
 
-        // Para que veas que se guardó:
         console.log("Registros:", registros);
       });
 
@@ -226,23 +246,40 @@
         pendingLatLng = null;
         mostrarPanel(false);
       });
+
+      // (Opcional) intenta cargar la capa por defecto al iniciar:
+      // cargarKmlKmz(DEFAULT_LAYER_URL);
     }
 
     function cargarKmlKmz(url) {
-      // Si ya hay capa, la quitamos
+      // Quitar capa anterior
       if (kmlLayer) kmlLayer.setMap(null);
 
+      // Crea capa KML/KMZ
       kmlLayer = new google.maps.KmlLayer({
         url,
         map,
         preserveViewport: false
       });
 
+      // Diagnóstico
       kmlLayer.addListener("status_changed", () => {
         const status = kmlLayer.getStatus();
+        console.log("KML/KMZ status:", status, "URL:", url);
+
         if (status !== "OK") {
-          alert("No se pudo cargar el KML/KMZ. Estado: " + status +
-                "\nAsegúrate de que la URL sea pública y directa al archivo.");
+          let tip = "";
+          if (status === "FETCH_ERROR") {
+            tip = "El archivo no es accesible directo (Drive suele fallar). Sube el .kml a GitHub Pages o usa URL directa.";
+          } else if (status === "INVALID_DOCUMENT") {
+            tip = "El archivo parece corrupto o no es KML/KMZ válido. Prueba convertir KMZ → KML.";
+          } else if (status === "DOCUMENT_NOT_FOUND") {
+            tip = "La URL no existe (404). Revisa el nombre y la ruta.";
+          } else {
+            tip = "Revisa permisos y que sea URL directa al archivo.";
+          }
+
+          alert("No se pudo cargar el KML/KMZ.\nEstado: " + status + "\n\n" + tip);
         }
       });
     }
@@ -252,7 +289,6 @@
     }
 
     function generarId() {
-      // ID simple incremental: P-0001, P-0002...
       const id = "P-" + String(nextId).padStart(4, "0");
       nextId += 1;
       return id;
@@ -265,9 +301,9 @@
     }
   </script>
 
-  <!-- Carga Google Maps JS API -->
+  <!-- Carga Google Maps JS API (REEMPLAZA por tu key si cambiaste) -->
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiwSBJ3zp6ysMWJqwVmxunpawTOsYYATw&callback=initMap"
+    src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY_AQUI&callback=initMap"
     async defer></script>
 </body>
 </html>
