@@ -258,11 +258,7 @@
     /* ======== PRINT ======== */
     @media print{
   /* Ocultar botones Imprimir y Cerrar en la impresión */
-  #modalFormula button{ display:none !important; 
-      /* Alinear firma a la izquierda */
-      #pFirmaWrap #pProfesional{ display:block; width:100%; text-align:left; }
-      #pFirmaWrap .lbl{ text-align:left; }
-}
+  #modalFormula button{ display:none !important; }
 
   
       body{ background:#fff; padding:0; }
@@ -298,11 +294,11 @@
     }
   
       /* Alinear nombre del profesional a la izquierda (solo debajo de la firma) */
-      
+      #pFirmaWrap #pProfesional{ display:block; width:100%; text-align:left; }
 
     
       /* Alinear texto 'Firma del profesional' a la izquierda */
-      
+      #pFirmaWrap .lbl{ text-align:left; }
 
     </style>
 
@@ -872,6 +868,19 @@ async function init(){
       HIST_TABLE = await detectarTablaHistorias();
       $("tablaDetectada").textContent = HIST_TABLE ? `Tabla historias: ${HIST_TABLE}` : "No se detectó tabla de historias clínicas.";
 
+      // ===============================
+      // 🔹 AUTOCARGA DESDE URL (?cedula=)
+      // ===============================
+      const params = new URLSearchParams(window.location.search);
+      const cedulaURL = params.get("cedula");
+      if (cedulaURL) {
+        const input = document.getElementById("buscar_cedula");
+        if (input) {
+          input.value = cedulaURL;
+          await buscarPaciente();
+        }
+      }
+
       // init meds
       state.meds = [];
       renderMeds();
@@ -1087,7 +1096,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción7</p>
         </div>
       </div>
 
@@ -1276,7 +1285,7 @@ window.cerrarModalFormula = cerrarModalFormula;
     </div>
 
     <!-- ====== AREA IMPRESIÓN ====== -->
-    <div id="printArea" class="print-original">
+    <div id="printArea">
       <div class="p-head">
         <img id="pLogo" alt="Logo">
         <div style="flex:1;">
@@ -1393,5 +1402,4 @@ window.cerrarModalFormula = cerrarModalFormula;
   </div>
 </body>
 </html>
-
 
