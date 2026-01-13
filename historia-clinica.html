@@ -432,7 +432,7 @@ function _evolucionesToHTML(evos){
         <button type="button" onclick="irInicio()" class="btn btn-inicio">IR A INICIO</button>
       </div>
       <div class="ctrl">
-        <button type="button" onclick="cerrarSesion()" class="btn btn-salir">Cerrar sesión</button>
+        <button type="button" onclick="cerrarSesion()" class="btn btn-salir">CERRAR CESION</button>
       </div>
       <div class="ctrl">
         <button type="button" onclick="irAEvoluciones()" class="btn btn-agenda">EVOLUCIONES</button>
@@ -443,6 +443,10 @@ function _evolucionesToHTML(evos){
       </div>
       <div class="ctrl">
         <button type="button" onclick="irAConsentimientos()" class="btn btn-agendar">CONSENTIMIENTOS INFORMADOS</button>
+      </div>
+
+       <div class="ctrl">
+        <button type="button" onclick="irAFormulasMedicas()" class="btn btn-agenda">FÓRMULAS MÉDICAS</button>
       </div>
 
       <div class="ctrl">
@@ -3122,6 +3126,25 @@ function cerrarModalEvoluciones(){
   const iframe = document.getElementById("iframeEvoluciones");
   if (iframe) iframe.src = "about:blank";
   if (modal) modal.style.display = "none";
+}
+
+  function irAFormulasMedicas() {
+  const cedula = (
+    document.getElementById("paciente_numdoc")?.value ||
+    document.getElementById("buscar_cedula")?.value ||
+    ""
+  ).trim();
+
+  if (!cedula) {
+    alert("⚠️ Primero debes cargar un paciente.");
+    return;
+  }
+
+  const url =
+    "https://cacg1022.github.io/ODONTOLOGIA/formulasmedicas.html" +
+    "?cedula=" + encodeURIComponent(cedula);
+
+  window.location.href = url;
 }
 
 // ✅ opcional: cerrar modal si evoluciones.html envía un mensaje
