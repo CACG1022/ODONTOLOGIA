@@ -872,20 +872,6 @@ async function init(){
       HIST_TABLE = await detectarTablaHistorias();
       $("tablaDetectada").textContent = HIST_TABLE ? `Tabla historias: ${HIST_TABLE}` : "No se detectó tabla de historias clínicas.";
 
-  // ===============================
-// 🔹 AUTOCARGA DESDE URL (?cedula=)
-// ===============================
-const params = new URLSearchParams(window.location.search);
-const cedulaURL = params.get("cedula");
-
-if (cedulaURL) {
-  const input = document.getElementById("buscar_cedula");
-  if (input) {
-    input.value = cedulaURL;
-    await buscarPaciente(); // ✅ ahora sí es seguro
-  }
-}
-
       // init meds
       state.meds = [];
       renderMeds();
@@ -1101,7 +1087,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         <img id="logoTop" alt="Logo clínica">
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción8</p>
+          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción</p>
         </div>
       </div>
 
