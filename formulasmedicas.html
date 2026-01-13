@@ -872,6 +872,20 @@ async function init(){
       HIST_TABLE = await detectarTablaHistorias();
       $("tablaDetectada").textContent = HIST_TABLE ? `Tabla historias: ${HIST_TABLE}` : "No se detectó tabla de historias clínicas.";
 
+  // ===============================
+// 🔹 AUTOCARGA DESDE URL (?cedula=)
+// ===============================
+const params = new URLSearchParams(window.location.search);
+const cedulaURL = params.get("cedula");
+
+if (cedulaURL) {
+  const input = document.getElementById("buscar_cedula");
+  if (input) {
+    input.value = cedulaURL;
+    await buscarPaciente(); // ✅ ahora sí es seguro
+  }
+}
+
       // init meds
       state.meds = [];
       renderMeds();
