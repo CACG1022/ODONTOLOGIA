@@ -1199,8 +1199,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       if(!data || !data.encontrado){ setHintHTML("✔️ Paciente nuevo.", "#1e8449"); return; }
 
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
-      if (data.correo)  document.getElementById('correo').value  = data.correo;
-      if (data.celular) document.getElementById('celular').value = data.celular;
+      //if (data.correo)  document.getElementById('correo').value  = data.correo;
+      //if (data.celular) document.getElementById('celular').value = data.celular;
       if (typeof data.observaciones === "string") document.getElementById('observaciones').value = data.observaciones;
 
       let pn=null, pp=null;
