@@ -1304,6 +1304,59 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
 
 
+/* =========================================================
+   ✅ OBTENER DATOS DESDE SUPABASE - HISTORIA CLINICA
+========================================================= */
+async function obtenerDatosDesdeHistoriaClinica(){
+  const cedula = document.getElementById("cedula")?.value?.trim();
+  if(!cedula){
+    alert("⚠️ Ingresa primero la cédula del paciente.");
+    return;
+  }
+
+  let tries = 0;
+  while(!window.supabase && tries < 40){
+    await new Promise(r => setTimeout(r,100));
+    tries++;
+  }
+  if(!window.supabase){
+    alert("❌ Supabase no disponible.");
+    return;
+  }
+
+  try{
+    const { data, error } = await window.supabase
+      .from("HISTORIAS CLINICAS")
+      .select('"Nombre y apellido", paciente_cel, paciente_email')
+      .eq('"Numero de Identificacion"', cedula)
+      .single();
+
+    if(error || !data){
+      alert("⚠️ No se encontró historia clínica para esta cédula.");
+      return;
+    }
+
+    if(data["Nombre y apellido"])
+      document.getElementById("nombre").value = data["Nombre y apellido"];
+
+    if(data.paciente_cel)
+      document.getElementById("celular").value = data.paciente_cel;
+
+    if(data.paciente_email)
+      document.getElementById("correo").value = data.paciente_email;
+
+    alert("✅ Datos cargados desde historia clínica.");
+  }catch(e){
+    console.error(e);
+    alert("❌ Error consultando historia clínica.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btnObtenerDatosHC");
+  if(btn) btn.addEventListener("click", obtenerDatosDesdeHistoriaClinica);
+});
+
 
 
 
