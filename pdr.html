@@ -56,7 +56,7 @@
       padding: 10px;
       border-radius: 12px;
       box-shadow: 0 6px 18px rgba(0,0,0,.18);
-      width: 560px;
+      width: 640px;
       max-width: calc(100% - 24px);
       display: flex;
       flex-wrap: wrap;
@@ -107,7 +107,7 @@
 
   <!-- Barra inferior -->
   <div id="bottomBar">
-    <div class="pill">Cartografía: GeoJSON en Google Cloud Storage</div>
+    <div class="pill">Cartografía (GeoJSON)</div>
 
     <input id="geoUrl" type="text"
       value="https://storage.googleapis.com/gpkg-json-camilo/cartografia2.geojson"
@@ -126,18 +126,15 @@
   <script>
     let map;
 
-    // Para el punto tocado
+    // Punto tocado
     let pendingLatLng = null;
     let tempMarker = null;
 
-    // Contador IDs
+    // IDs
     let nextId = 1;
 
-    // Guardamos registros en memoria (luego puedes enviarlos a Supabase)
+    // Registros en memoria
     const registros = [];
-
-    // Estado GeoJSON cargado
-    let geoLoaded = false;
 
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
@@ -146,7 +143,7 @@
         mapTypeId: "roadmap"
       });
 
-      // Estilo del GeoJSON (cuando esté cargado)
+      // Estilo de la cartografía (GeoJSON)
       map.data.setStyle({
         fillColor: "#1a73e8",
         fillOpacity: 0.20,
@@ -154,11 +151,10 @@
         strokeWeight: 2
       });
 
-      // Click en el mapa -> abrir formulario
+      // Click/touch en el mapa -> abrir formulario
       map.addListener("click", (e) => {
         pendingLatLng = e.latLng;
 
-        // Marcador temporal
         if (tempMarker) tempMarker.setMap(null);
         tempMarker = new google.maps.Marker({
           position: pendingLatLng,
@@ -166,7 +162,6 @@
           title: "Nuevo punto"
         });
 
-        // Form
         document.getElementById("idField").value = generarId();
         document.getElementById("nameField").value = "";
 
@@ -180,38 +175,16 @@
         mostrarPanel(true);
       });
 
-      // Click en una geometría del GeoJSON (opcional)
-      map.data.addListener("click", (event) => {
-        // Evita “doble click” si justo diste click al mapa
-        // (Google dispara eventos separados. Si quieres, puedes refinar esto.)
-        const latLng = event.latLng;
-        const props = event.feature ? event.feature.toGeoJson : null;
-
-        const iw = new google.maps.InfoWindow({
-          position: latLng,
-          content: `
-            <div style="font-family:system-ui,Arial; font-size:14px;">
-              <b>Cartografía</b><br/>
-              Lat: ${latLng.lat().toFixed(6)}<br/>
-              Lng: ${latLng.lng().toFixed(6)}
-            </div>
-          `
-        });
-        iw.open(map);
-      });
-
-      // Botón cargar GeoJSON
-      document.getElementById("loadGeoBtn").addEventListener("click", async () => {
+      // Botón cargar GeoJSON (SIN fetch -> evita CORS)
+      document.getElementById("loadGeoBtn").addEventListener("click", () => {
         const url = document.getElementById("geoUrl").value.trim();
         if (!url) return alert("Pega una URL pública directa a .geojson");
-
-        await cargarGeoJson(url);
+        cargarGeoJson(url);
       });
 
       // Botón quitar GeoJSON
       document.getElementById("clearGeoBtn").addEventListener("click", () => {
         map.data.forEach((f) => map.data.remove(f));
-        geoLoaded = false;
         alert("GeoJSON removido.");
       });
 
@@ -233,7 +206,6 @@
         };
         registros.push(registro);
 
-        // Marcador definitivo
         const marker = new google.maps.Marker({
           position: pendingLatLng,
           map,
@@ -254,7 +226,6 @@
 
         marker.addListener("click", () => info.open({ anchor: marker, map }));
 
-        // Limpiar
         if (tempMarker) tempMarker.setMap(null);
         tempMarker = null;
         pendingLatLng = null;
@@ -271,61 +242,64 @@
         mostrarPanel(false);
       });
 
-      // (Opcional) Cargar automáticamente el GeoJSON al iniciar:
+      // (Opcional) cargar automáticamente al iniciar:
       // cargarGeoJson(document.getElementById("geoUrl").value.trim());
     }
 
-    async function cargarGeoJson(url) {
-      // Quitar lo anterior si ya había algo
+    function cargarGeoJson(url) {
+      // Eliminar lo anterior
       map.data.forEach((f) => map.data.remove(f));
-      geoLoaded = false;
 
-      // Validación rápida: intentar descargar antes (para mostrar error claro)
-      try {
-        const resp = await fetch(url, { method: "GET" });
-        if (!resp.ok) {
-          throw new Error(`HTTP ${resp.status}`);
-        }
-      } catch (err) {
-        console.error("No se pudo descargar el GeoJSON:", err);
-        alert("No se pudo descargar el GeoJSON.\n" +
-              "Asegúrate de que la URL sea pública y directa.\n\n" +
-              "Detalle: " + err.message);
-        return;
-      }
-
-      // Cargar GeoJSON en Google Maps Data Layer
+      // Cargar GeoJSON
       map.data.loadGeoJson(url, null, (features) => {
-        geoLoaded = true;
-        console.log("GeoJSON cargado. Features:", features.length);
-
-        if (!features || features.length === 0) {
-          alert("El GeoJSON cargó, pero no se encontraron features.");
+        if (!features) {
+          alert("No se pudo cargar el GeoJSON (sin detalles). Revisa que la URL sea directa.");
           return;
         }
 
-        // Ajustar vista a la cartografía (bounds)
+        console.log("GeoJSON cargado. Features:", features.length);
+
+        if (features.length === 0) {
+          alert("El GeoJSON cargó pero no se encontraron features.");
+          return;
+        }
+
+        // Ajustar vista al GeoJSON
         const bounds = new google.maps.LatLngBounds();
         map.data.forEach((feature) => {
-          processGeometry(feature.getGeometry(), bounds.extend, bounds);
+          expandirBounds(feature.getGeometry(), bounds);
         });
-        if (!bounds.isEmpty()) map.fitBounds(bounds);
+
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds);
+        } else {
+          alert("GeoJSON cargado, pero no se pudo calcular bounds.");
+        }
       });
+
+      // Si la URL está mal o no es accesible, Google Maps puede fallar silenciosamente.
+      // Por eso mira la consola (F12) si no ves nada.
     }
 
-    // Recorrer geometrías para calcular bounds
-    function processGeometry(geometry, callback, thisArg) {
+    function expandirBounds(geometry, bounds) {
       if (!geometry) return;
-      if (geometry instanceof google.maps.LatLng) {
-        callback.call(thisArg, geometry);
-      } else if (geometry.getType) {
-        const type = geometry.getType();
-        if (type === "Point") {
-          callback.call(thisArg, geometry.get());
-        } else {
-          geometry.getArray().forEach((g) => processGeometry(g, callback, thisArg));
-        }
+
+      const type = geometry.getType();
+
+      if (type === "Point") {
+        bounds.extend(geometry.get());
+        return;
       }
+
+      // Para LineString, Polygon, MultiPolygon, etc.
+      geometry.getArray().forEach((g) => {
+        if (g.getType) {
+          expandirBounds(g, bounds);
+        } else {
+          // LatLng
+          bounds.extend(g);
+        }
+      });
     }
 
     function mostrarPanel(show) {
@@ -347,7 +321,8 @@
 
   <!-- Google Maps JS API -->
   <script
-    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiwSBJ3zp6ysMWJqwVmxunpawTOsYYATw&callback=initMap"
+    src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY_AQUI&callback=initMap"
     async defer></script>
 </body>
 </html>
+
