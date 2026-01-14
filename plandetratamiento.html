@@ -1268,10 +1268,39 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         console.warn("No se pudo inicializar la cédula desde la URL:", e);
       }
     }
+    
+    /* ====== CARGA DESDE HISTORIA CLÍNICA (PACIENTE NUEVO) ====== */
+    function loadFromHistoriaClinicaLocal(){
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if(params.get("nuevo") !== "1") return;
+
+        const raw = localStorage.getItem("historia_clinica_nueva");
+        if(!raw) return;
+
+        const data = JSON.parse(raw);
+
+        if(data.nombre)  document.getElementById('nombre').value  = data.nombre;
+        if(data.cedula)  document.getElementById('cedula').value  = data.cedula;
+        if(data.celular) document.getElementById('celular').value = data.celular;
+        if(data.correo)  document.getElementById('correo').value  = data.correo;
+        if(data.observaciones) document.getElementById('observaciones').value = data.observaciones;
+
+        // evitar reconsulta innecesaria a n8n
+        localStorage.removeItem("historia_clinica_nueva");
+        console.log("✔️ Historia clínica cargada desde módulo historia-clinica (paciente nuevo)");
+      }catch(e){
+        console.warn("No se pudo cargar historia clínica local:", e);
+      }
+    }
+
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
   </script>
 </body>
 </html>
+
+
+
 
 
 
