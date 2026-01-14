@@ -1590,7 +1590,7 @@ async function cargarProfesionalesDesdeSupabase() {
   // 2) leer paciente completo por localStorage
   let pacienteLS = null;
   try {
-    pacienteLS = JSON.parse(localStorage.getItem("paciente_actual_evoluciones") || "null");
+    pacienteLS = JSON.parse(localStorage.getItem("paciente_plan_tratamiento") || "null");
   } catch(e) {}
 
   const cedula = cedulaURL || (pacienteLS?.cedula || "");
@@ -1599,6 +1599,25 @@ async function cargarProfesionalesDesdeSupabase() {
   // pacienteLS.nombre, pacienteLS.edad, etc.
 
   console.log("Paciente recibido:", { cedula, pacienteLS });
+
+    if (pacienteLS) {
+  console.log("✅ Paciente recibido desde Historia Clínica:", pacienteLS);
+
+  if (pacienteLS.nombre) {
+    const el = document.getElementById("paciente_nombre");
+    if (el) el.value = pacienteLS.nombre;
+  }
+
+  if (pacienteLS.celular) {
+    const el = document.getElementById("paciente_cel");
+    if (el) el.value = pacienteLS.celular;
+  }
+
+  if (pacienteLS.email) {
+    const el = document.getElementById("paciente_email");
+    if (el) el.value = pacienteLS.email;
+  }
+}
 
     
 });
