@@ -1199,8 +1199,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       if(!data || !data.encontrado){ setHintHTML("✔️ Paciente nuevo.", "#1e8449"); return; }
 
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
-      //if (data.correo)  document.getElementById('correo').value  = data.correo;
-      //if (data.celular) document.getElementById('celular').value = data.celular;
+      if (data.correo)  document.getElementById('correo').value  = data.correo;
+      if (data.celular) document.getElementById('celular').value = data.celular;
       if (typeof data.observaciones === "string") document.getElementById('observaciones').value = data.observaciones;
 
       let pn=null, pp=null;
@@ -1269,6 +1269,39 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       }
     }
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
+  
+    /* ======================================================
+       🔁 AUTOLLENADO DESDE HISTORIA CLÍNICA (LOCALSTORAGE)
+       ====================================================== */
+    document.addEventListener("DOMContentLoaded", () => {
+      let paciente = null;
+      try {
+        paciente = JSON.parse(localStorage.getItem("paciente_plan_tratamiento") || "null");
+      } catch(e) {}
+
+      console.log("📥 Paciente recibido desde Historia Clínica:", paciente);
+
+      if (!paciente) return;
+
+      const inputNombre  = document.getElementById("nombre");
+      const inputCelular = document.getElementById("celular");
+      const inputCorreo  = document.getElementById("correo");
+      const inputCedula  = document.getElementById("cedula");
+
+      if (inputCedula && paciente.cedula && !inputCedula.value) {
+        inputCedula.value = paciente.cedula;
+      }
+      if (inputNombre && paciente.nombre) {
+        inputNombre.value = paciente.nombre;
+      }
+      if (inputCelular && paciente.celular) {
+        inputCelular.value = paciente.celular;
+      }
+      if (inputCorreo && paciente.email) {
+        inputCorreo.value = paciente.email;
+      }
+    });
+
   </script>
 </body>
 </html>
