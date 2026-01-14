@@ -1,6 +1,4 @@
 <!DOCTYPE html>
-<!-- ARCHIVO COMPLETO CON AUTOCOMPLETADO POR CÉDULA DESDE SUPABASE -->
-<!DOCTYPE html>
 <html lang="es">
 <head>
   <!-- ✅ Fuente tipo la de tu imagen -->
@@ -1273,45 +1271,68 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
   
     /* =========================
-       🔎 AUTOCOMPLETADO PACIENTE DESDE SUPABASE
+       🔎 AUTOCOMPLETADO PACIENTE DESDE SUPABASE (FIX)
        ========================= */
     const cedulaInputSupabase = document.getElementById("cedula");
 
     cedulaInputSupabase.addEventListener("blur", async () => {
-      const cedula = cedulaInputSupabase.value.trim();
+      const cedula = String(cedulaInputSupabase.value || "").trim();
       if (!cedula) return;
+
+      console.log("🔎 Buscando cédula en Supabase:", cedula);
 
       try {
         const { data, error } = await window.supabase
           .from("HISTORIAS CLINICAS")
-          .select("Nombre y apellido, paciente_cel, paciente_email")
+          .select(`
+            "Nombre y apellido",
+            "Numero de identificacion",
+            paciente_cel,
+            paciente_email
+          `)
           .eq("Numero de identificacion", cedula)
           .limit(1)
           .maybeSingle();
 
         if (error) {
-          console.error("Error consultando paciente:", error);
+          console.error("❌ Error Supabase:", error);
           return;
         }
 
-        if (data) {
-          if (data["Nombre y apellido"])
-            document.getElementById("nombre").value = data["Nombre y apellido"];
-
-          if (data["paciente_cel"])
-            document.getElementById("celular").value = data["paciente_cel"];
-
-          if (data["paciente_email"])
-            document.getElementById("correo").value = data["paciente_email"];
+        if (!data) {
+          console.log("ℹ️ Paciente no encontrado");
+          return;
         }
+
+        console.log("✅ Paciente encontrado:", data);
+
+        if (data["Nombre y apellido"])
+          document.getElementById("nombre").value = data["Nombre y apellido"];
+
+        if (data.paciente_cel)
+          document.getElementById("celular").value = data.paciente_cel;
+
+        if (data.paciente_email)
+          document.getElementById("correo").value = data.paciente_email;
+
       } catch (e) {
-        console.error("Fallo en autocompletado por cédula:", e);
+        console.error("🔥 Fallo inesperado:", e);
       }
     });
+
   </script>
 </body>
-
 </html>
+
+
+
+
+
+
+
+
+
+
 
 
 
