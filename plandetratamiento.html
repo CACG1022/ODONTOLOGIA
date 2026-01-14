@@ -619,7 +619,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       <div class="odontograma-summary">
         <strong>Resumen por diente:</strong>
         <ul class="summary-list" id="summary-list"></ul>
-        <div><strong>Procedimiento principal:</strong> <span id="resumen-proc-principal">No aplica</span></div>
+        <div><strong>Subtotal odontograma:</strong> $<span id="odonto-subtotal">0</span></div>
       </div>
 
       <input type="hidden" name="odontograma_json" id="odontograma-json">
@@ -764,7 +764,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     const selectedTeeth = {};
 
     const summaryList = document.getElementById('summary-list');
-    const resumenProcPrincipal = document.getElementById('resumen-proc-principal');
+    const odontoSubtotalEl = document.getElementById('odonto-subtotal');
     const odontoJson = document.getElementById('odontograma-json');
     const odontoResumen = document.getElementById('odontograma-resumen');
 
@@ -811,13 +811,13 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
 
       summaryList.innerHTML = items.length
-        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label}`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
+        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label} ($${(p.price||0).toLocaleString('es-CO')})`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
         : '<li>Sin procedimientos asignados.</li>';
 
       let lines = [];
       if(items.length){
         items.forEach(it=>{
-          const procsText = it.arr.map(p=>`${p.label}`).join(', ');
+          const procsText = it.arr.map(p=>`${p.label} ($${(p.price||0).toLocaleString('es-CO')})`).join(', ');
           lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
         });
       } else {
@@ -826,12 +826,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       odontoResumen.value = lines.join('\n');
 
       const subt = items.reduce((s,it)=>s+it.total,0);
-      const [ppName, ppPrice] = (procedimiento.value || "No aplica|0").split("|");
-      if(ppName && ppName !== "No aplica"){
-        resumenProcPrincipal.textContent = `${ppName} - $${parseMoney(ppPrice).toLocaleString('es-CO')}`;
-      } else {
-        resumenProcPrincipal.textContent = "No aplica";
-      }
+      odontoSubtotalEl.textContent = subt.toLocaleString('es-CO');
       odontoJson.value = JSON.stringify(selectedTeeth);
 
       calcularTotal();
@@ -1268,94 +1263,11 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         console.warn("No se pudo inicializar la cédula desde la URL:", e);
       }
     }
-    
-    /* ====== CARGA DESDE HISTORIA CLÍNICA (PACIENTE NUEVO) ====== */
-    function loadFromHistoriaClinicaLocal(){
-      try{
-        const params = new URLSearchParams(window.location.search);
-        if(params.get("nuevo") !== "1") return;
-
-        const raw = localStorage.getItem("historia_clinica_nueva");
-        if(!raw) return;
-
-        const data = JSON.parse(raw);
-
-        if(data.nombre)  document.getElementById('nombre').value  = data.nombre;
-        if(data.cedula)  document.getElementById('cedula').value  = data.cedula;
-        if(data.celular) document.getElementById('celular').value = data.celular;
-        if(data.correo)  document.getElementById('correo').value  = data.correo;
-        if(data.observaciones) document.getElementById('observaciones').value = data.observaciones;
-
-        // evitar reconsulta innecesaria a n8n
-        localStorage.removeItem("historia_clinica_nueva");
-        console.log("✔️ Historia clínica cargada desde módulo historia-clinica (paciente nuevo)");
-      }catch(e){
-        console.warn("No se pudo cargar historia clínica local:", e);
-      }
-    }
-
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
   </script>
 </body>
 </html>
 
-
-
-
-
-
-/* =========================================================
-   ✅ OBTENER DATOS DESDE SUPABASE - HISTORIA CLINICA
-========================================================= */
-async function obtenerDatosDesdeHistoriaClinica(){
-  const cedula = document.getElementById("cedula")?.value?.trim();
-  if(!cedula){
-    alert("⚠️ Ingresa primero la cédula del paciente.");
-    return;
-  }
-
-  let tries = 0;
-  while(!window.supabase && tries < 40){
-    await new Promise(r => setTimeout(r,100));
-    tries++;
-  }
-  if(!window.supabase){
-    alert("❌ Supabase no disponible.");
-    return;
-  }
-
-  try{
-    const { data, error } = await window.supabase
-      .from("HISTORIAS CLINICAS")
-      .select('"Nombre y apellido", paciente_cel, paciente_email')
-      .eq('"Numero de Identificacion"', cedula)
-      .single();
-
-    if(error || !data){
-      alert("⚠️ No se encontró historia clínica para esta cédula.");
-      return;
-    }
-
-    if(data["Nombre y apellido"])
-      document.getElementById("nombre").value = data["Nombre y apellido"];
-
-    if(data.paciente_cel)
-      document.getElementById("celular").value = data.paciente_cel;
-
-    if(data.paciente_email)
-      document.getElementById("correo").value = data.paciente_email;
-
-    alert("✅ Datos cargados desde historia clínica.");
-  }catch(e){
-    console.error(e);
-    alert("❌ Error consultando historia clínica.");
-  }
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btnObtenerDatosHC");
-  if(btn) btn.addEventListener("click", obtenerDatosDesdeHistoriaClinica);
-});
 
 
 
