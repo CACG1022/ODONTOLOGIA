@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Google Maps + KML/KMZ + Formulario</title>
+  <title>Google Maps + GeoJSON + Formulario</title>
   <style>
     html, body { height: 100%; margin: 0; font-family: system-ui, Arial; }
     #map { height: 100%; width: 100%; }
@@ -20,6 +20,7 @@
       box-shadow: 0 6px 18px rgba(0,0,0,.18);
       width: 320px;
       max-width: calc(100% - 24px);
+      display: none;
     }
     #panel h3 { margin: 0 0 10px; font-size: 16px; }
     #panel label { display:block; font-size: 12px; margin-top: 8px; }
@@ -55,14 +56,14 @@
       padding: 10px;
       border-radius: 12px;
       box-shadow: 0 6px 18px rgba(0,0,0,.18);
-      width: 520px;
+      width: 560px;
       max-width: calc(100% - 24px);
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
       align-items: center;
     }
-    #kmlUrl { flex: 1; min-width: 220px; }
+    #geoUrl { flex: 1; min-width: 260px; }
     .hint { font-size: 12px; color: #5f6368; margin-top: 6px; }
     .small { font-size: 12px; color: #5f6368; }
     .pill {
@@ -76,7 +77,7 @@
 
 <body>
   <!-- Formulario -->
-  <div id="panel" style="display:none;">
+  <div id="panel">
     <h3>Nuevo registro</h3>
 
     <label>ID</label>
@@ -104,20 +105,19 @@
     <div class="hint" id="coordHint"></div>
   </div>
 
-  <!-- Barra inferior para capa -->
+  <!-- Barra inferior -->
   <div id="bottomBar">
-    <div class="pill">Capa recomendada: KML en GitHub Pages</div>
+    <div class="pill">Cartografía: GeoJSON en Google Cloud Storage</div>
 
-    <input id="kmlUrl" type="text"
-      placeholder="Pega URL directa a .kml o .kmz (mejor .kml)"
-      value="https://cacg1022.github.io/ODONTOLOGIA/data/capa.kml" />
+    <input id="geoUrl" type="text"
+      value="https://storage.googleapis.com/gpkg-json-camilo/cartografia2.geojson"
+      placeholder="URL pública directa a .geojson" />
 
-    <button id="loadKmlBtn" type="button">Cargar URL</button>
-    <button id="loadDefaultBtn" type="button">Cargar capa del repo</button>
-    <button id="clearKmlBtn" type="button">Quitar capa</button>
+    <button id="loadGeoBtn" type="button">Cargar GeoJSON</button>
+    <button id="clearGeoBtn" type="button">Quitar GeoJSON</button>
 
     <div class="small">
-      Sube tu archivo al repo en <b>ODONTOLOGIA/data/</b> y cambia <b>capa.kml</b> por tu nombre real.
+      Tip: Si el GeoJSON es pesado, puede tardar unos segundos en dibujar.
     </div>
   </div>
 
@@ -125,29 +125,36 @@
 
   <script>
     let map;
-    let kmlLayer = null;
 
     // Para el punto tocado
     let pendingLatLng = null;
     let tempMarker = null;
 
-    // Contador simple para IDs
+    // Contador IDs
     let nextId = 1;
 
     // Guardamos registros en memoria (luego puedes enviarlos a Supabase)
     const registros = [];
 
-    // ⭐ Cambia aquí si tu archivo tiene otro nombre:
-    const DEFAULT_LAYER_URL = "https://cacg1022.github.io/ODONTOLOGIA/data/capa.kml";
+    // Estado GeoJSON cargado
+    let geoLoaded = false;
 
     function initMap() {
       map = new google.maps.Map(document.getElementById("map"), {
         center: { lat: 4.7110, lng: -74.0721 }, // Bogotá
-        zoom: 12,
+        zoom: 11,
         mapTypeId: "roadmap"
       });
 
-      // Click/touch en el mapa
+      // Estilo del GeoJSON (cuando esté cargado)
+      map.data.setStyle({
+        fillColor: "#1a73e8",
+        fillOpacity: 0.20,
+        strokeColor: "#1a73e8",
+        strokeWeight: 2
+      });
+
+      // Click en el mapa -> abrir formulario
       map.addListener("click", (e) => {
         pendingLatLng = e.latLng;
 
@@ -164,8 +171,8 @@
         document.getElementById("nameField").value = "";
 
         const now = new Date();
-        document.getElementById("dateField").value = now.toISOString().slice(0,10);
-        document.getElementById("timeField").value = now.toTimeString().slice(0,5);
+        document.getElementById("dateField").value = now.toISOString().slice(0, 10);
+        document.getElementById("timeField").value = now.toTimeString().slice(0, 5);
 
         document.getElementById("coordHint").textContent =
           `Coordenadas: ${pendingLatLng.lat().toFixed(6)}, ${pendingLatLng.lng().toFixed(6)}`;
@@ -173,22 +180,39 @@
         mostrarPanel(true);
       });
 
-      // Botones capa
-      document.getElementById("loadKmlBtn").addEventListener("click", () => {
-        const url = document.getElementById("kmlUrl").value.trim();
-        if (!url) return alert("Pega una URL directa a .kml o .kmz");
-        cargarKmlKmz(url);
+      // Click en una geometría del GeoJSON (opcional)
+      map.data.addListener("click", (event) => {
+        // Evita “doble click” si justo diste click al mapa
+        // (Google dispara eventos separados. Si quieres, puedes refinar esto.)
+        const latLng = event.latLng;
+        const props = event.feature ? event.feature.toGeoJson : null;
+
+        const iw = new google.maps.InfoWindow({
+          position: latLng,
+          content: `
+            <div style="font-family:system-ui,Arial; font-size:14px;">
+              <b>Cartografía</b><br/>
+              Lat: ${latLng.lat().toFixed(6)}<br/>
+              Lng: ${latLng.lng().toFixed(6)}
+            </div>
+          `
+        });
+        iw.open(map);
       });
 
-      document.getElementById("loadDefaultBtn").addEventListener("click", () => {
-        document.getElementById("kmlUrl").value = DEFAULT_LAYER_URL;
-        cargarKmlKmz(DEFAULT_LAYER_URL);
+      // Botón cargar GeoJSON
+      document.getElementById("loadGeoBtn").addEventListener("click", async () => {
+        const url = document.getElementById("geoUrl").value.trim();
+        if (!url) return alert("Pega una URL pública directa a .geojson");
+
+        await cargarGeoJson(url);
       });
 
-      document.getElementById("clearKmlBtn").addEventListener("click", () => {
-        if (kmlLayer) kmlLayer.setMap(null);
-        kmlLayer = null;
-        alert("Capa removida.");
+      // Botón quitar GeoJSON
+      document.getElementById("clearGeoBtn").addEventListener("click", () => {
+        map.data.forEach((f) => map.data.remove(f));
+        geoLoaded = false;
+        alert("GeoJSON removido.");
       });
 
       // Guardar registro
@@ -239,7 +263,7 @@
         console.log("Registros:", registros);
       });
 
-      // Cancelar
+      // Cancelar registro
       document.getElementById("cancelBtn").addEventListener("click", () => {
         if (tempMarker) tempMarker.setMap(null);
         tempMarker = null;
@@ -247,41 +271,61 @@
         mostrarPanel(false);
       });
 
-      // (Opcional) intenta cargar la capa por defecto al iniciar:
-      // cargarKmlKmz(DEFAULT_LAYER_URL);
+      // (Opcional) Cargar automáticamente el GeoJSON al iniciar:
+      // cargarGeoJson(document.getElementById("geoUrl").value.trim());
     }
 
-    function cargarKmlKmz(url) {
-      // Quitar capa anterior
-      if (kmlLayer) kmlLayer.setMap(null);
+    async function cargarGeoJson(url) {
+      // Quitar lo anterior si ya había algo
+      map.data.forEach((f) => map.data.remove(f));
+      geoLoaded = false;
 
-      // Crea capa KML/KMZ
-      kmlLayer = new google.maps.KmlLayer({
-        url,
-        map,
-        preserveViewport: false
-      });
-
-      // Diagnóstico
-      kmlLayer.addListener("status_changed", () => {
-        const status = kmlLayer.getStatus();
-        console.log("KML/KMZ status:", status, "URL:", url);
-
-        if (status !== "OK") {
-          let tip = "";
-          if (status === "FETCH_ERROR") {
-            tip = "El archivo no es accesible directo (Drive suele fallar). Sube el .kml a GitHub Pages o usa URL directa.";
-          } else if (status === "INVALID_DOCUMENT") {
-            tip = "El archivo parece corrupto o no es KML/KMZ válido. Prueba convertir KMZ → KML.";
-          } else if (status === "DOCUMENT_NOT_FOUND") {
-            tip = "La URL no existe (404). Revisa el nombre y la ruta.";
-          } else {
-            tip = "Revisa permisos y que sea URL directa al archivo.";
-          }
-
-          alert("No se pudo cargar el KML/KMZ.\nEstado: " + status + "\n\n" + tip);
+      // Validación rápida: intentar descargar antes (para mostrar error claro)
+      try {
+        const resp = await fetch(url, { method: "GET" });
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status}`);
         }
+      } catch (err) {
+        console.error("No se pudo descargar el GeoJSON:", err);
+        alert("No se pudo descargar el GeoJSON.\n" +
+              "Asegúrate de que la URL sea pública y directa.\n\n" +
+              "Detalle: " + err.message);
+        return;
+      }
+
+      // Cargar GeoJSON en Google Maps Data Layer
+      map.data.loadGeoJson(url, null, (features) => {
+        geoLoaded = true;
+        console.log("GeoJSON cargado. Features:", features.length);
+
+        if (!features || features.length === 0) {
+          alert("El GeoJSON cargó, pero no se encontraron features.");
+          return;
+        }
+
+        // Ajustar vista a la cartografía (bounds)
+        const bounds = new google.maps.LatLngBounds();
+        map.data.forEach((feature) => {
+          processGeometry(feature.getGeometry(), bounds.extend, bounds);
+        });
+        if (!bounds.isEmpty()) map.fitBounds(bounds);
       });
+    }
+
+    // Recorrer geometrías para calcular bounds
+    function processGeometry(geometry, callback, thisArg) {
+      if (!geometry) return;
+      if (geometry instanceof google.maps.LatLng) {
+        callback.call(thisArg, geometry);
+      } else if (geometry.getType) {
+        const type = geometry.getType();
+        if (type === "Point") {
+          callback.call(thisArg, geometry.get());
+        } else {
+          geometry.getArray().forEach((g) => processGeometry(g, callback, thisArg));
+        }
+      }
     }
 
     function mostrarPanel(show) {
@@ -301,10 +345,9 @@
     }
   </script>
 
-  <!-- Carga Google Maps JS API (REEMPLAZA por tu key si cambiaste) -->
+  <!-- Google Maps JS API -->
   <script
     src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDiwSBJ3zp6ysMWJqwVmxunpawTOsYYATw&callback=initMap"
     async defer></script>
 </body>
 </html>
-
