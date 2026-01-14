@@ -817,7 +817,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       let lines = [];
       if(items.length){
         items.forEach(it=>{
-          const procsText = it.arr.map(p=>`${p.label} ($${(p.price||0).toLocaleString('es-CO')})`).join(', ');
+          const procsText = it.arr.map(p=>`${p.label}`).join(', ');
           lines.push(`• Diente ${it.tooth}: ${procsText} — $${it.total.toLocaleString('es-CO')}`);
         });
       } else {
@@ -1272,6 +1272,10 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
