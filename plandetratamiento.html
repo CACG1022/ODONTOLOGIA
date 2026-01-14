@@ -1274,33 +1274,34 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
        🔁 AUTOLLENADO DESDE HISTORIA CLÍNICA (LOCALSTORAGE)
        ====================================================== */
     document.addEventListener("DOMContentLoaded", () => {
-      let paciente = null;
-      try {
-        paciente = JSON.parse(localStorage.getItem("paciente_plan_tratamiento") || "null");
-      } catch(e) {}
+  let paciente = null;
 
-      console.log("📥 Paciente recibido desde Historia Clínica:", paciente);
+  try {
+    paciente = JSON.parse(
+      localStorage.getItem("paciente_plan_tratamiento") || "null"
+    );
+  } catch (e) {
+    console.warn("Paciente inválido en localStorage");
+  }
 
-      if (!paciente) return;
+  // 🚫 Si no hay paciente, no hacemos nada
+  if (!paciente) return;
 
-      const inputNombre  = document.getElementById("nombre");
-      const inputCelular = document.getElementById("celular");
-      const inputCorreo  = document.getElementById("correo");
-      const inputCedula  = document.getElementById("cedula");
+  // ✅ AUTOCOMPLETAR
+  const nombre  = document.getElementById("nombre");
+  const cedula  = document.getElementById("cedula");
+  const celular = document.getElementById("celular");
+  const correo  = document.getElementById("correo");
 
-      if (inputCedula && paciente.cedula && !inputCedula.value) {
-        inputCedula.value = paciente.cedula;
-      }
-      if (inputNombre && paciente.nombre) {
-        inputNombre.value = paciente.nombre;
-      }
-      if (inputCelular && paciente.celular) {
-        inputCelular.value = paciente.celular;
-      }
-      if (inputCorreo && paciente.email) {
-        inputCorreo.value = paciente.email;
-      }
-    });
+  if (nombre)  nombre.value  = paciente.nombre  || "";
+  if (cedula)  cedula.value  = paciente.cedula  || "";
+  if (celular) celular.value = paciente.celular || "";
+  if (correo)  correo.value  = paciente.email   || "";
+
+  // 🧹🔥 CLAVE: BORRAR DESPUÉS DE USAR
+  localStorage.removeItem("paciente_plan_tratamiento");
+});
+
 
   </script>
 </body>
