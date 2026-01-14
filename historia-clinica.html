@@ -1348,46 +1348,31 @@ function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
   }
 
   function irPlanTratamiento() {
-  const cedula = (
-    document.getElementById("paciente_numdoc")?.value ||
-    document.getElementById("buscar_cedula")?.value ||
-    ""
-  ).trim();
+  const paciente = {
+    cedula: (document.getElementById("paciente_numdoc")?.value || "").trim(),
+    nombre: (document.getElementById("paciente_nombre")?.value || "").trim(),
+    celular: (document.getElementById("paciente_cel")?.value || "").trim(),
+    email: (document.getElementById("paciente_email")?.value || "").trim()
+  };
 
-  if (!cedula) {
-    alert("⚠️ Primero debes cargar o ingresar un paciente.");
+  if (!paciente.cedula) {
+    alert("⚠️ Primero debes cargar o buscar un paciente.");
     return;
   }
 
-  // ✅ Capturar TODA la historia clínica actual
-  const historiaClinica = obtenerDatosHistoriaClinica();
-
-  // 🔎 Detectar si es paciente nuevo (no existe ID cargado desde n8n)
-  const esPacienteNuevo = !window._cedulaActual;
-
+  // 🔐 Guardar paciente completo
   try {
-    localStorage.setItem("cedula_paciente_plan", cedula);
+    localStorage.setItem("paciente_plan_tratamiento", JSON.stringify(paciente));
+  } catch(e) {}
 
-    if (esPacienteNuevo) {
-      localStorage.setItem(
-        "historia_clinica_nueva",
-        JSON.stringify(historiaClinica)
-      );
-    } else {
-      localStorage.removeItem("historia_clinica_nueva");
-    }
-  } catch (e) {
-    console.warn("No se pudo guardar historia clínica en localStorage", e);
-  }
-
+  // 🔁 Mantener cédula en URL como respaldo
   const url =
     URL_PLAN_TRATAMIENTO +
-    "?cedula=" +
-    encodeURIComponent(cedula) +
-    (esPacienteNuevo ? "&nuevo=1" : "");
+    "?cedula=" + encodeURIComponent(paciente.cedula);
 
   window.open(url, "_blank");
 }
+
 
 
   // UTILIDADES
