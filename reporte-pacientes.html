@@ -5,69 +5,77 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reporte de Pacientes - Clínica Odontológica</title>
 
+  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+
+  <!-- Chart.js (se mantiene, aunque gráficos estén deshabilitados) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+  <!-- Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
-      --bg:#f3f5f7;--card:#fff;--text:#1f2a37;--muted:#6b7280;--line:#e5e7eb;
-      --brand:#1f6aa5;--brand2:#114a75;--danger:#b42318;
-      --shadow:0 10px 30px rgba(16,24,40,.08);--radius:14px;
+      --bg:#f3f5f7;--card:#fff;--text:#1f2a37;--muted:#6b7280;
+      --line:#e5e7eb;--brand:#1f6aa5;--brand2:#114a75;
+      --danger:#b42318;--shadow:0 10px 30px rgba(16,24,40,.08);
+      --radius:14px;
     }
     *{box-sizing:border-box}
-    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:16px}
+    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
 
-    .topbar,.container{max-width:100%}
-    .topbar{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
-
-    .container{margin:0 auto;background:var(--card);border:1px solid var(--line);
+    .container{max-width:1200px;margin:0 auto;background:#fff;border:1px solid var(--line);
       border-radius:var(--radius);box-shadow:var(--shadow)}
-    .header,.section,.footer{padding:14px 16px;background:#fff}
-    .header{border-bottom:1px solid var(--line);display:flex;justify-content:space-between;flex-wrap:wrap}
-    .footer{border-top:1px solid var(--line);display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
 
-    table{width:100%;border-collapse:collapse;table-layout:fixed}
+    table{width:100%;border-collapse:collapse}
     th,td{padding:10px;border-bottom:1px solid var(--line);font-size:12.5px;text-align:left}
     th{background:#fafafa;color:var(--muted);position:sticky;top:0}
 
-    col.cedula{width:140px}
-    col.nombre{width:30%}
-    col.telefono{width:140px}
-    col.correo{width:25%}
-    col.accion{width:110px}
+    .mono{font-family:ui-monospace,monospace}
+    .btn{padding:6px 10px;border-radius:8px;border:1px solid var(--line);cursor:pointer}
+    .btn.primary{background:var(--brand);color:#fff}
 
-    @media(max-width:900px){
-      col.nombre{width:40%}
-      col.correo{width:30%}
+    /* ===== AJUSTE RESPONSIVE SOLO TABLA ===== */
+    .table-responsive{
+      width:100%;
+      overflow-x:auto;
     }
+    .table-responsive table{
+      width:100%;
+      min-width:1100px;
+    }
+    .col-nombre{min-width:320px}
+    .col-acciones{white-space:nowrap;text-align:center}
   </style>
 </head>
 
 <body>
-<div class="topbar">
-  <h1>CLÍNICA ODONTOLÓGICA — Reporte de pacientes</h1>
-  <div>
-    <button onclick="location.href='index.html'">⬅ Volver</button>
-    <button onclick="location.href='login.html'">Cerrar sesión</button>
-  </div>
-</div>
 
 <div class="container">
-  <div class="header">
-    <b>Listado de pacientes</b>
-    <button onclick="cargar()">Actualizar</button>
-  </div>
+  <h2 style="padding:16px">Listado de pacientes</h2>
 
-  <div class="section" style="overflow:auto;max-height:65vh">
+  <div class="table-responsive">
     <table>
       <colgroup>
-        <col class="cedula"><col class="nombre"><col class="telefono"><col class="correo">
-        <col class="accion"><col class="accion"><col class="accion"><col class="accion">
+        <col style="width:140px">
+        <col class="col-nombre">
+        <col style="width:160px">
+        <col style="width:260px">
+        <col class="col-acciones">
+        <col class="col-acciones">
+        <col class="col-acciones">
+        <col class="col-acciones">
       </colgroup>
       <thead>
         <tr>
-          <th>Cédula</th><th>Nombre</th><th>Teléfono</th><th>Correo</th>
-          <th>Historia</th><th>Plan</th><th>Factura</th><th>Evol.</th>
+          <th>Cédula</th>
+          <th>Nombre</th>
+          <th>Teléfono</th>
+          <th>Correo</th>
+          <th>Historia clínica</th>
+          <th>Plan</th>
+          <th>Facturación</th>
+          <th>Evoluciones</th>
         </tr>
       </thead>
       <tbody id="tbody_pacientes">
@@ -75,40 +83,51 @@
       </tbody>
     </table>
   </div>
-
-  <div class="footer">© 2026</div>
 </div>
 
 <script>
-const supabase=window.supabase.createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-);
+const SUPABASE_URL="https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+
+const supabase = supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
 
 async function cargar(){
-  const {data}=await supabase.from("HISTORIAS CLINICAS")
-    .select('"Numero de Identificacion","Nombre y apellido",paciente_cel,paciente_email');
-  const tb=document.getElementById("tbody_pacientes");
-  tb.innerHTML="";
+  const {data,error}=await supabase
+    .from("HISTORIAS CLINICAS")
+    .select('"Numero de Identificacion","Nombre y apellido",paciente_cel,paciente_email')
+    .limit(1000);
+
+  const tbody=document.getElementById("tbody_pacientes");
+  tbody.innerHTML="";
+
+  if(error){
+    tbody.innerHTML="<tr><td colspan='8'>Error cargando datos</td></tr>";
+    return;
+  }
+
   data.forEach(p=>{
     const ced=encodeURIComponent(p["Numero de Identificacion"]);
-    tb.innerHTML+=`
-    <tr>
-      <td>${p["Numero de Identificacion"]}</td>
-      <td>${p["Nombre y apellido"]}</td>
-      <td>${p.paciente_cel||""}</td>
-      <td>${p.paciente_email||""}</td>
-      <td><button onclick="location.href='historia-clinica.html?buscar_cedula=${ced}'">ver</button></td>
-      <td><button onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
-      <td><button onclick="location.href='facturacion.html?paciente_cedula=${ced}'">ver</button></td>
-      <td><button onclick="location.href='evoluciones.html?cedula=${ced}'">ver</button></td>
-    </tr>`;
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td class="mono">${p["Numero de Identificacion"]||""}</td>
+      <td>${p["Nombre y apellido"]||""}</td>
+      <td class="mono">${p.paciente_cel||""}</td>
+      <td class="mono">${p.paciente_email||""}</td>
+      <td><button class="btn primary" onclick="location.href='historia-clinica.html?buscar_cedula=${ced}'">ver</button></td>
+      <td><button class="btn" onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
+      <td><button class="btn" onclick="location.href='facturacion.html?paciente_cedula=${ced}'">ver</button></td>
+      <td><button class="btn" onclick="location.href='evoluciones.html?cedula_paciente=${ced}'">ver</button></td>
+    `;
+    tbody.appendChild(tr);
   });
 }
-cargar();
+
+document.addEventListener("DOMContentLoaded",cargar);
 </script>
+
 </body>
 </html>
+
 
 
 
