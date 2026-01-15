@@ -1648,7 +1648,7 @@ async function cargarProfesionalesDesdeSupabase() {
     "Prótesis removible": '#42ffc6',
     "Prótesis total": '#fff642',
     "En erupción": '#CF1111',
-    "Restos radiculares": '#EDC766',
+    "Resto radiculares": '#EDC766',
   };
 
   let reporte = {};
@@ -1739,7 +1739,7 @@ async function cargarProfesionalesDesdeSupabase() {
 
         if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
 
-        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona_adaptada"|| nombre === "Corona_desadaptada"|| nombre === "En erupción"||nombre === "Restos radiculares") {
+        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona_adaptada"|| nombre === "Corona_desadaptada"|| nombre === "En erupción"||nombre === "Resto radiculares"||nombre === "Prótesis fija"||nombre === "Prótesis removible"||nombre === "Prótesis fija") {
           elemento.parentElement.querySelectorAll(".cara, .centro")
             .forEach(c => c.style.background = preexistencias[nombre]);
 
