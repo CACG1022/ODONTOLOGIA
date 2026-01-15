@@ -91,18 +91,23 @@
     }
 
     function _appendEnTextarea(textarea, texto) {
-      if (!textarea) return;
+  if (!textarea || !texto) return;
 
-      const actual = textarea.value || "";
-      const add = (texto || "").trim();
-      if (!add) return;
+  // Insertar en la posición actual del cursor
+  const start = textarea.selectionStart ?? textarea.value.length;
+  const end = textarea.selectionEnd ?? textarea.value.length;
 
-      const sep = actual.trim().length ? (actual.endsWith("\n") ? "" : "\n") : "";
-      textarea.value = actual + sep + add;
+  const before = textarea.value.slice(0, start);
+  const after = textarea.value.slice(end);
 
-      textarea.focus();
-      textarea.selectionStart = textarea.selectionEnd = textarea.value.length;
-    }
+  textarea.value = before + texto + " " + after;
+
+  const newPos = before.length + texto.length + 1;
+  textarea.selectionStart = textarea.selectionEnd = newPos;
+
+  textarea.focus();
+}
+
 
     function iniciarDictadoEvoDetalle() {
       const ta = document.getElementById("evo_detalle");
