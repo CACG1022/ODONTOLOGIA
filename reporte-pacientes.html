@@ -396,10 +396,14 @@
                   <th>Nombre</th>
                   <th style="width:200px;">Teléfono</th>
                   <th style="width:260px;">Correo</th>
+                  <th style="width:120px;">Historia clínica</th>
+                  <th style="width:140px;">Plan tratamiento</th>
+                  <th style="width:120px;">Facturación</th>
+                  <th style="width:120px;">Evoluciones</th>
                 </tr>
               </thead>
               <tbody id="tbody_pacientes">
-                <tr><td colspan="4" class="empty">Cargando...</td></tr>
+                <tr><td colspan="8" class="empty">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -420,6 +424,14 @@
   <div id="toast" data-type="ok"></div>
 
   <script>
+    
+    // =========================
+    // ✅ LINKS A MÓDULOS POR PACIENTE
+    // =========================
+    function linkBtn(url, cedula){
+      return `<button class="btn small" onclick="window.open('${url}?cedula=${cedula}', '_blank')">ver</button>`;
+    }
+
     // =========================
     // ✅ DEBUG GLOBAL
     // =========================
@@ -881,4 +893,6 @@
   </script>
 </body>
 </html>
+
+
 
