@@ -1574,6 +1574,9 @@
       await cargarDetalleFiltro();
       await cargarTotalMesActual();
 
+      // ✅ ABONOS
+      await cargarTotalAbonosMes();
+
       const kpi = calcKPIs();
       renderTablaFacturas();
       renderCharts(kpi);
@@ -1700,6 +1703,9 @@
       $("f_profesional").addEventListener("change", refrescarDashboard);
       $("f_metodo").addEventListener("change", refrescarDashboard);
 
+      // ✅ ABONOS POR DÍA
+      $("fecha_abonos_dia").addEventListener("change", cargarAbonosPorDia);
+
       $("btn-show-all").addEventListener("click", ()=>{ state._view="all"; renderTablaFacturas(); });
       $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
       $("btn-show-paid").addEventListener("click", ()=>{ state._view="paid"; renderTablaFacturas(); });
@@ -1755,6 +1761,7 @@
   </script>
 </body>
 </html>
+
 
 
 
