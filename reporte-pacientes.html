@@ -396,10 +396,10 @@
                   <th>Nombre</th>
                   <th style="width:200px;">Teléfono</th>
                   <th style="width:260px;">Correo</th>
-                  <th style="width:120px;">Historia clínica</th>
-                  <th style="width:140px;">Plan tratamiento</th>
-                  <th style="width:120px;">Facturación</th>
-                  <th style="width:120px;">Evoluciones</th>
+                   <th style="width:140px;">Historia clínica</th>
+                   <th style="width:160px;">Plan tratamiento</th>
+                   <th style="width:140px;">Facturación</th>
+                   <th style="width:140px;">Evoluciones</th>
                 </tr>
               </thead>
               <tbody id="tbody_pacientes">
@@ -424,18 +424,8 @@
   <div id="toast" data-type="ok"></div>
 
   <script>
-    
-    // =========================
-    // ✅ BOTONES VER POR PACIENTE
-    // =========================
-    function linkBtn(url, cedula){
-      return `<button class="btn small primary" type="button"
-        onclick="window.location.href='${url}?cedula=${cedula}'">ver</button>`;
-    }
-
     // =========================
     // ✅ DEBUG GLOBAL
-
     // =========================
     window.addEventListener("error", (e) => {
       console.error("JS ERROR:", e?.error || e?.message || e);
@@ -895,6 +885,7 @@
   </script>
 </body>
 </html>
+
 
 
 
