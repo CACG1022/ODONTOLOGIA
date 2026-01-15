@@ -811,7 +811,11 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         .map(([tooth, arr])=>({ tooth, arr, total: arr.reduce((s,p)=>s+(p.price||0),0) }));
 
       summaryList.innerHTML = items.length
-        ? items.map(it => `<li>Diente ${it.tooth}: ${it.arr.map(p=>`${p.label}`).join(', ')} — <strong>$${it.total.toLocaleString('es-CO')}</strong></li>`).join('')
+        ? items.map(it =>
+            it.arr.map(p =>
+              `<li>Diente ${it.tooth}: ${p.label} — <strong>$${(p.price||0).toLocaleString('es-CO')}</strong></li>`
+            ).join('')
+          ).join('')
         : '<li>Sin procedimientos asignados.</li>';
 
       let lines = [];
