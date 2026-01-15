@@ -618,6 +618,60 @@
       </div>
     </div>
 
+    
+    <!-- =========================
+         ✅ NUEVA SECCIÓN: ABONOS
+         ========================= -->
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 4;">
+          <h3>
+            <span>Total abonado (mes seleccionado)</span>
+            <span class="sub" id="sub_abonos_mes">—</span>
+          </h3>
+          <div class="kpi">
+            <div class="k">Total abonos</div>
+            <div class="v mono">$ <span id="k_abonos_mes">0</span></div>
+            <div class="s">Suma de todos los abonos del mes</div>
+          </div>
+        </div>
+
+        <div class="card" style="grid-column: span 8;">
+          <h3>
+            <span>Abonos por día</span>
+            <span class="sub">Selecciona una fecha</span>
+          </h3>
+
+          <div class="grid" style="margin-bottom:10px;">
+            <div class="ctrl" style="grid-column: span 4;">
+              <label>Fecha</label>
+              <input id="fecha_abonos_dia" type="date">
+            </div>
+          </div>
+
+          <div class="mono" id="abonos_dia_resumen" style="margin-bottom:8px; color:var(--muted);">
+            —
+          </div>
+
+          <div style="max-height: 40vh; overflow:auto; border:1px solid var(--line); border-radius: 12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:150px;">Fecha</th>
+                  <th>Paciente</th>
+                  <th style="width:180px;">Factura</th>
+                  <th style="width:160px;">Monto</th>
+                </tr>
+              </thead>
+              <tbody id="tbody_abonos_dia">
+                <tr><td colspan="4" class="empty">Selecciona una fecha</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="footer">
       <div class="mono" id="status"></div>
       <div>© <span id="year"></span></div>
@@ -1542,6 +1596,82 @@
       $("fecha_hasta").value = h;
     }
 
+    
+    // =========================
+    // ✅ ABONOS (MES Y POR DÍA)
+    // =========================
+    async function cargarTotalAbonosMes(){
+      const desde = ($("fecha_desde").value || "").slice(0,7) + "-01";
+      const d = new Date(desde + "T00:00:00");
+      const hasta = lastDayOfMonthISO(d);
+
+      try{
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("monto")
+          .gte("fecha", dateStartISO(desde))
+          .lte("fecha", dateEndISO(hasta));
+
+        if (error) throw error;
+
+        const total = (data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
+        $("k_abonos_mes").textContent = money(total);
+        $("sub_abonos_mes").textContent = formatFechaHuman(desde) + " → " + formatFechaHuman(hasta);
+      }catch(err){
+        console.error("cargarTotalAbonosMes:", err);
+        $("k_abonos_mes").textContent = "0";
+        $("sub_abonos_mes").textContent = "No disponible";
+      }
+    }
+
+    async function cargarAbonosPorDia(){
+      const fecha = $("fecha_abonos_dia").value;
+      const tbody = $("tbody_abonos_dia");
+      tbody.innerHTML = "";
+
+      if (!fecha){
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">Selecciona una fecha</td></tr>`;
+        return;
+      }
+
+      try{
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("fecha, monto, factura_id, facturas(numero_factura, paciente_nombre)")
+          .gte("fecha", dateStartISO(fecha))
+          .lte("fecha", dateEndISO(fecha))
+          .order("fecha", { ascending:true });
+
+        if (error) throw error;
+
+        const rows = data || [];
+        const totalDia = rows.reduce((a,b)=> a + (Number(b.monto)||0), 0);
+
+        $("abonos_dia_resumen").textContent =
+          `Total del día ${formatFechaHuman(fecha)}: $ ${money(totalDia)} • Abonos: ${rows.length}`;
+
+        if (!rows.length){
+          tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay abonos este día.</td></tr>`;
+          return;
+        }
+
+        for (const a of rows){
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
+            <td>${escapeHtml(a.facturas?.paciente_nombre || "—")}</td>
+            <td class="mono">${escapeHtml(a.facturas?.numero_factura || "—")}</td>
+            <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
+          `;
+          tbody.appendChild(tr);
+        }
+      }catch(err){
+        console.error("cargarAbonosPorDia:", err);
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">Error cargando abonos.</td></tr>`;
+      }
+    }
+
+
     // =========================
     // ✅ INIT
     // =========================
@@ -1617,6 +1747,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
