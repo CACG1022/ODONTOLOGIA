@@ -1042,7 +1042,16 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         next.push({ key: row.dataset.key, label: row.dataset.label, price });
       });
 
-      if(next.length) selectedTeeth[currentTooth]=next;
+      // 🔒 evitar procedimientos duplicados por diente
+      const uniqueMap = new Map();
+      next.forEach(p => {
+        if(!uniqueMap.has(p.key)){
+          uniqueMap.set(p.key, p);
+        }
+      });
+      const unique = Array.from(uniqueMap.values());
+
+      if(unique.length) selectedTeeth[currentTooth]=unique;
       else delete selectedTeeth[currentTooth];
       tempSelections = [];
 
@@ -1322,3 +1331,4 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
+
