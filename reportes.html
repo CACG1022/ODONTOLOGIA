@@ -491,25 +491,6 @@
         </div>
       </div>
 
-<!-- =========================
-         ✅ NUEVA SECCIÓN: ABONOS
-         ========================= -->
-    <div class="section">
-      <div class="cards">
-        <div class="card" style="grid-column: span 4;">
-          <h3>
-            <span>Total abonado (mes seleccionado)</span>
-            <span class="sub" id="sub_abonos_mes">—</span>
-          </h3>
-          <div class="kpi">
-            <div class="k">Total abonos</div>
-            <div class="v mono">$ <span id="k_abonos_mes">0</span></div>
-            <div class="s">Suma de todos los abonos del mes</div>
-          </div>
-        </div>
-
-
-
       <div style="margin-top:10px; color:var(--muted); font-size:12px;" class="mono">
         Tip: el “Total facturado (mes actual)” se calcula siempre con el mes actual (aunque filtres otro rango).
       </div>
@@ -638,7 +619,22 @@
     </div>
 
     
-    
+    <!-- =========================
+         ✅ NUEVA SECCIÓN: ABONOS
+         ========================= -->
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 4;">
+          <h3>
+            <span>Total abonado (mes seleccionado)</span>
+            <span class="sub" id="sub_abonos_mes">—</span>
+          </h3>
+          <div class="kpi">
+            <div class="k">Total abonos</div>
+            <div class="v mono">$ <span id="k_abonos_mes">0</span></div>
+            <div class="s">Suma de todos los abonos del mes</div>
+          </div>
+        </div>
 
         <div class="card" style="grid-column: span 8;">
           <h3>
@@ -1578,9 +1574,6 @@
       await cargarDetalleFiltro();
       await cargarTotalMesActual();
 
-      // ✅ ABONOS
-      await cargarTotalAbonosMes();
-
       const kpi = calcKPIs();
       renderTablaFacturas();
       renderCharts(kpi);
@@ -1707,9 +1700,6 @@
       $("f_profesional").addEventListener("change", refrescarDashboard);
       $("f_metodo").addEventListener("change", refrescarDashboard);
 
-      // ✅ ABONOS POR DÍA
-      $("fecha_abonos_dia").addEventListener("change", cargarAbonosPorDia);
-
       $("btn-show-all").addEventListener("click", ()=>{ state._view="all"; renderTablaFacturas(); });
       $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
       $("btn-show-paid").addEventListener("click", ()=>{ state._view="paid"; renderTablaFacturas(); });
@@ -1765,6 +1755,10 @@
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
