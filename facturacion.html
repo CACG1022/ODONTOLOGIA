@@ -2364,6 +2364,38 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
     } else {
       init();
     }
+   /* =====================================================
+   ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
+   (?paciente_cedula=)
+   ===================================================== */
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("paciente_cedula");
+
+  if (!cedula) return;
+
+  window.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("paciente_cedula");
+    if (!input) {
+      console.warn("❌ Input paciente_cedula no encontrado");
+      return;
+    }
+
+    // Colocar cédula automáticamente
+    input.value = cedula;
+
+    // 🔥 Ejecutar la función REAL de búsqueda
+    setTimeout(() => {
+      if (typeof buscarFactura === "function") {
+        buscarFactura();
+      } else if (typeof buscarFacturacion === "function") {
+        buscarFacturacion();
+      } else {
+        console.error("❌ No se encontró función de búsqueda de facturación");
+      }
+    }, 300);
+  });
+})();    
   </script>
 </body>
 </html>
