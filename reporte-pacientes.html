@@ -280,7 +280,7 @@
 <body>
   <div class="topbar">
     <div class="brand">
-      <h1>CLÍNICA ODONTOLÓGICA — Reporte de pacientes2</h1>
+      <h1>CLÍNICA ODONTOLÓGICA — Reporte de pacientes3</h1>
     </div>
     <div class="meta">
       <div class="chip">
@@ -396,14 +396,10 @@
                   <th>Nombre</th>
                   <th style="width:200px;">Teléfono</th>
                   <th style="width:260px;">Correo</th>
-                   <th style="width:140px;">Historia clínica</th>
-                   <th style="width:160px;">Plan tratamiento</th>
-                   <th style="width:140px;">Facturación</th>
-                   <th style="width:140px;">Evoluciones</th>
                 </tr>
               </thead>
               <tbody id="tbody_pacientes">
-                <tr><td colspan="8" class="empty">Cargando...</td></tr>
+                <tr><td colspan="4" class="empty">Cargando...</td></tr>
               </tbody>
             </table>
           </div>
@@ -678,7 +674,7 @@
       $("sub_table").textContent = `${rows.length} registro(s)`;
 
       if (!rows.length){
-        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay pacientes para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay pacientes para mostrar.</td></tr>`;
         return;
       }
 
@@ -883,6 +879,74 @@
       }
     });
   </script>
+
+<script>
+/* =========================================================
+   🔧 OVERRIDE SEGURO – BOTONES "VER" POR PACIENTE
+   No elimina ni modifica lógica existente.
+   Sobrescribe renderTabla y ajusta headers dinámicamente.
+   ========================================================= */
+
+(function(){
+
+  function ensureHeaders(){
+    const theadRow = document.querySelector("table thead tr");
+    if (!theadRow) return;
+
+    const titles = [
+      "Historia clínica",
+      "Plan tratamiento",
+      "Facturación",
+      "Evoluciones"
+    ];
+
+    // Si ya existen, no duplicar
+    if (theadRow.children.length >= 8) return;
+
+    titles.forEach(t => {
+      const th = document.createElement("th");
+      th.textContent = t;
+      th.style.width = "140px";
+      theadRow.appendChild(th);
+    });
+  }
+
+  window.renderTabla = function(rows){
+    const tbody = document.getElementById("tbody_pacientes");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    document.getElementById("sub_table").textContent = `${rows.length} registro(s)`;
+
+    if (!rows.length){
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay pacientes para mostrar.</td></tr>`;
+      return;
+    }
+
+    for (const p of rows){
+      const tr = document.createElement("tr");
+      const ced = encodeURIComponent(p.documento ?? "");
+
+      tr.innerHTML = `
+        <td class="mono">${escapeHtml(p.documento ?? "—")}</td>
+        <td>${escapeHtml(p.nombre ?? "—")}</td>
+        <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
+        <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
+
+        <td><button class="btn small primary" onclick="location.href='historia-clinica.html?cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='facturacion.html?cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='evoluciones.html?cedula=${ced}'">ver</button></td>
+      `;
+
+      tbody.appendChild(tr);
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", ensureHeaders);
+})();
+</script>
+
 </body>
 </html>
 
