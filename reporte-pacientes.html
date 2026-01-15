@@ -886,10 +886,11 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
         <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
         <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
 
-        <td><button class="btn small primary" onclick="location.href='historia-clinica.html?buscar_cedula=${ced}'">ver</button></td>
-        <td><button class="btn small" onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
-        <td><button class="btn small" onclick="location.href='facturacion.html?paciente_cedula=${ced}'">ver</button></td>
-        <td><button class="btn small" onclick="location.href='evoluciones.html?auto=1&cedula=${ced}'">ver</button></td>
+        <td><button class="btn small primary" onclick="window.open('historia-clinica.html?buscar_cedula=${ced}', '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('plandetratamiento.html?cedula=${ced}', '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('facturacion.html?paciente_cedula=${ced}', '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('evoluciones.html?auto=1&cedula=${ced}', '_blank')">ver</button></td>
+
       `;
 
       tbody.appendChild(tr);
