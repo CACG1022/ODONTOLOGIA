@@ -827,7 +827,20 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       } else {
         lines.push('• Sin procedimientos asignados.');
       }
-      odontoResumen.value = lines.join('\n');
+      odontoResumen.value = (() => {
+      // 🔁 Enviar a n8n EXACTAMENTE como se muestra en pantalla (1 línea = 1 procedimiento)
+      let lines = [];
+      if(items.length){
+        items.forEach(it=>{
+          it.arr.forEach(p=>{
+            lines.push(`Diente ${it.tooth}: ${p.label} — $${(p.price||0).toLocaleString('es-CO')}`);
+          });
+        });
+      } else {
+        lines.push('Sin procedimientos asignados.');
+      }
+      return lines.join('\n');
+    })();
 
       const subt = items.reduce((s,it)=>s+it.total,0);
       const [ppName, ppPrice] = (procedimiento.value || "No aplica|0").split("|");
@@ -1331,4 +1344,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
+
+
 
