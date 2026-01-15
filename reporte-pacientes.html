@@ -5,128 +5,913 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Reporte de Pacientes - Clínica Odontológica</title>
 
-  <!-- Supabase -->
+  <!-- ✅ Supabase (UMD) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
-  <!-- Chart.js (se mantiene, aunque gráficos estén deshabilitados) -->
+  <!-- ✅ Chart.js (gráficas) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
-  <!-- Excel -->
+  <!-- ✅ Excel export (SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
-      --bg:#f3f5f7;--card:#fff;--text:#1f2a37;--muted:#6b7280;
-      --line:#e5e7eb;--brand:#1f6aa5;--brand2:#114a75;
-      --danger:#b42318;--shadow:0 10px 30px rgba(16,24,40,.08);
-      --radius:14px;
+      --bg: #f3f5f7;
+      --card: #ffffff;
+      --text: #1f2a37;
+      --muted: #6b7280;
+      --line: #e5e7eb;
+      --brand: #1f6aa5;
+      --brand2: #114a75;
+      --danger: #b42318;
+      --shadow: 0 10px 30px rgba(16,24,40,.08);
+      --radius: 14px;
+      --ok: #16a34a;
+      --warn: #f59e0b;
     }
-    *{box-sizing:border-box}
-    body{margin:0;font-family:Arial,sans-serif;background:var(--bg);color:var(--text);padding:18px}
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 18px;
+    }
 
-    .container{max-width:1200px;margin:0 auto;background:#fff;border:1px solid var(--line);
-      border-radius:var(--radius);box-shadow:var(--shadow)}
+    .topbar{
+      max-width: 1200px;
+      margin: 0 auto 14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+    .brand{ display:flex; align-items:center; gap:10px; }
+    .brand h1{ font-size: 16px; margin:0; }
 
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px;border-bottom:1px solid var(--line);font-size:12.5px;text-align:left}
-    th{background:#fafafa;color:var(--muted);position:sticky;top:0}
+    .meta{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+      align-items:center;
+    }
 
-    .mono{font-family:ui-monospace,monospace}
-    .btn{padding:6px 10px;border-radius:8px;border:1px solid var(--line);cursor:pointer}
-    .btn.primary{background:var(--brand);color:#fff}
+    .chip{
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-size: 12px;
+      color: var(--muted);
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      white-space:nowrap;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      line-height:1.2;
+    }
+    .chip b{ color: var(--text); }
+    .chip .line{ display:flex; gap:6px; align-items:baseline; }
+    .chip .line span{ color: var(--muted); }
+    .chip .line small{ color: var(--muted); font-weight:700; }
 
-    /* ===== AJUSTE RESPONSIVE SOLO TABLA ===== */
-    .table-responsive{
+    .btn{
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: 800;
+      color: var(--text);
+    }
+    .btn:hover{ filter: brightness(.98); }
+    .btn.primary{
+      background: var(--brand);
+      color:#fff;
+      border-color: var(--brand);
+    }
+    .btn.primary:hover{ background: var(--brand2); border-color: var(--brand2); }
+    .btn.danger{ color: var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding: 8px 10px; font-size: 12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+
+    .container{
+      max-width: 100%;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .header{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      background:#fff;
+      flex-wrap:wrap;
+    }
+    .header .title{ font-weight:900; font-size: 14px; }
+
+    .section{
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      background: #fff;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .ctrl label{
+      display:block;
+      font-size:12px;
+      color: var(--muted);
+      margin-bottom:6px;
+      font-weight:700;
+    }
+    input, select{
       width:100%;
-      overflow-x:auto;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      font-size: 14px;
+      background:#fff;
     }
-    .table-responsive table{
-      width:100%;
-      min-width:1100px;
+
+    .kpis{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
     }
-    .col-nombre{min-width:320px}
-    .col-acciones{white-space:nowrap;text-align:center}
+    .kpi{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      min-height: 86px;
+    }
+    .kpi .k{ color: var(--muted); font-size: 12px; font-weight: 800; }
+    .kpi .v{ margin-top: 8px; font-size: 18px; font-weight: 900; }
+    .kpi .s{ margin-top: 6px; color: var(--muted); font-size: 12px; }
+
+    .cards{
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 10px;
+    }
+    .card{
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background:#fff;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      padding: 12px;
+      overflow:hidden;
+    }
+    .card h3{
+      margin:0 0 10px 0;
+      font-size: 13px;
+      font-weight: 900;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+    .sub{
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    
+    table{ width:100%; border-collapse: collapse; table-layout: fixed; }
+    th:nth-child(2), td:nth-child(2){ width: 30%; } /* Nombre más amplio */
+    th:nth-child(1), td:nth-child(1){ width: 12%; }
+    th:nth-child(3), td:nth-child(3){ width: 14%; }
+    th:nth-child(4), td:nth-child(4){ width: 24%; }
+
+    th, td{
+      padding: 10px 10px;
+      border-bottom: 1px solid var(--line);
+      text-align:left;
+      vertical-align: middle;
+      font-size: 12.5px;
+    }
+    th{
+      font-size: 12px;
+      color: var(--muted);
+      background: #fafafa;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+    .empty{ color: var(--muted); text-align:center; padding: 18px; }
+
+    .footer{
+      padding: 12px 16px;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: #fff;
+    }
+
+    #toast{
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: #fff;
+      box-shadow: var(--shadow);
+      font-weight: 800;
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      max-width: 520px;
+      white-space: pre-wrap;
+      z-index: 99;
+    }
+    #toast.show{ opacity: 1; transform: translateY(0); }
+    #toast[data-type="ok"]{ border-color: #b7e4c7; }
+    #toast[data-type="err"]{ border-color: #f2c6c6; }
+    #toast[data-type="warn"]{ border-color: #ffe7b3; }
+
+    .row-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:flex-end;
+    }
+
+    .blocked{
+      max-width: 1200px;
+      margin: 0 auto 12px;
+      background: #fff;
+      border: 1px solid #fde2e2;
+      color: #991b1b;
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: 0 8px 20px rgba(0,0,0,.06);
+      display:none;
+      white-space: pre-wrap;
+      font-weight: 800;
+    }
+
+    @media (max-width: 1050px){
+      .kpis{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px){
+      .kpis{ grid-template-columns: 1fr; }
+      .header{ align-items:flex-start; flex-direction:column; }
+    }
   </style>
 </head>
 
 <body>
-
-<div class="container">
-  <h2 style="padding:16px">Listado de pacientes</h2>
-
-  <div class="table-responsive">
-    <table>
-      <colgroup>
-        <col style="width:140px">
-        <col class="col-nombre">
-        <col style="width:160px">
-        <col style="width:260px">
-        <col class="col-acciones">
-        <col class="col-acciones">
-        <col class="col-acciones">
-        <col class="col-acciones">
-      </colgroup>
-      <thead>
-        <tr>
-          <th>Cédula</th>
-          <th>Nombre</th>
-          <th>Teléfono</th>
-          <th>Correo</th>
-          <th>Historia clínica</th>
-          <th>Plan</th>
-          <th>Facturación</th>
-          <th>Evoluciones</th>
-        </tr>
-      </thead>
-      <tbody id="tbody_pacientes">
-        <tr><td colspan="8">Cargando...</td></tr>
-      </tbody>
-    </table>
+  <div class="topbar">
+    <div class="brand">
+      <h1>CLÍNICA ODONTOLÓGICA — Reporte de pacientes3</h1>
+    </div>
+    <div class="meta">
+      <div class="chip">
+        <div class="line"><span>Usuario:</span> <b id="user-email">—</b></div>
+        <div class="line"><small>Rol:</small> <b id="user-role">—</b></div>
+      </div>
+      <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+      <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
+    </div>
   </div>
-</div>
 
-<script>
-const SUPABASE_URL="https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+  <div id="blocked" class="blocked"></div>
 
-const supabase = supabase.createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+  <div class="container" id="app">
+    <div class="header">
+      <div class="title">Dashboard de pacientes</div>
+      <div class="row-actions">
+        <button class="btn primary" id="btn-refresh" type="button">🔄 Actualizar</button>
+        <button class="btn" id="btn-export" type="button">⬇ Excel</button>
+      </div>
+    </div>
 
-async function cargar(){
-  const {data,error}=await supabase
-    .from("HISTORIAS CLINICAS")
-    .select('"Numero de Identificacion","Nombre y apellido",paciente_cel,paciente_email')
-    .limit(1000);
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Búsqueda (nombre / cédula / teléfono / correo)</label>
+          <input id="q" type="text" placeholder="Ej: 102295..., Juan, 300..., correo@...">
+        </div>
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Solo con correo</label>
+          <select id="f_con_correo">
+            <option value="">— Todos —</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Solo con teléfono</label>
+          <select id="f_con_telefono">
+            <option value="">— Todos —</option>
+            <option value="si">Sí</option>
+            <option value="no">No</option>
+          </select>
+        </div>
+      </div>
 
-  const tbody=document.getElementById("tbody_pacientes");
-  tbody.innerHTML="";
+      <div style="margin-top:10px; color:var(--muted); font-size:12px;" class="mono">
+        Fuente: tabla <b>HISTORIAS CLINICAS</b> (campos: “Numero de Identificacion”, “Nombre y apellido”, “paciente_cel”, “paciente_email”).
+      </div>
+    </div>
 
-  if(error){
-    tbody.innerHTML="<tr><td colspan='8'>Error cargando datos</td></tr>";
-    return;
-  }
+    <div class="section">
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">Pacientes (resultado)</div>
+          <div class="v mono"><span id="k_total">0</span></div>
+          <div class="s">Según filtros actuales</div>
+        </div>
 
-  data.forEach(p=>{
-    const ced=encodeURIComponent(p["Numero de Identificacion"]);
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td class="mono">${p["Numero de Identificacion"]||""}</td>
-      <td>${p["Nombre y apellido"]||""}</td>
-      <td class="mono">${p.paciente_cel||""}</td>
-      <td class="mono">${p.paciente_email||""}</td>
-      <td><button class="btn primary" onclick="location.href='historia-clinica.html?buscar_cedula=${ced}'">ver</button></td>
-      <td><button class="btn" onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
-      <td><button class="btn" onclick="location.href='facturacion.html?paciente_cedula=${ced}'">ver</button></td>
-      <td><button class="btn" onclick="location.href='evoluciones.html?cedula_paciente=${ced}'">ver</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
+        <div class="kpi">
+          <div class="k">Con correo</div>
+          <div class="v mono"><span id="k_con_correo">0</span></div>
+          <div class="s"><span id="k_con_correo_pct">0%</span> del resultado</div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">Con teléfono</div>
+          <div class="v mono"><span id="k_con_tel">0</span></div>
+          <div class="s"><span id="k_con_tel_pct">0%</span> del resultado</div>
+        </div>
+
+        <div class="kpi">
+          <div class="k">Sin correo y sin teléfono</div>
+          <div class="v mono"><span id="k_sin_contacto">0</span></div>
+          <div class="s">Recomendación: completar datos</div>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="section">
+      <div class="cards">
+        <div class="card" style="grid-column: span 12;">
+          <h3>
+            <span>Listado de pacientes</span>
+            <span class="sub" id="sub_table">—</span>
+          </h3>
+
+          <div style="max-height: 55vh; overflow:auto; border:1px solid var(--line); border-radius: 12px;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width:190px;">Cédula</th>
+                  <th>Nombre</th>
+                  <th style="width:200px;">Teléfono</th>
+                  <th style="width:260px;">Correo</th>
+                </tr>
+              </thead>
+              <tbody id="tbody_pacientes">
+                <tr><td colspan="4" class="empty">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="mono" style="margin-top:10px; color:var(--muted);">
+            Nota: si no ves datos, revisa RLS/policies de la tabla <b>HISTORIAS CLINICAS</b>.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="mono" id="status"></div>
+      <div>© <span id="year"></span></div>
+    </div>
+  </div>
+
+  <div id="toast" data-type="ok"></div>
+
+  <script>
+    // =========================
+    // ✅ DEBUG GLOBAL
+    // =========================
+    window.addEventListener("error", (e) => {
+      console.error("JS ERROR:", e?.error || e?.message || e);
+      try{
+        const el = document.getElementById("toast");
+        if (el){
+          el.textContent = "Error JS: revisa consola (F12)\n" + (e?.message || "Error");
+          el.dataset.type = "err";
+          el.classList.add("show");
+          clearTimeout(window.__t);
+          window.__t = setTimeout(()=> el.classList.remove("show"), 4500);
+        }
+      }catch(_){}
+    });
+
+    // =========================
+    // ✅ SUPABASE CLIENT (UMD)
+    // =========================
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+
+    if (!window.supabase){
+      console.error("Supabase UMD no cargó (CDN bloqueado?)");
+    }
+
+    const supabase = window.supabase?.createClient
+      ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+      : null;
+
+    // =========================
+    // ✅ CONFIG (MISMAS URLS)
+    // =========================
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+    // ✅ ESTE DEBE COINCIDIR con modulos_permisos.modulo
+    const MODULO = "reporte_pacientes";
+
+    // =========================
+    // ✅ TABLA PACIENTES (según lo que ya usas en Agendamientos)
+    // =========================
+    const TABLA_HISTORIAS = "HISTORIAS CLINICAS";
+    const HIST_COL_DOCUMENTO = "Numero de Identificacion";
+    const HIST_COL_NOMBRE = "Nombre y apellido";
+    const HIST_COL_TELEFONO = "paciente_cel";
+    const HIST_COL_CORREO = "paciente_email";
+
+    const state = {
+      session: null,
+      role: null,
+      pacientes: [],
+      charts: { contact:null, dist:null }
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
+    }
+    function setStatus(msg){
+      const el = $("status");
+      if (el) el.textContent = msg || "";
+    }
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function normalizeText(t){ return String(t || "").trim(); }
+    function hasValue(v){ return normalizeText(v).length > 0; }
+
+    function showBlocked(msg){
+      const box = $("blocked");
+      const app = $("app");
+      if (box){
+        box.style.display = "block";
+        box.textContent = msg || "⛔ Acceso denegado.";
+      }
+      if (app) app.style.display = "none";
+    }
+    function hideBlocked(){
+      const box = $("blocked");
+      const app = $("app");
+      if (box) box.style.display = "none";
+      if (app) app.style.display = "block";
+    }
+
+    // =========================
+    // ✅ AUTH + ROLE
+    // =========================
+    async function cargarRolActualPorId(userId){
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", userId)
+          .single();
+
+        if (error) throw error;
+
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        state.role = role || "user";
+        $("user-role").textContent = state.role;
+        return state.role;
+      }catch(err){
+        console.error("No se pudo leer rol en profiles:", err);
+        state.role = "user";
+        $("user-role").textContent = "user";
+        return "user";
+      }
+    }
+
+    // =========================
+    // ✅ PERMISOS POR MÓDULO (modulos_permisos)
+    // =========================
+    async function validarPermisoModulo(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return { ok:false };
+      }
+
+      // rol desde profiles (id)
+      const rol = await cargarRolActualPorId(session.user.id);
+      const rolKey = String(rol || "user").toLowerCase().trim(); // admin/doctor/auxiliar/paciente/user
+
+      // leer permisos del módulo
+      const { data: permiso, error: ePerm } = await supabase
+        .from("modulos_permisos")
+        .select("admin, doctor, auxiliar, paciente, modulo")
+        .eq("modulo", MODULO)
+        .maybeSingle();
+
+      if (ePerm){
+        console.error("❌ Error leyendo modulos_permisos:", ePerm);
+        showBlocked("Error leyendo permisos del módulo.\n" + (ePerm.message || ePerm));
+        toast("Error permisos (ver consola)", "err");
+        return { ok:false };
+      }
+
+      if (!permiso){
+        console.warn("⚠️ No existe fila en modulos_permisos para modulo =", MODULO);
+        showBlocked("Módulo no configurado en permisos.\n(" + MODULO + ")");
+        toast("Módulo no configurado en permisos.", "warn");
+        return { ok:false };
+      }
+
+      // validar permiso
+      if (!permiso[rolKey]){
+        showBlocked("⛔ No tienes permiso para acceder a este módulo.\nMódulo: " + MODULO + "\nRol: " + rolKey);
+        toast("⛔ Sin permiso para este módulo", "err");
+        window.location.href = INDEX_URL;
+        return { ok:false };
+      }
+
+      console.log("✅ Acceso permitido a:", MODULO, "Rol:", rolKey);
+      hideBlocked();
+      return { ok:true, session, rol: rolKey };
+    }
+
+    function bindAuthListener(){
+      if (!supabase) return;
+      supabase.auth.onAuthStateChange((event, session) => {
+        if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+          window.location.href = LOGIN_URL;
+        }
+      });
+    }
+
+    async function cerrarSesion(){
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    }
+
+    // =========================
+    // ✅ DATA LOADERS (PACIENTES)
+    // =========================
+    async function cargarPacientes(){
+      setStatus("Cargando pacientes...");
+      try{
+        // Selección con comillas por columnas con espacios
+        const selectCols = `"${HIST_COL_DOCUMENTO}","${HIST_COL_NOMBRE}",${HIST_COL_TELEFONO},${HIST_COL_CORREO}`;
+
+        // ⚠️ Si tienes muchos registros, puedes paginar o aumentar el limit
+        const { data, error } = await supabase
+          .from(TABLA_HISTORIAS)
+          .select(selectCols)
+          .limit(5000);
+
+        if (error) throw error;
+
+        const rows = (data || []).map(r => ({
+          documento: r[HIST_COL_DOCUMENTO],
+          nombre: r[HIST_COL_NOMBRE],
+          telefono: r[HIST_COL_TELEFONO],
+          correo: r[HIST_COL_CORREO],
+        }));
+
+        state.pacientes = rows;
+        setStatus("");
+      } catch(err){
+        console.error("cargarPacientes:", err);
+        setStatus("");
+        toast("No se pudieron cargar pacientes (posible RLS o columnas):\n" + (err?.message || "Error"), "err");
+        state.pacientes = [];
+      }
+    }
+
+    // =========================
+    // ✅ FILTROS + RENDER
+    // =========================
+    function aplicarFiltros(){
+      const q = normalizeText($("q").value).toLowerCase();
+      const fCorreo = ($("f_con_correo").value || "").trim();
+      const fTel = ($("f_con_telefono").value || "").trim();
+
+      let rows = [...(state.pacientes || [])];
+
+      if (q){
+        rows = rows.filter(p => {
+          const doc = String(p.documento ?? "").toLowerCase();
+          const nom = String(p.nombre ?? "").toLowerCase();
+          const tel = String(p.telefono ?? "").toLowerCase();
+          const cor = String(p.correo ?? "").toLowerCase();
+          return doc.includes(q) || nom.includes(q) || tel.includes(q) || cor.includes(q);
+        });
+      }
+
+      if (fCorreo === "si") rows = rows.filter(p => hasValue(p.correo));
+      if (fCorreo === "no") rows = rows.filter(p => !hasValue(p.correo));
+
+      if (fTel === "si") rows = rows.filter(p => hasValue(p.telefono));
+      if (fTel === "no") rows = rows.filter(p => !hasValue(p.telefono));
+
+      return rows;
+    }
+
+    function renderTabla(rows){
+      const tbody = $("tbody_pacientes");
+      tbody.innerHTML = "";
+
+      $("sub_table").textContent = `${rows.length} registro(s)`;
+
+      if (!rows.length){
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay pacientes para mostrar.</td></tr>`;
+        return;
+      }
+
+      for (const p of rows){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(p.documento ?? "—")}</td>
+          <td>${escapeHtml(p.nombre ?? "—")}</td>
+          <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
+          <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    function calcKPIs(rows){
+      const total = rows.length;
+
+      const conCorreo = rows.filter(p => hasValue(p.correo)).length;
+      const conTel = rows.filter(p => hasValue(p.telefono)).length;
+      const sinContacto = rows.filter(p => !hasValue(p.correo) && !hasValue(p.telefono)).length;
+
+      $("k_total").textContent = String(total);
+      $("k_con_correo").textContent = String(conCorreo);
+      $("k_con_tel").textContent = String(conTel);
+      $("k_sin_contacto").textContent = String(sinContacto);
+
+      const pct = (a,b)=> (b>0 ? Math.round((a/b)*100) : 0);
+      $("k_con_correo_pct").textContent = pct(conCorreo, total) + "%";
+      $("k_con_tel_pct").textContent = pct(conTel, total) + "%";
+
+      const sc = $("sub_contact");
+if (sc) sc.textContent = `Total: ${total}`;
+
+const sd = $("sub_dist");
+if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
+
+
+      return { total, conCorreo, conTel, sinContacto };
+    }
+
+    function destroyChart(ch){
+      try{ if (ch) ch.destroy(); } catch(e) {}
+    }
+
+    function renderCharts(){
+  // 🔕 Gráficos deshabilitados intencionalmente
 }
 
-document.addEventListener("DOMContentLoaded",cargar);
+    // =========================
+    // ✅ EXPORT EXCEL
+    // =========================
+    function exportarExcel(){
+      try{
+        const rows = aplicarFiltros();
+        if (!rows.length){
+          toast("No hay pacientes para exportar con el filtro actual.", "warn");
+          return;
+        }
+
+        const q = normalizeText($("q").value);
+        const fCorreo = ($("f_con_correo").value || "").trim();
+        const fTel = ($("f_con_telefono").value || "").trim();
+
+        const data = rows.map(p => ({
+          "Cédula": p.documento ?? "",
+          "Nombre": p.nombre ?? "",
+          "Teléfono": p.telefono ?? "",
+          "Correo": p.correo ?? ""
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(data);
+
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Pacientes - (Filtro)"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Búsqueda:", q || "(vacío)"],
+          ["Solo con correo:", fCorreo || "(todos)"],
+          ["Solo con teléfono:", fTel || "(todos)"],
+          ["Cantidad:", rows.length]
+        ]);
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Pacientes");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+
+        const filename = `reporte_pacientes_${new Date().toISOString().slice(0,10)}.xlsx`;
+        XLSX.writeFile(wb, filename);
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+      }
+    }
+
+    // =========================
+    // ✅ DASHBOARD
+    // =========================
+    async function refrescarDashboard(){
+      await cargarPacientes();
+      const rows = aplicarFiltros();
+      const kpi = calcKPIs(rows);
+      renderTabla(rows);
+      renderCharts(kpi);
+
+      if ((state.pacientes || []).length === 0){
+        setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
+      } else {
+        setStatus("");
+      }
+    }
+
+    // =========================
+    // ✅ INIT
+    // =========================
+    async function init(){
+      $("year").textContent = new Date().getFullYear();
+
+      $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+      $("btn-logout").addEventListener("click", cerrarSesion);
+
+      $("btn-refresh").addEventListener("click", refrescarDashboard);
+      $("btn-export").addEventListener("click", exportarExcel);
+
+      $("q").addEventListener("input", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+      $("f_con_correo").addEventListener("change", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+      $("f_con_telefono").addEventListener("change", () => {
+        const rows = aplicarFiltros();
+        const kpi = calcKPIs(rows);
+        renderTabla(rows);
+        renderCharts(kpi);
+      });
+
+      bindAuthListener();
+
+      if (!supabase){
+        showBlocked("No cargó Supabase (CDN). Revisa tu conexión o bloqueadores.");
+        toast("No cargó Supabase (CDN)", "err");
+        return;
+      }
+
+      // ✅ Guard por permisos del módulo
+      const guard = await validarPermisoModulo();
+      if (!guard.ok) return;
+
+      state.session = guard.session;
+      $("user-email").textContent = (guard.session.user?.email || "Usuario").toString();
+
+      await refrescarDashboard();
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      try{
+        init();
+      }catch(err){
+        console.error("INIT FAILED:", err);
+        toast("Falló init: revisa consola (F12)\n" + (err?.message || "Error"), "err");
+      }
+    });
+  </script>
+
+<script>
+/* =========================================================
+   🔧 OVERRIDE SEGURO – BOTONES "VER" POR PACIENTE
+   No elimina ni modifica lógica existente.
+   Sobrescribe renderTabla y ajusta headers dinámicamente.
+   ========================================================= */
+
+(function(){
+
+  function ensureHeaders(){
+    const theadRow = document.querySelector("table thead tr");
+    if (!theadRow) return;
+
+    const titles = [
+      "Historia clínica",
+      "Plan tratamiento",
+      "Facturación",
+      "Evoluciones"
+    ];
+
+    // Si ya existen, no duplicar
+    if (theadRow.children.length >= 8) return;
+
+    titles.forEach(t => {
+      const th = document.createElement("th");
+      th.textContent = t;
+      th.style.width = "140px";
+      theadRow.appendChild(th);
+    });
+  }
+
+  window.renderTabla = function(rows){
+    const tbody = document.getElementById("tbody_pacientes");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    document.getElementById("sub_table").textContent = `${rows.length} registro(s)`;
+
+    if (!rows.length){
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay pacientes para mostrar.</td></tr>`;
+      return;
+    }
+
+    for (const p of rows){
+      const tr = document.createElement("tr");
+      const ced = encodeURIComponent(p.documento ?? "");
+
+      tr.innerHTML = `
+        <td class="mono">${escapeHtml(p.documento ?? "—")}</td>
+        <td>${escapeHtml(p.nombre ?? "—")}</td>
+        <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
+        <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
+
+        <td><button class="btn small primary" onclick="location.href='historia-clinica.html?buscar_cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='plandetratamiento.html?cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='facturacion.html?paciente_cedula=${ced}'">ver</button></td>
+        <td><button class="btn small" onclick="location.href='evoluciones.html?auto=1&cedula=${ced}'">ver</button></td>
+      `;
+
+      tbody.appendChild(tr);
+    }
+  };
+
+  document.addEventListener("DOMContentLoaded", ensureHeaders);
+})();
+
+  
 </script>
 
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
 
