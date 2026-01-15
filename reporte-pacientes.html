@@ -426,14 +426,16 @@
   <script>
     
     // =========================
-    // ✅ LINKS A MÓDULOS POR PACIENTE
+    // ✅ BOTONES VER POR PACIENTE
     // =========================
     function linkBtn(url, cedula){
-      return `<button class="btn small" onclick="window.open('${url}?cedula=${cedula}', '_blank')">ver</button>`;
+      return `<button class="btn small primary" type="button"
+        onclick="window.location.href='${url}?cedula=${cedula}'">ver</button>`;
     }
 
     // =========================
     // ✅ DEBUG GLOBAL
+
     // =========================
     window.addEventListener("error", (e) => {
       console.error("JS ERROR:", e?.error || e?.message || e);
@@ -686,7 +688,7 @@
       $("sub_table").textContent = `${rows.length} registro(s)`;
 
       if (!rows.length){
-        tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay pacientes para mostrar.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay pacientes para mostrar.</td></tr>`;
         return;
       }
 
@@ -893,6 +895,8 @@
   </script>
 </body>
 </html>
+
+
 
 
 
