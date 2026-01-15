@@ -3516,6 +3516,39 @@ function _evolucionesToHTML(evos){
   const isFS = modal.classList.contains("fullscreen");
   if (btn) btn.textContent = isFS ? "Restaurar 🗗" : "Maximizar ⛶";
 }
+/* =====================================================
+   ✅ AUTO-BÚSQUEDA DESDE URL (?buscar_cedula=)
+   ===================================================== */
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("buscar_cedula");
+
+  if (!cedula) return;
+
+  // Esperar a que el DOM y scripts estén listos
+  window.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("buscar_cedula");
+    if (!input) {
+      console.warn("Input buscar_cedula no encontrado");
+      return;
+    }
+
+    // Setear valor
+    input.value = cedula;
+
+    // 🔥 Disparar búsqueda automática
+    setTimeout(() => {
+      if (typeof buscarHistoriaClinica === "function") {
+        buscarHistoriaClinica();
+      } else if (typeof buscarPacienteEnHistoria === "function") {
+        buscarPacienteEnHistoria(true);
+      } else {
+        console.warn("No se encontró función de búsqueda automática");
+      }
+    }, 300);
+  });
+})();
+  
 window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
 
 </script>
