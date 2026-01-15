@@ -2364,7 +2364,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
     } else {
       init();
     }
-   /* =====================================================
+ /* =====================================================
    ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
    (?paciente_cedula=)
    ===================================================== */
@@ -2374,6 +2374,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
 
   if (!cedula) return;
 
+  // Esperar a que TODO esté inicializado
   window.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("paciente_cedula");
     if (!input) {
@@ -2381,21 +2382,19 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
       return;
     }
 
-    // Colocar cédula automáticamente
+    // Setear la cédula
     input.value = cedula;
 
-    // 🔥 Ejecutar la función REAL de búsqueda
+    // ⏳ Esperar a que Supabase + listeners estén listos
     setTimeout(() => {
-      if (typeof buscarFactura === "function") {
-        buscarFactura();
-      } else if (typeof buscarFacturacion === "function") {
-        buscarFacturacion();
+      if (typeof buscarPacienteEnHistoria === "function") {
+        buscarPacienteEnHistoria(true); // ← ESTA ES LA CLAVE
       } else {
-        console.error("❌ No se encontró función de búsqueda de facturación");
+        console.error("❌ buscarPacienteEnHistoria no existe");
       }
-    }, 300);
+    }, 600);
   });
-})();    
+})();
   </script>
 </body>
 </html>
