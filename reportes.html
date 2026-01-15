@@ -1601,7 +1601,8 @@
     // ✅ ABONOS (MES Y POR DÍA)
     // =========================
     async function cargarTotalAbonosMes(){
-      const desde = ($("fecha_desde").value || "").slice(0,7) + "-01";
+      const base = ($("fecha_desde").value || hoyISO()).slice(0,7);
+      const desde = base + "-01";
       const d = new Date(desde + "T00:00:00");
       const hasta = lastDayOfMonthISO(d);
 
@@ -1609,8 +1610,8 @@
         const { data, error } = await supabase
           .from("abonos")
           .select("monto")
-          .gte("fecha", dateStartISO(desde))
-          .lte("fecha", dateEndISO(hasta));
+          .gte("fecha", desde)
+          .lte("fecha", hasta);
 
         if (error) throw error;
 
@@ -1637,10 +1638,17 @@
       try{
         const { data, error } = await supabase
           .from("abonos")
-          .select("fecha, monto, factura_id, facturas(numero_factura, paciente_nombre)")
-          .gte("fecha", dateStartISO(fecha))
-          .lte("fecha", dateEndISO(fecha))
-          .order("fecha", { ascending:true });
+          .select(`
+            fecha,
+            monto,
+            factura_id,
+            facturas:factura_id (
+              numero_factura,
+              paciente_nombre
+            )
+          `)
+          .eq("fecha", fecha)
+          .order("created_at", { ascending:true });
 
         if (error) throw error;
 
@@ -1747,6 +1755,11 @@
   </script>
 </body>
 </html>
+
+
+
+
+
 
 
 
