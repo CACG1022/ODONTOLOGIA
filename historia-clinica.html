@@ -1291,10 +1291,10 @@ Fecha: {{FECHA}}
 
 <script>
   // ==============================
-  // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (5 min)
+  // CERRAR SESIÓN + AUTO CIERRE POR INACTIVIDAD (60 min)
   // ==============================
   const LOGIN_URL = window.APP_URLS?.LOGIN || "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-  const INACTIVIDAD_MS = 5 * 60 * 1000;
+  const INACTIVIDAD_MS = 60 * 60 * 1000;
 
   async function cerrarSesion(motivo = "") {
     try {
