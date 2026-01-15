@@ -1339,18 +1339,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   // 🧹🔥 CLAVE: BORRAR DESPUÉS DE USAR
   localStorage.removeItem("paciente_plan_tratamiento");
 });
-// === INTEGRACIÓN FACTURACIÓN ===
-document.getElementById('btn-guardar').addEventListener('click', ()=>{
-  const payload = {
-    cedula: document.getElementById('cedula').value,
-    nombre: document.getElementById('nombre').value,
-    correo: document.getElementById('correo').value,
-    procedimientos: document.getElementById('odontograma-json').value,
-    resumen: document.getElementById('odontograma-resumen').value,
-    total: document.getElementById('input-total').value
-  };
-  localStorage.setItem('plan_'+payload.cedula, JSON.stringify(payload));
-});
+
+
   </script>
 </body>
 </html>
