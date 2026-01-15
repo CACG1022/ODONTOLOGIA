@@ -360,25 +360,6 @@
       </div>
     </div>
 
-    <div class="section">
-      <div class="cards">
-        <div class="card" style="grid-column: span 6;">
-          <h3>
-            <span>Completitud de contacto</span>
-            <span class="sub" id="sub_contact">—</span>
-          </h3>
-          <canvas id="chart_contact" height="140"></canvas>
-        </div>
-
-        <div class="card" style="grid-column: span 6;">
-          <h3>
-            <span>Distribución (correo / teléfono)</span>
-            <span class="sub" id="sub_dist">—</span>
-          </h3>
-          <canvas id="chart_dist" height="140"></canvas>
-        </div>
-      </div>
-    </div>
 
     <div class="section">
       <div class="cards">
@@ -716,47 +697,9 @@
       try{ if (ch) ch.destroy(); } catch(e) {}
     }
 
-    function renderCharts(kpi){
-      if (!window.Chart){
-        console.error("Chart.js no cargó");
-        return;
-      }
-
-      // 1) doughnut: completitud (tiene ambos / solo correo / solo tel / ninguno)
-      const rows = aplicarFiltros();
-      const ambos = rows.filter(p => hasValue(p.correo) && hasValue(p.telefono)).length;
-      const soloCorreo = rows.filter(p => hasValue(p.correo) && !hasValue(p.telefono)).length;
-      const soloTel = rows.filter(p => !hasValue(p.correo) && hasValue(p.telefono)).length;
-      const ninguno = rows.filter(p => !hasValue(p.correo) && !hasValue(p.telefono)).length;
-
-      destroyChart(state.charts.contact);
-      state.charts.contact = new Chart($("chart_contact"), {
-        type: "doughnut",
-        data: {
-          labels: ["Correo + Teléfono", "Solo correo", "Solo teléfono", "Sin contacto"],
-          datasets: [{ data: [ambos, soloCorreo, soloTel, ninguno] }]
-        },
-        options: { responsive: true, plugins: { legend: { display: true } } }
-      });
-
-      // 2) pie: distribución simple (con correo / sin correo / con tel / sin tel)
-      destroyChart(state.charts.dist);
-      state.charts.dist = new Chart($("chart_dist"), {
-        type: "pie",
-        data: {
-          labels: ["Con correo", "Sin correo", "Con teléfono", "Sin teléfono"],
-          datasets: [{
-            data: [
-              kpi.conCorreo,
-              Math.max(0, kpi.total - kpi.conCorreo),
-              kpi.conTel,
-              Math.max(0, kpi.total - kpi.conTel)
-            ]
-          }]
-        },
-        options: { responsive: true, plugins: { legend: { display: true } } }
-      });
-    }
+    function renderCharts(){
+  // 🔕 Gráficos deshabilitados intencionalmente
+}
 
     // =========================
     // ✅ EXPORT EXCEL
