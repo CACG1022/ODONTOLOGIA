@@ -687,8 +687,12 @@
       $("k_con_correo_pct").textContent = pct(conCorreo, total) + "%";
       $("k_con_tel_pct").textContent = pct(conTel, total) + "%";
 
-      $("sub_contact").textContent = `Total: ${total}`;
-      $("sub_dist").textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
+      const sc = $("sub_contact");
+if (sc) sc.textContent = `Total: ${total}`;
+
+const sd = $("sub_dist");
+if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
+
 
       return { total, conCorreo, conTel, sinContacto };
     }
