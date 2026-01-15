@@ -852,6 +852,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
     let currentTooth = null;
     let panelMode = "tooth"; // "tooth" | "principal"
+    let tempSelections = []; // 🔧 mantiene selección mientras el modal está abierto
 
     function renderProcRows(filterText = ""){
       const q = String(filterText || "").trim().toLowerCase();
@@ -926,13 +927,22 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
             check.checked = true;
           });
         }else{
-          const existing = (selectedTeeth[currentTooth]||[]).find(p=>String(p.key)===String(proc.key));
+          const baseArr = tempSelections.length ? tempSelections : (selectedTeeth[currentTooth]||[]);
+          const existing = baseArr.find(p=>String(p.key)===String(proc.key));
           if(existing){
             check.checked = true;
             price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
           }
 
           check.addEventListener("change", ()=>{
+            // 🔧 guardar selección temporal
+            const priceVal = parseMoney(price.value);
+            if(check.checked){
+              tempSelections = tempSelections.filter(p=>p.key!==proc.key);
+              tempSelections.push({ key: proc.key, label: proc.label, price: priceVal||0 });
+            }else{
+              tempSelections = tempSelections.filter(p=>p.key!==proc.key);
+            }
             if(check.checked && !parseMoney(price.value)){
               price.focus();
             }
@@ -947,6 +957,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     }
 
     async function openPanelTooth(toothNumber){
+      tempSelections = [...(selectedTeeth[String(toothNumber)]||[])];
       panelMode = "tooth";
       currentTooth = String(toothNumber);
       panelTitle.childNodes[0].nodeValue = "Procedimientos diente ";
@@ -1014,7 +1025,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       if(!currentTooth) return;
 
       const rows = procsContainer.querySelectorAll('.proc-row');
-      const next = [];
+      const next = [...tempSelections];
 
       rows.forEach(row=>{
         const check = row.querySelector('.proc-check');
@@ -1029,6 +1040,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
       if(next.length) selectedTeeth[currentTooth]=next;
       else delete selectedTeeth[currentTooth];
+      tempSelections = [];
 
       refreshBadges();
       closePanel();
@@ -1306,61 +1318,3 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
