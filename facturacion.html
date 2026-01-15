@@ -2364,6 +2364,37 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
     } else {
       init();
     }
+
+    // === CARGA AUTOMÁTICA DESDE PLAN DE TRATAMIENTO ===
+document.getElementById('paciente_cedula').addEventListener('blur', ()=>{
+  const ced = document.getElementById('paciente_cedula').value;
+  const raw = localStorage.getItem('plan_'+ced);
+  if(!raw) return;
+  const data = JSON.parse(raw);
+
+  document.getElementById('paciente_nombre').value = data.nombre || '';
+  document.getElementById('paciente_correo').value = data.correo || '';
+
+  const resumen = (data.resumen||'').split('\n');
+  resumen.forEach(r=>{
+    const m = r.match(/Diente (\d+): (.*?) — \$(.*)/);
+    if(!m) return;
+    const proc = state.procedimientos.find(p=>p.procedimiento===m[2]);
+    if(proc){
+      state.items.push({
+        id_local: crypto.randomUUID(),
+        codigo_cups: proc.codigo_cups||'',
+        descripcion: proc.procedimiento,
+        cantidad: 1,
+        valor_unitario: Number(proc.valor||0),
+        valor_total: Number(proc.valor||0)
+      });
+    }
+  });
+  renderItems();
+  recalcularTotales();
+});
+
   </script>
 </body>
 </html>
