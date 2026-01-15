@@ -126,7 +126,7 @@
       _srEvo.continuous = true;
       _srEvo.interimResults = true;
 
-      let bufferFinal = "";
+      // let bufferFinal = "";
 
       _srEvo.onstart = () => {
         _srEvoOn = true;
@@ -134,25 +134,22 @@
         if (hint) hint.style.display = "block";
       };
 
-      _srEvo.onresult = (event) => {
-        let textoFinal = "";
+     _srEvo.onresult = (event) => {
+  for (let i = event.resultIndex; i < event.results.length; i++) {
+    const res = event.results[i];
+    if (!res.isFinal) continue;
 
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const res = event.results[i];
-          const t = (res[0]?.transcript || "").trim();
-          if (!t) continue;
+    let texto = res[0].transcript.trim();
 
-          if (res.isFinal) {
-            textoFinal += (textoFinal ? " " : "") + t;
-          }
-        }
+    // Comandos de voz para saltos de línea
+    texto = texto
+      .replace(/\b(nueva línea|salto de línea|renglón nuevo)\b/gi, "\n")
+      .replace(/\b(punto y aparte)\b/gi, "\n\n");
 
-        if (textoFinal) {
-          bufferFinal += (bufferFinal ? " " : "") + textoFinal;
-          _appendEnTextarea(ta, bufferFinal);
-          bufferFinal = "";
-        }
-      };
+    _appendEnTextarea(ta, texto);
+  }
+};
+
 
       _srEvo.onerror = (e) => {
         console.warn("Dictado error:", e);
