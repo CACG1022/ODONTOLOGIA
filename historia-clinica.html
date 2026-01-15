@@ -3525,7 +3525,6 @@ function _evolucionesToHTML(evos){
 
   if (!cedula) return;
 
-  // Esperar a que el DOM y scripts estén listos
   window.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("buscar_cedula");
     if (!input) {
@@ -3533,17 +3532,15 @@ function _evolucionesToHTML(evos){
       return;
     }
 
-    // Setear valor
+    // Colocar cédula en el input
     input.value = cedula;
 
-    // 🔥 Disparar búsqueda automática
+    // 🔥 Ejecutar la función REAL
     setTimeout(() => {
-      if (typeof buscarHistoriaClinica === "function") {
-        buscarHistoriaClinica();
-      } else if (typeof buscarPacienteEnHistoria === "function") {
-        buscarPacienteEnHistoria(true);
+      if (typeof buscarHistoria === "function") {
+        buscarHistoria();
       } else {
-        console.warn("No se encontró función de búsqueda automática");
+        console.error("❌ buscarHistoria() no existe");
       }
     }, 300);
   });
