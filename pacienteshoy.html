@@ -1,320 +1,288 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Agenda de Pacientes</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<title>Agenda de Pacientes</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    body{
-      margin:0;
-      background:#f4f6f8;
-      font-family:'Inter',sans-serif;
-      color:#1f2937;
-      padding:40px;
-    }
+<style>
+body{
+  margin:0;
+  background:#f4f6f8;
+  font-family:'Inter',sans-serif;
+  color:#1f2937;
+  padding:40px;
+}
+.container{
+  max-width:1300px;
+  margin:auto;
+  background:#fff;
+  border-radius:14px;
+  padding:30px;
+  box-shadow:0 10px 30px rgba(0,0,0,.06);
+}
+.header-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:20px;
+  flex-wrap:wrap;
+  margin-bottom:20px;
+}
+h1{
+  margin:0;
+  font-size:26px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.reloj{
+  text-align:right;
+  padding:12px 20px;
+  border-radius:12px;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  min-width:220px;
+}
+.hora-actual{
+  font-size:36px;
+  font-weight:700;
+}
+.fecha-actual{
+  margin-top:6px;
+  font-size:14px;
+  font-weight:600;
+  color:#6b7280;
+  text-transform:capitalize;
+}
+.filters{
+  display:flex;
+  gap:14px;
+  margin-bottom:20px;
+}
+input{
+  padding:8px 12px;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  font-size:13px;
+}
+.table-wrapper{
+  width:100%;
+  overflow-x:auto;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:900px;
+}
+th,td{
+  padding:10px;
+  text-align:left;
+}
+th{
+  background:#f3f4f6;
+  font-weight:700;
+  font-size:13px;
+}
+tr{ border-bottom:1px solid #e5e7eb; }
+.hora{ font-weight:700; }
 
-    .container{
-      max-width:1300px;
-      margin:auto;
-      background:#fff;
-      border-radius:14px;
-      padding:30px;
-      box-shadow:0 10px 30px rgba(0,0,0,.06);
-    }
+.estado-select{
+  font-weight:700;
+  border-radius:999px;
+  padding:6px 12px;
+  border:none;
+}
+.estado-atendida{ background:#d1fae5; color:#065f46; }
+.estado-en-sala{ background:#fef3c7; color:#92400e; }
+.estado-cancelada{ background:#fee2e2; color:#991b1b; }
+.estado-confirmada,.estado-programada{
+  background:#e5e7eb; color:#374151;
+}
 
-    .header-top{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:20px;
-      flex-wrap:wrap;
-      margin-bottom:20px;
-    }
-
-    h1{
-      margin:0;
-      font-size:26px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    .reloj{
-      text-align:right;
-      padding:12px 20px;
-      border-radius:12px;
-      background:#f9fafb;
-      border:1px solid #e5e7eb;
-      min-width:220px;
-    }
-
-    .hora-actual{
-      font-size:36px;
-      font-weight:700;
-    }
-
-    .fecha-actual{
-      margin-top:6px;
-      font-size:14px;
-      font-weight:600;
-      color:#6b7280;
-      text-transform:capitalize;
-    }
-
-    .filters{
-      display:flex;
-      gap:14px;
-      margin-bottom:20px;
-      flex-wrap:wrap;
-    }
-
-    input{
-      padding:8px 12px;
-      border-radius:8px;
-      border:1px solid #d1d5db;
-      font-size:13px;
-    }
-
-    .table-wrapper{
-      width:100%;
-      overflow-x:auto;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:900px;
-    }
-
-    th,td{
-      padding:10px;
-      text-align:left;
-      vertical-align:middle;
-    }
-
-    th{
-      background:#f3f4f6;
-      font-weight:700;
-      font-size:13px;
-    }
-
-    tr{
-      border-bottom:1px solid #e5e7eb;
-    }
-
-    .hora{ font-weight:700; }
-
-    .estado-select{
-      font-weight:700;
-      border-radius:999px;
-      padding:6px 12px;
-      border:1px solid transparent;
-      cursor:pointer;
-      font-size:12px;
-    }
-
-    .estado-atendida{ background:#d1fae5; color:#065f46; }
-    .estado-en-sala{ background:#fef3c7; color:#92400e; }
-    .estado-cancelada{ background:#fee2e2; color:#991b1b; }
-    .estado-confirmada,.estado-programada{
-      background:#e5e7eb; color:#374151;
-    }
-
-    .btn-ver{
-      padding:6px 16px;
-      border-radius:999px;
-      border:1px solid #e5e7eb;
-      background:#fff;
-      font-size:13px;
-      font-weight:700;
-      cursor:pointer;
-    }
-
-    .btn-ver.primary{
-      background:#1f6aa5;
-      color:#fff;
-      border-color:#1f6aa5;
-    }
-
-    .empty{
-      padding:30px;
-      text-align:center;
-      color:#6b7280;
-      font-weight:600;
-    }
-
-    @media(max-width:768px){
-      body{ padding:15px; }
-      .header-top{ flex-direction:column; align-items:flex-start; }
-      .reloj{ width:100%; text-align:left; }
-      .hora-actual{ font-size:28px; }
-    }
-  </style>
+.btn-ver{
+  padding:6px 16px;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  background:#fff;
+  font-weight:700;
+  cursor:pointer;
+}
+.btn-ver.primary{
+  background:#1f6aa5;
+  color:#fff;
+  border-color:#1f6aa5;
+}
+.empty{
+  padding:30px;
+  text-align:center;
+  color:#6b7280;
+  font-weight:600;
+}
+</style>
 </head>
 
 <body>
 
 <div class="container">
 
-  <div class="header-top">
-    <h1>🦷 Agenda de Pacientes</h1>
-    <div class="reloj">
-      <div id="hora-actual" class="hora-actual"></div>
-      <div id="fecha-actual" class="fecha-actual"></div>
-    </div>
+<div class="header-top">
+  <h1>🦷 Agenda de Pacientes</h1>
+  <div class="reloj">
+    <div id="hora-actual" class="hora-actual"></div>
+    <div id="fecha-actual" class="fecha-actual"></div>
   </div>
+</div>
 
-  <div class="filters">
-    <input type="date" id="fecha">
-  </div>
+<div class="filters">
+  <input type="date" id="fecha">
+</div>
 
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Hora</th>
-          <th>Paciente</th>
-          <th>Profesional</th>
-          <th>Especialidad</th>
-          <th>Estado</th>
-          <th>Historia clínica</th>
-          <th>Plan tratamiento</th>
-          <th>Facturación</th>
-          <th>Evoluciones</th>
-        </tr>
-      </thead>
-      <tbody id="tabla"></tbody>
-    </table>
-  </div>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th>Hora</th>
+<th>Paciente</th>
+<th>Profesional</th>
+<th>Especialidad</th>
+<th>Estado</th>
+<th>Historia clínica</th>
+<th>Plan tratamiento</th>
+<th>Facturación</th>
+<th>Evoluciones</th>
+</tr>
+</thead>
+<tbody id="tabla"></tbody>
+</table>
+</div>
 
-  <div id="empty" class="empty" style="display:none;">
-    No hay citas para esta fecha
-  </div>
+<div id="empty" class="empty" style="display:none;">
+No hay citas para esta fecha
+</div>
+
 </div>
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
 const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+ "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+ "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
 /* ===== RELOJ ===== */
 function actualizarReloj(){
-  const ahora = new Date();
-  hora-actual.textContent = ahora.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-  fecha-actual.textContent = ahora.toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+ const ahora = new Date();
+ document.getElementById("hora-actual").textContent =
+   ahora.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+ document.getElementById("fecha-actual").textContent =
+   ahora.toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
 }
 actualizarReloj();
 setInterval(actualizarReloj,1000);
 
 /* ===== SONIDO ===== */
 function anunciarPacienteEnSala(){
-  const msg = new SpeechSynthesisUtterance("Paciente en sala");
-  msg.lang = "es-ES";
-  msg.rate = 1;
-  window.speechSynthesis.speak(msg);
+ const msg = new SpeechSynthesisUtterance("Paciente en sala");
+ msg.lang = "es-ES";
+ speechSynthesis.speak(msg);
 }
 
 /* ===== AGENDA ===== */
 const tabla = document.getElementById("tabla");
 const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
-
 fechaInput.value = new Date().toISOString().split("T")[0];
 
 const estadosPrevios = {};
 let primeraCarga = true;
 
 function claseEstado(v){
-  return {
-    atendida:"estado-atendida",
-    en_sala:"estado-en-sala",
-    cancelada:"estado-cancelada",
-    confirmada:"estado-confirmada",
-    programada:"estado-programada"
-  }[v] || "";
+ return {
+   atendida:"estado-atendida",
+   en_sala:"estado-en-sala",
+   cancelada:"estado-cancelada",
+   confirmada:"estado-confirmada",
+   programada:"estado-programada"
+ }[v] || "";
 }
 
 async function cargarCitas(){
-  tabla.innerHTML="";
-  emptyMsg.style.display="none";
+ tabla.innerHTML="";
+ emptyMsg.style.display="none";
 
-  const fecha = fechaInput.value;
+ const fecha = fechaInput.value;
 
-  const { data } = await supabase
-    .from("citas")
-    .select("*")
-    .gte("inicio",`${fecha} 00:00:00`)
-    .lte("inicio",`${fecha} 23:59:59`)
-    .order("inicio");
+ const { data } = await supabase
+   .from("citas")
+   .select("*")
+   .gte("inicio",`${fecha} 00:00:00`)
+   .lte("inicio",`${fecha} 23:59:59`)
+   .order("inicio");
 
-  if(!data?.length){
-    emptyMsg.style.display="block";
-    return;
-  }
+ if(!data?.length){
+   emptyMsg.style.display="block";
+   return;
+ }
 
-  data.forEach(c=>{
-    if(!primeraCarga && estadosPrevios[c.id] !== "en_sala" && c.estado === "en_sala"){
-      anunciarPacienteEnSala();
-    }
-    estadosPrevios[c.id] = c.estado;
+ data.forEach(c=>{
+   if(!primeraCarga && estadosPrevios[c.id] !== "en_sala" && c.estado === "en_sala"){
+     anunciarPacienteEnSala();
+   }
+   estadosPrevios[c.id] = c.estado;
 
-    const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
-    const cedula = encodeURIComponent(c.documento_paciente||"");
+   const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+   const cedula = encodeURIComponent(c.documento_paciente||"");
 
-    const selectEstado = document.createElement("select");
-    selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
+   const select = document.createElement("select");
+   select.className = `estado-select ${claseEstado(c.estado)}`;
 
-    [
-      {v:"confirmada",l:"Confirmada",e:false},
-      {v:"programada",l:"Programada",e:false},
-      {v:"en_sala",l:"En Sala",e:true},
-      {v:"atendida",l:"Atendida",e:true},
-      {v:"cancelada",l:"Cancelada",e:true},
-    ].forEach(o=>{
-      const opt=document.createElement("option");
-      opt.value=o.v;
-      opt.textContent=o.l;
-      opt.disabled=!o.e;
-      if(o.v===c.estado) opt.selected=true;
-      selectEstado.appendChild(opt);
-    });
+   [
+     {v:"confirmada",l:"Confirmada",e:false},
+     {v:"programada",l:"Programada",e:false},
+     {v:"en_sala",l:"En Sala",e:true},
+     {v:"atendida",l:"Atendida",e:true},
+     {v:"cancelada",l:"Cancelada",e:true},
+   ].forEach(o=>{
+     const opt=document.createElement("option");
+     opt.value=o.v;
+     opt.textContent=o.l;
+     opt.disabled=!o.e;
+     if(o.v===c.estado) opt.selected=true;
+     select.appendChild(opt);
+   });
 
-    selectEstado.onchange = async e=>{
-      await supabase.from("citas").update({estado:e.target.value}).eq("id",c.id);
-      selectEstado.className = `estado-select ${claseEstado(e.target.value)}`;
-    };
+   select.onchange=async e=>{
+     await supabase.from("citas").update({estado:e.target.value}).eq("id",c.id);
+     select.className=`estado-select ${claseEstado(e.target.value)}`;
+   };
 
-    const tr=document.createElement("tr");
-    tr.innerHTML=`
-      <td class="hora">${hora}</td>
-      <td>${c.nombre_paciente}</td>
-      <td>${c.nombre_profesional}</td>
-      <td>${c.especialidad||"-"}</td>
-      <td></td>
-      <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('evoluciones.html?auto=1&cedula=${cedula}','_blank')">ver</button></td>
-    `;
+   const tr=document.createElement("tr");
+   tr.innerHTML=`
+     <td class="hora">${hora}</td>
+     <td>${c.nombre_paciente}</td>
+     <td>${c.nombre_profesional}</td>
+     <td>${c.especialidad||"-"}</td>
+     <td></td>
+     <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
+     <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
+     <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
+     <td><button class="btn-ver" onclick="window.open('evoluciones.html?auto=1&cedula=${cedula}','_blank')">ver</button></td>
+   `;
+   tr.children[4].appendChild(select);
+   tabla.appendChild(tr);
+ });
 
-    tr.children[4].appendChild(selectEstado);
-    tabla.appendChild(tr);
-  });
-
-  primeraCarga = false;
+ primeraCarga=false;
 }
 
-fechaInput.onchange = cargarCitas;
-setInterval(cargarCitas,60000); // 1 minuto
+fechaInput.onchange=cargarCitas;
+setInterval(cargarCitas,60000);
 cargarCitas();
 </script>
 
 </body>
 </html>
-
