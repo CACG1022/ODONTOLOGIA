@@ -254,18 +254,29 @@ async function cargarCitas(){
     selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
 
   [
-  { value:"confirmada", label:"Confirmada" },
-  { value:"programada", label:"Programada" },
-  { value:"en_sala",    label:"En Sala" },
-  { value:"atendida",   label:"Atendida" },
-  { value:"cancelada",  label:"Cancelada" }
+  { value:"confirmada", label:"Confirmada", editable:false },
+  { value:"programada", label:"Programada", editable:false },
+  { value:"en_sala",    label:"En Sala",    editable:true },
+  { value:"atendida",   label:"Atendida",   editable:true },
+  { value:"cancelada",  label:"Cancelada",  editable:true }
 ].forEach(op=>{
   const o = document.createElement("option");
-  o.value = op.value;           // ✅ BD
-  o.textContent = op.label;     // ✅ UI
-  if(op.value === c.estado) o.selected = true;
+  o.value = op.value;
+  o.textContent = op.label;
+
+  // 🔒 Bloquear estados NO editables
+  if(!op.editable) {
+    o.disabled = true;
+  }
+
+  // ✅ Seleccionar el estado real de la BD
+  if(op.value === c.estado) {
+    o.selected = true;
+  }
+
   selectEstado.appendChild(o);
 });
+
 
 
 
