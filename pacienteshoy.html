@@ -171,18 +171,28 @@ async function cargarCitas(){
   tabla.innerHTML="";
   emptyMsg.style.display="none";
 
+  const fecha = fechaInput.value;
+  const inicioDia = `${fecha} 00:00:00`;
+  const finDia = `${fecha} 23:59:59`;
+
   let query = supabase
     .from("citas")
     .select("*")
-    .eq("inicio::date",fechaInput.value)
+    .gte("inicio", inicioDia)
+    .lte("inicio", finDia)
     .order("inicio",{ascending:true});
 
   if(profesionalSelect.value){
-    query = query.eq("nombre_profesional",profesionalSelect.value);
+    query = query.eq("nombre_profesional", profesionalSelect.value);
   }
 
   const { data, error } = await query;
-  if(error){ alert("Error cargando citas"); return; }
+
+  if(error){
+    console.error(error);
+    alert("Error cargando citas");
+    return;
+  }
 
   if(!data.length){
     emptyMsg.style.display="block";
@@ -203,6 +213,7 @@ async function cargarCitas(){
     tabla.appendChild(tr);
   });
 }
+
 
 /* 🚀 INIT */
 async function init(){
