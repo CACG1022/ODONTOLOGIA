@@ -2,99 +2,84 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Agenda Odontológica</title>
-
-  <!-- Supabase -->
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <title>Agenda de Pacientes</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
   <!-- Fuente -->
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body {
-      font-family: 'Inter', sans-serif;
-      background: #f4f6f8;
-      margin: 0;
-      padding: 40px;
-      color: #333;
+    body{
+      margin:0;
+      background:#f4f6f8;
+      font-family:'Inter',sans-serif;
+      color:#1f2937;
+      padding:40px;
     }
-
-    .container {
-      max-width: 1100px;
-      margin: auto;
-      background: #fff;
-      border-radius: 12px;
-      padding: 30px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    .container{
+      max-width:1100px;
+      margin:auto;
+      background:#fff;
+      border-radius:14px;
+      padding:30px;
+      box-shadow:0 10px 30px rgba(0,0,0,.06);
     }
-
-    h1 {
-      margin-bottom: 20px;
+    h1{
+      margin:0 0 20px;
+      font-size:26px;
+      display:flex;
+      align-items:center;
+      gap:10px;
     }
-
-    .filters {
-      display: flex;
-      gap: 15px;
-      margin-bottom: 25px;
-      flex-wrap: wrap;
+    .filters{
+      display:flex;
+      gap:14px;
+      margin-bottom:20px;
+      flex-wrap:wrap;
     }
-
-    .filters input, .filters select {
-      padding: 10px 14px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-size: 14px;
+    input,select{
+      padding:10px 14px;
+      border-radius:8px;
+      border:1px solid #d1d5db;
+      font-size:14px;
     }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    table{
+      width:100%;
+      border-collapse:collapse;
     }
-
-    th, td {
-      padding: 14px;
-      text-align: left;
+    th,td{
+      padding:14px;
+      text-align:left;
     }
-
-    th {
-      background: #f1f3f5;
-      font-weight: 600;
-      font-size: 14px;
+    th{
+      background:#f3f4f6;
+      font-weight:700;
+      font-size:13px;
     }
-
-    tr {
-      border-bottom: 1px solid #eaeaea;
+    tr{
+      border-bottom:1px solid #e5e7eb;
     }
-
-    .estado {
-      padding: 6px 12px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: capitalize;
-      display: inline-block;
+    .estado{
+      padding:6px 12px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      text-transform:capitalize;
+      display:inline-block;
     }
-
-    .confirmado {
-      background: #d1fae5;
-      color: #065f46;
-    }
-
-    .programado {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .cancelado {
-      background: #fee2e2;
-      color: #991b1b;
-    }
-
-    .hora {
-      font-weight: 600;
+    .confirmado{ background:#d1fae5;color:#065f46; }
+    .programado{ background:#fef3c7;color:#92400e; }
+    .cancelado{ background:#fee2e2;color:#991b1b; }
+    .hora{ font-weight:700; }
+    .empty{
+      padding:30px;
+      text-align:center;
+      color:#6b7280;
+      font-weight:600;
     }
   </style>
 </head>
+
 <body>
 
 <div class="container">
@@ -117,92 +102,136 @@
         <th>Estado</th>
       </tr>
     </thead>
-    <tbody id="tabla-citas"></tbody>
+    <tbody id="tabla"></tbody>
   </table>
+
+  <div id="empty" class="empty" style="display:none;">
+    No hay citas para esta fecha
+  </div>
 </div>
 
-<script>
-  const supabase = window.supabase.createClient(
-    'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
-  );
+<!-- SCRIPT -->
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  const tabla = document.getElementById('tabla-citas');
-  const fechaInput = document.getElementById('fecha');
-  const profesionalSelect = document.getElementById('profesional');
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
 
-  // Fecha de hoy por defecto
-  const hoy = new Date().toISOString().split('T')[0];
-  fechaInput.value = hoy;
+const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-  async function cargarProfesionales() {
-    const { data } = await supabase
-      .from('citas')
-      .select('nombre_profesional')
-      .not('nombre_profesional', 'is', null);
+const tabla = document.getElementById("tabla");
+const emptyMsg = document.getElementById("empty");
+const fechaInput = document.getElementById("fecha");
+const profesionalSelect = document.getElementById("profesional");
 
-    const profesionales = [...new Set(data.map(p => p.nombre_profesional))];
+// Fecha hoy
+fechaInput.value = new Date().toISOString().split("T")[0];
 
-    profesionales.forEach(p => {
-      const option = document.createElement('option');
-      option.value = p;
-      option.textContent = p;
-      profesionalSelect.appendChild(option);
-    });
+/* 🔐 Validar sesión */
+async function validarSesion(){
+  const { data:{ session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.href = LOGIN_URL;
+    return null;
+  }
+  return session.user;
+}
+
+/* 🔐 Validar permiso en modulos_permisos */
+async function validarPermiso(rol){
+  const { data, error } = await supabase
+    .from("modulos_permisos")
+    .select("admin,doctor,auxiliar,paciente")
+    .eq("modulo","agendamientos")
+    .single();
+
+  if(error) return false;
+  return data[rol] === true;
+}
+
+/* 👨‍⚕️ Profesionales */
+async function cargarProfesionales(){
+  const { data } = await supabase
+    .from("citas")
+    .select("nombre_profesional")
+    .not("nombre_profesional","is",null);
+
+  [...new Set(data.map(d=>d.nombre_profesional))].forEach(p=>{
+    const o=document.createElement("option");
+    o.value=p;
+    o.textContent=p;
+    profesionalSelect.appendChild(o);
+  });
+}
+
+/* 📅 Citas */
+async function cargarCitas(){
+  tabla.innerHTML="";
+  emptyMsg.style.display="none";
+
+  let query = supabase
+    .from("citas")
+    .select("*")
+    .eq("inicio::date",fechaInput.value)
+    .order("inicio",{ascending:true});
+
+  if(profesionalSelect.value){
+    query = query.eq("nombre_profesional",profesionalSelect.value);
   }
 
-  async function cargarCitas() {
-    tabla.innerHTML = '';
+  const { data, error } = await query;
+  if(error){ alert("Error cargando citas"); return; }
 
-    const fecha = fechaInput.value;
-    const profesional = profesionalSelect.value;
-
-    let query = supabase
-      .from('citas')
-      .select('*')
-      .gte('inicio', `${fecha}T00:00:00`)
-      .lte('inicio', `${fecha}T23:59:59`)
-      .order('inicio', { ascending: true });
-
-    if (profesional) {
-      query = query.eq('nombre_profesional', profesional);
-    }
-
-    const { data, error } = await query;
-
-    if (error) {
-      alert('Error cargando citas');
-      return;
-    }
-
-    data.forEach(cita => {
-      const hora = new Date(cita.inicio).toLocaleTimeString('es-CO', {
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td class="hora">${hora}</td>
-        <td>${cita.nombre_paciente}</td>
-        <td>${cita.nombre_profesional}</td>
-        <td>${cita.especialidad || '-'}</td>
-        <td>
-          <span class="estado ${cita.estado}">
-            ${cita.estado}
-          </span>
-        </td>
-      `;
-      tabla.appendChild(tr);
-    });
+  if(!data.length){
+    emptyMsg.style.display="block";
+    return;
   }
 
-  fechaInput.addEventListener('change', cargarCitas);
-  profesionalSelect.addEventListener('change', cargarCitas);
+  data.forEach(c=>{
+    const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+      <td class="hora">${hora}</td>
+      <td>${c.nombre_paciente}</td>
+      <td>${c.nombre_profesional}</td>
+      <td>${c.especialidad || "-"}</td>
+      <td>
+        <span class="estado ${c.estado.toLowerCase()}">${c.estado}</span>
+      </td>`;
+    tabla.appendChild(tr);
+  });
+}
 
-  cargarProfesionales();
-  cargarCitas();
+/* 🚀 INIT */
+async function init(){
+  const user = await validarSesion();
+  if(!user) return;
+
+  const { data:perfil } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id",user.id)
+    .single();
+
+  const permiso = await validarPermiso(perfil.role);
+  if(!permiso){
+    alert("No tienes permiso para ver la agenda");
+    window.location.href="index.html";
+    return;
+  }
+
+  await cargarProfesionales();
+  await cargarCitas();
+}
+
+fechaInput.addEventListener("change",cargarCitas);
+profesionalSelect.addEventListener("change",cargarCitas);
+
+init();
 </script>
 
 </body>
 </html>
+
