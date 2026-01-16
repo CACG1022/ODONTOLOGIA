@@ -16,7 +16,7 @@
       padding:40px;
     }
     .container{
-      max-width:1200px;
+      max-width:1300px;
       margin:auto;
       background:#fff;
       border-radius:14px;
@@ -37,17 +37,19 @@
       flex-wrap:wrap;
     }
     input,select{
-      padding:10px 14px;
+      padding:8px 12px;
       border-radius:8px;
       border:1px solid #d1d5db;
-      font-size:14px;
+      font-size:13px;
+      background:#fff;
     }
+
     table{
       width:100%;
       border-collapse:collapse;
     }
     th,td{
-      padding:12px;
+      padding:10px;
       text-align:left;
       vertical-align:middle;
     }
@@ -60,17 +62,31 @@
       border-bottom:1px solid #e5e7eb;
     }
 
-    .estado{
-      padding:6px 12px;
-      border-radius:999px;
-      font-size:12px;
+    /* ===== ESTADOS ===== */
+    .estado-select{
       font-weight:700;
-      text-transform:capitalize;
-      display:inline-block;
+      border-radius:999px;
+      padding:6px 12px;
+      border:1px solid transparent;
+      cursor:pointer;
+      font-size:12px;
     }
-    .confirmado{ background:#d1fae5;color:#065f46; }
-    .programado{ background:#fef3c7;color:#92400e; }
-    .cancelado{ background:#fee2e2;color:#991b1b; }
+
+    .estado-atendida{
+      background:#d1fae5;
+      color:#065f46;
+      border-color:#6ee7b7;
+    }
+    .estado-en-sala{
+      background:#fef3c7;
+      color:#92400e;
+      border-color:#fde68a;
+    }
+    .estado-cancelada{
+      background:#fee2e2;
+      color:#991b1b;
+      border-color:#fecaca;
+    }
 
     .hora{ font-weight:700; }
 
@@ -183,6 +199,25 @@ async function cargarProfesionales(){
   });
 }
 
+function claseEstado(valor){
+  if(valor === "Atendida") return "estado-atendida";
+  if(valor === "En Sala") return "estado-en-sala";
+  if(valor === "Cancelada") return "estado-cancelada";
+  return "";
+}
+
+async function actualizarEstado(citaId, nuevoEstado){
+  const { error } = await supabase
+    .from("citas")
+    .update({ estado: nuevoEstado })
+    .eq("id", citaId);
+
+  if(error){
+    alert("No se pudo actualizar el estado");
+    console.error(error);
+  }
+}
+
 async function cargarCitas(){
   tabla.innerHTML="";
   emptyMsg.style.display="none";
@@ -213,19 +248,37 @@ async function cargarCitas(){
     const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
     const cedula = encodeURIComponent(c.documento_paciente || "");
 
+    const selectEstado = document.createElement("select");
+    selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
+    ["Atendida","En Sala","Cancelada"].forEach(op=>{
+      const o=document.createElement("option");
+      o.value=op;
+      o.textContent=op;
+      if(op===c.estado) o.selected=true;
+      selectEstado.appendChild(o);
+    });
+
+    selectEstado.addEventListener("change", async e=>{
+      const nuevoEstado = e.target.value;
+      selectEstado.className = `estado-select ${claseEstado(nuevoEstado)}`;
+      await actualizarEstado(c.id, nuevoEstado);
+    });
+
     const tr=document.createElement("tr");
     tr.innerHTML=`
       <td class="hora">${hora}</td>
       <td>${c.nombre_paciente}</td>
       <td>${c.nombre_profesional}</td>
       <td>${c.especialidad || "-"}</td>
-      <td><span class="estado ${c.estado.toLowerCase()}">${c.estado}</span></td>
+      <td></td>
 
       <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
       <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
       <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
       <td><button class="btn-ver" onclick="window.open('evoluciones.html?auto=1&cedula=${cedula}','_blank')">ver</button></td>
     `;
+
+    tr.children[4].appendChild(selectEstado);
     tabla.appendChild(tr);
   });
 }
@@ -259,5 +312,6 @@ init();
 
 </body>
 </html>
+
 
 
