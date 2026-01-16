@@ -5,7 +5,6 @@
   <title>Agenda de Pacientes</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <!-- Fuente -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -17,7 +16,7 @@
       padding:40px;
     }
     .container{
-      max-width:1100px;
+      max-width:1200px;
       margin:auto;
       background:#fff;
       border-radius:14px;
@@ -48,8 +47,9 @@
       border-collapse:collapse;
     }
     th,td{
-      padding:14px;
+      padding:12px;
       text-align:left;
+      vertical-align:middle;
     }
     th{
       background:#f3f4f6;
@@ -59,6 +59,7 @@
     tr{
       border-bottom:1px solid #e5e7eb;
     }
+
     .estado{
       padding:6px 12px;
       border-radius:999px;
@@ -70,7 +71,25 @@
     .confirmado{ background:#d1fae5;color:#065f46; }
     .programado{ background:#fef3c7;color:#92400e; }
     .cancelado{ background:#fee2e2;color:#991b1b; }
+
     .hora{ font-weight:700; }
+
+    .btn-ver{
+      padding:6px 16px;
+      border-radius:999px;
+      border:1px solid #e5e7eb;
+      background:#fff;
+      font-size:13px;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .btn-ver.primary{
+      background:#1f6aa5;
+      color:#fff;
+      border-color:#1f6aa5;
+    }
+    .btn-ver:hover{ filter:brightness(.95); }
+
     .empty{
       padding:30px;
       text-align:center;
@@ -100,6 +119,10 @@
         <th>Profesional</th>
         <th>Especialidad</th>
         <th>Estado</th>
+        <th>Historia clínica</th>
+        <th>Plan tratamiento</th>
+        <th>Facturación</th>
+        <th>Evoluciones</th>
       </tr>
     </thead>
     <tbody id="tabla"></tbody>
@@ -110,7 +133,6 @@
   </div>
 </div>
 
-<!-- SCRIPT -->
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
@@ -126,10 +148,8 @@ const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
 const profesionalSelect = document.getElementById("profesional");
 
-// Fecha hoy
 fechaInput.value = new Date().toISOString().split("T")[0];
 
-/* 🔐 Validar sesión */
 async function validarSesion(){
   const { data:{ session } } = await supabase.auth.getSession();
   if(!session){
@@ -139,19 +159,16 @@ async function validarSesion(){
   return session.user;
 }
 
-/* 🔐 Validar permiso en modulos_permisos */
 async function validarPermiso(rol){
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("modulos_permisos")
     .select("admin,doctor,auxiliar,paciente")
     .eq("modulo","agendamientos")
     .single();
 
-  if(error) return false;
-  return data[rol] === true;
+  return data?.[rol] === true;
 }
 
-/* 👨‍⚕️ Profesionales */
 async function cargarProfesionales(){
   const { data } = await supabase
     .from("citas")
@@ -166,7 +183,6 @@ async function cargarProfesionales(){
   });
 }
 
-/* 📅 Citas */
 async function cargarCitas(){
   tabla.innerHTML="";
   emptyMsg.style.display="none";
@@ -178,44 +194,42 @@ async function cargarCitas(){
   let query = supabase
     .from("citas")
     .select("*")
-    .gte("inicio", inicioDia)
-    .lte("inicio", finDia)
+    .gte("inicio",inicioDia)
+    .lte("inicio",finDia)
     .order("inicio",{ascending:true});
 
   if(profesionalSelect.value){
     query = query.eq("nombre_profesional", profesionalSelect.value);
   }
 
-  const { data, error } = await query;
+  const { data } = await query;
 
-  if(error){
-    console.error(error);
-    alert("Error cargando citas");
-    return;
-  }
-
-  if(!data.length){
+  if(!data || !data.length){
     emptyMsg.style.display="block";
     return;
   }
 
   data.forEach(c=>{
     const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
+    const cedula = encodeURIComponent(c.documento_paciente || "");
+
     const tr=document.createElement("tr");
     tr.innerHTML=`
       <td class="hora">${hora}</td>
       <td>${c.nombre_paciente}</td>
       <td>${c.nombre_profesional}</td>
       <td>${c.especialidad || "-"}</td>
-      <td>
-        <span class="estado ${c.estado.toLowerCase()}">${c.estado}</span>
-      </td>`;
+      <td><span class="estado ${c.estado.toLowerCase()}">${c.estado}</span></td>
+
+      <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
+      <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
+      <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
+      <td><button class="btn-ver" onclick="window.open('evoluciones.html?auto=1&cedula=${cedula}','_blank')">ver</button></td>
+    `;
     tabla.appendChild(tr);
   });
 }
 
-
-/* 🚀 INIT */
 async function init(){
   const user = await validarSesion();
   if(!user) return;
@@ -245,4 +259,5 @@ init();
 
 </body>
 </html>
+
 
