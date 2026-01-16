@@ -25,7 +25,6 @@
       box-shadow:0 10px 30px rgba(0,0,0,.06);
     }
 
-    /* ===== HEADER ===== */
     .header-top{
       display:flex;
       justify-content:space-between;
@@ -43,7 +42,6 @@
       gap:10px;
     }
 
-    /* ===== RELOJ ===== */
     .reloj{
       text-align:right;
       padding:12px 20px;
@@ -56,8 +54,6 @@
     .hora-actual{
       font-size:36px;
       font-weight:700;
-      line-height:1;
-      color:#111827;
     }
 
     .fecha-actual{
@@ -68,7 +64,6 @@
       text-transform:capitalize;
     }
 
-    /* ===== FILTROS ===== */
     .filters{
       display:flex;
       gap:14px;
@@ -76,15 +71,13 @@
       flex-wrap:wrap;
     }
 
-    input,select{
+    input{
       padding:8px 12px;
       border-radius:8px;
       border:1px solid #d1d5db;
       font-size:13px;
-      background:#fff;
     }
 
-    /* ===== TABLA ===== */
     .table-wrapper{
       width:100%;
       overflow-x:auto;
@@ -114,7 +107,6 @@
 
     .hora{ font-weight:700; }
 
-    /* ===== ESTADOS ===== */
     .estado-select{
       font-weight:700;
       border-radius:999px;
@@ -124,32 +116,13 @@
       font-size:12px;
     }
 
-    .estado-atendida{
-      background:#d1fae5;
-      color:#065f46;
-      border-color:#6ee7b7;
+    .estado-atendida{ background:#d1fae5; color:#065f46; }
+    .estado-en-sala{ background:#fef3c7; color:#92400e; }
+    .estado-cancelada{ background:#fee2e2; color:#991b1b; }
+    .estado-confirmada,.estado-programada{
+      background:#e5e7eb; color:#374151;
     }
 
-    .estado-en-sala{
-      background:#fef3c7;
-      color:#92400e;
-      border-color:#fde68a;
-    }
-
-    .estado-cancelada{
-      background:#fee2e2;
-      color:#991b1b;
-      border-color:#fecaca;
-    }
-
-    .estado-confirmada,
-    .estado-programada{
-      background:#e5e7eb;
-      color:#374151;
-      border-color:#d1d5db;
-    }
-
-    /* ===== BOTONES ===== */
     .btn-ver{
       padding:6px 16px;
       border-radius:999px;
@@ -166,8 +139,6 @@
       border-color:#1f6aa5;
     }
 
-    .btn-ver:hover{ filter:brightness(.95); }
-
     .empty{
       padding:30px;
       text-align:center;
@@ -175,10 +146,8 @@
       font-weight:600;
     }
 
-    /* ===== RESPONSIVE ===== */
     @media(max-width:768px){
       body{ padding:15px; }
-      .container{ padding:20px; }
       .header-top{ flex-direction:column; align-items:flex-start; }
       .reloj{ width:100%; text-align:left; }
       .hora-actual{ font-size:28px; }
@@ -192,7 +161,6 @@
 
   <div class="header-top">
     <h1>🦷 Agenda de Pacientes</h1>
-
     <div class="reloj">
       <div id="hora-actual" class="hora-actual"></div>
       <div id="fecha-actual" class="fecha-actual"></div>
@@ -238,26 +206,29 @@ const supabase = createClient(
 /* ===== RELOJ ===== */
 function actualizarReloj(){
   const ahora = new Date();
-
-  document.getElementById("hora-actual").textContent =
-    ahora.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
-
-  document.getElementById("fecha-actual").textContent =
-    ahora.toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+  hora-actual.textContent = ahora.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+  fecha-actual.textContent = ahora.toLocaleDateString("es-CO",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
 }
 actualizarReloj();
 setInterval(actualizarReloj,1000);
+
+/* ===== SONIDO ===== */
+function anunciarPacienteEnSala(){
+  const msg = new SpeechSynthesisUtterance("Paciente en sala");
+  msg.lang = "es-ES";
+  msg.rate = 1;
+  window.speechSynthesis.speak(msg);
+}
 
 /* ===== AGENDA ===== */
 const tabla = document.getElementById("tabla");
 const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
 
-function hoy(){
-  const d = new Date();
-  return d.toISOString().split("T")[0];
-}
-fechaInput.value = hoy();
+fechaInput.value = new Date().toISOString().split("T")[0];
+
+const estadosPrevios = {};
+let primeraCarga = true;
 
 function claseEstado(v){
   return {
@@ -288,8 +259,13 @@ async function cargarCitas(){
   }
 
   data.forEach(c=>{
+    if(!primeraCarga && estadosPrevios[c.id] !== "en_sala" && c.estado === "en_sala"){
+      anunciarPacienteEnSala();
+    }
+    estadosPrevios[c.id] = c.estado;
+
     const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
-    const cedula = encodeURIComponent(c.documento_paciente || "");
+    const cedula = encodeURIComponent(c.documento_paciente||"");
 
     const selectEstado = document.createElement("select");
     selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
@@ -301,11 +277,11 @@ async function cargarCitas(){
       {v:"atendida",l:"Atendida",e:true},
       {v:"cancelada",l:"Cancelada",e:true},
     ].forEach(o=>{
-      const opt = document.createElement("option");
-      opt.value = o.v;
-      opt.textContent = o.l;
-      opt.disabled = !o.e;
-      if(o.v === c.estado) opt.selected = true;
+      const opt=document.createElement("option");
+      opt.value=o.v;
+      opt.textContent=o.l;
+      opt.disabled=!o.e;
+      if(o.v===c.estado) opt.selected=true;
       selectEstado.appendChild(opt);
     });
 
@@ -314,14 +290,13 @@ async function cargarCitas(){
       selectEstado.className = `estado-select ${claseEstado(e.target.value)}`;
     };
 
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
       <td class="hora">${hora}</td>
       <td>${c.nombre_paciente}</td>
       <td>${c.nombre_profesional}</td>
-      <td>${c.especialidad || "-"}</td>
+      <td>${c.especialidad||"-"}</td>
       <td></td>
-
       <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
       <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
       <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
@@ -331,6 +306,8 @@ async function cargarCitas(){
     tr.children[4].appendChild(selectEstado);
     tabla.appendChild(tr);
   });
+
+  primeraCarga = false;
 }
 
 fechaInput.onchange = cargarCitas;
@@ -340,5 +317,4 @@ cargarCitas();
 
 </body>
 </html>
-
 
