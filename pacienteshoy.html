@@ -15,6 +15,7 @@
       color:#1f2937;
       padding:40px;
     }
+
     .container{
       max-width:1300px;
       margin:auto;
@@ -23,19 +24,58 @@
       padding:30px;
       box-shadow:0 10px 30px rgba(0,0,0,.06);
     }
+
+    /* ===== HEADER ===== */
+    .header-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:20px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+    }
+
     h1{
-      margin:0 0 20px;
+      margin:0;
       font-size:26px;
       display:flex;
       align-items:center;
       gap:10px;
     }
+
+    /* ===== RELOJ ===== */
+    .reloj{
+      text-align:right;
+      padding:12px 20px;
+      border-radius:12px;
+      background:#f9fafb;
+      border:1px solid #e5e7eb;
+      min-width:200px;
+    }
+
+    .hora-actual{
+      font-size:34px;
+      font-weight:700;
+      line-height:1;
+      color:#111827;
+    }
+
+    .fecha-actual{
+      margin-top:6px;
+      font-size:14px;
+      font-weight:600;
+      color:#6b7280;
+      text-transform:capitalize;
+    }
+
+    /* ===== FILTROS ===== */
     .filters{
       display:flex;
       gap:14px;
       margin-bottom:20px;
       flex-wrap:wrap;
     }
+
     input,select{
       padding:8px 12px;
       border-radius:8px;
@@ -44,6 +84,7 @@
       background:#fff;
     }
 
+    /* ===== TABLA ===== */
     .table-wrapper{
       width:100%;
       overflow-x:auto;
@@ -54,19 +95,24 @@
       border-collapse:collapse;
       min-width:900px;
     }
+
     th,td{
       padding:10px;
       text-align:left;
       vertical-align:middle;
     }
+
     th{
       background:#f3f4f6;
       font-weight:700;
       font-size:13px;
     }
+
     tr{
       border-bottom:1px solid #e5e7eb;
     }
+
+    .hora{ font-weight:700; }
 
     /* ===== ESTADOS ===== */
     .estado-select{
@@ -83,16 +129,19 @@
       color:#065f46;
       border-color:#6ee7b7;
     }
+
     .estado-en-sala{
       background:#fef3c7;
       color:#92400e;
       border-color:#fde68a;
     }
+
     .estado-cancelada{
       background:#fee2e2;
       color:#991b1b;
       border-color:#fecaca;
     }
+
     .estado-confirmada,
     .estado-programada{
       background:#e5e7eb;
@@ -100,8 +149,7 @@
       border-color:#d1d5db;
     }
 
-    .hora{ font-weight:700; }
-
+    /* ===== BOTONES ===== */
     .btn-ver{
       padding:6px 16px;
       border-radius:999px;
@@ -111,11 +159,13 @@
       font-weight:700;
       cursor:pointer;
     }
+
     .btn-ver.primary{
       background:#1f6aa5;
       color:#fff;
       border-color:#1f6aa5;
     }
+
     .btn-ver:hover{ filter:brightness(.95); }
 
     .empty{
@@ -125,30 +175,24 @@
       font-weight:600;
     }
 
-    /* ===================== */
-    /* 📱 RESPONSIVE DESIGN */
-    /* ===================== */
-
-    @media (max-width:1024px){
-      body{ padding:20px; }
+    /* ===== RESPONSIVE ===== */
+    @media(max-width:768px){
+      body{ padding:15px; }
       .container{ padding:20px; }
-      h1{ font-size:22px; }
-      th,td{ font-size:12px; padding:8px; }
-    }
 
-    @media (max-width:768px){
-      body{ padding:10px; }
-      .container{ padding:16px; }
-      h1{ font-size:20px; }
-      .filters{ flex-direction:column; }
-      input,select{ width:100%; }
-      .btn-ver{ font-size:11px; padding:5px 10px; }
-      .estado-select{ font-size:11px; }
-    }
+      .header-top{
+        flex-direction:column;
+        align-items:flex-start;
+      }
 
-    @media (max-width:480px){
-      h1{ font-size:18px; }
-      .btn-ver{ font-size:10px; padding:4px 8px; }
+      .reloj{
+        width:100%;
+        text-align:left;
+      }
+
+      .hora-actual{
+        font-size:28px;
+      }
     }
   </style>
 </head>
@@ -156,7 +200,15 @@
 <body>
 
 <div class="container">
-  <h1>🦷 Agenda de Pacientes</h1>
+
+  <div class="header-top">
+    <h1>🦷 Agenda de Pacientes</h1>
+
+    <div class="reloj">
+      <div id="hora-actual" class="hora-actual"></div>
+      <div id="fecha-actual" class="fecha-actual"></div>
+    </div>
+  </div>
 
   <div class="filters">
     <input type="date" id="fecha">
@@ -194,13 +246,36 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  "TU_PUBLIC_ANON_KEY_AQUI"
 );
 
+/* ===== RELOJ ===== */
+function actualizarReloj(){
+  const ahora = new Date();
+
+  document.getElementById("hora-actual").textContent =
+    ahora.toLocaleTimeString("es-CO", {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit"
+    });
+
+  document.getElementById("fecha-actual").textContent =
+    ahora.toLocaleDateString("es-CO", {
+      weekday: "long",
+      day: "2-digit",
+      month: "long",
+      year: "numeric"
+    });
+}
+
+actualizarReloj();
+setInterval(actualizarReloj, 1000);
+
+/* ===== AGENDA (NO TOCADA) ===== */
 const tabla = document.getElementById("tabla");
 const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
-const profesionalSelect = document.getElementById("profesional");
 
 fechaInput.value = new Date().toISOString().split("T")[0];
 
@@ -234,30 +309,6 @@ async function cargarCitas(){
 
   data.forEach(c=>{
     const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
-    const cedula = encodeURIComponent(c.documento_paciente||"");
-
-    const select = document.createElement("select");
-    select.className=`estado-select ${claseEstado(c.estado)}`;
-
-    [
-      {v:"confirmada",l:"Confirmada",e:false},
-      {v:"programada",l:"Programada",e:false},
-      {v:"en_sala",l:"En Sala",e:true},
-      {v:"atendida",l:"Atendida",e:true},
-      {v:"cancelada",l:"Cancelada",e:true},
-    ].forEach(o=>{
-      const opt=document.createElement("option");
-      opt.value=o.v;
-      opt.textContent=o.l;
-      opt.disabled=!o.e;
-      if(o.v===c.estado) opt.selected=true;
-      select.appendChild(opt);
-    });
-
-    select.onchange=async e=>{
-      await supabase.from("citas").update({estado:e.target.value}).eq("id",c.id);
-      select.className=`estado-select ${claseEstado(e.target.value)}`;
-    };
 
     const tr=document.createElement("tr");
     tr.innerHTML=`
@@ -265,13 +316,12 @@ async function cargarCitas(){
       <td>${c.nombre_paciente}</td>
       <td>${c.nombre_profesional}</td>
       <td>${c.especialidad||"-"}</td>
-      <td></td>
+      <td><span class="estado-select ${claseEstado(c.estado)}">${c.estado.replace("_"," ")}</span></td>
       <td><button class="btn-ver primary">ver</button></td>
       <td><button class="btn-ver">ver</button></td>
       <td><button class="btn-ver">ver</button></td>
       <td><button class="btn-ver">ver</button></td>
     `;
-    tr.children[4].appendChild(select);
     tabla.appendChild(tr);
   });
 }
@@ -283,5 +333,6 @@ cargarCitas();
 
 </body>
 </html>
+
 
 
