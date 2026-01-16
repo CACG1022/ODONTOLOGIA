@@ -315,6 +315,12 @@ fechaInput.addEventListener("change",cargarCitas);
 profesionalSelect.addEventListener("change",cargarCitas);
 
 init();
+
+  // 🔄 Auto refresco cada 5 minutos (300000 ms)
+setInterval(() => {
+  cargarCitas();
+}, 300000);
+  
 </script>
 
 </body>
