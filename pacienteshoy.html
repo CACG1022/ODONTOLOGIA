@@ -253,10 +253,12 @@ async function cargarCitas(){
     const selectEstado = document.createElement("select");
     selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
 
-   [
-  { value:"atendida", label:"Atendida" },
-  { value:"en_sala",  label:"En Sala" },
-  { value:"cancelada",label:"Cancelada" }
+  [
+  { value:"confirmada", label:"Confirmada" },
+  { value:"programada", label:"Programada" },
+  { value:"en_sala",    label:"En Sala" },
+  { value:"atendida",   label:"Atendida" },
+  { value:"cancelada",  label:"Cancelada" }
 ].forEach(op=>{
   const o = document.createElement("option");
   o.value = op.value;           // ✅ BD
