@@ -250,7 +250,8 @@ async function cargarCitas(){
 
     const selectEstado = document.createElement("select");
     selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
-    [
+
+   [
   { value:"atendida", label:"Atendida" },
   { value:"en_sala",  label:"En Sala" },
   { value:"cancelada",label:"Cancelada" }
@@ -258,7 +259,10 @@ async function cargarCitas(){
   const o = document.createElement("option");
   o.value = op.value;           // ✅ BD
   o.textContent = op.label;     // ✅ UI
+  if(op.value === c.estado) o.selected = true;
+  selectEstado.appendChild(o);
 });
+
 
 
     selectEstado.addEventListener("change", async e=>{
