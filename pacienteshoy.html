@@ -44,9 +44,15 @@
       background:#fff;
     }
 
+    .table-wrapper{
+      width:100%;
+      overflow-x:auto;
+    }
+
     table{
       width:100%;
       border-collapse:collapse;
+      min-width:900px;
     }
     th,td{
       padding:10px;
@@ -87,6 +93,12 @@
       color:#991b1b;
       border-color:#fecaca;
     }
+    .estado-confirmada,
+    .estado-programada{
+      background:#e5e7eb;
+      color:#374151;
+      border-color:#d1d5db;
+    }
 
     .hora{ font-weight:700; }
 
@@ -112,6 +124,32 @@
       color:#6b7280;
       font-weight:600;
     }
+
+    /* ===================== */
+    /* 📱 RESPONSIVE DESIGN */
+    /* ===================== */
+
+    @media (max-width:1024px){
+      body{ padding:20px; }
+      .container{ padding:20px; }
+      h1{ font-size:22px; }
+      th,td{ font-size:12px; padding:8px; }
+    }
+
+    @media (max-width:768px){
+      body{ padding:10px; }
+      .container{ padding:16px; }
+      h1{ font-size:20px; }
+      .filters{ flex-direction:column; }
+      input,select{ width:100%; }
+      .btn-ver{ font-size:11px; padding:5px 10px; }
+      .estado-select{ font-size:11px; }
+    }
+
+    @media (max-width:480px){
+      h1{ font-size:18px; }
+      .btn-ver{ font-size:10px; padding:4px 8px; }
+    }
   </style>
 </head>
 
@@ -127,22 +165,24 @@
     </select>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Hora</th>
-        <th>Paciente</th>
-        <th>Profesional</th>
-        <th>Especialidad</th>
-        <th>Estado</th>
-        <th>Historia clínica</th>
-        <th>Plan tratamiento</th>
-        <th>Facturación</th>
-        <th>Evoluciones</th>
-      </tr>
-    </thead>
-    <tbody id="tabla"></tbody>
-  </table>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Hora</th>
+          <th>Paciente</th>
+          <th>Profesional</th>
+          <th>Especialidad</th>
+          <th>Estado</th>
+          <th>Historia clínica</th>
+          <th>Plan tratamiento</th>
+          <th>Facturación</th>
+          <th>Evoluciones</th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+  </div>
 
   <div id="empty" class="empty" style="display:none;">
     No hay citas para esta fecha
@@ -154,10 +194,8 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  "TU_PUBLIC_ANON_KEY_AQUI"
 );
-
-const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
 const tabla = document.getElementById("tabla");
 const emptyMsg = document.getElementById("empty");
@@ -166,58 +204,14 @@ const profesionalSelect = document.getElementById("profesional");
 
 fechaInput.value = new Date().toISOString().split("T")[0];
 
-async function validarSesion(){
-  const { data:{ session } } = await supabase.auth.getSession();
-  if(!session){
-    window.location.href = LOGIN_URL;
-    return null;
-  }
-  return session.user;
-}
-
-async function validarPermiso(rol){
-  const { data } = await supabase
-    .from("modulos_permisos")
-    .select("admin,doctor,auxiliar,paciente")
-    .eq("modulo","agendamientos")
-    .single();
-
-  return data?.[rol] === true;
-}
-
-async function cargarProfesionales(){
-  const { data } = await supabase
-    .from("citas")
-    .select("nombre_profesional")
-    .not("nombre_profesional","is",null);
-
-  [...new Set(data.map(d=>d.nombre_profesional))].forEach(p=>{
-    const o=document.createElement("option");
-    o.value=p;
-    o.textContent=p;
-    profesionalSelect.appendChild(o);
-  });
-}
-
-function claseEstado(valor){
-  if(valor === "atendida") return "estado-atendida";
-  if(valor === "en_sala") return "estado-en-sala";
-  if(valor === "cancelada") return "estado-cancelada";
-  if(valor === "confirmada") return "estado-confirmada"; // amarillo suave
-  if(valor === "programada") return "estado-programada"; // amarillo suave
-  return "";
-}
-
-async function actualizarEstado(citaId, nuevoEstado){
-  const { error } = await supabase
-    .from("citas")
-    .update({ estado: nuevoEstado })
-    .eq("id", citaId);
-
-  if(error){
-    alert("No se pudo actualizar el estado");
-    console.error(error);
-  }
+function claseEstado(v){
+  return {
+    atendida:"estado-atendida",
+    en_sala:"estado-en-sala",
+    cancelada:"estado-cancelada",
+    confirmada:"estado-confirmada",
+    programada:"estado-programada"
+  }[v] || "";
 }
 
 async function cargarCitas(){
@@ -225,121 +219,69 @@ async function cargarCitas(){
   emptyMsg.style.display="none";
 
   const fecha = fechaInput.value;
-  const inicioDia = `${fecha} 00:00:00`;
-  const finDia = `${fecha} 23:59:59`;
 
-  let query = supabase
+  const { data } = await supabase
     .from("citas")
     .select("*")
-    .gte("inicio",inicioDia)
-    .lte("inicio",finDia)
-    .order("inicio",{ascending:true});
+    .gte("inicio",`${fecha} 00:00:00`)
+    .lte("inicio",`${fecha} 23:59:59`)
+    .order("inicio");
 
-  if(profesionalSelect.value){
-    query = query.eq("nombre_profesional", profesionalSelect.value);
-  }
-
-  const { data } = await query;
-
-  if(!data || !data.length){
+  if(!data?.length){
     emptyMsg.style.display="block";
     return;
   }
 
   data.forEach(c=>{
     const hora = new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"});
-    const cedula = encodeURIComponent(c.documento_paciente || "");
+    const cedula = encodeURIComponent(c.documento_paciente||"");
 
-    const selectEstado = document.createElement("select");
-    selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
+    const select = document.createElement("select");
+    select.className=`estado-select ${claseEstado(c.estado)}`;
 
-  [
-  { value:"confirmada", label:"Confirmada", editable:false },
-  { value:"programada", label:"Programada", editable:false },
-  { value:"en_sala",    label:"En Sala",    editable:true },
-  { value:"atendida",   label:"Atendida",   editable:true },
-  { value:"cancelada",  label:"Cancelada",  editable:true }
-].forEach(op=>{
-  const o = document.createElement("option");
-  o.value = op.value;
-  o.textContent = op.label;
-
-  // 🔒 Bloquear estados NO editables
-  if(!op.editable) {
-    o.disabled = true;
-  }
-
-  // ✅ Seleccionar el estado real de la BD
-  if(op.value === c.estado) {
-    o.selected = true;
-  }
-
-  selectEstado.appendChild(o);
-});
-
-
-
-
-    selectEstado.addEventListener("change", async e=>{
-      const nuevoEstado = e.target.value;
-      selectEstado.className = `estado-select ${claseEstado(nuevoEstado)}`;
-      await actualizarEstado(c.id, nuevoEstado);
+    [
+      {v:"confirmada",l:"Confirmada",e:false},
+      {v:"programada",l:"Programada",e:false},
+      {v:"en_sala",l:"En Sala",e:true},
+      {v:"atendida",l:"Atendida",e:true},
+      {v:"cancelada",l:"Cancelada",e:true},
+    ].forEach(o=>{
+      const opt=document.createElement("option");
+      opt.value=o.v;
+      opt.textContent=o.l;
+      opt.disabled=!o.e;
+      if(o.v===c.estado) opt.selected=true;
+      select.appendChild(opt);
     });
+
+    select.onchange=async e=>{
+      await supabase.from("citas").update({estado:e.target.value}).eq("id",c.id);
+      select.className=`estado-select ${claseEstado(e.target.value)}`;
+    };
 
     const tr=document.createElement("tr");
     tr.innerHTML=`
       <td class="hora">${hora}</td>
       <td>${c.nombre_paciente}</td>
       <td>${c.nombre_profesional}</td>
-      <td>${c.especialidad || "-"}</td>
+      <td>${c.especialidad||"-"}</td>
       <td></td>
-
-      <td><button class="btn-ver primary" onclick="window.open('historia-clinica.html?buscar_cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('plandetratamiento.html?cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('facturacion.html?paciente_cedula=${cedula}','_blank')">ver</button></td>
-      <td><button class="btn-ver" onclick="window.open('evoluciones.html?auto=1&cedula=${cedula}','_blank')">ver</button></td>
+      <td><button class="btn-ver primary">ver</button></td>
+      <td><button class="btn-ver">ver</button></td>
+      <td><button class="btn-ver">ver</button></td>
+      <td><button class="btn-ver">ver</button></td>
     `;
-
-    tr.children[4].appendChild(selectEstado);
+    tr.children[4].appendChild(select);
     tabla.appendChild(tr);
   });
 }
 
-async function init(){
-  const user = await validarSesion();
-  if(!user) return;
-
-  const { data:perfil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id",user.id)
-    .single();
-
-  const permiso = await validarPermiso(perfil.role);
-  if(!permiso){
-    alert("No tienes permiso para ver la agenda");
-    window.location.href="index.html";
-    return;
-  }
-
-  await cargarProfesionales();
-  await cargarCitas();
-}
-
-fechaInput.addEventListener("change",cargarCitas);
-profesionalSelect.addEventListener("change",cargarCitas);
-
-init();
-
-  // 🔄 Auto refresco cada 5 minutos (300000 ms)
-setInterval(() => {
-  cargarCitas();
-}, 300000);
-  
+fechaInput.onchange=cargarCitas;
+setInterval(cargarCitas,60000);
+cargarCitas();
 </script>
 
 </body>
 </html>
-
 
 
