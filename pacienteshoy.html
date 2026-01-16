@@ -200,9 +200,9 @@ async function cargarProfesionales(){
 }
 
 function claseEstado(valor){
-  if(valor === "Atendida") return "estado-atendida";
-  if(valor === "En Sala") return "estado-en-sala";
-  if(valor === "Cancelada") return "estado-cancelada";
+  if(valor === "atendida") return "estado-atendida";
+  if(valor === "en_sala") return "estado-en-sala";
+  if(valor === "cancelada") return "estado-cancelada";
   return "";
 }
 
@@ -250,13 +250,16 @@ async function cargarCitas(){
 
     const selectEstado = document.createElement("select");
     selectEstado.className = `estado-select ${claseEstado(c.estado)}`;
-    ["Atendida","En Sala","Cancelada"].forEach(op=>{
-      const o=document.createElement("option");
-      o.value=op;
-      o.textContent=op;
-      if(op===c.estado) o.selected=true;
-      selectEstado.appendChild(o);
-    });
+    [
+  { value:"atendida", label:"Atendida" },
+  { value:"en_sala",  label:"En Sala" },
+  { value:"cancelada",label:"Cancelada" }
+].forEach(op=>{
+  const o = document.createElement("option");
+  o.value = op.value;           // ✅ BD
+  o.textContent = op.label;     // ✅ UI
+});
+
 
     selectEstado.addEventListener("change", async e=>{
       const nuevoEstado = e.target.value;
