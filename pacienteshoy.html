@@ -250,7 +250,17 @@ setInterval(actualizarReloj,1000);
 const tabla = document.getElementById("tabla");
 const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
-fechaInput.value = new Date().toISOString().split("T")[0];
+
+function fechaHoyLocal() {
+  const hoy = new Date();
+  const year = hoy.getFullYear();
+  const month = String(hoy.getMonth() + 1).padStart(2, "0");
+  const day = String(hoy.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+fechaInput.value = fechaHoyLocal();
+
 
 function claseEstado(v){
   return {
