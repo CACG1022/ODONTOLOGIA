@@ -1434,11 +1434,17 @@ async function validarPermisoDesdeTabla(){
             tipo_usuario,
             eps,
             numero_factura,
-            valor_total: totals.total,
-            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
+            subtotal: totals.subtotal,
+            descuento_pct: totals.descuento_pct,
+            descuento_valor: totals.descuento_valor,
+            iva_aplica: totals.iva_aplica,
+            iva_porcentaje: totals.iva_pct,
+            iva_valor: totals.iva_valor,
             copago: totals.copago,
             cuota_moderadora: totals.cuota_moderadora,
-            profesional
+            valor_total: totals.total,
+            profesional,
+            saldo_pendiente: pagada ? 0 : Number(totals.total || 0)
           };
           const { data: fac2, error: e1b } = await supabase
             .from("facturas")
@@ -2449,6 +2455,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
