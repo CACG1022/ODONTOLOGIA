@@ -459,6 +459,10 @@
       <div class="box">
         <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
         <div>
+          <span>Descuento</span>
+          <b>$ <input id="descuento" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+        </div>
+        <div>
           <span>¿Aplica IVA?</span>
           <b>
             <select id="iva_aplica" style="width:140px;">
@@ -1042,10 +1046,11 @@ async function validarPermisoDesdeTabla(){
       const aplica = ivaAplica();
       const iva_pct = aplica ? Math.max(0, num($("iva_porcentaje")?.value)) : 0;
       const iva_valor = aplica ? Math.max(0, subtotal * (iva_pct / 100)) : 0;
+      const descuento = Math.max(0, num($("descuento")?.value));
       const copago = Math.max(0, num($("copago").value));
       const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, (subtotal + iva_valor) - copago - cuota);
-      return { subtotal, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
+      const total = Math.max(0, (subtotal - descuento + iva_valor) - copago - cuota);
+      return { subtotal, descuento, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
     }
     function recalcularTotales(){
       const t = calcularTotalesObj();
@@ -2282,6 +2287,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("btn-add").addEventListener("click", agregarProcedimiento);
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
+        $("descuento").addEventListener("input", recalcularTotales);
         $("iva_porcentaje").addEventListener("input", recalcularTotales);
         $("iva_aplica").addEventListener("change", syncIVAUI);
         $("btn-guardar").addEventListener("click", guardarFactura);
@@ -2398,3 +2404,4 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
