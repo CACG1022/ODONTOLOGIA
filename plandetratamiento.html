@@ -951,8 +951,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
             price.value = existing.price != null ? String(existing.price) : (proc.price == null ? "" : String(proc.price));
           }
 
+          // ✅ al marcar / desmarcar
           check.addEventListener("change", ()=>{
-            // 🔧 guardar selección temporal
             const priceVal = parseMoney(price.value);
             if(check.checked){
               tempSelections = tempSelections.filter(p=>p.key!==proc.key);
@@ -962,6 +962,18 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
             }
             if(check.checked && !parseMoney(price.value)){
               price.focus();
+            }
+          });
+
+          // ✅ FIX REAL: al EDITAR el precio, actualizar tempSelections
+          price.addEventListener("input", ()=>{
+            if(!check.checked) return;
+            const priceVal = parseMoney(price.value);
+            const idx = tempSelections.findIndex(p=>p.key===proc.key);
+            if(idx >= 0){
+              tempSelections[idx].price = priceVal;
+            }else{
+              tempSelections.push({ key: proc.key, label: proc.label, price: priceVal });
             }
           });
         }
@@ -1038,16 +1050,34 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         return;
       }
 
-      // modo tooth (FIX: respetar precios editados)
+      // modo tooth (igual que tenías)
       if(!currentTooth) return;
 
-      // 🔧 tempSelections YA contiene los precios editados en tiempo real
-      if(tempSelections.length){
-        selectedTeeth[currentTooth] = [...tempSelections];
-      }else{
-        delete selectedTeeth[currentTooth];
-      }
+      const rows = procsContainer.querySelectorAll('.proc-row');
+      const next = [...tempSelections];
 
+      rows.forEach(row=>{
+        const check = row.querySelector('.proc-check');
+        const priceEl = row.querySelector('.price');
+        if(!check.checked) return;
+
+        const price = parseMoney(priceEl.value);
+        if(price <= 0) return;
+
+        next.push({ key: row.dataset.key, label: row.dataset.label, price });
+      });
+
+      // 🔒 evitar procedimientos duplicados por diente
+      const uniqueMap = new Map();
+      next.forEach(p => {
+        if(!uniqueMap.has(p.key)){
+          uniqueMap.set(p.key, p);
+        }
+      });
+      const unique = Array.from(uniqueMap.values());
+
+      if(unique.length) selectedTeeth[currentTooth]=unique;
+      else delete selectedTeeth[currentTooth];
       tempSelections = [];
 
       refreshBadges();
@@ -1326,6 +1356,10 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
