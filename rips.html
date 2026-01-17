@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>RIPS - Gestión de Facturas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
+
+const tbody = document.getElementById("tbody");
+
+/* ===============================
+   CARGAR FACTURAS + ESTADO RIPS
+================================ */
+async function cargarFacturas() {
+  tbody.innerHTML = `<tr><td colspan="6">Cargando...</td></tr>`;
+
+  const { data: facturas, error } = await supabase
+    .from("facturas")
+    .select("id, numero_factura, fecha, paciente_nombre, total")
+    .order("fecha", { ascending: false });
+
+  if (error) {
+    tbody.innerHTML = `<tr><td colspan="6">Error cargando facturas</td></tr>`;
+    return;
+  }
+
+  const { data: envios } = await supabase
+    .from("rips_envios")
+    .select("factura_id");
+
+  const facturasConRips = new Set(envios?.map(e => e.factura_id));
+
+  tbody.innerHTML = "";
+
+  facturas.forEach(f => {
+    const tieneRips = facturasConRips.has(f.id);
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${f.numero_factura}</td>
+      <td>${f.fecha}</td>
+      <td>${f.paciente_nombre || "-"}</td>
+      <td>$${Number(f.total).toLocaleString()}</td>
+      <td>
+        <span class="estado ${tieneRips ? "ok" : "pendiente"}">
+          ${tieneRips ? "RIPS generado" : "Pendiente"}
+        </span>
+      </td>
+      <td>
+        ${tieneRips
+          ? `<button disabled>✔</button>`
+          : `<button onclick="generarRips('${f.id}')">Generar RIPS</button>`
+        }
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+/* ===============================
+   GENERAR RIPS (ENVÍO)
+================================ */
+window.generarRips = async function (facturaId) {
+
+  const ok = confirm("¿Generar RIPS para esta factura?");
+  if (!ok) return;
+
+  const { error } = await supabase
+    .from("rips_envios")
+    .insert([{
+      factura_id: facturaId,
+      estado: "generado",
+      fecha_envio: new Date().toISOString()
+    }]);
+
+  if (error) {
+    alert("❌ Error generando RIPS");
+    console.error(error);
+    return;
+  }
+
+  alert("✅ RIPS generado correctamente");
+  cargarFacturas();
+};
+
+window.onload = cargarFacturas;
+</script>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  background:#f4f6f8;
+  padding:20px;
+}
+h1{
+  margin-bottom:20px;
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+}
+th, td{
+  padding:12px;
+  border-bottom:1px solid #e5e7eb;
+  text-align:left;
+}
+th{
+  background:#1f6aa5;
+  color:#fff;
+}
+.estado{
+  padding:6px 12px;
+  border-radius:999px;
+  font-weight:bold;
+  font-size:13px;
+}
+.estado.ok{
+  background:#d1fae5;
+  color:#065f46;
+}
+.estado.pendiente{
+  background:#fee2e2;
+  color:#991b1b;
+}
+button{
+  padding:6px 12px;
+  border:none;
+  border-radius:8px;
+  background:#1f6aa5;
+  color:#fff;
+  cursor:pointer;
+}
+button:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+</style>
+</head>
+
+<body>
+
+<h1>📄 Gestión de RIPS por Factura</h1>
+
+<table>
+<thead>
+<tr>
+  <th>N° Factura</th>
+  <th>Fecha</th>
+  <th>Paciente</th>
+  <th>Total</th>
+  <th>Estado RIPS</th>
+  <th>Acción</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+</body>
+</html>
