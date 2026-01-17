@@ -94,7 +94,6 @@ window.generarRips = async function (facturaId, numeroFactura) {
   const confirmar = confirm(
     `¿Deseas generar el RIPS para la factura ${numeroFactura}?`
   );
-
   if (!confirmar) return;
 
   const { error } = await supabase
@@ -102,19 +101,20 @@ window.generarRips = async function (facturaId, numeroFactura) {
     .insert([{
       factura_id: facturaId,
       numero_factura: numeroFactura,
-      estado: "GENERADO",
-      fecha_envio: new Date().toISOString()
+      estado: "PENDIENTE",
+      fecha_generacion: new Date().toISOString()
     }]);
 
   if (error) {
-    console.error("Error RIPS:", error);
-    alert("❌ Error generando RIPS");
+    console.error("❌ Error insertando RIPS:", error);
+    alert("❌ Error generando RIPS (revisa consola)");
     return;
   }
 
-  alert("✅ RIPS generado correctamente");
+  alert("✅ RIPS creado correctamente");
   cargarFacturas();
 };
+
 
 window.onload = cargarFacturas;
 </script>
