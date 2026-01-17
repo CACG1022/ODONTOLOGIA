@@ -427,7 +427,9 @@
     <div class="section">
       <div class="grid">
         <div class="ctrl" style="grid-column: span 2;">
-          <label>Agregar procedimiento</label>
+          <label>Buscar procedimiento</label>
+          <input id="buscar-proc" type="text" placeholder="Escribe para buscar..." />
+          <label style="margin-top:6px;">Agregar procedimiento</label>
           <select id="sel-proc"></select>
         </div>
         <div class="ctrl">
@@ -889,11 +891,13 @@ async function validarPermisoDesdeTabla(){
       state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
       renderProfesionales();
     }
-    function renderProcedimientosSelect(){
+    function renderProcedimientosSelect(filtro = ""){
       const sel = $("sel-proc");
+      const f = filtro.toLowerCase();
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
       for (const p of state.procedimientos){
         const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
+        if (f && !label.toLowerCase().includes(f)) continue;
         const opt = document.createElement("option");
         opt.value = String(p.id);
         opt.textContent = label;
@@ -2285,6 +2289,11 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
         $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
         $("btn-add").addEventListener("click", agregarProcedimiento);
+        if ($("buscar-proc")){
+          $("buscar-proc").addEventListener("input", (e) => {
+            renderProcedimientosSelect(e.target.value || "");
+          });
+        }
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
         $("descuento").addEventListener("input", recalcularTotales);
@@ -2404,4 +2413,5 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
