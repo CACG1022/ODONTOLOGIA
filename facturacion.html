@@ -426,11 +426,11 @@
     </div>
     <div class="section">
       <div class="grid">
-        <div class="ctrl" style="grid-column: span 2;">
-          <label>Buscar procedimiento</label>
-          <input id="buscar-proc" type="text" placeholder="Escribe para buscar..." />
-          <label style="margin-top:6px;">Agregar procedimiento</label>
-          <select id="sel-proc"></select>
+        <div class="ctrl" style="grid-column: span 2; position:relative;">
+          <label>Agregar procedimiento</label>
+          <input id="sel-proc-input" type="text" placeholder="Escribe para buscar procedimiento..." autocomplete="off"/>
+          <select id="sel-proc" class="oculto"></select>
+          <div id="proc-dropdown" style="position:absolute; top:72px; left:0; right:0; z-index:20; background:#fff; border:1px solid var(--line); border-radius:10px; max-height:260px; overflow:auto; display:none;"></div>
         </div>
         <div class="ctrl">
           <label>Cantidad</label>
@@ -893,8 +893,11 @@ async function validarPermisoDesdeTabla(){
     }
     function renderProcedimientosSelect(filtro = ""){
       const sel = $("sel-proc");
+      const drop = $("proc-dropdown");
       const f = filtro.toLowerCase();
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
+      drop.innerHTML = "";
+      let count = 0;
       for (const p of state.procedimientos){
         const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
         if (f && !label.toLowerCase().includes(f)) continue;
@@ -902,7 +905,22 @@ async function validarPermisoDesdeTabla(){
         opt.value = String(p.id);
         opt.textContent = label;
         sel.appendChild(opt);
+
+        const div = document.createElement("div");
+        div.textContent = label;
+        div.style.padding = "10px 12px";
+        div.style.cursor = "pointer";
+        div.addEventListener("mouseenter", () => div.style.background = "#f3f5f7");
+        div.addEventListener("mouseleave", () => div.style.background = "#fff");
+        div.addEventListener("click", () => {
+          $("sel-proc-input").value = label;
+          sel.value = opt.value;
+          drop.style.display = "none";
+        });
+        drop.appendChild(div);
+        count++;
       }
+      drop.style.display = count ? "block" : "none";
     }
     function renderProfesionales(){
       const sel = $("profesional");
@@ -2289,9 +2307,18 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
         $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
         $("btn-add").addEventListener("click", agregarProcedimiento);
-        if ($("buscar-proc")){
-          $("buscar-proc").addEventListener("input", (e) => {
+        if ($("sel-proc-input")){
+          $("sel-proc-input").addEventListener("input", (e) => {
             renderProcedimientosSelect(e.target.value || "");
+          });
+          $("sel-proc-input").addEventListener("focus", (e) => {
+            renderProcedimientosSelect(e.target.value || "");
+          });
+          document.addEventListener("click", (ev) => {
+            if (!ev.target.closest("#proc-dropdown") && !ev.target.closest("#sel-proc-input")){
+              const d = $("proc-dropdown");
+              if (d) d.style.display = "none";
+            }
           });
         }
         $("copago").addEventListener("input", recalcularTotales);
@@ -2413,5 +2440,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
