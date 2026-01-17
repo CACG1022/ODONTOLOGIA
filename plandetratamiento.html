@@ -1038,34 +1038,16 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         return;
       }
 
-      // modo tooth (igual que tenías)
+      // modo tooth (FIX: respetar precios editados)
       if(!currentTooth) return;
 
-      const rows = procsContainer.querySelectorAll('.proc-row');
-      const next = [...tempSelections];
+      // 🔧 tempSelections YA contiene los precios editados en tiempo real
+      if(tempSelections.length){
+        selectedTeeth[currentTooth] = [...tempSelections];
+      }else{
+        delete selectedTeeth[currentTooth];
+      }
 
-      rows.forEach(row=>{
-        const check = row.querySelector('.proc-check');
-        const priceEl = row.querySelector('.price');
-        if(!check.checked) return;
-
-        const price = parseMoney(priceEl.value);
-        if(price <= 0) return;
-
-        next.push({ key: row.dataset.key, label: row.dataset.label, price });
-      });
-
-      // 🔒 evitar procedimientos duplicados por diente
-      const uniqueMap = new Map();
-      next.forEach(p => {
-        if(!uniqueMap.has(p.key)){
-          uniqueMap.set(p.key, p);
-        }
-      });
-      const unique = Array.from(uniqueMap.values());
-
-      if(unique.length) selectedTeeth[currentTooth]=unique;
-      else delete selectedTeeth[currentTooth];
       tempSelections = [];
 
       refreshBadges();
@@ -1344,6 +1326,10 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </script>
 </body>
 </html>
+
+
+
+
 
 
 
