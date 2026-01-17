@@ -1281,6 +1281,7 @@ async function validarPermisoDesdeTabla(){
           </div>
           <div class="totbox">
             <div class="line"><span>Subtotal</span><b class="mono">$ ${money(totals.subtotal)}</b></div>
+            <div class="line"><span>Descuento (${Number(totals.descuento_pct||0)}%)</span><b class="mono">- $ ${money(totals.descuento_valor||0)}</b></div>
             <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
@@ -1646,7 +1647,7 @@ async function validarPermisoDesdeTabla(){
         const htmlDoc = buildInvoiceHTML({
           fac: f,
           detalle: det || [],
-          totals: { subtotal, iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
+          totals: { subtotal, descuento_pct: Number(f.descuento_pct||0), descuento_valor: Number(f.descuento_valor||0), iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
           abonos: (ab || [])
         });
         const frame = $("vf_iframe");
@@ -2227,7 +2228,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
+          totals: { subtotal, descuento_pct: Number(fac.descuento_pct||0), descuento_valor: Number(fac.descuento_valor||0), iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
           abonos
         });
         const w = window.open("", "_blank", "width=900,height=700");
@@ -2448,6 +2449,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
