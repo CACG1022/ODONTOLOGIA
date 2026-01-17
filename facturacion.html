@@ -460,9 +460,15 @@
     <div class="totales">
       <div class="box">
         <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
-        <div>
+        <div style="align-items:flex-start;">
           <span>Descuento</span>
-          <b>$ <input id="descuento" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="color:var(--muted); font-weight:700;">%</span>
+              <input id="descuento_pct" type="number" min="0" max="100" step="0.01" value="0" style="width:140px; text-align:right;">
+            </div>
+            <div class="mono" style="color:var(--muted);">Desc: $ <span id="descuento_valor">0</span></div>
+          </div>
         </div>
         <div>
           <span>¿Aplica IVA?</span>
@@ -1068,16 +1074,18 @@ async function validarPermisoDesdeTabla(){
       const aplica = ivaAplica();
       const iva_pct = aplica ? Math.max(0, num($("iva_porcentaje")?.value)) : 0;
       const iva_valor = aplica ? Math.max(0, subtotal * (iva_pct / 100)) : 0;
-      const descuento = Math.max(0, num($("descuento")?.value));
+      const descuento_pct = Math.min(100, Math.max(0, num($("descuento_pct")?.value)));
+      const descuento_valor = Math.max(0, subtotal * (descuento_pct / 100));
       const copago = Math.max(0, num($("copago").value));
       const cuota = Math.max(0, num($("cuota_moderadora").value));
-      const total = Math.max(0, (subtotal - descuento + iva_valor) - copago - cuota);
-      return { subtotal, descuento, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
+      const total = Math.max(0, (subtotal - descuento_valor + iva_valor) - copago - cuota);
+      return { subtotal, descuento_pct, descuento_valor, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
     }
     function recalcularTotales(){
       const t = calcularTotalesObj();
       $("subtotal").textContent = money(t.subtotal);
       $("iva_valor").textContent = money(t.iva_valor);
+      if ($("descuento_valor")) $("descuento_valor").textContent = money(t.descuento_valor);
       $("total").textContent = money(t.total);
     }
     function formatFechaHuman(iso){
@@ -2323,7 +2331,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         }
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
-        $("descuento").addEventListener("input", recalcularTotales);
+        if ($("descuento_pct")) $("descuento_pct").addEventListener("input", recalcularTotales);
         $("iva_porcentaje").addEventListener("input", recalcularTotales);
         $("iva_aplica").addEventListener("change", syncIVAUI);
         $("btn-guardar").addEventListener("click", guardarFactura);
@@ -2440,6 +2448,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
