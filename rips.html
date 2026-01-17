@@ -2,12 +2,15 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>RIPS - Gestión de Facturas</title>
+<title>Gestión de RIPS por Factura</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+/* ===============================
+   CONFIGURACIÓN SUPABASE
+================================ */
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
@@ -19,26 +22,37 @@ const tbody = document.getElementById("tbody");
    CARGAR FACTURAS + ESTADO RIPS
 ================================ */
 async function cargarFacturas() {
-  tbody.innerHTML = `<tr><td colspan="6">Cargando...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7">Cargando facturas...</td></tr>`;
 
+  // 1️⃣ Obtener facturas
   const { data: facturas, error } = await supabase
     .from("facturas")
-    .select("id, numero_factura, fecha, paciente_nombre, total")
+    .select(`
+      id,
+      numero_factura,
+      fecha,
+      paciente_nombre,
+      paciente_cedula,
+      valor_total
+    `)
     .order("fecha", { ascending: false });
 
   if (error) {
-    tbody.innerHTML = `<tr><td colspan="6">Error cargando facturas</td></tr>`;
+    console.error("Error facturas:", error);
+    tbody.innerHTML = `<tr><td colspan="7">❌ Error cargando facturas</td></tr>`;
     return;
   }
 
-  const { data: envios } = await supabase
+  // 2️⃣ Obtener RIPS ya generados
+  const { data: rips } = await supabase
     .from("rips_envios")
     .select("factura_id");
 
-  const facturasConRips = new Set(envios?.map(e => e.factura_id));
+  const facturasConRips = new Set((rips || []).map(r => r.factura_id));
 
   tbody.innerHTML = "";
 
+  // 3️⃣ Pintar tabla
   facturas.forEach(f => {
     const tieneRips = facturasConRips.has(f.id);
 
@@ -47,42 +61,54 @@ async function cargarFacturas() {
       <td>${f.numero_factura}</td>
       <td>${f.fecha}</td>
       <td>${f.paciente_nombre || "-"}</td>
-      <td>$${Number(f.total).toLocaleString()}</td>
+      <td>${f.paciente_cedula || "-"}</td>
+      <td>$${Number(f.valor_total || 0).toLocaleString()}</td>
       <td>
         <span class="estado ${tieneRips ? "ok" : "pendiente"}">
           ${tieneRips ? "RIPS generado" : "Pendiente"}
         </span>
       </td>
       <td>
-        ${tieneRips
+        ${
+          tieneRips
           ? `<button disabled>✔</button>`
-          : `<button onclick="generarRips('${f.id}')">Generar RIPS</button>`
+          : `<button onclick="generarRips('${f.id}', '${f.numero_factura}')">
+               Generar RIPS
+             </button>`
         }
       </td>
     `;
     tbody.appendChild(tr);
   });
+
+  if (facturas.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">No hay facturas registradas</td></tr>`;
+  }
 }
 
 /* ===============================
-   GENERAR RIPS (ENVÍO)
+   GENERAR RIPS (REGISTRO)
 ================================ */
-window.generarRips = async function (facturaId) {
+window.generarRips = async function (facturaId, numeroFactura) {
 
-  const ok = confirm("¿Generar RIPS para esta factura?");
-  if (!ok) return;
+  const confirmar = confirm(
+    `¿Deseas generar el RIPS para la factura ${numeroFactura}?`
+  );
+
+  if (!confirmar) return;
 
   const { error } = await supabase
     .from("rips_envios")
     .insert([{
       factura_id: facturaId,
-      estado: "generado",
+      numero_factura: numeroFactura,
+      estado: "GENERADO",
       fecha_envio: new Date().toISOString()
     }]);
 
   if (error) {
+    console.error("Error RIPS:", error);
     alert("❌ Error generando RIPS");
-    console.error(error);
     return;
   }
 
@@ -111,6 +137,7 @@ th, td{
   padding:12px;
   border-bottom:1px solid #e5e7eb;
   text-align:left;
+  font-size:14px;
 }
 th{
   background:#1f6aa5;
@@ -120,7 +147,7 @@ th{
   padding:6px 12px;
   border-radius:999px;
   font-weight:bold;
-  font-size:13px;
+  font-size:12px;
 }
 .estado.ok{
   background:#d1fae5;
@@ -155,6 +182,7 @@ button:disabled{
   <th>N° Factura</th>
   <th>Fecha</th>
   <th>Paciente</th>
+  <th>Cédula</th>
   <th>Total</th>
   <th>Estado RIPS</th>
   <th>Acción</th>
@@ -165,3 +193,4 @@ button:disabled{
 
 </body>
 </html>
+
