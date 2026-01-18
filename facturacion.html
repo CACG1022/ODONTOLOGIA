@@ -1089,19 +1089,29 @@ async function validarPermisoDesdeTabla(){
       $("total").textContent = money(t.total);
     }
     function formatFechaHuman(iso){
-      if (!iso) return "—";
-      try{
-        const d = new Date(iso);
-        if (Number.isNaN(d.getTime())){
-          const [y,m,dd] = String(iso).split("-");
-          if (y && m && dd) return `${dd}/${m}/${y}`;
-          return String(iso);
-        }
-        return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
-      } catch(e){
-        return String(iso);
-      }
+  if (!iso) return "—";
+
+  // ✅ Caso 1: viene como DATE (YYYY-MM-DD) desde Supabase
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
+  }
+
+  // ✅ Caso 2: viene como timestamp (created_at, fecha_pago, etc.)
+  try{
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime())){
+      return d.toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
     }
+  } catch (e){}
+
+  return String(iso);
+}
+
     function resolveProfesionalLabel(v){
       const raw = String(v ?? "").trim();
       if (!raw) return "—";
