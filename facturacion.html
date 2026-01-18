@@ -926,12 +926,17 @@ async function validarPermisoDesdeTabla(){
         drop.appendChild(div);
         count++;
       }
-      // ✅ SOLO mostrar dropdown si el usuario está escribiendo
-if (filtro && count > 0) {
+    
+const input = document.getElementById("sel-proc-input");
+const isFocused = document.activeElement === input;
+
+// ✅ Mostrar si hay foco (click) o si hay texto escrito
+if ((isFocused || filtro) && count > 0) {
   drop.style.display = "block";
 } else {
   drop.style.display = "none";
 }
+
 
     }
     function renderProfesionales(){
