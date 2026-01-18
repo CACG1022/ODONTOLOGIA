@@ -926,7 +926,13 @@ async function validarPermisoDesdeTabla(){
         drop.appendChild(div);
         count++;
       }
-      drop.style.display = count ? "block" : "none";
+      // ✅ SOLO mostrar dropdown si el usuario está escribiendo
+if (filtro && count > 0) {
+  drop.style.display = "block";
+} else {
+  drop.style.display = "none";
+}
+
     }
     function renderProfesionales(){
       const sel = $("profesional");
@@ -2433,6 +2439,10 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         console.error("INIT ERROR:", err);
         toast("Error inicializando:\n" + (err?.message || err), "err");
       }
+      // ✅ Asegurar dropdown cerrado al cargar la página
+const procDrop = document.getElementById("proc-dropdown");
+if (procDrop) procDrop.style.display = "none";
+
     }
     // ✅ ARRANQUE ROBUSTO (esto evita el “ningún botón funciona”)
     if (document.readyState === "loading"){
