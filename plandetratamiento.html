@@ -1459,5 +1459,53 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   </button>
 </div>
 
+
+<!-- ================= FIX DESFASE FIRMA CANVAS (NO MODIFICA LOGICA EXISTENTE) ================= -->
+<script>
+(function(){
+  function ajustarCanvasFirma(canvas){
+    if(!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return;
+
+    // Ajustar tamaño REAL al tamaño visual
+    canvas.width  = rect.width;
+    canvas.height = rect.height;
+
+    const ctx = canvas.getContext("2d");
+    if(ctx){
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.lineJoin = "round";
+      ctx.strokeStyle = "#000";
+    }
+  }
+
+  function ajustarTodos(){
+    document.querySelectorAll("canvas.firma-canvas").forEach(c => {
+      ajustarCanvasFirma(c);
+    });
+  }
+
+  // Al cargar DOM
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", ajustarTodos);
+  } else {
+    ajustarTodos();
+  }
+
+  // Al redimensionar ventana (responsive / móvil)
+  window.addEventListener("resize", () => {
+    setTimeout(ajustarTodos, 100);
+  });
+
+  // Exponer por si algún modal lo necesita manualmente
+  window.__ajustarCanvasFirma = ajustarCanvasFirma;
+})();
+</script>
+
 </body>
 </html>
+
+
