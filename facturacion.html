@@ -1281,6 +1281,7 @@ async function validarPermisoDesdeTabla(){
           </div>
           <div class="totbox">
             <div class="line"><span>Subtotal</span><b class="mono">$ ${money(totals.subtotal)}</b></div>
+            <div class="line"><span>Descuento (${Number(totals.descuento_pct||0)}%)</span><b class="mono">- $ ${money(totals.descuento_valor||0)}</b></div>
             <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
@@ -1433,10 +1434,13 @@ async function validarPermisoDesdeTabla(){
             tipo_usuario,
             eps,
             numero_factura,
-            valor_total: totals.total,
-            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
+            subtotal: totals.subtotal,
+            descuento_pct: totals.descuento_pct,
+            descuento_valor: totals.descuento_valor,
             copago: totals.copago,
             cuota_moderadora: totals.cuota_moderadora,
+            valor_total: totals.total,
+            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
             profesional
           };
           const { data: fac2, error: e1b } = await supabase
@@ -1646,7 +1650,17 @@ async function validarPermisoDesdeTabla(){
         const htmlDoc = buildInvoiceHTML({
           fac: f,
           detalle: det || [],
-          totals: { subtotal, iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
+          totals: {
+            subtotal,
+            descuento_pct: Number(f.descuento_pct||0),
+            descuento_valor: Number(f.descuento_valor||0),
+            iva_aplica,
+            iva_pct,
+            iva_valor,
+            copago,
+            cuota_moderadora: cuota,
+            total
+          },
           abonos: (ab || [])
         });
         const frame = $("vf_iframe");
@@ -2448,6 +2462,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   </script>
 </body>
 </html>
+
 
 
 
