@@ -1,11 +1,12 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Inicio - Clínica Dra. Leidi Silva</title>
+  <title>DENTOVA · Panel Futurista</title>
 
-  <script type="module">
+<script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
     // ✅ Supabase
@@ -181,461 +182,103 @@
     };
   </script>
 
-  
-<style>
-/* ================= FUTURISTIC PREMIUM HUD THEME ================= */
-:root{
-  --bg0:#020b10;
-  --bg1:#062a33;
-  --neon:#20f0d0;
-  --neon2:#66ffb5;
-  --glass:rgba(255,255,255,.07);
-  --glass2:rgba(255,255,255,.03);
-  --border:rgba(255,255,255,.22);
-  --text:#ffffff;
-  --muted:rgba(255,255,255,.70);
-  --ok:#2cff9a;
-  --radius:20px;
-  --shadow:0 30px 90px rgba(0,0,0,.75);
-  --shadow2:0 18px 50px rgba(0,0,0,.55);
-}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap" rel="stylesheet">
 
-*{box-sizing:border-box}
-html,body{height:100%}
-
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:flex-start;
-  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  color:var(--text);
-  background:
-    radial-gradient(900px 520px at 18% 18%, rgba(32,240,208,.32), transparent 60%),
-    radial-gradient(780px 520px at 85% 78%, rgba(102,255,181,.24), transparent 62%),
-    linear-gradient(150deg,var(--bg0),var(--bg1));
-  padding:32px 16px;
-  overflow-x:hidden;
-}
-
-/* HUD grid */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:
-    linear-gradient(rgba(255,255,255,.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.04) 1px, transparent 1px);
-  background-size:48px 48px;
-  opacity:.25;
-  mask-image:radial-gradient(circle at 50% 40%, black, transparent 78%);
-}
-
-/* Edge glow */
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  pointer-events:none;
-  background:
-    radial-gradient(24px 400px at left 50%, rgba(32,240,208,.55), transparent 70%),
-    radial-gradient(24px 400px at right 50%, rgba(32,240,208,.55), transparent 70%);
-}
-
-.wrapper{
-  width:min(1100px,100%);
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:24px;
-}
-
-/* Logo */
-.logo-top img{
-  width:min(320px,90vw);
-  filter:
-    drop-shadow(0 0 35px rgba(32,240,208,.55))
-    drop-shadow(0 0 70px rgba(32,240,208,.25));
-}
-.logo-sub{
-  color:var(--neon);
-  letter-spacing:.4em;
-}
-
-/* Main glass card */
-.main-card{
-  width:100%;
-  padding:28px;
-  border-radius:var(--radius);
-  background:
-    radial-gradient(900px 360px at 25% 0%, rgba(32,240,208,.22), transparent 60%),
-    linear-gradient(180deg,var(--glass),var(--glass2));
-  border:1px solid var(--border);
-  box-shadow:var(--shadow);
-  backdrop-filter:blur(20px);
-  position:relative;
-}
-
-.main-card::before{
-  content:"";
-  position:absolute;
-  inset:14px;
-  border-radius:calc(var(--radius) - 10px);
-  border:1px solid rgba(255,255,255,.18);
-  pointer-events:none;
-}
-
-/* Header */
-.header{
-  border-bottom:1px solid var(--border);
-  padding-bottom:18px;
-}
-
-.title{color:var(--muted)}
-#user-email{color:#fff!important}
-#user-role{
-  background:rgba(32,240,208,.22);
-  border:1px solid rgba(32,240,208,.45);
-  color:#fff;
-}
-
-/* Chips */
-.chip{
-  background:rgba(0,0,0,.32);
-  border:1px solid var(--border);
-  color:var(--muted);
-}
-.dot{
-  background:var(--ok);
-  box-shadow:0 0 0 4px rgba(44,255,154,.30);
-}
-
-/* Grid */
-.grid{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:18px;
-}
-@media(max-width:900px){.grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:560px){.grid{grid-template-columns:1fr}}
-
-/* Tiles – HUD style */
-.tile{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:16px;
-  padding:20px;
-  border-radius:18px;
-  text-decoration:none;
-  color:#fff;
-  border:1px solid var(--border);
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.15), rgba(255,255,255,.05));
-  box-shadow:var(--shadow2);
-  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-.tile:hover{
-  transform:translateY(-4px);
-  border-color:var(--neon);
-  box-shadow:0 40px 90px rgba(0,0,0,.85);
-}
-
-.tile.disabled{
-  opacity:.40;
-  cursor:not-allowed;
-  filter:grayscale(.5);
-}
-
-/* ICON FIX (CRÍTICO) */
-.icon{
-  width:48px;
-  height:48px;
-  border-radius:14px;
-  background:rgba(32,240,208,.22);
-  border:1px solid rgba(32,240,208,.45);
-  display:grid;
-  place-items:center;
-}
-.icon svg{
-  width:22px!important;
-  height:22px!important;
-  stroke-width:2;
-}
-
-/* Text */
-.ttext h3{
-  font-size:15px;
-  font-weight:800;
-}
-.ttext p{
-  font-size:13px;
-  color:var(--muted);
-}
-
-/* Arrow */
-.arrow{
-  width:34px;
-  height:34px;
-  border-radius:12px;
-  background:rgba(32,240,208,.25);
-  border:1px solid rgba(32,240,208,.45);
-  color:#fff;
-  font-weight:900;
-}
-
-/* Footer */
-.footer{
-  border-top:1px solid var(--border);
-  color:var(--muted);
-}
-
-/* Logout */
-.logout{
-  border:none;
-  border-radius:14px;
-  padding:12px 20px;
-  background:linear-gradient(135deg,var(--neon),var(--neon2));
-  color:#003333;
-  font-weight:900;
-  letter-spacing:.06em;
-  cursor:pointer;
-  box-shadow:0 24px 50px rgba(0,0,0,.65);
-}
-.logout:hover{filter:brightness(1.1)}
-</style>
-
+  <style>
+    :root{
+      --bg0:#041722; --bg1:#072738;
+      --neon:#20f0d0; --neon2:#66ffb5;
+      --glass:rgba(255,255,255,.08);
+      --glass2:rgba(255,255,255,.04);
+      --border:rgba(255,255,255,.22);
+      --text:#fff; --muted:rgba(255,255,255,.7);
+      --radius:22px;
+      --shadow:0 30px 80px rgba(0,0,0,.6);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;font-family:Inter,system-ui,sans-serif;color:var(--text);
+      background:
+        radial-gradient(900px 520px at 20% 15%, rgba(32,240,208,.25), transparent 60%),
+        radial-gradient(780px 520px at 85% 80%, rgba(102,255,181,.18), transparent 62%),
+        linear-gradient(150deg,var(--bg0),var(--bg1));
+      padding:28px;
+    }
+    .topbar{
+      display:flex;justify-content:space-between;align-items:center;
+      background:linear-gradient(180deg,var(--glass),var(--glass2));
+      border:1px solid var(--border);border-radius:18px;
+      padding:14px 18px;box-shadow:var(--shadow);
+    }
+    .brand{font-weight:900;letter-spacing:.04em}
+    .actions button{
+      margin-left:8px;padding:10px 14px;border-radius:14px;
+      border:1px solid var(--border);background:rgba(0,0,0,.2);
+      color:#fff;font-weight:800;cursor:pointer;
+    }
+    .actions .primary{background:linear-gradient(135deg,var(--neon),var(--neon2));color:#003333}
+    .hero{
+      margin-top:24px;padding:28px;border-radius:26px;
+      background:linear-gradient(180deg,var(--glass),var(--glass2));
+      border:1px solid var(--border);box-shadow:var(--shadow);
+      display:grid;grid-template-columns:1.3fr .7fr;gap:20px;
+    }
+    h1{font-size:48px;margin:0;font-weight:900}
+    h1 span{color:var(--neon)}
+    .cta button{margin-right:10px}
+    .kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+    .kpi{background:rgba(0,0,0,.25);border:1px solid var(--border);border-radius:16px;padding:14px}
+    .modules{margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+    .card{padding:18px;border-radius:18px;
+      background:linear-gradient(180deg,var(--glass),var(--glass2));
+      border:1px solid var(--border);cursor:pointer;
+      display:flex;justify-content:space-between;align-items:center;
+    }
+    .card:hover{border-color:var(--neon)}
+    .card.disabled{opacity:.45;cursor:not-allowed}
+    @media(max-width:900px){.hero{grid-template-columns:1fr}.modules{grid-template-columns:1fr 1fr}}
+    @media(max-width:560px){.modules{grid-template-columns:1fr}}
+  </style>
 </head>
 
 <body>
-  <div class="wrapper">
-    <div class="logo-top">
-      <img
-        src="https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png"
-        alt="Logo Clínica Dra. Leidi Silva"
-      />
-    </div>
-
-    <section class="main-card">
-      <div class="header">
-        <p class="title">
-          Software Dental<br/>
-          Clínica Dra. Leidi Silva<br/>
-          <span id="user-email" style="display:inline-block;margin-top:8px;font-weight:700;"></span><br/>
-          <span id="user-role">Rol: ...</span>
-        </p>
-
-        <div class="meta">
-          <div class="chip"><span class="dot"></span> Sistema activo</div>
-          <div class="chip">Fecha: <span id="today"></span></div>
-        </div>
-      </div>
-
-      <div class="grid">
-        <a class="tile" href="#" id="go-reporte-ventas">
-  <div class="left">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M10 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M16 20v-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-        <path d="M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="ttext">
-      <h3>Reporte ventas</h3>
-      <p>Visualizar reportes de ventas.</p>
+  <div class="topbar">
+    <div class="brand">🦷 DENTOVA · Panel Futurista</div>
+    <div class="actions">
+      <span id="user-email"></span>
+      <button onclick="cerrarSesion()">Cerrar sesión</button>
     </div>
   </div>
-  <div class="arrow">→</div>
-</a>
 
-        <a class="tile" href="#" id="go-agendar">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 13v6M9 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Agendar</h3><p>Ir al enlace de citas.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-agendamiento">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M8 3v3M16 3v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M4 9h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M6 6h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M7.5 12.5h4M7.5 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Agendamiento</h3><p>Calendario de citas.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-historia">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M14 2H7a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-6Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M14 2v6h6" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 13h8M8 17h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Historia Clínica</h3><p>Gestión del paciente.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-reporte-pacientes">
-  <div class="left">
-    <div class="icon">
-      <svg viewBox="0 0 24 24" fill="none">
-        <path d="M4 4h16v16H4V4Z" stroke="currentColor" stroke-width="2"/>
-        <path d="M7 8h10M7 12h10M7 16h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-      </svg>
+  <section class="hero">
+    <div>
+      <h1>DISEÑO <span>FUTURISTA</span><br/>PARA TU SOFTWARE</h1>
+      <p>Panel premium con glassmorphism y módulos inteligentes.</p>
+      <div class="cta">
+        <button class="primary">Empezar ahora</button>
+      </div>
     </div>
-    <div class="ttext"><h3>Reporte de pacientes</h3><p>Buscar por cédula o nombre.</p></div>
-  </div>
-  <div class="arrow">→</div>
-</a>
+    <div class="kpis">
+      <div class="kpi">Citas hoy<br><b>12</b></div>
+      <div class="kpi">Pacientes<br><b>3.421</b></div>
+      <div class="kpi">Facturas<br><b>$8.9M</b></div>
+      <div class="kpi">Alertas<br><b>2</b></div>
+    </div>
+  </section>
 
-
-        <a class="tile" href="#" id="go-plan">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M9 4h6l1 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h3l1-2Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 13h8M8 16h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Plan de Tratamiento</h3><p>Registrar procedimientos.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-hoy">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Pacientes agendados hoy</h3><p>(Pendiente URL)</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-rips">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M4 20V10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M10 20V4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M16 20v-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M22 20H2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>RIPS</h3><p>Solo administrador.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-registro">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"
-                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M19 8v4M17 10h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Registrar Usuarios</h3><p>Solo administrador.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-usuarios">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M16 11c1.66 0 3-1.34 3-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 11c1.66 0 3-1.34 3-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M8 13c-2.76 0-5 1.79-5 4v2h10v-2c0-2.21-2.24-4-5-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M16 13c-1 0-1.92.24-2.7.66 1.04.88 1.7 2.04 1.7 3.34v2h6v-2c0-2.21-2.24-4-5-4Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Usuarios registrados</h3><p>Administrar roles.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <a class="tile" href="#" id="go-precios">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 1v4M12 19v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M12 7a5 5 0 1 0 0 10 5 5 0 0 0 0-10Z" stroke="currentColor" stroke-width="2"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Actualización de precios</h3><p>Editar y agregar procedimientos.</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <!-- ✅ NUEVO: Agregar profesionales (solo admin) -->
-        <a class="tile" href="#" id="go-profesionales">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-                <path d="M19 8v4M17 10h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Agregar profesionales</h3><p>Crear, editar y eliminar (solo admin).</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-        <!-- ✅ NUEVO: Facturación (solo admin) -->
-        <a class="tile" href="#" id="go-facturacion">
-          <div class="left">
-            <div class="icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path d="M7 3h10a2 2 0 0 1 2 2v16l-3-2-3 2-3-2-3 2V5a2 2 0 0 1 2-2Z" stroke="currentColor" stroke-width="2"/>
-                <path d="M9 8h6M9 12h6M9 16h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
-              </svg>
-            </div>
-            <div class="ttext"><h3>Facturación</h3><p>Crear y guardar facturas (solo admin).</p></div>
-          </div>
-          <div class="arrow">→</div>
-        </a>
-
-      </div>
-
-      <div class="footer">
-        <span>© <span id="year"></span> Clínica Dra. Leidi Silva</span>
-        <button class="logout" type="button" onclick="cerrarSesion()">Cerrar sesión</button>
-      </div>
-    </section>
-  </div>
+  <section class="modules">
+    <div class="card" id="go-historia">Historia Clínica →</div>
+    <div class="card" id="go-agendar">Agendamientos →</div>
+    <div class="card" id="go-facturacion">Facturación →</div>
+    <div class="card" id="go-plan">Plan de Tratamiento →</div>
+    <div class="card" id="go-reporte-ventas">Reportes →</div>
+    <div class="card" id="go-usuarios">Administración →</div>
+  </section>
 </body>
 </html>
+
 
 
 
