@@ -96,6 +96,22 @@
 
         tdProc.appendChild(inpProc);
 
+        // ===== CUPS =====
+        const tdCups = document.createElement("td");
+        const inpCups = document.createElement("input");
+        inpCups.type = "text";
+        inpCups.placeholder = "CUPS";
+        inpCups.value = row.codigo_cups ?? "";
+
+        inpCups.addEventListener("input", ()=>{
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, codigo_cups: row.codigo_cups };
+          prev.codigo_cups = inpCups.value;
+          state.editing.set(row.id, prev);
+          markDirty(tr, true);
+        });
+
+        tdCups.appendChild(inpCups);
+
         // ===== Valor =====
         const tdValor = document.createElement("td");
         const inpValor = document.createElement("input");
@@ -135,6 +151,7 @@
         tdAcc.appendChild(btnDel);
 
         tr.appendChild(tdProc);
+        tr.appendChild(tdCups);
         tr.appendChild(tdValor);
         tr.appendChild(tdAcc);
 
@@ -151,7 +168,7 @@
         state.filtered = [...state.all];
       } else {
         state.filtered = state.all.filter(r =>
-          String(r.procedimiento || "").toLowerCase().includes(q)
+          String(r.procedimiento || "").toLowerCase().includes(q) || String(r.codigo_cups || "").toLowerCase().includes(q)
         );
       }
       render();
@@ -162,7 +179,7 @@
       try{
         const { data, error } = await supabase
           .from("procedimientos_precios")
-          .select("id,procedimiento,valor,updated_at")
+          .select("id,procedimiento,valor,codigo_cups,updated_at")
           .order("procedimiento", { ascending: true });
 
         if (error){
@@ -197,7 +214,7 @@
         return;
       }
 
-      const payload = { procedimiento, valor: valor === null ? null : valor };
+      const payload = { procedimiento, valor: valor === null ? null : valor, codigo_cups: edit.codigo_cups || null };
 
       setStatus("Guardando...");
       const { error } = await supabase
@@ -250,7 +267,7 @@
       setStatus("Creando...");
       const { error } = await supabase
         .from("procedimientos_precios")
-        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor }]);
+        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor, codigo_cups: document.getElementById("new-cups").value || null }]);
 
       setStatus("");
       if(error){
@@ -261,6 +278,7 @@
 
       document.getElementById("new-nombre").value = "";
       document.getElementById("new-valor").value = "";
+      document.getElementById("new-cups").value = "";
 
       showToast("Creado ✅", "ok");
       await cargarProcedimientos();
@@ -597,6 +615,7 @@
 
     <div class="new-row">
       <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
+      <input id="new-cups" type="text" placeholder="CUPS (opcional)" />
       <input id="new-valor" type="number" min="0" step="100" placeholder="Valor (opcional)" />
       <button class="btn primary" type="button" id="btn-add">Agregar</button>
       <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
@@ -607,6 +626,7 @@
         <thead>
           <tr>
             <th>Procedimiento</th>
+            <th style="width: 180px;">CUPS</th>
             <th style="width: 220px;">Valor</th>
             <th style="width: 240px;">Acciones</th>
           </tr>
@@ -624,5 +644,8 @@
   <div id="toast"></div>
 </body>
 </html>
+
+
+
 
 
