@@ -861,7 +861,6 @@ async function validarPermisoDesdeTabla(){
         cargarRolActual().then(()=> validarAccesoPorRol());
       }
     });
-          }
     async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e) {}
       window.location.href = LOGIN_URL;
@@ -871,7 +870,6 @@ async function validarPermisoDesdeTabla(){
         .from("procedimientos_precios")
         .select("id, procedimiento, valor, codigo_cups, activo")
         .order("procedimiento", { ascending: true });
-          }
       if (error){
         console.error(error);
         toast("Error procedimientos:\n" + error.message, "err");
@@ -888,7 +886,6 @@ async function validarPermisoDesdeTabla(){
         .from("profesionales")
         .select("id, cedula, nombre, activo")
         .order("nombre", { ascending: true });
-          }
       if (error){
         console.error(error);
         toast("Error profesionales:\n" + error.message, "err");
@@ -926,7 +923,6 @@ async function validarPermisoDesdeTabla(){
           sel.value = opt.value;
           drop.style.display = "none";
         });
-          }
         drop.appendChild(div);
         count++;
       }
@@ -959,7 +955,6 @@ async function validarPermisoDesdeTabla(){
       try{
         const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}`;
         const resp = await fetch(url, { method: "GET" });
-          }
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         const data = await resp.json();
         if (!data?.existe){
@@ -1057,9 +1052,7 @@ async function validarPermisoDesdeTabla(){
             renderItems();
             recalcularTotales();
           });
-          }
         });
-          }
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
@@ -1105,7 +1098,6 @@ async function validarPermisoDesdeTabla(){
           return String(iso);
         }
         return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
-          }
       } catch(e){
         return String(iso);
       }
@@ -1289,7 +1281,6 @@ async function validarPermisoDesdeTabla(){
           </div>
           <div class="totbox">
             <div class="line"><span>Subtotal</span><b class="mono">$ ${money(totals.subtotal)}</b></div>
-            <div class="line"><span>Descuento (${Number(totals.descuento_pct||0)}%)</span><b class="mono">- $ ${money(totals.descuento_valor||0)}</b></div>
             <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
             <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
             <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
@@ -1350,7 +1341,6 @@ async function validarPermisoDesdeTabla(){
     root.dataset.estado = estado;
     window.parent.postMessage({ type: "estado_factura_change", factura_id: facturaId, estado }, "*");
   });
-          }
   // Permite que el padre actualice estado/saldo dinámicamente (por ejemplo tras agregar abonos)
   window.addEventListener("message", (e) => {
     const d = e.data || {};
@@ -1367,7 +1357,6 @@ async function validarPermisoDesdeTabla(){
       sel.value = est;
     }
   });
-          }
 })();
 <\/script>
 </body>
@@ -1411,11 +1400,11 @@ async function validarPermisoDesdeTabla(){
           tipo_usuario,
           eps,
           numero_factura,
-          valor_total: Number(totals.total || 0),
+          valor_total: totals.total,
           copago: totals.copago,
           cuota_moderadora: totals.cuota_moderadora,
           profesional,
-          subtotal: Number(totals.subtotal || 0),
+          subtotal: totals.subtotal,
           iva_aplica: totals.iva_aplica,
           iva_porcentaje: totals.iva_pct,
           iva_valor: totals.iva_valor,
@@ -1429,7 +1418,6 @@ async function validarPermisoDesdeTabla(){
         let fac = null;
         const { data: fac1, error: e1 } = await supabase
           .from("facturas")
-          console.log('FACTURA INSERT PAYLOAD', payloadConExtras);
           .insert([payloadConExtras])
           .select("*")
           .single();
@@ -1445,17 +1433,11 @@ async function validarPermisoDesdeTabla(){
             tipo_usuario,
             eps,
             numero_factura,
-            subtotal: Number(totals.subtotal || 0),
-            descuento_pct: Number(totals.descuento_pct || 0),
-            descuento_valor: Number(totals.descuento_valor || 0),
-            iva_aplica: totals.iva_aplica,
-            iva_porcentaje: totals.iva_pct,
-            iva_valor: totals.iva_valor,
+            valor_total: totals.total,
+            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
             copago: totals.copago,
             cuota_moderadora: totals.cuota_moderadora,
-            valor_total: Number(totals.total || 0),
-            profesional,
-            saldo_pendiente: pagada ? 0 : Number(totals.total || 0)
+            profesional
           };
           const { data: fac2, error: e1b } = await supabase
             .from("facturas")
@@ -1513,7 +1495,6 @@ async function validarPermisoDesdeTabla(){
           .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", state.facturaGuardada.id)
           .order("id", { ascending: true });
-          }
         if (error) throw error;
         // 2) Abonos (si existe tabla)
         let abonos = [];
@@ -1523,7 +1504,6 @@ async function validarPermisoDesdeTabla(){
             .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
             .eq("factura_id", state.facturaGuardada.id)
             .order("fecha", { ascending: true });
-          }
           if (!ea) abonos = ab || [];
           else console.warn("Tabla abonos no disponible:", ea?.message || ea);
         }catch(e){
@@ -1541,7 +1521,6 @@ async function validarPermisoDesdeTabla(){
           totals,
           abonos
         });
-          }
         const w = window.open("", "_blank", "width=900,height=700");
         if (!w){
           setStatus("");
@@ -1645,7 +1624,6 @@ async function validarPermisoDesdeTabla(){
           .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
           .eq("factura_id", facturaId)
           .order("fecha", { ascending: true });
-          }
         // Si la tabla no existe, mostramos igual la factura y dejamos abonos vacíos
         if (ea){
           console.warn("Tabla abonos no disponible:", ea?.message || ea);
@@ -1668,10 +1646,9 @@ async function validarPermisoDesdeTabla(){
         const htmlDoc = buildInvoiceHTML({
           fac: f,
           detalle: det || [],
-          totals: { subtotal, descuento_pct: Number(f.descuento_pct||0), descuento_valor: Number(f.descuento_valor||0), iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
+          totals: { subtotal, iva_aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total },
           abonos: (ab || [])
         });
-          }
         const frame = $("vf_iframe");
         if (frame) frame.srcdoc = htmlDoc;
         openModalVerFactura();
@@ -1744,9 +1721,7 @@ async function validarPermisoDesdeTabla(){
         }
       } catch(_){}
       await setEstadoFactura({ facturaId, estado, saldoPendiente: saldo });
-          }
     });
-          }
     /* ✅ SUPABASE (Recomendado): crear tabla 'abonos'
       - id (bigint, identity) PK
       - factura_id (bigint) FK -> facturas.id (ON DELETE CASCADE)
@@ -1811,7 +1786,6 @@ async function validarPermisoDesdeTabla(){
           if (!ok) return;
           await eliminarAbono(a.id);
         });
-          }
         tbody.appendChild(tr);
       }
     }
@@ -1820,7 +1794,6 @@ async function validarPermisoDesdeTabla(){
       if (!facturaId){
         renderAbonosTabla([]);
         updateResumenAbonos({ totalFactura: 0, totalAbonado: 0 });
-          }
         return;
       }
       try{
@@ -1836,7 +1809,6 @@ async function validarPermisoDesdeTabla(){
           .select("id, factura_id, fecha, monto, metodo_pago, referencia, observacion, created_at")
           .eq("factura_id", facturaId)
           .order("fecha", { ascending: true });
-          }
         if (error){
           const msg = String(error.message || "").toLowerCase();
           const missingTable =
@@ -1846,7 +1818,6 @@ async function validarPermisoDesdeTabla(){
             toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
             $("tbody-abonos").innerHTML = `<tr><td colspan="6" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
             updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
-          }
             return;
           }
           throw error;
@@ -1855,13 +1826,11 @@ async function validarPermisoDesdeTabla(){
         renderAbonosTabla(state.abonos);
         const totalAbonado = (state.abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
         updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado });
-          }
         // ✅ Auto-actualizar estado: si saldo llega a 0 -> PAGADA. Si no, PENDIENTE.
         const totalFacturaNum = Number(fac?.valor_total || 0);
         const saldoPendiente = Math.max(0, totalFacturaNum - Number(totalAbonado || 0));
         const estadoAuto = (saldoPendiente === 0) ? "PAGADA" : "PENDIENTE";
         await setEstadoFactura({ facturaId, estado: estadoAuto, saldoPendiente, silent: true });
-          }
         setStatus("");
       } catch(err){
         console.error(err);
@@ -2088,23 +2057,18 @@ async function validarPermisoDesdeTabla(){
           await cargarFacturaEnFormulario(f.id);
           closeModal();
         });
-          }
         tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
           await imprimirFacturaPorId(f.id);
         });
-          }
         tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
           await togglePagadaFactura(f);
         });
-          }
                 tr.querySelector('[data-act="verfactura"]').addEventListener("click", async () => {
           await abrirVerFactura(f.id);
         });
-          }
 tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           await abrirAbonosFactura(f.id);
         });
-          }
         tbody.appendChild(tr);
       }
       updateResumenFacturas(rows);
@@ -2168,7 +2132,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
-          }
         if (e2) throw e2;
         $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
         $("numero_factura").value = fac.numero_factura || "";
@@ -2232,7 +2195,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
-          }
         if (e2) throw e2;
         // Abonos (si existe tabla)
         let abonos = [];
@@ -2242,7 +2204,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
             .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
             .eq("factura_id", facturaId)
             .order("fecha", { ascending: true });
-          }
           if (!ea) abonos = ab || [];
           else console.warn("Tabla abonos no disponible:", ea?.message || ea);
         }catch(e){
@@ -2266,10 +2227,9 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         const html = buildInvoiceHTML({
           fac,
           detalle: det || [],
-          totals: { subtotal, descuento_pct: Number(fac.descuento_pct||0), descuento_valor: Number(fac.descuento_valor||0), iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
           abonos
         });
-          }
         const w = window.open("", "_blank", "width=900,height=700");
         if (!w){
           setStatus("");
@@ -2322,7 +2282,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           [],
           ["TOTAL FACTURADO", totalFacturado]
         ], { origin: `A${lastRow}` });
-          }
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
           ["Generado:", new Date().toLocaleString("es-CO")],
@@ -2360,18 +2319,15 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           $("sel-proc-input").addEventListener("input", (e) => {
             renderProcedimientosSelect(e.target.value || "");
           });
-          }
           $("sel-proc-input").addEventListener("focus", (e) => {
             renderProcedimientosSelect(e.target.value || "");
           });
-          }
           document.addEventListener("click", (ev) => {
             if (!ev.target.closest("#proc-dropdown") && !ev.target.closest("#sel-proc-input")){
               const d = $("proc-dropdown");
               if (d) d.style.display = "none";
             }
           });
-          }
         }
         $("copago").addEventListener("input", recalcularTotales);
         $("cuota_moderadora").addEventListener("input", recalcularTotales);
@@ -2388,7 +2344,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
             }
             await abrirAbonosFactura(state.facturaGuardada.id);
           });
-          }
         }
         $("btn-logout").addEventListener("click", cerrarSesion);
         $("paciente_cedula").addEventListener("input", onCedulaInput);
@@ -2398,18 +2353,15 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           openModal();
           await listarFacturas();
         });
-          }
         $("btn-cerrar-modal").addEventListener("click", closeModal);
         $("modal-facturas").addEventListener("click", (e) => {
           if (e.target === $("modal-facturas")) closeModal();
         });
-          }
         // ✅ Ver factura
         $("btn-cerrar-modal-verfactura").addEventListener("click", closeModalVerFactura);
         $("modal-verfactura").addEventListener("click", (e) => {
           if (e.target === $("modal-verfactura")) closeModalVerFactura();
         });
-          }
         $("btn-imprimir-verfactura").addEventListener("click", async () => {
           if (!state.facturaVer){
             toast("No hay una factura seleccionada", "warn");
@@ -2417,13 +2369,11 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           }
           await imprimirFacturaPorId(state.facturaVer);
         });
-          }
         // ✅ Abonos
         $("btn-cerrar-modal-abonos").addEventListener("click", closeModalAbonos);
         $("modal-abonos").addEventListener("click", (e) => {
           if (e.target === $("modal-abonos")) closeModalAbonos();
         });
-          }
         $("btn-refresh-abonos").addEventListener("click", listarAbonos);
         $("btn-agregar-abono").addEventListener("click", agregarAbono);
         $("btn-refresh-facturas").addEventListener("click", listarFacturas);
@@ -2436,7 +2386,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
             $("btn-max-modal-facturas").textContent = isMax ? "🗗" : "⛶";
             $("btn-max-modal-facturas").title = isMax ? "Restaurar" : "Maximizar";
           });
-          }
         }
         $("btn-buscar-facturas").addEventListener("click", listarFacturas);
         $("limite_facturas").addEventListener("change", listarFacturas);
@@ -2446,7 +2395,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("buscar_facturas").addEventListener("keydown", (e) => {
           if (e.key === "Enter") listarFacturas();
         });
-          }
         $("btn-export-excel").addEventListener("click", exportarExcel);
         const ok = await proteger();
         if (!ok) return;
@@ -2496,11 +2444,11 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
       }
     }, 600);
   });
-          }
 })();
   </script>
 </body>
 </html>
+
 
 
 
