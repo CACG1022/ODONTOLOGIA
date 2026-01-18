@@ -322,6 +322,46 @@
     }
   
   .oculto{display:none!important;}
+
+  /* ================================
+   COMPACTAR FILAS DE PROCEDIMIENTOS
+   ================================ */
+
+/* Reducir padding de filas */
+table td {
+  padding: 8px 12px;   /* antes ~12px 16px */
+  vertical-align: middle;
+}
+
+/* Encabezados un poco más compactos */
+table th {
+  padding: 8px 12px;
+}
+
+/* Inputs dentro de la tabla */
+table td input {
+  padding: 6px 8px;
+  height: 34px;
+  font-size: 13px;
+}
+
+/* Botón quitar más compacto */
+table td .btn.small,
+table td button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Texto del procedimiento */
+table td:nth-child(2) {
+  line-height: 1.2;
+}
+
+/* Columna de totales */
+table td.mono {
+  font-size: 13px;
+}
+
 </style>
 </head>
 <body>
