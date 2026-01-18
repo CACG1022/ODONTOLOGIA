@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ODONTOLOGÍA — Demo Futurista</title>
+
+  <!-- Fuente similar a la estética moderna -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      /* ===== Paleta futurista (turquesa/verde como tu imagen) ===== */
+      --bg0: #041722;      /* azul muy oscuro */
+      --bg1: #072738;      /* azul oscuro */
+      --glass: rgba(255,255,255,.08);
+      --glass2: rgba(255,255,255,.04);
+      --stroke: rgba(255,255,255,.16);
+
+      --neon: #20f0d0;     /* turquesa */
+      --neon2:#66ffb5;     /* verde menta */
+      --neon3:#24b7ff;     /* azul cian */
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+
+      --shadow: 0 22px 60px rgba(0,0,0,.45);
+      --shadow2: 0 16px 40px rgba(0,0,0,.35);
+
+      --radius: 22px;
+      --radius2: 18px;
+
+      --font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: var(--font);
+      color: var(--text);
+      overflow-x:hidden;
+
+      /* Fondo tipo “sci-fi” */
+      background:
+        radial-gradient(900px 520px at 20% 20%, rgba(32,240,208,.22), transparent 60%),
+        radial-gradient(780px 520px at 85% 70%, rgba(36,183,255,.18), transparent 62%),
+        radial-gradient(540px 380px at 70% 18%, rgba(102,255,181,.12), transparent 60%),
+        linear-gradient(145deg, var(--bg0), var(--bg1));
+    }
+
+    /* “Grid” suave tipo HUD */
+    .hud-grid{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.35;
+      background:
+        linear-gradient(rgba(255,255,255,.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: radial-gradient(circle at 50% 40%, rgba(0,0,0,1), rgba(0,0,0,.15) 60%, transparent 78%);
+    }
+
+    /* Brillos en bordes laterales (como tu imagen) */
+    .edge-glow{
+      position:fixed; inset:0; pointer-events:none;
+    }
+    .edge-glow::before,
+    .edge-glow::after{
+      content:"";
+      position:absolute;
+      top: 12%;
+      bottom: 12%;
+      width: 34px;
+      filter: blur(10px);
+      opacity:.65;
+      background: radial-gradient(circle, rgba(32,240,208,.95), transparent 65%);
+    }
+    .edge-glow::before{ left:-14px; }
+    .edge-glow::after{ right:-14px; }
+
+    .wrap{
+      width:min(1200px, 100%);
+      margin:0 auto;
+      padding: 26px 16px 46px;
+    }
+
+    /* ===== Topbar ===== */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 12px;
+      padding: 14px 14px;
+      border-radius: 16px;
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.14);
+      box-shadow: 0 16px 40px rgba(0,0,0,.26);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      position: relative;
+      overflow:hidden;
+    }
+    .topbar::before{
+      content:"";
+      position:absolute; inset:-140px -160px auto auto;
+      width: 320px; height: 320px;
+      background: radial-gradient(circle, rgba(32,240,208,.20), transparent 60%);
+      pointer-events:none;
+    }
+
+    .brand{
+      display:flex; align-items:center; gap: 12px;
+      min-width: 0;
+    }
+    .logo{
+      width: 40px; height: 40px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(32,240,208,.25), rgba(36,183,255,.18));
+      border: 1px solid rgba(255,255,255,.14);
+      display:grid; place-items:center;
+      box-shadow: 0 10px 22px rgba(0,0,0,.22);
+    }
+    .logo svg{ width: 22px; height: 22px; opacity:.95; }
+    .logo svg path{ fill: rgba(255,255,255,.92); }
+
+    .brand-title{
+      display:flex; flex-direction:column;
+      line-height:1.05;
+      min-width:0;
+    }
+    .brand-title .kicker{
+      font-size: 12px;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.70);
+      font-weight: 700;
+    }
+    .brand-title .name{
+      font-size: 16px;
+      font-weight: 900;
+      letter-spacing: -.02em;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .top-actions{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      flex-wrap:wrap;
+      justify-content:flex-end;
+    }
+
+    .chip{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.14);
+      color: rgba(255,255,255,.78);
+      font-weight: 700;
+      font-size: 12px;
+    }
+    .chip .dot{
+      width: 10px; height: 10px; border-radius:999px;
+      background: var(--neon);
+      box-shadow: 0 0 0 4px rgba(32,240,208,.18);
+    }
+
+    .btn{
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.88);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      font-weight: 900;
+      letter-spacing:.04em;
+      text-transform: uppercase;
+      box-shadow: 0 12px 24px rgba(0,0,0,.22);
+      transition: transform .10s ease, filter .12s ease, border-color .12s ease;
+    }
+    .btn:hover{
+      transform: translateY(-1px);
+      filter: brightness(1.05);
+      border-color: rgba(32,240,208,.35);
+    }
+    .btn.primary{
+      background: linear-gradient(135deg, rgba(32,240,208,.22), rgba(102,255,181,.18));
+      border-color: rgba(32,240,208,.28);
+    }
+
+    /* ===== Hero (panel grande) ===== */
+    .hero{
+      margin-top: 18px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(32,240,208,.22);
+      background:
+        radial-gradient(900px 520px at 25% 0%, rgba(32,240,208,.18), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      overflow:hidden;
+      position: relative;
+      padding: 26px;
+    }
+
+    /* marco tipo “pantalla” */
+    .hero::before{
+      content:"";
+      position:absolute; inset: 14px;
+      border-radius: calc(var(--radius) - 10px);
+      border: 1px solid rgba(255,255,255,.12);
+      pointer-events:none;
+    }
+    .hero::after{
+      content:"";
+      position:absolute;
+      left: -120px;
+      bottom: -160px;
+      width: 460px;
+      height: 460px;
+      background: radial-gradient(circle, rgba(36,183,255,.18), transparent 62%);
+      filter: blur(2px);
+      pointer-events:none;
+    }
+
+    .hero-grid{
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap: 18px;
+      align-items:stretch;
+    }
+
+    .hero-left{
+      display:flex;
+      flex-direction:column;
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .headline{
+      margin: 0;
+      font-size: clamp(26px, 4.2vw, 52px);
+      line-height: 1.02;
+      letter-spacing: -0.04em;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+    .headline .neon{
+      background: linear-gradient(90deg, var(--neon), var(--neon2), var(--neon3));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color: transparent;
+      text-shadow: 0 0 22px rgba(32,240,208,.20);
+    }
+
+    .sub{
+      margin:0;
+      color: rgba(255,255,255,.78);
+      font-size: 14px;
+      line-height: 1.5;
+      max-width: 62ch;
+    }
+
+    .cta-row{
+      display:flex;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin-top: 4px;
+    }
+
+    .cta-big{
+      padding: 14px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(32,240,208,.30);
+      background: linear-gradient(135deg, rgba(32,240,208,.22), rgba(102,255,181,.14));
+      color: rgba(255,255,255,.92);
+      font-weight: 1000;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      cursor:pointer;
+      box-shadow: 0 18px 38px rgba(0,0,0,.28);
+      transition: transform .10s ease, filter .12s ease;
+    }
+    .cta-big:hover{ transform: translateY(-1px); filter: brightness(1.06); }
+
+    .cta-ghost{
+      padding: 14px 18px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(0,0,0,.18);
+      color: rgba(255,255,255,.86);
+      font-weight: 900;
+      letter-spacing:.06em;
+      text-transform: uppercase;
+      cursor:pointer;
+    }
+
+    .hero-right{
+      position: relative;
+      z-index: 2;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      box-shadow: var(--shadow2);
+      overflow:hidden;
+      padding: 16px;
+    }
+
+    /* “circuit lines” animadas */
+    .circuit{
+      position:absolute;
+      inset:0;
+      opacity:.65;
+      background:
+        radial-gradient(circle at 20% 30%, rgba(32,240,208,.14), transparent 55%),
+        radial-gradient(circle at 80% 60%, rgba(36,183,255,.10), transparent 55%);
+      pointer-events:none;
+    }
+    .scanline{
+      position:absolute;
+      left: 0; right:0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(32,240,208,.9), transparent);
+      opacity:.55;
+      filter: blur(.2px);
+      animation: scan 4.2s linear infinite;
+      pointer-events:none;
+    }
+    @keyframes scan{
+      0%{ top: -6px; }
+      100%{ top: calc(100% + 6px); }
+    }
+
+    .panel-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      margin-bottom: 10px;
+    }
+    .panel-title h3{
+      margin:0;
+      font-size: 12px;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.72);
+    }
+    .status-pill{
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing:.10em;
+      text-transform: uppercase;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(32,240,208,.26);
+      background: rgba(32,240,208,.12);
+      color: rgba(255,255,255,.90);
+      display:flex;
+      align-items:center;
+      gap: 8px;
+    }
+    .status-pill::before{
+      content:"";
+      width:8px; height:8px;
+      border-radius:999px;
+      background: var(--neon2);
+      box-shadow: 0 0 0 4px rgba(102,255,181,.18);
+    }
+
+    .kpi-grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .kpi{
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
+      padding: 12px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+    }
+    .kpi .label{
+      font-size: 11px;
+      color: rgba(255,255,255,.70);
+      letter-spacing:.10em;
+      text-transform: uppercase;
+      font-weight: 800;
+    }
+    .kpi .value{
+      margin-top: 6px;
+      font-size: 22px;
+      font-weight: 1000;
+      letter-spacing: -.02em;
+    }
+    .kpi .hint{
+      margin-top: 6px;
+      font-size: 12px;
+      color: rgba(255,255,255,.70);
+    }
+
+    /* ===== Cards de módulos (para tu software) ===== */
+    .modules{
+      margin-top: 16px;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap: 12px;
+    }
+    @media (max-width: 980px){
+      .hero-grid{ grid-template-columns: 1fr; }
+      .modules{ grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 560px){
+      .modules{ grid-template-columns: 1fr; }
+    }
+
+    .module{
+      border-radius: var(--radius2);
+      border: 1px solid rgba(255,255,255,.14);
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));
+      box-shadow: 0 16px 34px rgba(0,0,0,.22);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      padding: 14px;
+      position: relative;
+      overflow:hidden;
+      transition: transform .12s ease, border-color .12s ease, filter .12s ease;
+      cursor:pointer;
+    }
+    .module:hover{
+      transform: translateY(-2px);
+      border-color: rgba(32,240,208,.28);
+      filter: brightness(1.02);
+    }
+    .module::before{
+      content:"";
+      position:absolute;
+      inset: -60px -60px auto auto;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle, rgba(32,240,208,.18), transparent 62%);
+      pointer-events:none;
+    }
+
+    .module-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .micon{
+      width: 46px; height: 46px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.16);
+      display:grid;
+      place-items:center;
+      box-shadow: 0 12px 24px rgba(0,0,0,.18);
+    }
+    .micon svg{ width: 22px; height: 22px; }
+    .micon svg path{ fill: rgba(255,255,255,.92); }
+
+    .module h4{
+      margin: 0;
+      font-size: 14px;
+      font-weight: 1000;
+      letter-spacing: .02em;
+      text-transform: uppercase;
+    }
+    .module p{
+      margin: 8px 0 0;
+      font-size: 12.5px;
+      color: rgba(255,255,255,.74);
+      line-height: 1.35;
+    }
+
+    .mgo{
+      font-size: 12px;
+      font-weight: 1000;
+      letter-spacing:.10em;
+      text-transform: uppercase;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(32,240,208,.22);
+      background: rgba(32,240,208,.10);
+      color: rgba(255,255,255,.88);
+      white-space:nowrap;
+    }
+
+    /* Footer */
+    .foot{
+      margin-top: 18px;
+      opacity:.75;
+      font-size: 12px;
+      display:flex;
+      justify-content:space-between;
+      gap: 12px;
+      flex-wrap:wrap;
+    }
+    .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; }
+  </style>
+</head>
+
+<body>
+  <div class="hud-grid"></div>
+  <div class="edge-glow"></div>
+
+  <div class="wrap">
+    <!-- Topbar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-hidden="true">
+          <!-- icono simple -->
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2c4.2 0 7.5 2.6 7.5 6.6 0 2.7-1.1 4.9-3.2 6.4V20a2 2 0 0 1-2 2H9.7a2 2 0 0 1-2-2v-4.9C5.6 13.6 4.5 11.4 4.5 8.6 4.5 4.6 7.8 2 12 2Zm-2.6 18h5.2v-4.2l.4-.2c1.8-.9 2.9-2.8 2.9-5 0-2.9-2.4-4.6-5.9-4.6S6.1 5.7 6.1 8.6c0 2.2 1.1 4.1 2.9 5l.4.2V20Z"/>
+          </svg>
+        </div>
+
+        <div class="brand-title">
+          <div class="kicker">Software</div>
+          <div class="name">Odontología — Panel Futurista</div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <div class="chip">
+          <span class="dot"></span>
+          <span>Sesión activa</span>
+        </div>
+        <button class="btn" type="button" onclick="alert('Ejemplo: ir a Agenda')">Agenda</button>
+        <button class="btn primary" type="button" onclick="alert('Ejemplo: abrir Facturación')">Facturación</button>
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div class="hero-grid">
+        <div class="hero-left">
+          <h1 class="headline">
+            Diseño <span class="neon">Futurista</span><br/>
+            para tu Software
+          </h1>
+
+          <p class="sub">
+            Panel estilo “neón” con vidrio (glass), brillos laterales y tarjetas tipo HUD.
+            Ideal para tu sistema de odontología: Historia clínica, Agenda, Plan de tratamiento, Facturación y Reportes.
+          </p>
+
+          <div class="cta-row">
+            <button class="cta-big" type="button" onclick="toast('✅ Botón principal (ejemplo)')">
+              Empezar ahora
+            </button>
+            <button class="cta-ghost" type="button" onclick="toast('ℹ️ Botón secundario (ejemplo)')">
+              Ver módulos
+            </button>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="circuit"></div>
+          <div class="scanline"></div>
+
+          <div class="panel-title">
+            <h3>Resumen rápido</h3>
+            <div class="status-pill">online</div>
+          </div>
+
+          <div class="kpi-grid">
+            <div class="kpi">
+              <div class="label">Citas hoy</div>
+              <div class="value">12</div>
+              <div class="hint">Actualizado hace 2 min</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Pacientes</div>
+              <div class="value">3.421</div>
+              <div class="hint">Historial clínico</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Facturas</div>
+              <div class="value">$ 8.9M</div>
+              <div class="hint">Semana actual</div>
+            </div>
+            <div class="kpi">
+              <div class="label">Alertas</div>
+              <div class="value">2</div>
+              <div class="hint">Seguimientos</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Módulos -->
+      <div class="modules" id="mods">
+        <div class="module" onclick="toast('📁 Historia clínica (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2h7l5 5v15a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Zm6 1.8V8h4.2L13 3.8ZM8 11h8v2H8v-2Zm0 4h8v2H8v-2Zm0 4h6v2H8v-2Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Historia clínica</h4>
+          <p>Formulario + odontograma + evoluciones. Base perfecta para tu módulo principal.</p>
+        </div>
+
+        <div class="module" onclick="toast('📅 Agenda y agendamientos (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2h2v2h6V2h2v2h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h3V2Zm15 8H2v10h20V10ZM4 6v2h16V6H4Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Agendamientos</h4>
+          <p>Vista rápida tipo panel para citas, filtros por día, profesional y estado.</p>
+        </div>
+
+        <div class="module" onclick="toast('🧾 Facturación (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 2h10a2 2 0 0 1 2 2v18l-3-2-3 2-3-2-3 2V4a2 2 0 0 1 2-2Zm2 6h6v2H9V8Zm0 4h6v2H9v-2Zm0 4h4v2H9v-2Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Facturación</h4>
+          <p>Tarjetas, tablas y totales con look neón. Ideal para módulo de ventas.</p>
+        </div>
+
+        <div class="module" onclick="toast('🦷 Plan de tratamiento (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M12 2c4.2 0 7.5 2.6 7.5 6.6 0 2.7-1.1 4.9-3.2 6.4V20a2 2 0 0 1-2 2H9.7a2 2 0 0 1-2-2v-4.9C5.6 13.6 4.5 11.4 4.5 8.6 4.5 4.6 7.8 2 12 2Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Plan de tratamiento</h4>
+          <p>Selecciona procedimientos, costos, control de etapas y firma digital.</p>
+        </div>
+
+        <div class="module" onclick="toast('📊 Reportes (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 20V4h2v16H4Zm4 0V10h2v10H8Zm4 0V6h2v14h-2Zm4 0V13h2v7h-2Zm4 0V8h2v12h-2Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Reportes</h4>
+          <p>Gráficas, KPIs, exportación. Mantiene el estilo futurista consistente.</p>
+        </div>
+
+        <div class="module" onclick="toast('⚙️ Administración (demo)')">
+          <div class="module-top">
+            <div class="micon" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M19.4 13a7.8 7.8 0 0 0 .1-1 7.8 7.8 0 0 0-.1-1l2.1-1.6a.6.6 0 0 0 .1-.8l-2-3.5a.6.6 0 0 0-.7-.3l-2.5 1a8.2 8.2 0 0 0-1.7-1l-.4-2.6a.6.6 0 0 0-.6-.5H10a.6.6 0 0 0-.6.5L9 4.8c-.6.3-1.2.6-1.7 1l-2.5-1a.6.6 0 0 0-.7.3l-2 3.5a.6.6 0 0 0 .1.8L4.3 11a7.8 7.8 0 0 0-.1 1 7.8 7.8 0 0 0 .1 1l-2.1 1.6a.6.6 0 0 0-.1.8l2 3.5a.6.6 0 0 0 .7.3l2.5-1c.5.4 1.1.7 1.7 1l.4 2.6a.6.6 0 0 0 .6.5h4a.6.6 0 0 0 .6-.5l.4-2.6c.6-.3 1.2-.6 1.7-1l2.5 1a.6.6 0 0 0 .7-.3l2-3.5a.6.6 0 0 0-.1-.8L19.4 13ZM12 15.5A3.5 3.5 0 1 1 12 8a3.5 3.5 0 0 1 0 7.5Z"/></svg>
+            </div>
+            <span class="mgo">Abrir</span>
+          </div>
+          <h4>Administración</h4>
+          <p>Roles, usuarios, precios y profesionales. Todo con el mismo “look & feel”.</p>
+        </div>
+      </div>
+    </section>
+
+    <div class="foot">
+      <div>Demo UI futurista — Odontología</div>
+      <div class="mono">Tip: cambia colores en <b>:root</b> (variables CSS)</div>
+    </div>
+  </div>
+
+  <script>
+    function toast(msg){
+      const t = document.createElement("div");
+      t.textContent = msg;
+      t.style.position = "fixed";
+      t.style.right = "16px";
+      t.style.bottom = "16px";
+      t.style.padding = "10px 12px";
+      t.style.borderRadius = "14px";
+      t.style.border = "1px solid rgba(255,255,255,.18)";
+      t.style.background = "rgba(0,0,0,.30)";
+      t.style.backdropFilter = "blur(12px)";
+      t.style.webkitBackdropFilter = "blur(12px)";
+      t.style.color = "rgba(255,255,255,.92)";
+      t.style.fontWeight = "900";
+      t.style.boxShadow = "0 18px 40px rgba(0,0,0,.35)";
+      t.style.zIndex = "9999";
+      t.style.maxWidth = "340px";
+      t.style.whiteSpace = "pre-wrap";
+      t.style.transform = "translateY(8px)";
+      t.style.opacity = "0";
+      t.style.transition = "opacity .15s ease, transform .15s ease";
+      document.body.appendChild(t);
+      requestAnimationFrame(()=>{ t.style.opacity = "1"; t.style.transform = "translateY(0)"; });
+      setTimeout(()=>{
+        t.style.opacity = "0";
+        t.style.transform = "translateY(8px)";
+        setTimeout(()=> t.remove(), 200);
+      }, 2200);
+    }
+  </script>
+</body>
+</html>
