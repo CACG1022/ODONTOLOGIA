@@ -22,7 +22,7 @@
       agendar: "https://cacg1022.github.io/ODONTOLOGIA/agendamientos.html",
       plan: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html",
       historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
-      hoy: "#",
+      hoy: "https://cacg1022.github.io/ODONTOLOGIA/pacienteshoy.html",
       rips: "#",
       registro: "https://cacg1022.github.io/ODONTOLOGIA/registro.html",
       usuarios: "https://cacg1022.github.io/ODONTOLOGIA/admin-roles.html",
@@ -563,6 +563,7 @@
     }
 
     .circuit{
+      pointer-events:none;
       position:absolute;
       inset:0;
       opacity:.65;
@@ -575,6 +576,7 @@
 
     /* ✅ SCANLINE (la línea que baja) */
     .scanline{
+      pointer-events:none;
       position:absolute;
       left:0; right:0;
       height: 2px;
@@ -702,6 +704,7 @@
   
     /* ===== Tooth centerpiece (Resumen rápido) ===== */
     .tooth-center{
+      pointer-events:none;
       position:absolute;
       left:50%;
       top:50%;
@@ -770,7 +773,7 @@
       <div class="hero-grid">
         <div class="hero-left">
           <h1 class="headline">
-            DISEÑO <span class="neon">FUTURISTA</span><br/>
+            DISEÑO <span class="neon">DENTOVA</span><br/>
             PARA TU SOFTWARE
           </h1>
           <p class="sub">Panel premium con glassmorphism y módulos inteligentes para tu sistema de odontología.</p>
@@ -786,16 +789,34 @@
 
           <!-- Tooth centerpiece -->
           <div class="tooth-center" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 2c4.2 0 7.5 2.6 7.5 6.6 0 2.7-1.1 4.9-3.2 6.4V20a2 2 0 0 1-2 2H9.7a2 2 0 0 1-2-2v-4.9C5.6 13.6 4.5 11.4 4.5 8.6 4.5 4.6 7.8 2 12 2Z"/>
+            <svg viewBox="0 0 64 64" aria-hidden="true">
+              <path d="M32 5
+                       C20 5 10 13 10 25
+                       c0 7 3 13 8 17
+                       v11
+                       c0 4 3 7 7 7
+                       c3 0 6-2 7-6
+                       l2-7
+                       c1-3 5-3 6 0
+                       l2 7
+                       c1 4 4 6 7 6
+                       c4 0 7-3 7-7
+                       V42
+                       c5-4 8-10 8-17
+                       C54 13 44 5 32 5Z"
+                    fill="none"
+                    stroke="rgba(255,255,255,.98)"
+                    stroke-width="2.6"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"/>
+              <path d="M24 42c2 2 4 2 8 2s6 0 8-2" 
+                    fill="none"
+                    stroke="rgba(255,255,255,.60)"
+                    stroke-width="1.6"
+                    stroke-linecap="round"/>
             </svg>
           </div>
 
-
-          <div class="panel-title">
-            <h3>Resumen rápido</h3>
-            <div class="status-pill">online</div>
-          </div>
 
           <div class="kpi-grid">
             <div class="kpi">
