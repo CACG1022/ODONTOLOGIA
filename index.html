@@ -16,7 +16,41 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-    // ✅ LINKS
+    
+    // =====================
+    // KPI: CITAS HOY (tabla: citas, campo: inicio)
+    // Cuenta citas cuyo inicio esté dentro del día actual (hora local del navegador)
+    // =====================
+    async function cargarCitasHoy() {
+      try {
+        const ahora = new Date();
+
+        // Inicio del día (local)
+        const inicioDia = new Date(ahora);
+        inicioDia.setHours(0, 0, 0, 0);
+
+        // Fin del día (local)
+        const finDia = new Date(ahora);
+        finDia.setHours(23, 59, 59, 999);
+
+        // Usamos count exact con head:true para no traer filas (solo conteo)
+        const { count, error } = await supabase
+          .from("citas")
+          .select("inicio", { count: "exact", head: true })
+          .gte("inicio", inicioDia.toISOString())
+          .lte("inicio", finDia.toISOString());
+
+        if (error) throw error;
+
+        // Puede ser <span id="kpi-citas-hoy"> o <div id="kpi-citas-hoy">
+        const el = document.getElementById("kpi-citas-hoy");
+        if (el) el.textContent = String(count ?? 0);
+
+      } catch (e) {
+        console.warn("No se pudo cargar KPI 'Citas hoy':", e?.message || e);
+      }
+    }
+// ✅ LINKS
     const URLS = {
       gestiondepermisos: "https://cacg1022.github.io/ODONTOLOGIA/permisos.html",
       agendar: "https://cacg1022.github.io/ODONTOLOGIA/agendamientos.html",
@@ -641,23 +675,17 @@ z-index: 1;
 
     /* ✅ SCANLINE (la línea que baja) */
     .scanline{
-  pointer-events:none;
-  position:absolute;
-  left:0;
-  right:0;
-  height:2px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(32,240,208,.95),
-    transparent
-  );
-  opacity:.75;
-  filter: blur(.3px);
-  animation: scan 4.2s linear infinite;
-  z-index: 20; /* 🔥 MÁS ALTO QUE LA MUELA */
-}
-
+      pointer-events:none;
+      position:absolute;
+      left:0; right:0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(32,240,208,.9), transparent);
+      opacity:.60;
+      filter: blur(.2px);
+      animation: scan 4.2s linear infinite;
+      pointer-events:none;
+      z-index:1;
+    }
     @keyframes scan {
       0%{ top:-6px; }
       100%{ top: calc(100% + 6px); }
@@ -872,7 +900,7 @@ z-index: 1;
           <div class="kpi-grid">
             <div class="kpi">
               <div class="label">Citas hoy</div>
-              <div class="value">12</div>
+              <div class="value"><span id="kpi-citas-hoy">12</span></div>
               <div class="hint">Actualizado hace 2 min</div>
             </div>
             <div class="kpi right-align">
