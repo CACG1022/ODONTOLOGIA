@@ -766,29 +766,18 @@
     }
   
     /* ===== Tooth centerpiece (Resumen rápido) ===== */
-    .tooth-center{
-      pointer-events:none;
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:110px;
-      height:110px;
-      border-radius:50%;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(32,240,208,.35), transparent 55%),
-        radial-gradient(circle at 70% 70%, rgba(36,183,255,.25), transparent 55%),
-        rgba(0,0,0,.25);
-      border:1px solid rgba(32,240,208,.35);
-      box-shadow:
-        0 0 0 6px rgba(32,240,208,.12),
-        0 18px 40px rgba(0,0,0,.45),
-        inset 0 0 24px rgba(32,240,208,.25);
-      display:grid;
-      place-items:center;
-      z-index:1;
-      pointer-events:none;
-    }
+   .tooth-center{
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;              /* 🔥 ahora va al frente */
+  pointer-events: none;     /* no bloquea clicks */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
     .tooth-center svg{
       width:56px;
       height:56px;
