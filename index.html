@@ -18,7 +18,7 @@
 
     // ✅ LINKS
     const URLS = {
-      agendamiento: "https://calendar.google.com/calendar/u/0?cid=ZHJhbGVpZGlzaWx2YUBnbWFpbC5jb20",
+      gestiondepermisos: "https://cacg1022.github.io/ODONTOLOGIA/permisos.html",
       agendar: "https://cacg1022.github.io/ODONTOLOGIA/agendamientos.html",
       plan: "https://cacg1022.github.io/ODONTOLOGIA/plandetratamiento.html",
       historia: "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html",
@@ -33,10 +33,7 @@
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html",
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
       reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
-
     };
-    
-
 
     // ✅ Admin por email
     const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
@@ -49,7 +46,6 @@
         el.setAttribute("aria-disabled", "true");
         el.dataset.disabledReason = reason;
 
-        // Evita acumular listeners si se re-ejecuta
         el.onclick = (e) => {
           e.preventDefault();
           alert("🚫 Acceso restringido: " + reason);
@@ -59,7 +55,6 @@
         el.removeAttribute("aria-disabled");
         delete el.dataset.disabledReason;
 
-        // si estaba bloqueado, quitamos el onclick de bloqueo
         if (el.onclick) el.onclick = null;
       }
     }
@@ -68,8 +63,7 @@
       const el = document.getElementById(id);
       if (!el) return;
 
-      // Evita duplicar listeners
-      el.addEventListener("click", (e) => {
+      el.onclick = (e) => {
         e.preventDefault();
 
         if (el.classList.contains("disabled")) return;
@@ -80,7 +74,7 @@
         }
         if (mode === "href") window.location.href = url;
         else window.open(url, "_blank");
-      }, { passive: false });
+      };
     }
 
     // ✅ Lee rol desde profiles
@@ -103,6 +97,74 @@
       }
     }
 
+    // ✅ Normaliza nombres de módulos para que coincidan aunque tengan .html
+    function normModulo(s) {
+      return String(s || "")
+        .trim()
+        .toLowerCase()
+        .replace(/^\/+/, "")
+        .replace(/\.html$/i, "");
+    }
+
+    // ✅ Mapa: botón -> modulo (DEBE coincidir con lo que tienes en modulos_permisos)
+    const MODULE_MAP = {
+      "go-reporte-ventas":    "reportes",
+      "go-agendar":           "agendamientos",
+      "go-gestiondepermisos": "permisos",
+      "go-historia":          "historia_clinica",
+      "go-reporte-pacientes": "reporte_pacientes",
+      "go-plan":              "plandetratamiento",
+      "go-precios":           "actualizacion_precios",
+      "go-usuarios":          "admin-roles",
+      "go-profesionales":     "profesionales-admin",
+      "go-facturacion":       "facturacion",
+      "go-registro":          "registro",
+
+      "go-hoy":               "pacienteshoy",
+
+      "go-rips":              "rips",
+    };
+
+    function getModuloCandidates(mod) {
+      const m = normModulo(mod);
+      const out = new Set([m, `${m}.html`]);
+      if (m === "permisos") out.add("admin-roles");
+      return Array.from(out);
+    }
+
+    async function cargarPermisosPorRol() {
+      try {
+        const { data, error } = await supabase
+          .from("modulos_permisos")
+          .select("modulo, admin, doctor, auxiliar, paciente");
+
+        if (error) throw error;
+
+        const map = {};
+        (data || []).forEach(row => {
+          const base = normModulo(row.modulo);
+          map[base] = row;
+          map[`${base}.html`] = row;
+        });
+
+        return map;
+      } catch (e) {
+        console.warn("No se pudo cargar modulos_permisos:", e?.message || e);
+        return null;
+      }
+    }
+
+    function puedeAcceder(permisosMap, modulo, roleKey) {
+      if (!permisosMap) return false;
+
+      const candidates = getModuloCandidates(modulo);
+      for (const cand of candidates) {
+        const row = permisosMap[cand];
+        if (row && row[roleKey] === true) return true;
+      }
+      return false;
+    }
+
     async function verificarSesionYPermisos() {
       const { data: { session } } = await supabase.auth.getSession();
 
@@ -113,33 +175,39 @@
 
       const email = (session.user?.email || "").toLowerCase();
 
-      // ✅ Mostrar email
       const u = document.getElementById("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
 
-      // ✅ Cargar rol y mostrarlo
-      const role = await cargarRolDesdeProfiles(session.user.id);
+      const roleRaw = await cargarRolDesdeProfiles(session.user.id);
+      const roleNorm = String(roleRaw || "").toLowerCase().trim();
+
       const roleEl = document.getElementById("user-role");
-      if (roleEl) roleEl.textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
+      if (roleEl) roleEl.textContent = roleRaw ? `Rol: ${roleRaw}` : "Rol: (sin rol)";
 
-      // ✅ Permisos admin
-      const isAdmin = (email === ADMIN_EMAIL) || (String(role || "").toLowerCase() === "admin");
+      const roleKey =
+        roleNorm === "admin" ? "admin" :
+        roleNorm === "doctor" ? "doctor" :
+        roleNorm === "auxiliar" ? "auxiliar" :
+        "paciente";
 
-      // ✅ Activar/Desactivar botones restringidos (SOLO ADMIN)
-      setDisabled(document.getElementById("go-registro"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-rips"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-usuarios"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-precios"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-profesionales"), !isAdmin, "Solo administrador");
-      setDisabled(document.getElementById("go-reporte-ventas"), !isAdmin, "Solo administrador");
+      const finalRoleKey = (email === ADMIN_EMAIL) ? "admin" : roleKey;
 
+      const permisosMap = await cargarPermisosPorRol();
 
-      // ✅ NUEVO: Facturación (SOLO ADMIN)
-      setDisabled(document.getElementById("go-facturacion"), !isAdmin, "Solo administrador");
+      for (const [btnId, modulo] of Object.entries(MODULE_MAP)) {
+        const el = document.getElementById(btnId);
 
-      // ✅ Navegación
-      wireNav("go-agendar", URLS.agendar, "open");
-      wireNav("go-agendamiento", URLS.agendamiento, "open");
+        const ok = puedeAcceder(permisosMap, modulo, finalRoleKey);
+
+        const reason = !permisosMap
+          ? "No se pudieron cargar permisos"
+          : `No autorizado para tu rol`;
+
+        setDisabled(el, !ok, reason);
+      }
+
+      wireNav("go-agendar", URLS.agendar, "href");
+      wireNav("go-gestiondepermisos", URLS.gestiondepermisos, "open");
       wireNav("go-historia", URLS.historia, "href");
       wireNav("go-plan", URLS.plan, "href");
       wireNav("go-hoy", URLS.hoy, "href");
@@ -148,13 +216,10 @@
       wireNav("go-usuarios", URLS.usuarios, "href");
       wireNav("go-precios", URLS.precios, "href");
       wireNav("go-profesionales", URLS.profesionales, "href");
-
-      // ✅ NUEVO: Facturación (redirige dentro del sitio)
       wireNav("go-facturacion", URLS.facturacion, "href");
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
       wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
 
-      // Fecha
       const t = document.getElementById("today");
       if (t) {
         t.textContent = new Date().toLocaleDateString("es-CO", {
@@ -168,12 +233,10 @@
 
     verificarSesionYPermisos();
 
-    // Si se expira/cierra, vuelve al login
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       try { localStorage.removeItem("usuario_logueado"); } catch(e) {}
@@ -1065,4 +1128,5 @@
   </div>
 </body>
 </html>
+
 
