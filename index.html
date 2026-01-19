@@ -752,6 +752,33 @@
         drop-shadow(0 0 36px rgba(32,240,208,.25));
     }
 
+  
+    /* === FIX muela resumen rápido === */
+    .hero-right{
+      position: relative;
+    }
+    .tooth-center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:140px;
+      height:140px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:1;
+      pointer-events:none;
+    }
+    .tooth-center svg{
+      width:110px;
+      height:auto;
+      opacity:.95;
+      filter:
+        drop-shadow(0 0 20px rgba(32,240,208,.55))
+        drop-shadow(0 0 40px rgba(32,240,208,.35));
+    }
+
   </style>
 </head>
 
@@ -1021,7 +1048,6 @@
   </div>
 </body>
 </html>
-
 
 
 
