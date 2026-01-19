@@ -641,17 +641,23 @@ z-index: 1;
 
     /* ✅ SCANLINE (la línea que baja) */
     .scanline{
-      pointer-events:none;
-      position:absolute;
-      left:0; right:0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(32,240,208,.9), transparent);
-      opacity:.60;
-      filter: blur(.2px);
-      animation: scan 4.2s linear infinite;
-      pointer-events:none;
-      z-index:1;
-    }
+  pointer-events:none;
+  position:absolute;
+  left:0;
+  right:0;
+  height:2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(32,240,208,.95),
+    transparent
+  );
+  opacity:.75;
+  filter: blur(.3px);
+  animation: scan 4.2s linear infinite;
+  z-index: 20; /* 🔥 MÁS ALTO QUE LA MUELA */
+}
+
     @keyframes scan {
       0%{ top:-6px; }
       100%{ top: calc(100% + 6px); }
