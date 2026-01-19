@@ -16,52 +16,7 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-    
-    // =====================
-    // KPI: CITAS HOY (tabla: citas, campo: inicio)
-    // Cuenta citas cuyo inicio esté dentro del día actual (hora local del navegador)
-    // =====================
-    
-    // 🔢 KPI: Citas hoy (conteo real por fecha)
-    async function cargarCitasHoy() {
-      try {
-        const hoy = new Date();
-        const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
-        const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
-
-        const { count, error } = await supabase
-          .from("citas")
-          .select("id", { count: "exact", head: true })
-          .gte("inicio", inicioDia.toISOString())
-          .lte("inicio", finDia.toISOString());
-
-        if (error) throw error;
-
-        const el = document.getElementById("kpi-citas-hoy");
-        if (el) el.textContent = count ?? 0;
-
-      } catch (e) {
-        console.error("Error contando citas hoy:", e);
-      }
-    }
-
-= await supabase
-          .from("citas")
-          .select("inicio", { count: "exact", head: true })
-          .gte("inicio", inicioDia.toISOString())
-          .lte("inicio", finDia.toISOString());
-
-        if (error) throw error;
-
-        // Puede ser <span id="kpi-citas-hoy"> o <div id="kpi-citas-hoy">
-        const el = document.getElementById("kpi-citas-hoy");
-        if (el) el.textContent = String(count ?? 0);
-
-      } catch (e) {
-        console.warn("No se pudo cargar KPI 'Citas hoy':", e?.message || e);
-      }
-    }
-// ✅ LINKS
+    // ✅ LINKS
     const URLS = {
       gestiondepermisos: "https://cacg1022.github.io/ODONTOLOGIA/permisos.html",
       agendar: "https://cacg1022.github.io/ODONTOLOGIA/agendamientos.html",
@@ -686,17 +641,23 @@ z-index: 1;
 
     /* ✅ SCANLINE (la línea que baja) */
     .scanline{
-      pointer-events:none;
-      position:absolute;
-      left:0; right:0;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(32,240,208,.9), transparent);
-      opacity:.60;
-      filter: blur(.2px);
-      animation: scan 4.2s linear infinite;
-      pointer-events:none;
-      z-index:1;
-    }
+  pointer-events:none;
+  position:absolute;
+  left:0;
+  right:0;
+  height:2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(32,240,208,.95),
+    transparent
+  );
+  opacity:.75;
+  filter: blur(.3px);
+  animation: scan 4.2s linear infinite;
+  z-index: 20; /* 🔥 MÁS ALTO QUE LA MUELA */
+}
+
     @keyframes scan {
       0%{ top:-6px; }
       100%{ top: calc(100% + 6px); }
@@ -911,7 +872,7 @@ z-index: 1;
           <div class="kpi-grid">
             <div class="kpi">
               <div class="label">Citas hoy</div>
-              <div class="value"><span id="kpi-citas-hoy">12</span></div>
+              <div class="value">12</div>
               <div class="hint">Actualizado hace 2 min</div>
             </div>
             <div class="kpi right-align">
@@ -1087,6 +1048,8 @@ z-index: 1;
   </div>
 </body>
 </html>
+
+
 
 
 
