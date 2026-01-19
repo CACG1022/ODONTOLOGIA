@@ -797,6 +797,29 @@
         drop-shadow(0 0 52px rgba(32,240,208,.35));
     }
 
+  
+    /* Tooth image styling */
+    .tooth-center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      z-index:1;
+      pointer-events:none;
+      background:none;
+      border:none;
+      box-shadow:none;
+    }
+    .tooth-center img{
+      width:120px;
+      height:auto;
+      display:block;
+      filter:
+        drop-shadow(0 0 20px rgba(32,240,208,.55))
+        drop-shadow(0 0 40px rgba(32,240,208,.35));
+      opacity:.98;
+    }
+
   </style>
 </head>
 
@@ -849,41 +872,11 @@
           <!-- Tooth centerpiece (realistic molar) -->
           <!-- Tooth centerpiece (TRUE MOLAR) -->
           <!-- Tooth centerpiece (ANATOMIC MOLAR) -->
+          <!-- Tooth centerpiece (IMAGE) -->
           <div class="tooth-center" aria-hidden="true">
-            <svg viewBox="0 0 140 140">
-              <defs>
-                <linearGradient id="molarGrad2" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#ffffff"/>
-                  <stop offset="55%" stop-color="#f1f3f5"/>
-                  <stop offset="100%" stop-color="#d4d9dd"/>
-                </linearGradient>
-              </defs>
-
-              <!-- Crown (wide, rounded molar) -->
-              <path d="
-                M30 36
-                C28 16 50 8 70 8
-                C90 8 112 16 110 36
-                C108 56 92 66 70 66
-                C48 66 32 56 30 36 Z"
-                fill="url(#molarGrad2)"/>
-
-              <!-- Left root (short & thick) -->
-              <path d="
-                M56 66
-                C50 82 52 104 58 120
-                C60 126 66 126 68 120
-                C66 104 64 82 68 66 Z"
-                fill="url(#molarGrad2)"/>
-
-              <!-- Right root (short & thick) -->
-              <path d="
-                M72 66
-                C76 82 78 104 74 120
-                C76 126 82 126 84 120
-                C90 104 88 82 82 66 Z"
-                fill="url(#molarGrad2)"/>
-            </svg>
+            <img src="https://static.wixstatic.com/media/63e6ec_5374fe6f441940e09de8a9672bec9db1~mv2.png/v1/fill/w_123,h_148,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/muela1.png"
+                 alt="Muela"
+                 loading="eager" />
           </div>
 
 
