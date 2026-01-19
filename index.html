@@ -21,20 +21,31 @@
     // KPI: CITAS HOY (tabla: citas, campo: inicio)
     // Cuenta citas cuyo inicio esté dentro del día actual (hora local del navegador)
     // =====================
+    
+    // 🔢 KPI: Citas hoy (conteo real por fecha)
     async function cargarCitasHoy() {
       try {
-        const ahora = new Date();
+        const hoy = new Date();
+        const inicioDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 0, 0, 0);
+        const finDia = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate(), 23, 59, 59);
 
-        // Inicio del día (local)
-        const inicioDia = new Date(ahora);
-        inicioDia.setHours(0, 0, 0, 0);
-
-        // Fin del día (local)
-        const finDia = new Date(ahora);
-        finDia.setHours(23, 59, 59, 999);
-
-        // Usamos count exact con head:true para no traer filas (solo conteo)
         const { count, error } = await supabase
+          .from("citas")
+          .select("id", { count: "exact", head: true })
+          .gte("inicio", inicioDia.toISOString())
+          .lte("inicio", finDia.toISOString());
+
+        if (error) throw error;
+
+        const el = document.getElementById("kpi-citas-hoy");
+        if (el) el.textContent = count ?? 0;
+
+      } catch (e) {
+        console.error("Error contando citas hoy:", e);
+      }
+    }
+
+= await supabase
           .from("citas")
           .select("inicio", { count: "exact", head: true })
           .gte("inicio", inicioDia.toISOString())
@@ -1076,6 +1087,7 @@ z-index: 1;
   </div>
 </body>
 </html>
+
 
 
 
