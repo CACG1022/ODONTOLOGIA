@@ -546,14 +546,14 @@
 
     /* ===== Resumen rápido ===== */
     .hero-right{
-      position: relative;
       border-radius: 20px;
       border: 1px solid rgba(255,255,255,.12);
       background: rgba(0,0,0,.18);
       box-shadow: var(--shadow2);
-      overflow:hidden;
       padding: 16px;
-    }
+position: relative;
+overflow: visible;
+}
     .panel-title{
       display:flex;
       align-items:center;
@@ -605,7 +605,9 @@
       background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.03));
       padding: 12px;
       box-shadow: 0 10px 24px rgba(0,0,0,.18);
-    }
+position: relative;
+z-index: 1;
+}
     .kpi .label{
       font-size: 11px;
       color: rgba(255,255,255,.70);
@@ -766,119 +768,42 @@
     }
   
     /* ===== Tooth centerpiece (Resumen rápido) ===== */
-   .tooth-center{
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 10;              /* 🔥 ahora va al frente */
-  pointer-events: none;     /* no bloquea clicks */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-    .tooth-center svg{
-      width:56px;
-      height:56px;
-      filter:
-        drop-shadow(0 0 12px rgba(32,240,208,.75))
-        drop-shadow(0 0 24px rgba(32,240,208,.35));
-    }
-    .tooth-center svg path{
-      fill:none;
-      stroke:rgba(255,255,255,.95);
-      stroke-width:1.8;
-    }
-
-  
     /* Realistic tooth glow */
-    .tooth-center{
-      background: none;
-      border: none;
-      box-shadow: none;
-    }
-    .tooth-center svg{
-      filter:
-        drop-shadow(0 0 18px rgba(32,240,208,.45))
-        drop-shadow(0 0 36px rgba(32,240,208,.25));
-    }
-
-  
     /* === FIX muela resumen rápido === */
     .hero-right{
       position: relative;
     }
-    .tooth-center{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      width:140px;
-      height:140px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      z-index:1;
-      pointer-events:none;
-    }
-    .tooth-center svg{
-      width:110px;
-      height:auto;
-      opacity:.95;
-      filter:
-        drop-shadow(0 0 20px rgba(32,240,208,.55))
-        drop-shadow(0 0 40px rgba(32,240,208,.35));
-    }
-
-  
     /* TRUE MOLAR enhancement */
-    .tooth-center svg{
-      width:120px;
-      filter:
-        drop-shadow(0 0 22px rgba(32,240,208,.55))
-        drop-shadow(0 0 44px rgba(32,240,208,.35));
-    }
-
-  
     /* ANATOMIC MOLAR FINAL */
-    .tooth-center svg{
-      width:130px;
-      filter:
-        drop-shadow(0 0 26px rgba(32,240,208,.55))
-        drop-shadow(0 0 52px rgba(32,240,208,.35));
-    }
-
-  
     /* Tooth image styling */
-    .tooth-center{
-      position:absolute;
-      left:50%;
-      top:50%;
-      transform:translate(-50%,-50%);
-      z-index:1;
-      pointer-events:none;
-      background:none;
-      border:none;
-      box-shadow:none;
-    }
-    .tooth-center img{
-      width:120px;
-      height:auto;
-      display:block;
-      filter:
-        drop-shadow(0 0 20px rgba(32,240,208,.55))
-        drop-shadow(0 0 40px rgba(32,240,208,.35));
-      opacity:.98;
-    }
-
-  
     /* Align right-side KPI cards */
     .kpi.right-align{
       text-align: right;
     }
 
-  </style>
+/* ===== Tooth centerpiece FINAL (al frente) ===== */
+.tooth-center{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  z-index: 10;
+  pointer-events:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.tooth-center img{
+  width:120px;
+  height:auto;
+  display:block;
+  opacity:.98;
+  filter:
+    drop-shadow(0 0 35px rgba(32,240,208,.75))
+    drop-shadow(0 0 70px rgba(32,240,208,.45));
+}
+
+</style>
 </head>
 
 <body>
@@ -912,10 +837,10 @@
       <div class="hero-grid">
         <div class="hero-left">
           <h1 class="headline">
-            DENTOVA <span class="neon">IIIIII</span><br/>
-            SOFTWARE DENTAL
+            DISEÑO <span class="neon">FUTURISTA</span><br/>
+            PARA TU SOFTWARE
           </h1>
-          <p class="sub">Panel premium - glassmorphism y módulos inteligentes para tu sistema de odontología.</p>
+          <p class="sub">Panel premium con glassmorphism y módulos inteligentes para tu sistema de odontología.</p>
           <div class="cta-row">
             <button class="cta-big" type="button" onclick="document.getElementById('mods').scrollIntoView({behavior:'smooth'})">Empezar ahora</button>
             <button class="cta-ghost" type="button" onclick="document.getElementById('mods').scrollIntoView({behavior:'smooth'})">Ver módulos</button>
@@ -1117,5 +1042,6 @@
   </div>
 </body>
 </html>
+
 
 
