@@ -699,6 +699,43 @@
       letter-spacing:.04em;
       box-shadow: 0 12px 18px rgba(0,0,0,.28);
     }
+  
+    /* ===== Tooth centerpiece (Resumen rápido) ===== */
+    .tooth-center{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform:translate(-50%,-50%);
+      width:110px;
+      height:110px;
+      border-radius:50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(32,240,208,.35), transparent 55%),
+        radial-gradient(circle at 70% 70%, rgba(36,183,255,.25), transparent 55%),
+        rgba(0,0,0,.25);
+      border:1px solid rgba(32,240,208,.35);
+      box-shadow:
+        0 0 0 6px rgba(32,240,208,.12),
+        0 18px 40px rgba(0,0,0,.45),
+        inset 0 0 24px rgba(32,240,208,.25);
+      display:grid;
+      place-items:center;
+      z-index:1;
+      pointer-events:none;
+    }
+    .tooth-center svg{
+      width:56px;
+      height:56px;
+      filter:
+        drop-shadow(0 0 12px rgba(32,240,208,.75))
+        drop-shadow(0 0 24px rgba(32,240,208,.35));
+    }
+    .tooth-center svg path{
+      fill:none;
+      stroke:rgba(255,255,255,.95);
+      stroke-width:1.8;
+    }
+
   </style>
 </head>
 
@@ -746,6 +783,14 @@
         <div class="hero-right" aria-label="Resumen rápido">
           <div class="circuit"></div>
           <div class="scanline"></div>
+
+          <!-- Tooth centerpiece -->
+          <div class="tooth-center" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2c4.2 0 7.5 2.6 7.5 6.6 0 2.7-1.1 4.9-3.2 6.4V20a2 2 0 0 1-2 2H9.7a2 2 0 0 1-2-2v-4.9C5.6 13.6 4.5 11.4 4.5 8.6 4.5 4.6 7.8 2 12 2Z"/>
+            </svg>
+          </div>
+
 
           <div class="panel-title">
             <h3>Resumen rápido</h3>
@@ -931,7 +976,6 @@
   </div>
 </body>
 </html>
-
 
 
 
