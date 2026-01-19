@@ -779,6 +779,15 @@
         drop-shadow(0 0 40px rgba(32,240,208,.35));
     }
 
+  
+    /* TRUE MOLAR enhancement */
+    .tooth-center svg{
+      width:120px;
+      filter:
+        drop-shadow(0 0 22px rgba(32,240,208,.55))
+        drop-shadow(0 0 44px rgba(32,240,208,.35));
+    }
+
   </style>
 </head>
 
@@ -829,42 +838,42 @@
 
           <!-- Tooth centerpiece -->
           <!-- Tooth centerpiece (realistic molar) -->
+          <!-- Tooth centerpiece (TRUE MOLAR) -->
           <div class="tooth-center" aria-hidden="true">
-            <svg viewBox="0 0 120 140" aria-hidden="true">
+            <svg viewBox="0 0 120 140">
               <defs>
-                <linearGradient id="toothGrad" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="molarGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stop-color="#ffffff"/>
-                  <stop offset="55%" stop-color="#f4f6f7"/>
-                  <stop offset="100%" stop-color="#d9dde0"/>
+                  <stop offset="60%" stop-color="#f2f4f6"/>
+                  <stop offset="100%" stop-color="#d6dade"/>
                 </linearGradient>
-                <radialGradient id="toothShade" cx="50%" cy="35%" r="55%">
-                  <stop offset="0%" stop-color="rgba(255,255,255,.95)"/>
-                  <stop offset="100%" stop-color="rgba(255,255,255,.65)"/>
-                </radialGradient>
               </defs>
+
+              <!-- Crown -->
               <path d="
-                M60 6
-                C30 6 12 26 14 54
-                c1 14 6 24 14 32
-                c6 6 8 18 8 34
-                c0 10 6 14 12 14
-                c6 0 10-4 12-14
-                c2-16 4-28 10-34
-                c8-8 13-18 14-32
-                C108 26 90 6 60 6 Z"
-                fill="url(#toothGrad)"/>
+                M20 32
+                C20 12 40 6 60 6
+                C80 6 100 12 100 32
+                C100 56 84 66 70 66
+                L50 66
+                C36 66 20 56 20 32 Z"
+                fill="url(#molarGrad)"/>
+
+              <!-- Left root -->
               <path d="
-                M60 10
-                C40 10 26 26 28 48
-                c1 10 4 18 10 24
-                c5 5 6 14 6 28
-                c0 6 4 8 8 8
-                c4 0 7-2 8-8
-                c2-14 3-23 8-28
-                c6-6 9-14 10-24
-                C92 26 78 10 60 10 Z"
-                fill="url(#toothShade)"
-                opacity=".85"/>
+                M46 66
+                C38 88 40 112 48 132
+                C52 140 58 140 60 132
+                C56 110 54 88 58 66 Z"
+                fill="url(#molarGrad)"/>
+
+              <!-- Right root -->
+              <path d="
+                M62 66
+                C66 88 68 110 64 132
+                C66 140 72 140 76 132
+                C84 112 86 88 78 66 Z"
+                fill="url(#molarGrad)"/>
             </svg>
           </div>
 
