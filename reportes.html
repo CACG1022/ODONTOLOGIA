@@ -639,15 +639,8 @@
         <div class="card" style="grid-column: span 8;">
           <h3>
             <span>Abonos por día</span>
-            <span class="sub">Selecciona una fecha</span>
+            <span class="sub">Filtrado por rango</span>
           </h3>
-
-          <div class="grid" style="margin-bottom:10px;">
-            <div class="ctrl" style="grid-column: span 4;">
-              <label>Fecha</label>
-              <input id="fecha_abonos_dia" type="date">
-            </div>
-          </div>
 
           <div class="mono" id="abonos_dia_resumen" style="margin-bottom:8px; color:var(--muted);">
             —
@@ -1577,6 +1570,8 @@
       // ✅ ABONOS
       await cargarTotalAbonosMes();
 
+      await cargarAbonosPorDia();
+
       const kpi = calcKPIs();
       renderTablaFacturas();
       renderCharts(kpi);
@@ -1628,18 +1623,22 @@
       }
     }
 
+    
     async function cargarAbonosPorDia(){
-      const fecha = $("fecha_abonos_dia").value;
       const tbody = $("tbody_abonos_dia");
       tbody.innerHTML = "";
 
-      if (!fecha){
-        tbody.innerHTML = `<tr><td colspan="4" class="empty">Selecciona una fecha</td></tr>`;
+      const fDesde = ($("fecha_desde").value || "").trim();
+      const fHasta = ($("fecha_hasta").value || "").trim();
+
+      if (!fDesde || !fHasta){
+        tbody.innerHTML = `<tr><td colspan="4" class="empty">Selecciona Fecha desde y Fecha hasta</td></tr>`;
+        $("abonos_dia_resumen").textContent = "—";
         return;
       }
 
       try{
-        let q = supabase
+        const { data, error } = await supabase
           .from("abonos")
           .select(`
             fecha,
@@ -1650,27 +1649,20 @@
               paciente_nombre
             )
           `)
-          .order("created_at", { ascending:true });
-
-        const fDesde = ($("fecha_desde").value || "").trim();
-        const fHasta = ($("fecha_hasta").value || "").trim();
-
-        if (fDesde) q = q.gte("fecha", fDesde);
-        if (fHasta) q = q.lte("fecha", fHasta);
-        if (fecha) q = q.eq("fecha", fecha);
-
-        const { data, error } = await q;
+          .gte("fecha", fDesde)
+          .lte("fecha", fHasta)
+          .order("fecha", { ascending:true });
 
         if (error) throw error;
 
         const rows = data || [];
-        const totalDia = rows.reduce((a,b)=> a + (Number(b.monto)||0), 0);
+        const total = rows.reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
         $("abonos_dia_resumen").textContent =
-          `Total del día ${formatFechaHuman(fecha)}: $ ${money(totalDia)} • Abonos: ${rows.length}`;
+          `Total del rango ${formatFechaHuman(fDesde)} → ${formatFechaHuman(fHasta)}: $ ${money(total)} • Abonos: ${rows.length}`;
 
         if (!rows.length){
-          tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay abonos este día.</td></tr>`;
+          tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay abonos en este rango.</td></tr>`;
           return;
         }
 
@@ -1712,7 +1704,7 @@
       $("f_metodo").addEventListener("change", refrescarDashboard);
 
       // ✅ ABONOS POR DÍA
-      $("fecha_abonos_dia").addEventListener("change", cargarAbonosPorDia);
+      
 
       $("btn-show-all").addEventListener("click", ()=>{ state._view="all"; renderTablaFacturas(); });
       $("btn-show-pending").addEventListener("click", ()=>{ state._view="pending"; renderTablaFacturas(); });
