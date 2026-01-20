@@ -44,32 +44,56 @@ async function validarAcceso(){
   }
 
   window.USER = session.user;
-  window.ROL = rol;
-
   userEmail.textContent = session.user.email;
   userRol.textContent = rol;
   responsable.value = session.user.email;
 }
 
-/* ================= PROVEEDORES ================= */
-async function cargarProveedores(){
-  const { data } = await supabase.from("gastos").select("proveedor");
-  const unique = [...new Set((data||[]).map(d=>d.proveedor).filter(Boolean))];
-  proveedor.innerHTML = "<option value=''>Proveedor</option>";
-  unique.forEach(p=>{
-    const o = document.createElement("option");
-    o.value = p; o.textContent = p;
-    proveedor.appendChild(o);
+/* ================= PROVEEDORES (TABLA DEDICADA) ================= */
+async function cargarProveedores(selected=null){
+  const { data, error } = await supabase
+    .from("proveedores")
+    .select("id, nombre")
+    .eq("activo", true)
+    .order("nombre");
+
+  if(error){ console.error(error); return; }
+
+  proveedor.innerHTML = "<option value=''>Seleccione proveedor</option>";
+  data.forEach(p=>{
+    const opt = document.createElement("option");
+    opt.value = p.id;
+    opt.textContent = p.nombre;
+    if(selected && selected === p.id) opt.selected = true;
+    proveedor.appendChild(opt);
   });
 }
 
-/* ================= GUARDAR / EDITAR ================= */
+/* ================= NUEVO PROVEEDOR ================= */
+async function guardarProveedor(){
+  const nombre = provNombre.value.trim();
+  if(!nombre) return alert("Nombre requerido");
+
+  const { data, error } = await supabase
+    .from("proveedores")
+    .insert([{ nombre, telefono: provTelefono.value, contacto: provContacto.value, activo:true }])
+    .select()
+    .single();
+
+  if(error){ alert(error.message); return; }
+
+  modalProv.style.display = "none";
+  provNombre.value = provTelefono.value = provContacto.value = "";
+  await cargarProveedores(data.id);
+}
+
+/* ================= GUARDAR / EDITAR GASTO ================= */
 async function guardarGasto(){
   const payload = {
     fecha: fecha.value,
     tipo: tipo.value,
     categoria: categoria.value,
-    proveedor: proveedor.value,
+    proveedor_id: proveedor.value || null,
     monto: monto.value,
     forma_pago: forma_pago.value,
     descripcion: descripcion.value,
@@ -86,7 +110,6 @@ async function guardarGasto(){
 
   limpiarFormulario();
   await cargarGastos();
-  await cargarProveedores();
 }
 
 /* ================= ELIMINAR ================= */
@@ -102,21 +125,27 @@ function editarGasto(g){
   fecha.value = g.fecha;
   tipo.value = g.tipo;
   categoria.value = g.categoria;
-  proveedor.value = g.proveedor || "";
   monto.value = g.monto;
   forma_pago.value = g.forma_pago || "";
   descripcion.value = g.descripcion || "";
+  cargarProveedores(g.proveedor_id);
   btnGuardar.textContent = "Actualizar gasto";
   window.scrollTo({top:0, behavior:"smooth"});
 }
 
 /* ================= CARGAR ================= */
 async function cargarGastos(){
-  const { data } = await supabase.from("gastos").select("*").order("fecha",{ascending:false});
+  const { data, error } = await supabase
+    .from("gastos")
+    .select("id,fecha,tipo,categoria,monto,descripcion,forma_pago,proveedor:proveedores(nombre),proveedor_id")
+    .order("fecha",{ascending:false});
+
+  if(error){ console.error(error); return; }
+
   tabla.innerHTML = "";
   let t=0,f=0,v=0,e=0;
 
-  (data||[]).forEach(g=>{
+  data.forEach(g=>{
     const m = Number(g.monto||0);
     t+=m;
     if(g.tipo==="fijo")f+=m;
@@ -128,7 +157,7 @@ async function cargarGastos(){
       <td>${g.fecha}</td>
       <td>${g.tipo}</td>
       <td>${g.categoria}</td>
-      <td>${g.proveedor||""}</td>
+      <td>${g.proveedor?.nombre||""}</td>
       <td>$${m.toLocaleString()}</td>
       <td>${g.descripcion||""}</td>
       <td class="actions">
@@ -154,11 +183,12 @@ function limpiarFormulario(){
 
 document.addEventListener("DOMContentLoaded", async ()=>{
   await validarAcceso();
-  await cargarGastos();
   await cargarProveedores();
+  await cargarGastos();
 });
 
 window.guardarGasto = guardarGasto;
+window.guardarProveedor = guardarProveedor;
 </script>
 
 <style>
@@ -180,7 +210,7 @@ body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,#fff,var
 .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;margin-bottom:24px}
 .grid{display:grid;gap:26px}
 .g-4{grid-template-columns:repeat(4,1fr)}
-.g-3{grid-template-columns:repeat(3,minmax(220px,1fr))}
+.g-3{grid-template-columns:repeat(3,minmax(240px,1fr))}
 .full{grid-column:1/-1}
 input,select{padding:16px;border-radius:14px;border:1px solid var(--border)}
 button{background:var(--neon);color:#fff;padding:14px 22px;border:none;border-radius:14px;font-weight:900;cursor:pointer}
@@ -191,6 +221,11 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 .actions button{background:none;border:none;cursor:pointer;font-size:16px}
 .actions .delete{color:#dc2626}
 .actions .edit{color:#0fb9a8}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center}
+.modal-content{background:#fff;padding:26px;border-radius:18px;width:360px;box-shadow:var(--shadow)}
+.modal-content h3{margin-top:0}
 </style>
 </head>
 
@@ -227,7 +262,11 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
     <option>Material desechable</option>
     <option>Medicamentos</option>
   </select>
-  <select id="proveedor"></select>
+
+  <div style="display:flex;gap:10px">
+    <select id="proveedor"></select>
+    <button type="button" onclick="modalProv.style.display='flex'">＋</button>
+  </div>
 </div>
 
 <div class="grid g-3" style="margin-top:26px">
@@ -263,6 +302,22 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 </div>
 
 </div>
+
+<!-- MODAL PROVEEDOR -->
+<div class="modal" id="modalProv">
+  <div class="modal-content">
+    <h3>Nuevo proveedor</h3>
+    <input id="provNombre" placeholder="Nombre">
+    <input id="provTelefono" placeholder="Teléfono">
+    <input id="provContacto" placeholder="Contacto">
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="guardarProveedor()">Guardar</button>
+      <button onclick="modalProv.style.display='none'" style="background:#e5e7eb;color:#000">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
+
 
