@@ -1907,11 +1907,20 @@
       }
 
       const { data, error } = await supabase
-        .from("abonos")
-        .select("fecha, monto, factura_id")
-        .gte("fecha", desde)
-        .lte("fecha", hasta)
-        .order("fecha", { ascending:false });
+  .from("abonos")
+  .select(`
+    fecha,
+    monto,
+    factura_id,
+    facturas (
+      numero_factura,
+      paciente_nombre
+    )
+  `)
+  .gte("fecha", desde)
+  .lte("fecha", hasta)
+  .order("fecha", { ascending:false });
+
 
       if(error){
         console.error("Reporte abonos:", error);
@@ -1927,13 +1936,14 @@
       }
 
       $("tabla_abonos").innerHTML = data.map(a => `
-        <tr>
-          <td>${formatFechaHuman(a.fecha)}</td>
-          <td>-</td>
-          <td>${a.factura_id || "-"}</td>
-          <td class="mono">$ ${money(a.monto)}</td>
-        </tr>
-      `).join("");
+  <tr>
+    <td>${formatFechaHuman(a.fecha)}</td>
+    <td>${a.facturas?.paciente_nombre || "-"}</td>
+    <td>${a.facturas?.numero_factura || "-"}</td>
+    <td class="mono">$ ${money(a.monto)}</td>
+  </tr>
+`).join("");
+
     }
 
     // 🔗 Hook seguro al refrescarDashboard
