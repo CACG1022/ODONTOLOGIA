@@ -16,7 +16,9 @@ const supabase = createClient(
 const LOGIN_URL = "login.html";
 const HOME_URL  = "index.html";
 const MODULO = "gastos";
+let EDIT_ID = null;
 
+/* ================= SESIÓN Y PERMISOS ================= */
 async function validarAcceso(){
   const { data:{ session } } = await supabase.auth.getSession();
   if(!session){ location.href = LOGIN_URL; return; }
@@ -42,82 +44,112 @@ async function validarAcceso(){
   }
 
   window.USER = session.user;
-  document.getElementById("user-email").textContent = session.user.email;
-  document.getElementById("user-rol").textContent = rol;
-  document.getElementById("responsable").value = session.user.email;
+  window.ROL = rol;
+
+  userEmail.textContent = session.user.email;
+  userRol.textContent = rol;
+  responsable.value = session.user.email;
 }
 
+/* ================= PROVEEDORES ================= */
 async function cargarProveedores(){
-  const { data } = await supabase
-    .from("gastos")
-    .select("proveedor");
-
-  const select = document.getElementById("proveedor");
+  const { data } = await supabase.from("gastos").select("proveedor");
   const unique = [...new Set((data||[]).map(d=>d.proveedor).filter(Boolean))];
-
-  select.innerHTML = '<option value="">Proveedor</option>';
+  proveedor.innerHTML = "<option value=''>Proveedor</option>";
   unique.forEach(p=>{
-    const opt = document.createElement("option");
-    opt.value = p;
-    opt.textContent = p;
-    select.appendChild(opt);
+    const o = document.createElement("option");
+    o.value = p; o.textContent = p;
+    proveedor.appendChild(o);
   });
 }
 
+/* ================= GUARDAR / EDITAR ================= */
 async function guardarGasto(){
-  const d = id => document.getElementById(id).value;
-
-  const { error } = await supabase.from("gastos").insert([{
-    fecha: d("fecha"),
-    tipo: d("tipo"),
-    categoria: d("categoria"),
-    proveedor: d("proveedor"),
-    monto: d("monto"),
-    forma_pago: d("forma_pago"),
-    descripcion: d("descripcion"),
+  const payload = {
+    fecha: fecha.value,
+    tipo: tipo.value,
+    categoria: categoria.value,
+    proveedor: proveedor.value,
+    monto: monto.value,
+    forma_pago: forma_pago.value,
+    descripcion: descripcion.value,
     usuario_id: USER.id
-  }]);
+  };
 
-  if(error){ alert(error.message); return; }
+  if(EDIT_ID){
+    await supabase.from("gastos").update(payload).eq("id", EDIT_ID);
+    EDIT_ID = null;
+    btnGuardar.textContent = "Guardar gasto";
+  }else{
+    await supabase.from("gastos").insert([payload]);
+  }
 
+  limpiarFormulario();
   await cargarGastos();
   await cargarProveedores();
 }
 
+/* ================= ELIMINAR ================= */
+async function eliminarGasto(id){
+  if(!confirm("¿Eliminar este gasto?")) return;
+  await supabase.from("gastos").delete().eq("id", id);
+  await cargarGastos();
+}
+
+/* ================= EDITAR ================= */
+function editarGasto(g){
+  EDIT_ID = g.id;
+  fecha.value = g.fecha;
+  tipo.value = g.tipo;
+  categoria.value = g.categoria;
+  proveedor.value = g.proveedor || "";
+  monto.value = g.monto;
+  forma_pago.value = g.forma_pago || "";
+  descripcion.value = g.descripcion || "";
+  btnGuardar.textContent = "Actualizar gasto";
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+
+/* ================= CARGAR ================= */
 async function cargarGastos(){
-  const { data, error } = await supabase
-    .from("gastos")
-    .select("*")
-    .order("fecha",{ascending:false});
-
-  if(error){ console.error(error); return; }
-
-  const tb = document.getElementById("tabla");
-  tb.innerHTML="";
-
+  const { data } = await supabase.from("gastos").select("*").order("fecha",{ascending:false});
+  tabla.innerHTML = "";
   let t=0,f=0,v=0,e=0;
+
   (data||[]).forEach(g=>{
     const m = Number(g.monto||0);
     t+=m;
-    if(g.tipo==="fijo") f+=m;
-    if(g.tipo==="variable") v+=m;
-    if(g.tipo==="extraordinario") e+=m;
+    if(g.tipo==="fijo")f+=m;
+    if(g.tipo==="variable")v+=m;
+    if(g.tipo==="extraordinario")e+=m;
 
-    tb.innerHTML += `
-      <tr>
-        <td>${g.fecha||""}</td>
-        <td>${g.tipo||""}</td>
-        <td>${g.categoria||""}</td>
-        <td>${g.proveedor||""}</td>
-        <td>$${m.toLocaleString()}</td>
-        <td>${g.descripcion||""}</td>
-      </tr>`;
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${g.fecha}</td>
+      <td>${g.tipo}</td>
+      <td>${g.categoria}</td>
+      <td>${g.proveedor||""}</td>
+      <td>$${m.toLocaleString()}</td>
+      <td>${g.descripcion||""}</td>
+      <td class="actions">
+        <button class="edit">✏️</button>
+        <button class="delete">🗑️</button>
+      </td>
+    `;
+    row.querySelector(".edit").onclick = ()=>editarGasto(g);
+    row.querySelector(".delete").onclick = ()=>eliminarGasto(g.id);
+    tabla.appendChild(row);
   });
 
-  kpiTotal.textContent="$"+t.toLocaleString();
-  kpiFijo.textContent="$"+f.toLocaleString();
-  kpiVar.textContent="$"+v.toLocaleString();
-  kpiExt.textContent="$"+e.toLocaleString();
+  kpiTotal.textContent = "$"+t.toLocaleString();
+  kpiFijo.textContent  = "$"+f.toLocaleString();
+  kpiVar.textContent   = "$"+v.toLocaleString();
+  kpiExt.textContent   = "$"+e.toLocaleString();
+}
+
+/* ================= UTIL ================= */
+function limpiarFormulario(){
+  fecha.value=""; monto.value=""; forma_pago.value=""; descripcion.value="";
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
@@ -134,68 +166,31 @@ window.guardarGasto = guardarGasto;
   --bg:#f4f6f8;
   --card:#ffffff;
   --neon:#0fb9a8;
-  --text:#0f172a;
-  --muted:#64748b;
   --border:#e5e7eb;
   --shadow:0 18px 40px rgba(0,0,0,.12);
   --radius:18px;
 }
-body{
-  margin:0;
-  font-family:Inter,system-ui,Arial;
-  background:linear-gradient(180deg,#ffffff,var(--bg));
-  color:var(--text)
-}
-.topbar{
-  background:#fff;
-  border-bottom:1px solid var(--border);
-  padding:14px 22px;
-  display:flex;justify-content:space-between;align-items:center;
-}
+body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,#fff,var(--bg))}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:14px 22px;display:flex;justify-content:space-between}
 .brand{font-weight:900;color:var(--neon)}
 .meta{display:flex;gap:14px;align-items:center;font-size:13px}
-.chip{
-  background:#fff;border:1px solid var(--border);
-  border-radius:999px;padding:6px 14px;
-}
-.btn{
-  background:var(--neon);color:white;
-  padding:8px 16px;border-radius:999px;
-  font-weight:800;text-decoration:none;
-}
+.chip{border:1px solid var(--border);border-radius:999px;padding:6px 14px}
+.btn{background:var(--neon);color:#fff;padding:8px 16px;border-radius:999px;text-decoration:none;font-weight:800}
 .container{max-width:1200px;margin:26px auto;padding:0 16px}
-.card{
-  background:var(--card);
-  border:1px solid var(--border);
-  border-radius:var(--radius);
-  box-shadow:var(--shadow);
-  padding:24px;margin-bottom:22px;
-}
-h1{color:var(--neon)}
-.grid{display:grid;gap:20px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px;margin-bottom:24px}
+.grid{display:grid;gap:26px}
 .g-4{grid-template-columns:repeat(4,1fr)}
-.g-3{grid-template-columns:repeat(3,1fr)}
+.g-3{grid-template-columns:repeat(3,minmax(220px,1fr))}
 .full{grid-column:1/-1}
-input,select{
-  width:100%;padding:14px 16px;
-  border-radius:14px;
-  border:1px solid var(--border);
-  background:#fff;
-  font-size:14px;
-}
-button{
-  margin-top:20px;
-  background:var(--neon);color:white;
-  padding:14px 22px;
-  border:none;border-radius:14px;
-  font-weight:900;cursor:pointer;
-}
+input,select{padding:16px;border-radius:14px;border:1px solid var(--border)}
+button{background:var(--neon);color:#fff;padding:14px 22px;border:none;border-radius:14px;font-weight:900;cursor:pointer}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .kpi{font-size:24px;font-weight:900;color:var(--neon)}
-.klabel{color:var(--muted);font-size:13px}
 table{width:100%;border-collapse:collapse}
 th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
-th{color:var(--muted);text-align:left}
+.actions button{background:none;border:none;cursor:pointer;font-size:16px}
+.actions .delete{color:#dc2626}
+.actions .edit{color:#0fb9a8}
 </style>
 </head>
 
@@ -204,8 +199,8 @@ th{color:var(--muted);text-align:left}
 <div class="topbar">
   <div class="brand">💸 Gestión de Gastos</div>
   <div class="meta">
-    <span class="chip" id="user-email"></span>
-    <span class="chip">Rol: <b id="user-rol"></b></span>
+    <span class="chip" id="userEmail"></span>
+    <span class="chip">Rol: <b id="userRol"></b></span>
     <a class="btn" href="index.html">HOME</a>
   </div>
 </div>
@@ -235,31 +230,32 @@ th{color:var(--muted);text-align:left}
   <select id="proveedor"></select>
 </div>
 
-<div class="grid g-3" style="margin-top:20px">
+<div class="grid g-3" style="margin-top:26px">
   <input id="monto" type="number" placeholder="Monto">
   <input id="forma_pago" placeholder="Forma de pago">
   <input id="responsable" readonly>
 </div>
 
-<div class="grid" style="margin-top:20px">
+<div class="grid" style="margin-top:26px">
   <input id="descripcion" class="full" placeholder="Descripción">
 </div>
 
-<button onclick="guardarGasto()">Guardar gasto</button>
+<button id="btnGuardar" onclick="guardarGasto()">Guardar gasto</button>
 </div>
 
 <div class="kpis">
-<div class="card"><div class="klabel">Total Mes</div><div class="kpi" id="kpiTotal">$0</div></div>
-<div class="card"><div class="klabel">Gastos Fijos</div><div class="kpi" id="kpiFijo">$0</div></div>
-<div class="card"><div class="klabel">Gastos Variables</div><div class="kpi" id="kpiVar">$0</div></div>
-<div class="card"><div class="klabel">Extraordinarios</div><div class="kpi" id="kpiExt">$0</div></div>
+<div class="card"><div>Total Mes</div><div class="kpi" id="kpiTotal">$0</div></div>
+<div class="card"><div>Gastos Fijos</div><div class="kpi" id="kpiFijo">$0</div></div>
+<div class="card"><div>Gastos Variables</div><div class="kpi" id="kpiVar">$0</div></div>
+<div class="card"><div>Extraordinarios</div><div class="kpi" id="kpiExt">$0</div></div>
 </div>
 
 <div class="card">
 <table>
 <thead>
 <tr>
-<th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Proveedor</th><th>Monto</th><th>Descripción</th>
+<th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Proveedor</th>
+<th>Monto</th><th>Descripción</th><th>Acciones</th>
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
@@ -269,6 +265,4 @@ th{color:var(--muted);text-align:left}
 </div>
 </body>
 </html>
-
-
 
