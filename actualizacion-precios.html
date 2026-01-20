@@ -18,7 +18,6 @@
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
     const ADMIN_EMAIL = "camilo-1000@hotmail.com"; // lowercase
 
-    // ✅ Lee rol desde profiles
     async function cargarRolDesdeProfiles(userId) {
       try {
         const { data, error } = await supabase
@@ -34,7 +33,6 @@
       }
     }
 
-    // ✅ Convierte input a número o null si está vacío
     function money(v) {
       const raw = String(v ?? "").trim();
       if (!raw) return null;
@@ -49,7 +47,7 @@
     const state = {
       all: [],
       filtered: [],
-      editing: new Map(), // id -> {procedimiento, valor}
+      editing: new Map(), // id -> {procedimiento, valor, costo, codigo_cups}
       isAdmin: false
     };
 
@@ -81,6 +79,24 @@
       state.filtered.forEach((row)=>{
         const tr = document.createElement("tr");
 
+        // ===== Costo (primera columna) =====
+        const tdCosto = document.createElement("td");
+        const inpCosto = document.createElement("input");
+        inpCosto.type = "number";
+        inpCosto.min = "0";
+        inpCosto.step = "100";
+        inpCosto.placeholder = "Costo";
+        inpCosto.value = (row.costo === null || row.costo === undefined) ? "" : String(row.costo);
+
+        inpCosto.addEventListener("input", ()=>{
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
+          prev.costo = inpCosto.value;
+          state.editing.set(row.id, prev);
+          markDirty(tr, true);
+        });
+
+        tdCosto.appendChild(inpCosto);
+
         // ===== Procedimiento =====
         const tdProc = document.createElement("td");
         const inpProc = document.createElement("input");
@@ -88,7 +104,7 @@
         inpProc.value = row.procedimiento ?? "";
 
         inpProc.addEventListener("input", ()=>{
-          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor };
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
           prev.procedimiento = inpProc.value;
           state.editing.set(row.id, prev);
           markDirty(tr, true);
@@ -104,7 +120,7 @@
         inpCups.value = row.codigo_cups ?? "";
 
         inpCups.addEventListener("input", ()=>{
-          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, codigo_cups: row.codigo_cups };
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
           prev.codigo_cups = inpCups.value;
           state.editing.set(row.id, prev);
           markDirty(tr, true);
@@ -122,9 +138,8 @@
         inpValor.value = (row.valor === null || row.valor === undefined) ? "" : String(row.valor);
 
         inpValor.addEventListener("input", ()=>{
-          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor };
-          prev.procedimiento = inpProc.value;
-          prev.valor = inpValor.value; // guardamos lo que escribe (string), money() lo convierte luego
+          const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
+          prev.valor = inpValor.value;
           state.editing.set(row.id, prev);
           markDirty(tr, true);
         });
@@ -150,6 +165,7 @@
         tdAcc.appendChild(btnSave);
         tdAcc.appendChild(btnDel);
 
+        tr.appendChild(tdCosto);
         tr.appendChild(tdProc);
         tr.appendChild(tdCups);
         tr.appendChild(tdValor);
@@ -179,7 +195,7 @@
       try{
         const { data, error } = await supabase
           .from("procedimientos_precios")
-          .select("id,procedimiento,valor,codigo_cups,updated_at")
+          .select("id,costo,procedimiento,valor,codigo_cups,updated_at")
           .order("procedimiento", { ascending: true });
 
         if (error){
@@ -194,9 +210,7 @@
 
         setStatus("");
         render();
-      } finally {
-        // por si algo falla antes
-      }
+      } finally {}
     }
 
     async function guardarFila(id){
@@ -208,13 +222,19 @@
 
       const procedimiento = normalizeName(edit.procedimiento);
       const valor = money(edit.valor);
+      const costo = money(edit.costo);
 
       if(!procedimiento){
         showToast("El nombre del procedimiento es obligatorio", "err");
         return;
       }
 
-      const payload = { procedimiento, valor: valor === null ? null : valor, codigo_cups: edit.codigo_cups || null };
+      const payload = { 
+        procedimiento, 
+        valor: valor === null ? null : valor, 
+        costo: costo === null ? null : costo,
+        codigo_cups: edit.codigo_cups || null 
+      };
 
       setStatus("Guardando...");
       const { error } = await supabase
@@ -258,6 +278,7 @@
     async function crearProcedimiento(){
       const nombre = normalizeName(document.getElementById("new-nombre").value);
       const valor = money(document.getElementById("new-valor").value);
+      const costo = money(document.getElementById("new-costo").value);
 
       if(!nombre){
         showToast("Escribe un nombre", "err");
@@ -267,7 +288,12 @@
       setStatus("Creando...");
       const { error } = await supabase
         .from("procedimientos_precios")
-        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor, codigo_cups: document.getElementById("new-cups").value || null }]);
+        .insert([{ 
+          procedimiento: nombre, 
+          valor: valor === null ? null : valor, 
+          costo: costo === null ? null : costo,
+          codigo_cups: document.getElementById("new-cups").value || null 
+        }]);
 
       setStatus("");
       if(error){
@@ -278,6 +304,7 @@
 
       document.getElementById("new-nombre").value = "";
       document.getElementById("new-valor").value = "";
+      document.getElementById("new-costo").value = "";
       document.getElementById("new-cups").value = "";
 
       showToast("Creado ✅", "ok");
@@ -286,20 +313,16 @@
     }
 
     async function init(){
-      // año
       document.getElementById("year").textContent = new Date().getFullYear();
 
-      // 🔒 sesión
       const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
         return;
       }
 
-      // email
       document.getElementById("user-email").textContent = session.user?.email || "Usuario";
 
-      // rol
       const role = await cargarRolDesdeProfiles(session.user.id);
       document.getElementById("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
@@ -315,7 +338,6 @@
       document.getElementById("guard").style.display = "none";
       document.getElementById("app").style.display = "block";
 
-      // events
       document.getElementById("search").addEventListener("input", applyFilter);
       document.getElementById("btn-refresh").addEventListener("click", cargarProcedimientos);
       document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
@@ -326,12 +348,10 @@
 
     init();
 
-    // 🔄 sesión expirada
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
-    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       window.location.href = LOGIN_URL;
@@ -532,7 +552,6 @@
       color: var(--muted);
     }
 
-    /* Toast */
     #toast{
       position: fixed;
       right: 16px;
@@ -556,7 +575,6 @@
     #toast[data-type="err"]{ border-color: #f2c6c6; }
     #toast[data-type="warn"]{ border-color: #ffe7b3; }
 
-    /* Guard (no admin) */
     #guard{
       max-width: 800px;
       margin: 14px auto;
@@ -614,6 +632,7 @@
     </div>
 
     <div class="new-row">
+      <input id="new-costo" type="number" min="0" step="100" placeholder="Costo (opcional)" />
       <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
       <input id="new-cups" type="text" placeholder="CUPS (opcional)" />
       <input id="new-valor" type="number" min="0" step="100" placeholder="Valor (opcional)" />
@@ -625,6 +644,7 @@
       <table>
         <thead>
           <tr>
+            <th style="width: 180px;">Costo</th>
             <th>Procedimiento</th>
             <th style="width: 180px;">CUPS</th>
             <th style="width: 220px;">Valor</th>
@@ -644,6 +664,7 @@
   <div id="toast"></div>
 </body>
 </html>
+
 
 
 
