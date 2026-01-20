@@ -18,6 +18,7 @@
     const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
     const ADMIN_EMAIL = "camilo-1000@hotmail.com"; // lowercase
 
+    // ✅ Lee rol desde profiles
     async function cargarRolDesdeProfiles(userId) {
       try {
         const { data, error } = await supabase
@@ -33,11 +34,24 @@
       }
     }
 
+    // ✅ Convierte input a número o null si está vacío
     function money(v) {
       const raw = String(v ?? "").trim();
       if (!raw) return null;
       const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
       return Number.isFinite(n) ? n : null;
+    }
+
+    // ✅ Formato miles (solo visual)
+    function formatMiles(v) {
+      const raw = String(v ?? "").trim();
+      if (!raw) return "";
+      const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
+      return Number.isFinite(n) ? n.toLocaleString("es-CO") : "";
+    }
+
+    function unformatMiles(v) {
+      return String(v ?? "").replace(/[^\d]/g, "");
     }
 
     function normalizeName(s){
@@ -81,16 +95,23 @@
 
         // ===== Costo (primera columna) =====
         const tdCosto = document.createElement("td");
+        tdCosto.className = "col-costo";
         const inpCosto = document.createElement("input");
-        inpCosto.type = "number";
-        inpCosto.min = "0";
-        inpCosto.step = "100";
+        inpCosto.type = "text";
+        inpCosto.inputMode = "numeric";
         inpCosto.placeholder = "Costo";
-        inpCosto.value = (row.costo === null || row.costo === undefined) ? "" : String(row.costo);
+        inpCosto.value = formatMiles(row.costo);
+
+        inpCosto.addEventListener("focus", ()=>{
+          inpCosto.value = unformatMiles(inpCosto.value);
+        });
+        inpCosto.addEventListener("blur", ()=>{
+          inpCosto.value = formatMiles(inpCosto.value);
+        });
 
         inpCosto.addEventListener("input", ()=>{
           const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
-          prev.costo = inpCosto.value;
+          prev.costo = inpCosto.value; // string (con o sin puntos)
           state.editing.set(row.id, prev);
           markDirty(tr, true);
         });
@@ -131,15 +152,22 @@
         // ===== Valor =====
         const tdValor = document.createElement("td");
         const inpValor = document.createElement("input");
-        inpValor.type = "number";
-        inpValor.min = "0";
-        inpValor.step = "100";
+        inpValor.type = "text";
+        inpValor.inputMode = "numeric";
         inpValor.placeholder = "Sin precio";
-        inpValor.value = (row.valor === null || row.valor === undefined) ? "" : String(row.valor);
+        inpValor.value = formatMiles(row.valor);
+
+        inpValor.addEventListener("focus", ()=>{
+          inpValor.value = unformatMiles(inpValor.value);
+        });
+        inpValor.addEventListener("blur", ()=>{
+          inpValor.value = formatMiles(inpValor.value);
+        });
 
         inpValor.addEventListener("input", ()=>{
           const prev = state.editing.get(row.id) || { procedimiento: row.procedimiento, valor: row.valor, costo: row.costo, codigo_cups: row.codigo_cups };
-          prev.valor = inpValor.value;
+          prev.procedimiento = inpProc.value;
+          prev.valor = inpValor.value; // string, money() lo convierte luego
           state.editing.set(row.id, prev);
           markDirty(tr, true);
         });
@@ -210,7 +238,9 @@
 
         setStatus("");
         render();
-      } finally {}
+      } finally {
+        // por si algo falla antes
+      }
     }
 
     async function guardarFila(id){
@@ -229,12 +259,7 @@
         return;
       }
 
-      const payload = { 
-        procedimiento, 
-        valor: valor === null ? null : valor, 
-        costo: costo === null ? null : costo,
-        codigo_cups: edit.codigo_cups || null 
-      };
+      const payload = { procedimiento, valor: valor === null ? null : valor, costo: costo === null ? null : costo, codigo_cups: edit.codigo_cups || null };
 
       setStatus("Guardando...");
       const { error } = await supabase
@@ -288,12 +313,7 @@
       setStatus("Creando...");
       const { error } = await supabase
         .from("procedimientos_precios")
-        .insert([{ 
-          procedimiento: nombre, 
-          valor: valor === null ? null : valor, 
-          costo: costo === null ? null : costo,
-          codigo_cups: document.getElementById("new-cups").value || null 
-        }]);
+        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor, costo: costo === null ? null : costo, codigo_cups: document.getElementById("new-cups").value || null }]);
 
       setStatus("");
       if(error){
@@ -313,16 +333,20 @@
     }
 
     async function init(){
+      // año
       document.getElementById("year").textContent = new Date().getFullYear();
 
+      // 🔒 sesión
       const { data: { session } } = await supabase.auth.getSession();
       if(!session){
         window.location.href = LOGIN_URL;
         return;
       }
 
+      // email
       document.getElementById("user-email").textContent = session.user?.email || "Usuario";
 
+      // rol
       const role = await cargarRolDesdeProfiles(session.user.id);
       document.getElementById("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
@@ -338,6 +362,7 @@
       document.getElementById("guard").style.display = "none";
       document.getElementById("app").style.display = "block";
 
+      // events
       document.getElementById("search").addEventListener("input", applyFilter);
       document.getElementById("btn-refresh").addEventListener("click", cargarProcedimientos);
       document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
@@ -348,10 +373,12 @@
 
     init();
 
+    // 🔄 sesión expirada
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
 
+    // Logout
     window.cerrarSesion = async () => {
       try { await supabase.auth.signOut(); } catch(e) {}
       window.location.href = LOGIN_URL;
@@ -552,6 +579,7 @@
       color: var(--muted);
     }
 
+    /* Toast */
     #toast{
       position: fixed;
       right: 16px;
@@ -575,6 +603,7 @@
     #toast[data-type="err"]{ border-color: #f2c6c6; }
     #toast[data-type="warn"]{ border-color: #ffe7b3; }
 
+    /* Guard (no admin) */
     #guard{
       max-width: 800px;
       margin: 14px auto;
@@ -596,41 +625,32 @@
       .header-actions{ width: 100%; }
     }
 
-    /* ===== Ajuste responsive tabla precios ===== */
+    /* ===== Ajustes agregados (responsive + columna costo) ===== */
 
-/* La tabla ocupa todo el ancho disponible */
-table {
-  width: 100%;
-  table-layout: fixed;
-}
+    /* Columna costo en color */
+    th.col-costo{ color: #3DD9BB; }
+    td.col-costo input{ color: #3DD9BB; font-weight: 800; }
 
-/* Permite que las columnas se ajusten */
-th, td {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+    /* Responsive: evitar overflow por min-width de inputs */
+    td input{
+      min-width: 0 !important;
+    }
 
-/* Inputs se adaptan a la celda */
-td input {
-  width: 100%;
-  min-width: 0 !important;
-}
+    /* Tabla se adapta mejor al ancho */
+    table{
+      table-layout: fixed;
+      width: 100%;
+    }
+    th, td{
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
 
-/* Columnas con ancho razonable */
-th:nth-child(1), td:nth-child(1) { width: 140px; } /* Costo */
-th:nth-child(2), td:nth-child(2) { width: auto; }  /* Procedimiento */
-th:nth-child(3), td:nth-child(3) { width: 140px; } /* CUPS */
-th:nth-child(4), td:nth-child(4) { width: 160px; } /* Valor */
-th:nth-child(5), td:nth-child(5) { width: 220px; } /* Acciones */
-
-/* Scroll horizontal solo si es necesario */
-@media (max-width: 900px) {
-  table {
-    min-width: 900px;
-  }
-}
-
+    /* Scroll horizontal solo si hace falta en pantallas pequeñas */
+    @media (max-width: 900px){
+      table{ min-width: 900px; }
+    }
   </style>
 </head>
 
@@ -668,10 +688,10 @@ th:nth-child(5), td:nth-child(5) { width: 220px; } /* Acciones */
     </div>
 
     <div class="new-row">
-      <input id="new-costo" type="number" min="0" step="100" placeholder="Costo (opcional)" />
+      <input id="new-costo" type="text" inputmode="numeric" placeholder="Costo (opcional)" />
       <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
       <input id="new-cups" type="text" placeholder="CUPS (opcional)" />
-      <input id="new-valor" type="number" min="0" step="100" placeholder="Valor (opcional)" />
+      <input id="new-valor" type="text" inputmode="numeric" placeholder="Valor (opcional)" />
       <button class="btn primary" type="button" id="btn-add">Agregar</button>
       <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
     </div>
@@ -680,7 +700,7 @@ th:nth-child(5), td:nth-child(5) { width: 220px; } /* Acciones */
       <table>
         <thead>
           <tr>
-            <th style="width: 180px;">Costo</th>
+            <th class="col-costo" style="width: 180px;">Costo</th>
             <th>Procedimiento</th>
             <th style="width: 180px;">CUPS</th>
             <th style="width: 220px;">Valor</th>
@@ -700,7 +720,6 @@ th:nth-child(5), td:nth-child(5) { width: 220px; } /* Acciones */
   <div id="toast"></div>
 </body>
 </html>
-
 
 
 
