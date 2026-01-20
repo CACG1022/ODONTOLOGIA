@@ -1422,15 +1422,23 @@
 
       
       
-      const subtotal = Number(f.subtotal ?? 0) || (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
-      const aplicaIVA = (f.iva_aplica === true);
-      const descuentoPct = Number(f.descuento_pct ?? 0);
-      const descuentoValor = Number(f.descuento_valor ?? 0);
-      const ivaPct = Number(f.iva_porcentaje ?? 0);
-      const ivaValor = Number(f.iva_valor ?? 0) || (aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0);
-      const copago = Number(f.copago ?? 0);
-      const cuota = Number(f.cuota_moderadora ?? 0);
-      const totalCalc = Number(f.valor_total ?? 0) || (subtotal  - descuentoValor + ivaValor + copago + cuota);
+      const subtotal = Number(f.subtotal ?? 0) 
+  || (detalle || []).reduce((acc,it)=> acc + (Number(it.valor_total)||0), 0);
+
+const descuentoPct   = Number(f.descuento_pct ?? 0);
+const descuentoValor = Number(f.descuento_valor ?? 0);
+
+const aplicaIVA = (f.iva_aplica === true);
+const ivaPct    = Number(f.iva_porcentaje ?? 0);
+const ivaValor  = Number(f.iva_valor ?? 0) 
+  || (aplicaIVA ? Math.round((subtotal - descuentoValor) * (ivaPct/100)) : 0);
+
+const copago = Number(f.copago ?? 0);
+const cuota  = Number(f.cuota_moderadora ?? 0);
+
+const totalCalc = Number(f.valor_total ?? 0) 
+  || (subtotal - descuentoValor + ivaValor + copago + cuota);
+
       
 
 
