@@ -8,9 +8,6 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// ===============================
-// CONFIGURACIÓN SUPABASE
-// ===============================
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
@@ -20,174 +17,185 @@ const LOGIN_URL = "login.html";
 const HOME_URL  = "index.html";
 const MODULO = "gastos";
 
-// ===============================
-// VALIDAR SESIÓN Y PERMISOS (MISMA LÓGICA QUE TUS OTROS MÓDULOS)
-// ===============================
 async function validarAcceso(){
   const { data:{ session } } = await supabase.auth.getSession();
-  if(!session){
-    window.location.href = LOGIN_URL;
-    return;
-  }
+  if(!session){ location.href = LOGIN_URL; return; }
 
-  // 🔑 LEER ROL POR ID (NO POR EMAIL)
-  const { data: perfil, error: ePerfil } = await supabase
+  const { data: perfil } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
 
-  if(ePerfil || !perfil?.role){
-    alert("No se pudo obtener tu rol.");
-    window.location.href = HOME_URL;
-    return;
-  }
+  const rol = perfil?.role || "paciente";
 
-  const rol = String(perfil.role).toLowerCase().trim();
-
-  // 🔐 LEER PERMISOS DEL MODULO
-  const { data: permiso, error: ePerm } = await supabase
+  const { data: permiso } = await supabase
     .from("modulos_permisos")
-    .select("admin, doctor, auxiliar, paciente, modulo")
+    .select("admin,doctor,auxiliar,paciente")
     .eq("modulo", MODULO)
-    .maybeSingle();
+    .single();
 
-  if(ePerm || !permiso){
-    alert("Módulo no configurado en permisos.");
-    window.location.href = HOME_URL;
+  if(!permiso || !permiso[rol]){
+    alert("No autorizado");
+    location.href = HOME_URL;
     return;
   }
 
-  if(!permiso[rol]){
-    alert("⛔ No autorizado");
-    window.location.href = HOME_URL;
-    return;
-  }
-
-  // ✅ OK
+  document.getElementById("user-email").textContent = session.user.email;
+  document.getElementById("user-rol").textContent = rol;
   window.USER = session.user;
-  window.ROL = rol;
 }
-
 await validarAcceso();
 
-// ===============================
-// FUNCIONES DE GASTOS
-// ===============================
 async function guardarGasto(){
-  const data = {
-    fecha: document.getElementById("fecha").value,
-    tipo: document.getElementById("tipo").value,
-    categoria: document.getElementById("categoria").value,
-    proveedor: document.getElementById("proveedor").value,
-    monto: document.getElementById("monto").value,
-    forma_pago: document.getElementById("forma_pago").value,
-    descripcion: document.getElementById("descripcion").value,
-    usuario_id: window.USER.id
-  };
-
-  const { error } = await supabase.from("gastos").insert([data]);
-  if(error){
-    alert(error.message);
-    return;
-  }
+  const d = id => document.getElementById(id).value;
+  await supabase.from("gastos").insert([{
+    fecha:d("fecha"), tipo:d("tipo"), categoria:d("categoria"),
+    proveedor:d("proveedor"), monto:d("monto"),
+    forma_pago:d("forma_pago"), descripcion:d("descripcion"),
+    usuario_id:USER.id
+  }]);
   cargarGastos();
 }
 
 async function cargarGastos(){
-  const { data } = await supabase
-    .from("gastos")
-    .select("*")
-    .order("fecha", { ascending:false });
-
-  const tbody = document.getElementById("tabla");
-  tbody.innerHTML = "";
-
-  let total=0, fijos=0, variables=0, extra=0;
-
-  (data || []).forEach(g => {
-    const m = Number(g.monto || 0);
-    total += m;
-    if(g.tipo === "fijo") fijos += m;
-    if(g.tipo === "variable") variables += m;
-    if(g.tipo === "extraordinario") extra += m;
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${g.fecha}</td>
-        <td>${g.tipo}</td>
-        <td>${g.categoria}</td>
-        <td>${g.proveedor || "-"}</td>
-        <td>$${m.toLocaleString()}</td>
-        <td>${g.descripcion || ""}</td>
-      </tr>`;
+  const { data } = await supabase.from("gastos").select("*").order("fecha",{ascending:false});
+  const tb = document.getElementById("tabla");
+  tb.innerHTML="";
+  let t=0,f=0,v=0,e=0;
+  (data||[]).forEach(g=>{
+    const m=Number(g.monto||0);
+    t+=m; if(g.tipo==="fijo")f+=m; if(g.tipo==="variable")v+=m; if(g.tipo==="extraordinario")e+=m;
+    tb.innerHTML+=`<tr>
+      <td>${g.fecha}</td><td>${g.tipo}</td><td>${g.categoria}</td>
+      <td>${g.proveedor||""}</td><td>$${m.toLocaleString()}</td><td>${g.descripcion||""}</td>
+    </tr>`;
   });
-
-  document.getElementById("kpi-total").textContent = "$" + total.toLocaleString();
-  document.getElementById("kpi-fijos").textContent = "$" + fijos.toLocaleString();
-  document.getElementById("kpi-variables").textContent = "$" + variables.toLocaleString();
-  document.getElementById("kpi-extra").textContent = "$" + extra.toLocaleString();
+  kpiTotal.textContent="$"+t.toLocaleString();
+  kpiFijo.textContent="$"+f.toLocaleString();
+  kpiVar.textContent="$"+v.toLocaleString();
+  kpiExt.textContent="$"+e.toLocaleString();
 }
-
-window.guardarGasto = guardarGasto;
-window.onload = cargarGastos;
+window.onload=cargarGastos;
+window.guardarGasto=guardarGasto;
 </script>
 
 <style>
-body{font-family:Arial;background:#f4f6f8;padding:20px}
-.container{max-width:1200px;margin:auto;background:#fff;border-radius:14px;padding:20px}
-h1{margin-bottom:16px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.card{border:1px solid #e5e7eb;border-radius:12px;padding:14px}
-input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #d1d5db}
-button{padding:10px;border:none;border-radius:8px;background:#1f6aa5;color:#fff;font-weight:bold;cursor:pointer}
-table{width:100%;border-collapse:collapse;margin-top:20px}
-th,td{padding:10px;border-bottom:1px solid #e5e7eb}
-th{background:#f3f4f6}
-.kpi{font-size:20px;font-weight:bold}
+:root{
+  --bg:#f8fafc;
+  --card:#ffffff;
+  --neon:#20f3c4;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e5e7eb;
+  --shadow:0 12px 30px rgba(0,0,0,.08);
+  --radius:16px;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,Arial;background:var(--bg);color:var(--text)}
+.topbar{
+  background:#ffffff;
+  border-bottom:1px solid var(--border);
+  padding:14px 22px;
+  display:flex;justify-content:space-between;align-items:center;
+  box-shadow:var(--shadow)
+}
+.topbar .brand{font-weight:900;color:var(--neon);font-size:18px}
+.topbar .meta{display:flex;gap:14px;align-items:center;font-size:13px}
+.topbar .chip{
+  border:1px solid var(--border);border-radius:999px;padding:6px 12px;
+}
+.topbar a{
+  text-decoration:none;color:#fff;background:var(--neon);
+  padding:8px 14px;border-radius:999px;font-weight:800;
+}
+
+.container{max-width:1200px;margin:24px auto;padding:0 16px}
+h1{color:var(--neon);margin-bottom:18px}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px;
+  margin-bottom:20px;
+}
+.grid{display:grid;gap:16px}
+.g-4{grid-template-columns:repeat(4,1fr)}
+.g-2{grid-template-columns:repeat(2,1fr)}
+.full{grid-column:1/-1}
+
+input,select{
+  width:100%;padding:14px;border-radius:12px;
+  border:1px solid var(--border);font-size:14px
+}
+button{
+  background:var(--neon);border:none;color:#003d2f;
+  padding:12px 18px;border-radius:12px;font-weight:900;cursor:pointer
+}
+
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.kpi{font-size:22px;font-weight:900;color:var(--neon)}
+.klabel{color:var(--muted);font-size:13px}
+
+table{width:100%;border-collapse:collapse}
+th,td{padding:12px;border-bottom:1px solid var(--border);font-size:13px}
+th{color:var(--muted);text-align:left}
 </style>
 </head>
 
 <body>
+
+<div class="topbar">
+  <div class="brand">💸 Gestión de Gastos</div>
+  <div class="meta">
+    <span class="chip" id="user-email"></span>
+    <span class="chip">Rol: <b id="user-rol"></b></span>
+    <a href="index.html">Home</a>
+  </div>
+</div>
+
 <div class="container">
-<h1>💸 Gestión de Gastos</h1>
 
 <div class="card">
-<h3>Registrar gasto</h3>
-<div class="grid">
+<h1>Registrar gasto</h1>
+<div class="grid g-4">
 <input type="date" id="fecha">
 <select id="tipo">
   <option value="fijo">Fijo</option>
   <option value="variable">Variable</option>
   <option value="extraordinario">Extraordinario</option>
 </select>
-<input placeholder="Categoría" id="categoria">
-<input placeholder="Proveedor" id="proveedor">
-<input placeholder="Monto" type="number" id="monto">
-<input placeholder="Forma de pago" id="forma_pago">
+<input id="categoria" placeholder="Categoría">
+<input id="proveedor" placeholder="Proveedor">
+<input id="monto" placeholder="Monto" type="number">
+<input id="forma_pago" placeholder="Forma de pago">
+<input id="descripcion" class="full" placeholder="Descripción">
 </div>
-<input style="margin-top:10px;width:100%" placeholder="Descripción" id="descripcion">
-<button onclick="guardarGasto()" style="margin-top:10px">Guardar gasto</button>
-</div>
-
-<div class="grid" style="margin-top:20px">
-<div class="card"><div>Total Mes</div><div class="kpi" id="kpi-total">$0</div></div>
-<div class="card"><div>Gastos Fijos</div><div class="kpi" id="kpi-fijos">$0</div></div>
-<div class="card"><div>Gastos Variables</div><div class="kpi" id="kpi-variables">$0</div></div>
-<div class="card"><div>Extraordinarios</div><div class="kpi" id="kpi-extra">$0</div></div>
+<button style="margin-top:16px" onclick="guardarGasto()">Guardar gasto</button>
 </div>
 
+<div class="kpis">
+<div class="card"><div class="klabel">Total Mes</div><div class="kpi" id="kpiTotal">$0</div></div>
+<div class="card"><div class="klabel">Gastos Fijos</div><div class="kpi" id="kpiFijo">$0</div></div>
+<div class="card"><div class="klabel">Gastos Variables</div><div class="kpi" id="kpiVar">$0</div></div>
+<div class="card"><div class="klabel">Extraordinarios</div><div class="kpi" id="kpiExt">$0</div></div>
+</div>
+
+<div class="card">
 <table>
 <thead>
 <tr>
-<th>Fecha</th><th>Tipo</th><th>Categoría</th>
-<th>Proveedor</th><th>Monto</th><th>Descripción</th>
+<th>Fecha</th><th>Tipo</th><th>Categoría</th><th>Proveedor</th><th>Monto</th><th>Descripción</th>
 </tr>
 </thead>
 <tbody id="tabla"></tbody>
 </table>
+</div>
 
 </div>
 </body>
 </html>
+
 
