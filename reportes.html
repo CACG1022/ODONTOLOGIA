@@ -1639,7 +1639,7 @@
       }
 
       try{
-        const { data, error } = await supabase
+        let q = supabase
           .from("abonos")
           .select(`
             fecha,
@@ -1650,8 +1650,16 @@
               paciente_nombre
             )
           `)
-          .eq("fecha", fecha)
           .order("created_at", { ascending:true });
+
+        const fDesde = ($("fecha_desde").value || "").trim();
+        const fHasta = ($("fecha_hasta").value || "").trim();
+
+        if (fDesde) q = q.gte("fecha", fDesde);
+        if (fHasta) q = q.lte("fecha", fHasta);
+        if (fecha) q = q.eq("fecha", fecha);
+
+        const { data, error } = await q;
 
         if (error) throw error;
 
@@ -1761,6 +1769,17 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
