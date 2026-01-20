@@ -374,6 +374,47 @@
       await cargarProcedimientos();
     }
 
+    // ===== Formato y color en fila "Agregar" =====
+const newCosto = document.getElementById("new-costo");
+const newValor = document.getElementById("new-valor");
+
+// COSTO (opcional)
+if (newCosto) {
+  newCosto.style.color = "#FF7657";
+  newCosto.style.fontWeight = "700";
+
+  newCosto.addEventListener("focus", () => {
+    newCosto.value = unformatMiles(newCosto.value);
+  });
+
+  newCosto.addEventListener("blur", () => {
+    newCosto.value = formatMiles(newCosto.value);
+  });
+
+  newCosto.addEventListener("input", () => {
+    newCosto.value = newCosto.value.replace(/[^\d,]/g, "");
+  });
+}
+
+// VALOR (opcional)
+if (newValor) {
+  newValor.style.color = "#1DAD95";
+  newValor.style.fontWeight = "700";
+
+  newValor.addEventListener("focus", () => {
+    newValor.value = unformatMiles(newValor.value);
+  });
+
+  newValor.addEventListener("blur", () => {
+    newValor.value = formatMiles(newValor.value);
+  });
+
+  newValor.addEventListener("input", () => {
+    newValor.value = newValor.value.replace(/[^\d,]/g, "");
+  });
+}
+
+
     init();
 
     // 🔄 sesión expirada
@@ -704,7 +745,7 @@ td.col-valor input {
       <input id="new-costo" type="text" inputmode="numeric" placeholder="Costo (opcional)" />
       <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
       <input id="new-cups" type="text" placeholder="CUPS (opcional)" />
-      <input id="new-valor" type="text" inputmode="numeric" placeholder="Valor (opcional)" />
+      <input id="new-valor" type="text" inputmode="numeric" placeholder="Precio (opcional)" />
       <button class="btn primary" type="button" id="btn-add">Agregar</button>
       <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
     </div>
