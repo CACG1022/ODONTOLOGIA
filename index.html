@@ -230,38 +230,36 @@
       const y = document.getElementById("year");
       if (y) y.textContent = new Date().getFullYear();
     }
+// =========================
+// ✅ CONTAR PACIENTES ÚNICOS (CORREGIDO)
+// =========================
+async function cargarPacientes() {
+  try {
+    const { data, error } = await supabase
+      .from("HISTORIAS CLINICAS")
+      .select('"Numero de Identificacion"');
 
-    
-    
-    // =========================
-    // ✅ CONTAR PACIENTES ÚNICOS
-    // =========================
-    async function cargarPacientes() {
-      try {
-        const { data, error } = await supabase
-          .from("HISTORIAS CLINICAS")
-          .select("Numero de Identificacion");
+    if (error) throw error;
 
-        if (error) throw error;
+    const unicos = new Set(
+      (data || [])
+        .map(r => r["Numero de Identificacion"])
+        .filter(v => v !== null && v !== "")
+    );
 
-        const unicos = new Set(
-          (data || [])
-            .map(r => r["Numero de Identificacion"])
-            .filter(v => v !== null && v !== "")
-        );
+    const el = document.getElementById("pacientes-value");
+    if (el) el.textContent = unicos.size;
 
-        const el = document.getElementById("pacientes-value");
-        if (el) el.textContent = unicos.size;
+    const hint = document.getElementById("pacientes-hint");
+    if (hint) hint.textContent = "Pacientes únicos";
 
-        const hint = document.getElementById("pacientes-hint");
-        if (hint) hint.textContent = "Pacientes únicos";
+  } catch (e) {
+    console.error("Error cargando pacientes:", e);
+    const el = document.getElementById("pacientes-value");
+    if (el) el.textContent = "—";
+  }
+}
 
-      } catch (e) {
-        console.error("Error cargando pacientes:", e);
-        const el = document.getElementById("pacientes-value");
-        if (el) el.textContent = "—";
-      }
-    }
 
 
     // =========================
