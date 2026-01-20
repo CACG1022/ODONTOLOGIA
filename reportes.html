@@ -462,6 +462,8 @@
     </div>
 
 <!-- ===== KPIs GASTOS / INGRESOS ===== -->
+<h2 style='margin:18px 0'>Gastos</h2>
+<h3 style='margin:16px 0'>Gastos</h3>
 <div class="kpis" style="margin-top:12px">
   <div class="kpi"><div class="k">💰 Total gastos del mes</div><div class="v mono" id="k_gastos_mes">$0</div></div>
   <div class="kpi"><div class="k">📉 Variación vs mes anterior</div><div class="v mono" id="k_gastos_variacion">0%</div></div>
@@ -1569,6 +1571,43 @@
       }
     }
 
+    
+    // =========================
+    // KPIs GASTOS (RESPETAN RANGO DASHBOARD)
+    // =========================
+    async function actualizarKPIsGastos(fechaDesde, fechaHasta){
+      const { data: gastos } = await supabase
+        .from("gastos")
+        .select("fecha, monto");
+
+      let total = 0;
+      let dias = new Set();
+
+      (gastos || []).forEach(g => {
+        if(g.fecha >= fechaDesde && g.fecha <= fechaHasta){
+          total += Number(g.monto || 0);
+          dias.add(g.fecha);
+        }
+      });
+
+      document.getElementById("k_gastos_mes").textContent = money(total);
+      document.getElementById("k_gastos_promedio").textContent =
+        money(dias.size ? Math.round(total / dias.size) : 0);
+
+      const { data: abonos } = await supabase
+        .from("abonos")
+        .select("monto");
+
+      let ingresos = 0;
+      (abonos || []).forEach(a => ingresos += Number(a.monto || 0));
+
+      document.getElementById("k_ingresos_abonos").textContent = money(ingresos);
+      document.getElementById("k_balance_ingresos").textContent = money(ingresos - total);
+      document.getElementById("k_relacion_gi").textContent =
+        ingresos ? ((total / ingresos) * 100).toFixed(1) + "%" : "0%";
+    }
+
+
     // =========================
     // ✅ DASHBOARD
     // =========================
@@ -1588,7 +1627,10 @@
 
       if ((state.facturasFiltro || []).length === 0){
         setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
-      } else {
+      
+      // 🔹 KPIs Gastos (extensión)
+      await actualizarKPIsGastos(fechaDesde, fechaHasta);
+} else {
         setStatus("");
       }
     }
@@ -1771,6 +1813,7 @@
   </script>
 </body>
 </html>
+
 
 
 
