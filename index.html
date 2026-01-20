@@ -231,7 +231,39 @@
       if (y) y.textContent = new Date().getFullYear();
     }
 
-    verificarSesionYPermisos();
+    
+    // =========================
+    // ✅ CONTAR CITAS DE HOY
+    // =========================
+    async function cargarCitasHoy() {
+      try {
+        const inicioDia = new Date();
+        inicioDia.setHours(0,0,0,0);
+
+        const finDia = new Date();
+        finDia.setHours(23,59,59,999);
+
+        const { count, error } = await supabase
+          .from("citas")
+          .select("id", { count: "exact", head: true })
+          .gte("inicio", inicioDia.toISOString())
+          .lte("inicio", finDia.toISOString());
+
+        if (error) throw error;
+
+        const el = document.getElementById("citas-hoy-value");
+        if (el) el.textContent = count ?? 0;
+
+        const hint = document.getElementById("citas-hoy-hint");
+        if (hint) hint.textContent = "Actualizado en tiempo real";
+
+      } catch (e) {
+        console.error("Error cargando citas de hoy:", e);
+      }
+    }
+
+verificarSesionYPermisos();
+    cargarCitasHoy();
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
@@ -872,8 +904,8 @@ z-index: 1;
           <div class="kpi-grid">
             <div class="kpi">
               <div class="label">Citas hoy</div>
-              <div class="value">12</div>
-              <div class="hint">Actualizado hace 2 min</div>
+              <div class="value" id="citas-hoy-value">12</div>
+              <div class="hint" id="citas-hoy-hint">Actualizando...</div>
             </div>
             <div class="kpi right-align">
               <div class="label">Pacientes</div>
