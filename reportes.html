@@ -463,10 +463,8 @@
 
 <!-- ===== KPIs GASTOS / INGRESOS ===== -->
 <h2 style='margin:18px 0'>Gastos</h2>
-<h3 style='margin:16px 0'>Gastos</h3>
 <div class="kpis" style="margin-top:12px">
-  <div class="card"><div>💰 Total gastos del mes</div><div class="kpi" id="kpiTotalMes">$0</div></div>
-  
+  <div class="kpi"><div class="k">💰 Total gastos del mes</div><div class="v mono" id="k_gastos_mes">$0</div></div>
   <div class="kpi"><div class="k">📉 Variación vs mes anterior</div><div class="v mono" id="k_gastos_variacion">0%</div></div>
   <div class="kpi"><div class="k">📊 Gasto promedio diario</div><div class="v mono" id="k_gastos_promedio">$0</div></div>
   <div class="kpi"><div class="k">💵 Ingresos</div><div class="v mono" id="k_ingresos_abonos">$0</div></div>
@@ -1574,21 +1572,111 @@
 
     
     // =========================
-    // KPIs GASTOS (RESPETAN RANGO DASHBOARD)
+    // KPIs GASTOS (RANGO + VARIACIÓN)
     // =========================
-    async function actualizarKPIsGastos(fechaDesde, fechaHasta){
-      const { data: gastos } = await supabase
-        .from("gastos")
-        .select("fecha, monto");
+    async function actualizarKPIsGastos(){
+      try{
+        const fechaDesde = document.getElementById("fecha_desde")?.value;
+        const fechaHasta = document.getElementById("fecha_hasta")?.value;
+        if(!fechaDesde || !fechaHasta) return;
 
-      let total = 0;
-      let dias = new Set();
+        // 🔸 rango anterior (mismo número de días, desplazado 1 mes)
+        const dDesde = new Date(fechaDesde);
+        const dHasta = new Date(fechaHasta);
+        const diffDias = Math.ceil((dHasta - dDesde) / (1000*60*60*24)) + 1;
 
-      (gastos || []).forEach(g => {
-        if(g.fecha >= fechaDesde && g.fecha <= fechaHasta){
-          total += Number(g.monto || 0);
+        const prevDesde = new Date(dDesde);
+        prevDesde.setMonth(prevDesde.getMonth() - 1);
+        const prevHasta = new Date(prevDesde);
+        prevHasta.setDate(prevDesde.getDate() + diffDias - 1);
+
+        const fdPrev = prevDesde.toISOString().slice(0,10);
+        const fhPrev = prevHasta.toISOString().slice(0,10);
+
+        // ✅ GASTOS (rango actual y anterior)
+        const { data: gastosAct, error: eg1 } = await supabase
+          .from("gastos")
+          .select("fecha, monto")
+          .gte("fecha", fechaDesde)
+          .lte("fecha", fechaHasta);
+
+        if(eg1){ console.error("Gastos (act):", eg1); }
+
+        const { data: gastosPrev, error: eg2 } = await supabase
+          .from("gastos")
+          .select("fecha, monto")
+          .gte("fecha", fdPrev)
+          .lte("fecha", fhPrev);
+
+        if(eg2){ console.error("Gastos (prev):", eg2); }
+
+        const dias = new Set();
+        const total = (gastosAct || []).reduce((acc, g)=>{
           dias.add(g.fecha);
-        }
+          return acc + (Number(g.monto)||0);
+        }, 0);
+
+        const totalPrev = (gastosPrev || []).reduce((acc, g)=> acc + (Number(g.monto)||0), 0);
+
+        document.getElementById("k_gastos_mes").textContent = "$ " + money(total);
+        document.getElementById("k_gastos_promedio").textContent = "$ " + money(dias.size ? Math.round(total / dias.size) : 0);
+
+        const variacion = totalPrev ? ((total - totalPrev) / totalPrev) * 100 : 0;
+        document.getElementById("k_gastos_variacion").textContent = variacion.toFixed(1) + "%";
+
+        // ✅ INGRESOS (ABONOS) filtrados por rango
+        const { data: abonosAct, error: ea } = await supabase
+          .from("abonos")
+          .select("monto, fecha")
+          .gte("fecha", fechaDesde)
+          .lte("fecha", fechaHasta);
+
+        if(ea){ console.error("Abonos:", ea); }
+
+        const ingresos = (abonosAct || []).reduce((acc, a)=> acc + (Number(a.monto)||0), 0);
+
+        document.getElementById("k_ingresos_abonos").textContent = "$ " + money(ingresos);
+        document.getElementById("k_balance_ingresos").textContent = "$ " + money(ingresos - total);
+
+        const relacion = ingresos ? ((total / ingresos) * 100) : 0;
+        document.getElementById("k_relacion_gi").textContent = relacion.toFixed(1) + "%";
+      }catch(e){
+        console.error("KPIs Gastos:", e);
+      }
+    }
+if(g.fecha >= fdPrev && g.fecha <= fhPrev){
+            totalPrev += Number(g.monto||0);
+          }
+        });
+
+        document.getElementById("k_gastos_mes").textContent = money(total);
+        document.getElementById("k_gastos_promedio").textContent =
+          money(dias.size ? Math.round(total / dias.size) : 0);
+
+        const variacion = totalPrev ? ((total - totalPrev) / totalPrev) * 100 : 0;
+        document.getElementById("k_gastos_variacion").textContent =
+          variacion.toFixed(1) + "%";
+
+        const { data: abonos } = await supabase
+          .from("abonos")
+          .select("monto, fecha");
+
+        let ingresos = 0;
+        (abonos || []).forEach(a=>{
+          if(!a.fecha || (a.fecha >= fechaDesde && a.fecha <= fechaHasta)){
+            ingresos += Number(a.monto||0);
+          }
+        });
+
+        document.getElementById("k_ingresos_abonos").textContent = money(ingresos);
+        document.getElementById("k_balance_ingresos").textContent = money(ingresos - total);
+        document.getElementById("k_relacion_gi").textContent =
+          ingresos ? ((total / ingresos) * 100).toFixed(1) + "%" : "0%";
+
+      }catch(e){
+        console.error("KPIs Gastos:", e);
+      }
+    }
       });
 
       document.getElementById("k_gastos_mes").textContent = money(total);
@@ -1628,12 +1716,12 @@
 
       if ((state.facturasFiltro || []).length === 0){
         setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
-      
-      // 🔹 KPIs Gastos (extensión)
-      await actualizarKPIsGastos(fechaDesde, fechaHasta);
-} else {
+      } else {
         setStatus("");
       }
+
+      // 🔹 KPIs Gastos (extensión)
+      await actualizarKPIsGastos();
     }
 
     function setRangeMesActual(){
@@ -1814,8 +1902,6 @@
   </script>
 </body>
 </html>
-
-
 
 
 
