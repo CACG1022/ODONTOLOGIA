@@ -595,6 +595,42 @@
       .header{ align-items:flex-start; flex-direction: column; }
       .header-actions{ width: 100%; }
     }
+
+    /* ===== Ajuste responsive tabla precios ===== */
+
+/* La tabla ocupa todo el ancho disponible */
+table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* Permite que las columnas se ajusten */
+th, td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Inputs se adaptan a la celda */
+td input {
+  width: 100%;
+  min-width: 0 !important;
+}
+
+/* Columnas con ancho razonable */
+th:nth-child(1), td:nth-child(1) { width: 140px; } /* Costo */
+th:nth-child(2), td:nth-child(2) { width: auto; }  /* Procedimiento */
+th:nth-child(3), td:nth-child(3) { width: 140px; } /* CUPS */
+th:nth-child(4), td:nth-child(4) { width: 160px; } /* Valor */
+th:nth-child(5), td:nth-child(5) { width: 220px; } /* Acciones */
+
+/* Scroll horizontal solo si es necesario */
+@media (max-width: 900px) {
+  table {
+    min-width: 900px;
+  }
+}
+
   </style>
 </head>
 
