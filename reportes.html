@@ -1428,7 +1428,10 @@
       const ivaValor = Number(f.iva_valor ?? 0) || (aplicaIVA ? Math.round(subtotal * (ivaPct/100)) : 0);
       const copago = Number(f.copago ?? 0);
       const cuota = Number(f.cuota_moderadora ?? 0);
-      const totalCalc = Number(f.valor_total ?? 0) || (subtotal + ivaValor + copago + cuota);
+      const totalCalc = Number(f.valor_total ?? 0) || (subtotal  - descuentoValor + ivaValor + copago + cuota);
+      const descuentoPct = Number(f.descuento_pct ?? 0);
+      const descuentoValor = Number(f.descuento_valor ?? 0);
+
 
 
       const detalleRows = (detalle || []).length
@@ -1543,6 +1546,7 @@
         <div class="inv-sum">
           <div class="totals-card">
             <div class="trow"><span>Subtotal</span><b class="mono">$ ${escapeHtml(money(subtotal))}</b></div>
+            <div class="trow"><span>Descuento (${escapeHtml(descuentoPct)}%)</span><b class="mono">- $ ${escapeHtml(money(descuentoValor))}</b></div>
             <div class="trow"><span>IVA (${escapeHtml(ivaPct)}%)</span><b class="mono">$ ${escapeHtml(money(ivaValor))}</b></div>
             <div class="trow"><span>Copago</span><b class="mono">$ ${escapeHtml(money(copago))}</b></div>
             <div class="trow"><span>Cuota moderadora</span><b class="mono">$ ${escapeHtml(money(cuota))}</b></div>
