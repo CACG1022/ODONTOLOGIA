@@ -151,6 +151,8 @@
 
         // ===== Valor =====
         const tdValor = document.createElement("td");
+        tdValor.className = "col-valor";
+
         const inpValor = document.createElement("input");
         inpValor.type = "text";
         inpValor.inputMode = "numeric";
@@ -651,6 +653,16 @@
     @media (max-width: 900px){
       table{ min-width: 900px; }
     }
+    /* Color columna VALOR */
+  th.col-valor {
+  color: #E0DEDE;
+}
+
+td.col-valor input {
+  color: #E0DEDE;
+  font-weight: 700;
+}
+
   </style>
 </head>
 
