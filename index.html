@@ -232,6 +232,38 @@
     }
 
     
+    
+    // =========================
+    // ✅ CONTAR PACIENTES ÚNICOS
+    // =========================
+    async function cargarPacientes() {
+      try {
+        const { data, error } = await supabase
+          .from("HISTORIAS CLINICAS")
+          .select("Numero de Identificacion");
+
+        if (error) throw error;
+
+        const unicos = new Set(
+          (data || [])
+            .map(r => r["Numero de Identificacion"])
+            .filter(v => v !== null && v !== "")
+        );
+
+        const el = document.getElementById("pacientes-value");
+        if (el) el.textContent = unicos.size;
+
+        const hint = document.getElementById("pacientes-hint");
+        if (hint) hint.textContent = "Pacientes únicos";
+
+      } catch (e) {
+        console.error("Error cargando pacientes:", e);
+        const el = document.getElementById("pacientes-value");
+        if (el) el.textContent = "—";
+      }
+    }
+
+
     // =========================
     // ✅ CONTAR CITAS DE HOY
     // =========================
@@ -264,6 +296,7 @@
 
 verificarSesionYPermisos();
     cargarCitasHoy();
+    cargarPacientes();
 
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
@@ -909,8 +942,8 @@ z-index: 1;
             </div>
             <div class="kpi right-align">
               <div class="label">Pacientes</div>
-              <div class="value">3.421</div>
-              <div class="hint">Historial clínico</div>
+              <div class="value" id="pacientes-value">—</div>
+              <div class="hint" id="pacientes-hint">Actualizando...</div>
             </div>
             <div class="kpi">
               <div class="label">Facturas</div>
@@ -1080,8 +1113,6 @@ z-index: 1;
   </div>
 </body>
 </html>
-
-
 
 
 
