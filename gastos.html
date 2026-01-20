@@ -47,6 +47,23 @@ async function validarAcceso(){
   document.getElementById("responsable").value = session.user.email;
 }
 
+async function cargarProveedores(){
+  const { data } = await supabase
+    .from("gastos")
+    .select("proveedor");
+
+  const select = document.getElementById("proveedor");
+  const unique = [...new Set((data||[]).map(d=>d.proveedor).filter(Boolean))];
+
+  select.innerHTML = '<option value="">Proveedor</option>';
+  unique.forEach(p=>{
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    select.appendChild(opt);
+  });
+}
+
 async function guardarGasto(){
   const d = id => document.getElementById(id).value;
 
@@ -58,16 +75,13 @@ async function guardarGasto(){
     monto: d("monto"),
     forma_pago: d("forma_pago"),
     descripcion: d("descripcion"),
-    responsable: d("responsable"),
     usuario_id: USER.id
   }]);
 
-  if(error){
-    alert(error.message);
-    return;
-  }
+  if(error){ alert(error.message); return; }
 
-  cargarGastos();
+  await cargarGastos();
+  await cargarProveedores();
 }
 
 async function cargarGastos(){
@@ -80,8 +94,8 @@ async function cargarGastos(){
 
   const tb = document.getElementById("tabla");
   tb.innerHTML="";
-  let t=0,f=0,v=0,e=0;
 
+  let t=0,f=0,v=0,e=0;
   (data||[]).forEach(g=>{
     const m = Number(g.monto||0);
     t+=m;
@@ -106,19 +120,23 @@ async function cargarGastos(){
   kpiExt.textContent="$"+e.toLocaleString();
 }
 
-await validarAcceso();
-window.onload = cargarGastos;
+document.addEventListener("DOMContentLoaded", async ()=>{
+  await validarAcceso();
+  await cargarGastos();
+  await cargarProveedores();
+});
+
 window.guardarGasto = guardarGasto;
 </script>
 
 <style>
 :root{
   --bg:#f4f6f8;
-  --card:rgba(255,255,255,.85);
-  --glass-border:rgba(0,0,0,.08);
-  --neon:#0fb9a8; /* darker neon green */
+  --card:#ffffff;
+  --neon:#0fb9a8;
   --text:#0f172a;
   --muted:#64748b;
+  --border:#e5e7eb;
   --shadow:0 18px 40px rgba(0,0,0,.12);
   --radius:18px;
 }
@@ -129,18 +147,18 @@ body{
   color:var(--text)
 }
 .topbar{
-  background:rgba(255,255,255,.9);
-  border-bottom:1px solid var(--glass-border);
+  background:#fff;
+  border-bottom:1px solid var(--border);
   padding:14px 22px;
   display:flex;justify-content:space-between;align-items:center;
 }
 .brand{font-weight:900;color:var(--neon)}
 .meta{display:flex;gap:14px;align-items:center;font-size:13px}
 .chip{
-  background:#fff;border:1px solid var(--glass-border);
+  background:#fff;border:1px solid var(--border);
   border-radius:999px;padding:6px 14px;
 }
-.btn-glass{
+.btn{
   background:var(--neon);color:white;
   padding:8px 16px;border-radius:999px;
   font-weight:800;text-decoration:none;
@@ -148,25 +166,25 @@ body{
 .container{max-width:1200px;margin:26px auto;padding:0 16px}
 .card{
   background:var(--card);
-  border:1px solid var(--glass-border);
+  border:1px solid var(--border);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  padding:22px;margin-bottom:22px;
+  padding:24px;margin-bottom:22px;
 }
 h1{color:var(--neon)}
-.grid{display:grid;gap:18px}
+.grid{display:grid;gap:20px}
 .g-4{grid-template-columns:repeat(4,1fr)}
+.g-3{grid-template-columns:repeat(3,1fr)}
 .full{grid-column:1/-1}
 input,select{
   width:100%;padding:14px 16px;
   border-radius:14px;
-  border:1px solid var(--glass-border);
+  border:1px solid var(--border);
   background:#fff;
-  font-size:14px;color:#000;
+  font-size:14px;
 }
-input::placeholder{color:#6b7280}
 button{
-  margin-top:18px;
+  margin-top:20px;
   background:var(--neon);color:white;
   padding:14px 22px;
   border:none;border-radius:14px;
@@ -176,7 +194,7 @@ button{
 .kpi{font-size:24px;font-weight:900;color:var(--neon)}
 .klabel{color:var(--muted);font-size:13px}
 table{width:100%;border-collapse:collapse}
-th,td{padding:14px;border-bottom:1px solid var(--glass-border);font-size:13px}
+th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 th{color:var(--muted);text-align:left}
 </style>
 </head>
@@ -188,7 +206,7 @@ th{color:var(--muted);text-align:left}
   <div class="meta">
     <span class="chip" id="user-email"></span>
     <span class="chip">Rol: <b id="user-rol"></b></span>
-    <a class="btn-glass" href="index.html">HOME</a>
+    <a class="btn" href="index.html">HOME</a>
   </div>
 </div>
 
@@ -196,29 +214,37 @@ th{color:var(--muted);text-align:left}
 
 <div class="card">
 <h1>Registrar gasto</h1>
+
 <div class="grid g-4">
-<input type="date" id="fecha">
-<select id="tipo">
-  <option value="fijo">Fijo</option>
-  <option value="variable">Variable</option>
-  <option value="extraordinario">Extraordinario</option>
-</select>
-<select id="categoria">
-  <option>Consumibles</option>
-  <option>Laboratorio</option>
-  <option>Arriendo</option>
-  <option>Servicios públicos</option>
-  <option>Internet / software</option>
-  <option>Compra de equipos</option>
-  <option>Material desechable</option>
-  <option>Medicamentos</option>
-</select>
-<input id="proveedor" placeholder="Proveedor">
-<input id="monto" placeholder="Monto" type="number">
-<input id="forma_pago" placeholder="Forma de pago">
-<input id="responsable" placeholder="Responsable" readonly>
-<input id="descripcion" class="full" placeholder="Descripción">
+  <input type="date" id="fecha">
+  <select id="tipo">
+    <option value="fijo">Fijo</option>
+    <option value="variable">Variable</option>
+    <option value="extraordinario">Extraordinario</option>
+  </select>
+  <select id="categoria">
+    <option>Consumibles</option>
+    <option>Laboratorio</option>
+    <option>Arriendo</option>
+    <option>Servicios públicos</option>
+    <option>Internet / software</option>
+    <option>Compra de equipos</option>
+    <option>Material desechable</option>
+    <option>Medicamentos</option>
+  </select>
+  <select id="proveedor"></select>
 </div>
+
+<div class="grid g-3" style="margin-top:20px">
+  <input id="monto" type="number" placeholder="Monto">
+  <input id="forma_pago" placeholder="Forma de pago">
+  <input id="responsable" readonly>
+</div>
+
+<div class="grid" style="margin-top:20px">
+  <input id="descripcion" class="full" placeholder="Descripción">
+</div>
+
 <button onclick="guardarGasto()">Guardar gasto</button>
 </div>
 
@@ -243,5 +269,6 @@ th{color:var(--muted);text-align:left}
 </div>
 </body>
 </html>
+
 
 
