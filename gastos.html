@@ -8,39 +8,70 @@
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+// ===============================
+// CONFIGURACIÓN SUPABASE
+// ===============================
 const supabase = createClient(
- "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
- "TU_PUBLIC_ANON_KEY"
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
-const MODULO = "gastos";
 const LOGIN_URL = "login.html";
 const HOME_URL  = "index.html";
+const MODULO_ACTUAL = "gastos";
 
-/* ===============================
-   🔐 SESIÓN + PERMISOS
-================================ */
+// ===============================
+// NORMALIZACIÓN DE MÓDULO
+// ===============================
+function getModuloCandidates(mod){
+  const base = String(mod || "").toLowerCase().trim();
+  const withHtml = base.endsWith(".html") ? base : base + ".html";
+  const undersc = base.replaceAll("-", "_");
+  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+  return Array.from(new Set([base, withHtml, undersc, underscHtml]));
+}
+
+// ===============================
+// VALIDAR SESIÓN Y PERMISOS
+// ===============================
 async function validarAcceso(){
   const { data:{session} } = await supabase.auth.getSession();
-  if(!session) location.href = LOGIN_URL;
+  if(!session){
+    window.location.href = LOGIN_URL;
+    return;
+  }
+
+  const email = session.user.email.toLowerCase();
 
   const { data:perfil } = await supabase
     .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+    .select("role, email, created_at")
+    .eq("email", email)
+    .order("created_at", { ascending:false })
+    .limit(1)
+    .maybeSingle();
 
-  const rol = perfil?.role || "paciente";
+  const rol = (perfil?.role || "paciente").toLowerCase();
 
-  const { data:permiso } = await supabase
+  const candidates = getModuloCandidates(MODULO_ACTUAL);
+
+  const { data:permisos, error } = await supabase
     .from("modulos_permisos")
-    .select("admin,doctor,auxiliar,paciente")
-    .eq("modulo", MODULO)
-    .single();
+    .select("admin, doctor, auxiliar, paciente, modulo")
+    .in("modulo", candidates);
 
-  if(!permiso || !permiso[rol]){
+  if(error || !permisos?.length){
+    alert("⛔ Módulo no configurado en permisos.");
+    window.location.href = HOME_URL;
+    return;
+  }
+
+  const permiso = permisos[0];
+
+  if(!permiso[rol]){
     alert("⛔ No autorizado");
-    location.href = HOME_URL;
+    window.location.href = HOME_URL;
+    return;
   }
 
   window.ROL = rol;
@@ -48,6 +79,67 @@ async function validarAcceso(){
 }
 
 await validarAcceso();
+
+// ===============================
+// FUNCIONES DE GASTOS
+// ===============================
+async function guardarGasto(){
+  const data = {
+    fecha: document.getElementById("fecha").value,
+    tipo: document.getElementById("tipo").value,
+    categoria: document.getElementById("categoria").value,
+    proveedor: document.getElementById("proveedor").value,
+    monto: document.getElementById("monto").value,
+    forma_pago: document.getElementById("forma_pago").value,
+    descripcion: document.getElementById("descripcion").value,
+    usuario_id: window.USER.id
+  };
+
+  const { error } = await supabase.from("gastos").insert([data]);
+  if(error){
+    alert(error.message);
+    return;
+  }
+  cargarGastos();
+}
+
+async function cargarGastos(){
+  const { data } = await supabase
+    .from("gastos")
+    .select("*")
+    .order("fecha", { ascending:false });
+
+  const tbody = document.getElementById("tabla");
+  tbody.innerHTML = "";
+
+  let total=0, fijos=0, variables=0, extra=0;
+
+  (data || []).forEach(g => {
+    const m = Number(g.monto || 0);
+    total += m;
+    if(g.tipo === "fijo") fijos += m;
+    if(g.tipo === "variable") variables += m;
+    if(g.tipo === "extraordinario") extra += m;
+
+    tbody.innerHTML += `
+      <tr>
+        <td>${g.fecha}</td>
+        <td>${g.tipo}</td>
+        <td>${g.categoria}</td>
+        <td>${g.proveedor || "-"}</td>
+        <td>$${m.toLocaleString()}</td>
+        <td>${g.descripcion || ""}</td>
+      </tr>`;
+  });
+
+  document.getElementById("kpi-total").textContent = "$" + total.toLocaleString();
+  document.getElementById("kpi-fijos").textContent = "$" + fijos.toLocaleString();
+  document.getElementById("kpi-variables").textContent = "$" + variables.toLocaleString();
+  document.getElementById("kpi-extra").textContent = "$" + extra.toLocaleString();
+}
+
+window.guardarGasto = guardarGasto;
+window.onload = cargarGastos;
 </script>
 
 <style>
@@ -67,12 +159,8 @@ th{background:#f3f4f6}
 
 <body>
 <div class="container">
-
 <h1>💸 Gestión de Gastos</h1>
 
-<!-- =======================
-     REGISTRO DE GASTO
-======================= -->
 <div class="card">
 <h3>Registrar gasto</h3>
 <div class="grid">
@@ -91,9 +179,6 @@ th{background:#f3f4f6}
 <button onclick="guardarGasto()" style="margin-top:10px">Guardar gasto</button>
 </div>
 
-<!-- =======================
-     DASHBOARD
-======================= -->
 <div class="grid" style="margin-top:20px">
 <div class="card"><div>Total Mes</div><div class="kpi" id="kpi-total">$0</div></div>
 <div class="card"><div>Gastos Fijos</div><div class="kpi" id="kpi-fijos">$0</div></div>
@@ -101,9 +186,6 @@ th{background:#f3f4f6}
 <div class="card"><div>Extraordinarios</div><div class="kpi" id="kpi-extra">$0</div></div>
 </div>
 
-<!-- =======================
-     TABLA
-======================= -->
 <table>
 <thead>
 <tr>
@@ -115,58 +197,5 @@ th{background:#f3f4f6}
 </table>
 
 </div>
-
-<script>
-async function guardarGasto(){
-  const data = {
-    fecha: fecha.value,
-    tipo: tipo.value,
-    categoria: categoria.value,
-    proveedor: proveedor.value,
-    monto: monto.value,
-    forma_pago: forma_pago.value,
-    descripcion: descripcion.value,
-    usuario_id: USER.id
-  };
-
-  const { error } = await supabase.from("gastos").insert([data]);
-  if(error){ alert(error.message); return; }
-
-  cargarGastos();
-}
-
-async function cargarGastos(){
-  const { data } = await supabase.from("gastos").select("*").order("fecha",{ascending:false});
-  const tbody = document.getElementById("tabla");
-  tbody.innerHTML = "";
-
-  let total=0,fijos=0,variables=0,extra=0;
-
-  data.forEach(g=>{
-    total += Number(g.monto);
-    if(g.tipo==="fijo") fijos+=Number(g.monto);
-    if(g.tipo==="variable") variables+=Number(g.monto);
-    if(g.tipo==="extraordinario") extra+=Number(g.monto);
-
-    tbody.innerHTML += `
-      <tr>
-        <td>${g.fecha}</td>
-        <td>${g.tipo}</td>
-        <td>${g.categoria}</td>
-        <td>${g.proveedor||"-"}</td>
-        <td>$${Number(g.monto).toLocaleString()}</td>
-        <td>${g.descripcion||""}</td>
-      </tr>`;
-  });
-
-  kpi-total.textContent = `$${total.toLocaleString()}`;
-  kpi-fijos.textContent = `$${fijos.toLocaleString()}`;
-  kpi-variables.textContent = `$${variables.toLocaleString()}`;
-  kpi-extra.textContent = `$${extra.toLocaleString()}`;
-}
-
-cargarGastos();
-</script>
-
 </body>
 </html>
