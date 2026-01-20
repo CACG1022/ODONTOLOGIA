@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1891,6 +1892,62 @@
     }catch(err){
       console.error("Hook refrescarDashboard (gastos) falló:", err);
     }
+
+    // =========================
+    // ✅ REPORTE DE ABONOS (RANGO)
+    // =========================
+    async function cargarReporteAbonos(){
+      const desde = ($("fecha_desde").value || "").trim();
+      const hasta = ($("fecha_hasta").value || "").trim();
+
+      if(!desde || !hasta){
+        $("tabla_abonos").innerHTML =
+          "<tr><td colspan='4' class='muted'>Seleccione un rango de fechas</td></tr>";
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("abonos")
+        .select("fecha, monto, factura_id")
+        .gte("fecha", desde)
+        .lte("fecha", hasta)
+        .order("fecha", { ascending:false });
+
+      if(error){
+        console.error("Reporte abonos:", error);
+        $("tabla_abonos").innerHTML =
+          "<tr><td colspan='4' class='muted'>Error cargando abonos</td></tr>";
+        return;
+      }
+
+      if(!data || data.length === 0){
+        $("tabla_abonos").innerHTML =
+          "<tr><td colspan='4' class='muted'>Sin abonos en el rango</td></tr>";
+        return;
+      }
+
+      $("tabla_abonos").innerHTML = data.map(a => `
+        <tr>
+          <td>${formatFechaHuman(a.fecha)}</td>
+          <td>-</td>
+          <td>${a.factura_id || "-"}</td>
+          <td class="mono">$ ${money(a.monto)}</td>
+        </tr>
+      `).join("");
+    }
+
+    // 🔗 Hook seguro al refrescarDashboard
+    try{
+      if (typeof refrescarDashboard === "function"){
+        const __refrescarDashboardBase2 = refrescarDashboard;
+        refrescarDashboard = async function(){
+          await __refrescarDashboardBase2();
+          await cargarReporteAbonos();
+        };
+      }
+    }catch(err){
+      console.error("Hook reporte abonos falló:", err);
+    }
     // =========================
     // ✅ INIT
     // =========================
@@ -1969,6 +2026,36 @@
   </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+    <!-- =========================
+         ✅ REPORTE DE ABONOS (DEPENDIENTE DE FILTRO)
+         ========================= -->
+    <div class="section" id="section_abonos_reporte">
+      <div style="font-weight:900; font-size:18px; margin-bottom:10px;">Reporte de Abonos</div>
+
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Paciente</th>
+            <th>Factura</th>
+            <th>Monto</th>
+          </tr>
+        </thead>
+        <tbody id="tabla_abonos">
+          <tr><td colspan="4" class="muted">Sin datos</td></tr>
+        </tbody>
+      </table>
+    </div>
 
 
 
