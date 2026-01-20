@@ -44,11 +44,12 @@
 
     // ✅ Formato miles (solo visual)
     function formatMiles(v) {
-      const raw = String(v ?? "").trim();
-      if (!raw) return "";
-      const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
-      return Number.isFinite(n) ? n.toLocaleString("es-CO") : "";
-    }
+  const raw = String(v ?? "").trim();
+  if (!raw) return "";
+  const n = parseInt(raw.replace(/[^\d]/g, ""), 10);
+  return Number.isFinite(n) ? n.toLocaleString("en-US") : "";
+}
+
 
     function unformatMiles(v) {
       return String(v ?? "").replace(/[^\d]/g, "");
