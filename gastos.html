@@ -18,55 +18,45 @@ const supabase = createClient(
 
 const LOGIN_URL = "login.html";
 const HOME_URL  = "index.html";
-const MODULO_ACTUAL = "gastos";
+const MODULO = "gastos";
 
 // ===============================
-// NORMALIZACIÓN DE MÓDULO
-// ===============================
-function getModuloCandidates(mod){
-  const base = String(mod || "").toLowerCase().trim();
-  const withHtml = base.endsWith(".html") ? base : base + ".html";
-  const undersc = base.replaceAll("-", "_");
-  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
-  return Array.from(new Set([base, withHtml, undersc, underscHtml]));
-}
-
-// ===============================
-// VALIDAR SESIÓN Y PERMISOS
+// VALIDAR SESIÓN Y PERMISOS (MISMA LÓGICA QUE TUS OTROS MÓDULOS)
 // ===============================
 async function validarAcceso(){
-  const { data:{session} } = await supabase.auth.getSession();
+  const { data:{ session } } = await supabase.auth.getSession();
   if(!session){
     window.location.href = LOGIN_URL;
     return;
   }
 
-  const email = session.user.email.toLowerCase();
-
-  const { data:perfil } = await supabase
+  // 🔑 LEER ROL POR ID (NO POR EMAIL)
+  const { data: perfil, error: ePerfil } = await supabase
     .from("profiles")
-    .select("role, email, created_at")
-    .eq("email", email)
-    .order("created_at", { ascending:false })
-    .limit(1)
-    .maybeSingle();
+    .select("role")
+    .eq("id", session.user.id)
+    .single();
 
-  const rol = (perfil?.role || "paciente").toLowerCase();
-
-  const candidates = getModuloCandidates(MODULO_ACTUAL);
-
-  const { data:permisos, error } = await supabase
-    .from("modulos_permisos")
-    .select("admin, doctor, auxiliar, paciente, modulo")
-    .in("modulo", candidates);
-
-  if(error || !permisos?.length){
-    alert("⛔ Módulo no configurado en permisos.");
+  if(ePerfil || !perfil?.role){
+    alert("No se pudo obtener tu rol.");
     window.location.href = HOME_URL;
     return;
   }
 
-  const permiso = permisos[0];
+  const rol = String(perfil.role).toLowerCase().trim();
+
+  // 🔐 LEER PERMISOS DEL MODULO
+  const { data: permiso, error: ePerm } = await supabase
+    .from("modulos_permisos")
+    .select("admin, doctor, auxiliar, paciente, modulo")
+    .eq("modulo", MODULO)
+    .maybeSingle();
+
+  if(ePerm || !permiso){
+    alert("Módulo no configurado en permisos.");
+    window.location.href = HOME_URL;
+    return;
+  }
 
   if(!permiso[rol]){
     alert("⛔ No autorizado");
@@ -74,8 +64,9 @@ async function validarAcceso(){
     return;
   }
 
-  window.ROL = rol;
+  // ✅ OK
   window.USER = session.user;
+  window.ROL = rol;
 }
 
 await validarAcceso();
@@ -199,3 +190,4 @@ th{background:#f3f4f6}
 </div>
 </body>
 </html>
+
