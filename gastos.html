@@ -50,7 +50,7 @@ async function validarAcceso(){
 }
 
 /* ================= PROVEEDORES ================= */
-async function cargarProveedores(){
+async function cargarProveedores(selected=null){
   const { data, error } = await supabase
     .from("proveedores")
     .select("nombre")
@@ -64,11 +64,31 @@ async function cargarProveedores(){
     const opt = document.createElement("option");
     opt.value = p.nombre;
     opt.textContent = p.nombre;
+    if(selected && selected === p.nombre) opt.selected = true;
     proveedor.appendChild(opt);
   });
 }
 
-/* ================= GUARDAR / EDITAR ================= */
+/* ================= NUEVO PROVEEDOR ================= */
+async function guardarProveedor(){
+  const nombre = provNombre.value.trim();
+  if(!nombre) return alert("Nombre requerido");
+
+  const { error } = await supabase.from("proveedores").insert([{
+    nombre,
+    telefono: provTelefono.value,
+    contacto: provContacto.value,
+    activo: true
+  }]);
+
+  if(error){ alert(error.message); return; }
+
+  modalProv.style.display = "none";
+  provNombre.value = provTelefono.value = provContacto.value = "";
+  await cargarProveedores(nombre);
+}
+
+/* ================= GUARDAR / EDITAR GASTO ================= */
 async function guardarGasto(){
   const payload = {
     fecha: fecha.value,
@@ -111,10 +131,10 @@ function editarGasto(g){
   fecha.value = g.fecha;
   tipo.value = g.tipo;
   categoria.value = g.categoria;
-  proveedor.value = g.proveedor || "";
   monto.value = g.monto;
   forma_pago.value = g.forma_pago || "";
   descripcion.value = g.descripcion || "";
+  cargarProveedores(g.proveedor || "");
   btnGuardar.textContent = "Actualizar gasto";
   window.scrollTo({top:0, behavior:"smooth"});
 }
@@ -174,6 +194,7 @@ document.addEventListener("DOMContentLoaded", async ()=>{
 });
 
 window.guardarGasto = guardarGasto;
+window.guardarProveedor = guardarProveedor;
 </script>
 
 <style>
@@ -206,6 +227,11 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 .actions button{background:none;border:none;cursor:pointer;font-size:16px}
 .actions .delete{color:#dc2626}
 .actions .edit{color:#0fb9a8}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);align-items:center;justify-content:center}
+.modal-content{background:#fff;padding:26px;border-radius:18px;width:360px;box-shadow:var(--shadow)}
+.modal-content h3{margin-top:0}
 </style>
 </head>
 
@@ -242,7 +268,10 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
     <option>Material desechable</option>
     <option>Medicamentos</option>
   </select>
-  <select id="proveedor"></select>
+  <div style="display:flex;gap:10px">
+    <select id="proveedor"></select>
+    <button type="button" onclick="modalProv.style.display='flex'">＋</button>
+  </div>
 </div>
 
 <div class="grid g-3" style="margin-top:26px">
@@ -278,6 +307,21 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 </div>
 
 </div>
+
+<!-- MODAL NUEVO PROVEEDOR -->
+<div class="modal" id="modalProv">
+  <div class="modal-content">
+    <h3>Nuevo proveedor</h3>
+    <input id="provNombre" placeholder="Nombre">
+    <input id="provTelefono" placeholder="Teléfono">
+    <input id="provContacto" placeholder="Contacto">
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="guardarProveedor()">Guardar</button>
+      <button onclick="modalProv.style.display='none'" style="background:#e5e7eb;color:#000">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
 
