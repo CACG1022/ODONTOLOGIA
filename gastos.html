@@ -51,13 +51,11 @@ async function validarAcceso(){
 
 /* ================= PROVEEDORES ================= */
 async function cargarProveedores(selected=null){
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from("proveedores")
     .select("nombre")
     .eq("activo", true)
     .order("nombre");
-
-  if(error){ console.error(error); return; }
 
   proveedor.innerHTML = "<option value=''>Seleccione proveedor</option>";
   data.forEach(p=>{
@@ -139,6 +137,64 @@ function editarGasto(g){
   window.scrollTo({top:0, behavior:"smooth"});
 }
 
+/* ================= KPIs PRINCIPALES (NUEVO) ================= */
+async function calcularKPIsPrincipales(gastos){
+  const hoy = new Date();
+  const mesActual = hoy.toISOString().slice(0,7);
+
+  // Total gastos mes
+  let totalMes = 0;
+  let dias = new Set();
+
+  gastos.forEach(g=>{
+    if(g.fecha?.startsWith(mesActual)){
+      totalMes += Number(g.monto||0);
+      dias.add(g.fecha);
+    }
+  });
+
+  kpiTotalMes.textContent = "$" + totalMes.toLocaleString();
+
+  // Variación vs mes anterior
+  const mesAnterior = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1)
+    .toISOString().slice(0,7);
+
+  let totalAnterior = 0;
+  gastos.forEach(g=>{
+    if(g.fecha?.startsWith(mesAnterior)){
+      totalAnterior += Number(g.monto||0);
+    }
+  });
+
+  const variacion = totalAnterior
+    ? ((totalMes - totalAnterior) / totalAnterior) * 100
+    : 0;
+
+  kpiVariacion.textContent = variacion.toFixed(1) + "%";
+
+  // Gasto promedio diario
+  const promedio = dias.size ? totalMes / dias.size : 0;
+  kpiPromedio.textContent = "$" + Math.round(promedio).toLocaleString();
+
+  // Ingresos (abonos)
+  const { data: abonos } = await supabase
+    .from("abonos")
+    .select("monto");
+
+  let ingresos = 0;
+  (abonos||[]).forEach(a=> ingresos += Number(a.monto||0));
+
+  kpiIngresos.textContent = "$" + ingresos.toLocaleString();
+
+  // Ingreso - gastos
+  const balance = ingresos - totalMes;
+  kpiBalance.textContent = "$" + balance.toLocaleString();
+
+  // Relación gastos / ingresos
+  const relacion = ingresos ? (totalMes / ingresos) * 100 : 0;
+  kpiRelacion.textContent = relacion.toFixed(1) + "%";
+}
+
 /* ================= CARGAR ================= */
 async function cargarGastos(){
   const { data, error } = await supabase
@@ -180,6 +236,8 @@ async function cargarGastos(){
   kpiFijo.textContent  = "$"+f.toLocaleString();
   kpiVar.textContent   = "$"+v.toLocaleString();
   kpiExt.textContent   = "$"+e.toLocaleString();
+
+  await calcularKPIsPrincipales(data);
 }
 
 /* ================= UTIL ================= */
@@ -247,6 +305,19 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 </div>
 
 <div class="container">
+
+<!-- KPIs PRINCIPALES -->
+<div class="kpis">
+  <div class="card"><div>💰 Total gastos del mes</div><div class="kpi" id="kpiTotalMes">$0</div></div>
+  <div class="card"><div>📉 Variación vs mes anterior</div><div class="kpi" id="kpiVariacion">0%</div></div>
+  <div class="card"><div>📊 Gasto promedio diario</div><div class="kpi" id="kpiPromedio">$0</div></div>
+  <div class="card"><div>💵 Ingresos</div><div class="kpi" id="kpiIngresos">$0</div></div>
+</div>
+
+<div class="kpis">
+  <div class="card"><div>⚖️ Ingreso - Gastos</div><div class="kpi" id="kpiBalance">$0</div></div>
+  <div class="card"><div>⚖️ Relación gastos / ingresos</div><div class="kpi" id="kpiRelacion">0%</div></div>
+</div>
 
 <div class="card">
 <h1>Registrar gasto</h1>
