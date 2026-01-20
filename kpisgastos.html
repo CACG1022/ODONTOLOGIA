@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Gestión de Gastos</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
+
+const MODULO = "gastos";
+let EDIT_ID = null;
+
+/* ================= KPIs ================= */
+async function cargarKPIs(){
+  const hoy = new Date();
+  const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+  const inicioMesAnt = new Date(hoy.getFullYear(), hoy.getMonth()-1, 1);
+  const finMesAnt = new Date(hoy.getFullYear(), hoy.getMonth(), 0);
+
+  const { data: gastosMes } = await supabase
+    .from("gastos")
+    .select("monto,fecha")
+    .gte("fecha", inicioMes.toISOString().slice(0,10));
+
+  const { data: gastosMesAnt } = await supabase
+    .from("gastos")
+    .select("monto")
+    .gte("fecha", inicioMesAnt.toISOString().slice(0,10))
+    .lte("fecha", finMesAnt.toISOString().slice(0,10));
+
+  const totalMes = (gastosMes||[]).reduce((a,b)=>a+Number(b.monto||0),0);
+  const totalMesAnt = (gastosMesAnt||[]).reduce((a,b)=>a+Number(b.monto||0),0);
+
+  const variacion = totalMesAnt ? ((totalMes-totalMesAnt)/totalMesAnt)*100 : 0;
+
+  const dias = new Set((gastosMes||[]).map(g=>g.fecha)).size || 1;
+  const promedio = totalMes / dias;
+
+  const { data: ingresos } = await supabase
+    .from("facturas")
+    .select("total,fecha")
+    .gte("fecha", inicioMes.toISOString().slice(0,10));
+
+  const totalIngresos = (ingresos||[]).reduce((a,b)=>a+Number(b.total||0),0);
+  const relacion = totalIngresos ? (totalMes/totalIngresos)*100 : 0;
+
+  kpiTotalMes.textContent = "$"+totalMes.toLocaleString();
+  kpiVariacion.textContent = variacion.toFixed(1)+"%";
+  kpiPromedio.textContent = "$"+Math.round(promedio).toLocaleString();
+  kpiRelacion.textContent = relacion.toFixed(1)+"%";
+}
+
+document.addEventListener("DOMContentLoaded", cargarKPIs);
+</script>
+
+<style>
+:root{
+  --bg:#f4f6f8;
+  --card:#ffffff;
+  --neon:#0fb9a8;
+  --border:#e5e7eb;
+  --shadow:0 18px 40px rgba(0,0,0,.12);
+  --radius:18px;
+}
+body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,#fff,var(--bg))}
+.container{max-width:1200px;margin:40px auto;padding:0 16px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:22px}
+.card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:26px}
+.kpi-title{font-size:13px;color:#6b7280}
+.kpi-value{font-size:26px;font-weight:900;color:var(--neon)}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <div class="kpis">
+    <div class="card">
+      <div class="kpi-title">💰 Total gastos del mes</div>
+      <div class="kpi-value" id="kpiTotalMes">$0</div>
+    </div>
+    <div class="card">
+      <div class="kpi-title">📉 Variación vs mes anterior</div>
+      <div class="kpi-value" id="kpiVariacion">0%</div>
+    </div>
+    <div class="card">
+      <div class="kpi-title">📊 Gasto promedio diario</div>
+      <div class="kpi-value" id="kpiPromedio">$0</div>
+    </div>
+    <div class="card">
+      <div class="kpi-title">⚖️ Relación gastos / ingresos</div>
+      <div class="kpi-value" id="kpiRelacion">0%</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
