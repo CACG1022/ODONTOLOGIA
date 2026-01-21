@@ -2076,7 +2076,49 @@ const totalCalc = Number(f.valor_total ?? 0)
 // =========================
     // ✅ INIT
     // =========================
-    async function init(){
+    
+// ===============================
+// KPI COSTOS MES ACTUAL
+// ===============================
+async function cargarCostosMesActual() {
+  const hoy = new Date();
+  const desde = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().slice(0, 10);
+  const hasta = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().slice(0, 10);
+
+  const { data, error } = await supabase
+    .from("factura_detalle")
+    .select("costo, facturas!inner(fecha)")
+    .gte("facturas.fecha", desde)
+    .lte("facturas.fecha", hasta);
+
+  if (error) {
+    console.error("Error costos mes:", error);
+    return;
+  }
+
+  const totalCostos = (data || []).reduce((acc, r) => acc + Number(r.costo || 0), 0);
+  document.getElementById("kpi_costos_mes").textContent =
+    "$ " + totalCostos.toLocaleString("es-CO");
+
+  window.__TOTAL_COSTOS_MES = totalCostos;
+}
+
+// ===============================
+// KPI RESULTADO NETO
+// Ingresos (abonos en rango) - (gastos + costos)
+// ===============================
+function calcularResultadoNeto() {
+  const ingresos = window.__INGRESOS_RANGO || 0;
+  const gastos = window.__GASTOS_RANGO || 0;
+  const costos = window.__TOTAL_COSTOS_MES || 0;
+
+  const resultado = ingresos - (gastos + costos);
+  document.getElementById("kpi_resultado_neto").textContent =
+    "$ " + resultado.toLocaleString("es-CO");
+}
+
+
+async function init(){
       $("year").textContent = new Date().getFullYear();
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
@@ -2151,6 +2193,7 @@ const totalCalc = Number(f.valor_total ?? 0)
   </script>
 </body>
 </html>
+
 
 
 
