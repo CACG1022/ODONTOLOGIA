@@ -7,175 +7,13 @@
   <title>Reportes de Ventas - Clínica Odontológica</title>
 
   <!-- ✅ Supabase (UMD) - EVITA PROBLEMAS DEL import type="module" -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js">
-/* =============================
-   KPI COSTOS + RESULTADO NETO
-   ============================= */
-
-async function calcularCostosYRendimiento() {
-  try {
-    const fechaDesde = document.getElementById("fecha_desde").value;
-    const fechaHasta = document.getElementById("fecha_hasta").value;
-
-    // 1️⃣ COSTOS DESDE factura_detalle (por rango)
-    let q = supabase
-      .from("factura_detalle")
-      .select("costo, created_at");
-
-    if (fechaDesde) q = q.gte("created_at", fechaDesde + "T00:00:00");
-    if (fechaHasta) q = q.lte("created_at", fechaHasta + "T23:59:59");
-
-    const { data: costosRows, error } = await q;
-    if (error) throw error;
-
-    const totalCostos = (costosRows || [])
-      .reduce((a, b) => a + Number(b.costo || 0), 0);
-
-    const costosEl = document.getElementById("kpi-costos-valor");
-    if (costosEl) costosEl.textContent = formatMoney(totalCostos);
-
-    // 2️⃣ INGRESOS (abonos en rango)
-    const ingresos = window.__INGRESOS_RANGO || 0;
-
-    // 3️⃣ GASTOS (ya calculados)
-    const gastos = window.__GASTOS_RANGO || 0;
-
-    // 4️⃣ RESULTADO NETO
-    const resultado = ingresos - (gastos + totalCostos);
-    const resEl = document.getElementById("kpi-resultado-neto-valor");
-    if (resEl) resEl.textContent = formatMoney(resultado);
-
-  } catch (e) {
-    console.error("Error calculando costos / resultado neto:", e);
-  }
-}
-
-// Hook al botón actualizar
-const btnActualizar = document.getElementById("btn-actualizar");
-if (btnActualizar) {
-  btnActualizar.addEventListener("click", () => {
-    setTimeout(calcularCostosYRendimiento, 600);
-  });
-}
-
-// Ejecutar al cargar
-setTimeout(calcularCostosYRendimiento, 1200);
-
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
   <!-- ✅ Chart.js (gráficas) -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js">
-/* =============================
-   KPI COSTOS + RESULTADO NETO
-   ============================= */
-
-async function calcularCostosYRendimiento() {
-  try {
-    const fechaDesde = document.getElementById("fecha_desde").value;
-    const fechaHasta = document.getElementById("fecha_hasta").value;
-
-    // 1️⃣ COSTOS DESDE factura_detalle (por rango)
-    let q = supabase
-      .from("factura_detalle")
-      .select("costo, created_at");
-
-    if (fechaDesde) q = q.gte("created_at", fechaDesde + "T00:00:00");
-    if (fechaHasta) q = q.lte("created_at", fechaHasta + "T23:59:59");
-
-    const { data: costosRows, error } = await q;
-    if (error) throw error;
-
-    const totalCostos = (costosRows || [])
-      .reduce((a, b) => a + Number(b.costo || 0), 0);
-
-    const costosEl = document.getElementById("kpi-costos-valor");
-    if (costosEl) costosEl.textContent = formatMoney(totalCostos);
-
-    // 2️⃣ INGRESOS (abonos en rango)
-    const ingresos = window.__INGRESOS_RANGO || 0;
-
-    // 3️⃣ GASTOS (ya calculados)
-    const gastos = window.__GASTOS_RANGO || 0;
-
-    // 4️⃣ RESULTADO NETO
-    const resultado = ingresos - (gastos + totalCostos);
-    const resEl = document.getElementById("kpi-resultado-neto-valor");
-    if (resEl) resEl.textContent = formatMoney(resultado);
-
-  } catch (e) {
-    console.error("Error calculando costos / resultado neto:", e);
-  }
-}
-
-// Hook al botón actualizar
-const btnActualizar = document.getElementById("btn-actualizar");
-if (btnActualizar) {
-  btnActualizar.addEventListener("click", () => {
-    setTimeout(calcularCostosYRendimiento, 600);
-  });
-}
-
-// Ejecutar al cargar
-setTimeout(calcularCostosYRendimiento, 1200);
-
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
   <!-- ✅ Excel export (SheetJS) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-/* =============================
-   KPI COSTOS + RESULTADO NETO
-   ============================= */
-
-async function calcularCostosYRendimiento() {
-  try {
-    const fechaDesde = document.getElementById("fecha_desde").value;
-    const fechaHasta = document.getElementById("fecha_hasta").value;
-
-    // 1️⃣ COSTOS DESDE factura_detalle (por rango)
-    let q = supabase
-      .from("factura_detalle")
-      .select("costo, created_at");
-
-    if (fechaDesde) q = q.gte("created_at", fechaDesde + "T00:00:00");
-    if (fechaHasta) q = q.lte("created_at", fechaHasta + "T23:59:59");
-
-    const { data: costosRows, error } = await q;
-    if (error) throw error;
-
-    const totalCostos = (costosRows || [])
-      .reduce((a, b) => a + Number(b.costo || 0), 0);
-
-    const costosEl = document.getElementById("kpi-costos-valor");
-    if (costosEl) costosEl.textContent = formatMoney(totalCostos);
-
-    // 2️⃣ INGRESOS (abonos en rango)
-    const ingresos = window.__INGRESOS_RANGO || 0;
-
-    // 3️⃣ GASTOS (ya calculados)
-    const gastos = window.__GASTOS_RANGO || 0;
-
-    // 4️⃣ RESULTADO NETO
-    const resultado = ingresos - (gastos + totalCostos);
-    const resEl = document.getElementById("kpi-resultado-neto-valor");
-    if (resEl) resEl.textContent = formatMoney(resultado);
-
-  } catch (e) {
-    console.error("Error calculando costos / resultado neto:", e);
-  }
-}
-
-// Hook al botón actualizar
-const btnActualizar = document.getElementById("btn-actualizar");
-if (btnActualizar) {
-  btnActualizar.addEventListener("click", () => {
-    setTimeout(calcularCostosYRendimiento, 600);
-  });
-}
-
-// Ejecutar al cargar
-setTimeout(calcularCostosYRendimiento, 1200);
-
-</script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root{
@@ -761,9 +599,10 @@ setTimeout(calcularCostosYRendimiento, 1200);
           <div class="v mono">$ <span id="k_costos_total">0</span></div>
           <div class="s" id="k_costos_total_s">—</div>
         </div>
+
         <div class="kpi">
-          <div class="k">🧮 Ingresos − (Gastos + Costos)</div>
-          <div class="v mono">$ <span id="k_resultado_neto_total">0</span></div>
+          <div class="k">📊 Ingresos − (Gastos + Costos)</div>
+          <div class="v mono">$ <span id="k_resultado_neto">0</span></div>
           <div class="s" id="k_resultado_neto_s">—</div>
         </div>
       </div>
@@ -2069,7 +1908,6 @@ const totalCalc = Number(f.valor_total ?? 0)
         if (rGastoRango.error) throw rGastoRango.error;
 
         const totalGastoRango = (rGastoRango.data || []).reduce((acc, x)=> acc + (Number(x.monto)||0), 0);
-        window.__GASTOS_RANGO = totalGastoRango;
         const promDia = totalGastoRango / dias;
         setText("k_gastos_prom_dia", money(promDia));
         setText("k_gastos_prom_s", `Promedio en ${dias} día(s)`);
@@ -2084,7 +1922,6 @@ const totalCalc = Number(f.valor_total ?? 0)
         if (rIng.error) throw rIng.error;
 
         const ingresosRango = (rIng.data || []).reduce((acc, x)=> acc + (Number(x.monto)||0), 0);
-        window.__INGRESOS_RANGO = ingresosRango;
         setText("k_ingresos_rango", money(ingresosRango));
         setText("k_ingresos_rango_s", `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`);
 
@@ -2123,7 +1960,6 @@ const totalCalc = Number(f.valor_total ?? 0)
         refrescarDashboard = async function(){
           await __refrescarDashboardBase();
           await actualizarKPIsGastos();
-      await actualizarKPIsCostos();
         };
       }
     }catch(err){
@@ -2200,169 +2036,77 @@ const totalCalc = Number(f.valor_total ?? 0)
     // ✅ COSTOS (desde factura_detalle.costo)
     // =========================
     async function actualizarKPIsCostos(){
-      // ✅ Total costos (rango): depende del filtro Fecha desde / Fecha hasta (y filtros Profesional / Método)
+      const desde = ($("fecha_desde").value || "").trim();
+      const hasta = ($("fecha_hasta").value || "").trim();
+
+      const rangoDesde = desde || firstDayOfMonthISO(new Date());
+      const rangoHasta = hasta || hoyISO();
+
+      const sub = $("k_costos_sub");
+      if (sub){
+        sub.textContent = `Rango activo: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
+      }
+
       try{
-        // IDs reales en el HTML
-        const desde = ($("fecha_desde")?.value || "").trim();
-        const hasta = ($("fecha_hasta")?.value || "").trim();
+        const { data, error } = await supabase
+          .from("factura_detalle")
+          .select("costo, factura_id, facturas:factura_id (fecha)")
+          .gte("facturas.fecha", dateStartISO(rangoDesde))
+          .lte("facturas.fecha", dateEndISO(rangoHasta));
 
-        // Rango por defecto: mes actual (igual que los KPIs de mes actual)
-        const hoy = new Date();
-        const { startISO: mesStart, endISO: mesEnd } = monthRangeISO(hoy);
+        if (error) throw error;
 
-        const rangoDesde = (desde ? dateStartISO(desde) : mesStart);
-        const rangoHasta = (hasta ? dateEndISO(hasta) : mesEnd);
+        const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
 
-        // 1) Traer facturas en rango con filtros
-        let qFac = supabase
-          .from("facturas")
-          .select("id, fecha, profesional, metodo_pago")
+        $("k_costos_total").textContent = money(totalCostos);
+        $("k_costos_total_s").textContent = `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
+
+        // 🔹 Resultado neto = Ingresos − (Gastos + Costos)
+        // Ingresos = abonos en rango
+        const rIng = await supabase
+          .from("abonos")
+          .select("monto, fecha")
           .gte("fecha", rangoDesde)
           .lte("fecha", rangoHasta);
 
-        const profSel = ($("filtro_profesional")?.value || "").trim();
-        if (profSel && profSel !== "__ALL__"){
-          qFac = qFac.eq("profesional", profSel);
-        }
+        const ingresos = (rIng.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
-        const mpSel = ($("filtro_metodo_pago")?.value || "").trim();
-        if (mpSel && mpSel !== "__ALL__"){
-          qFac = qFac.eq("metodo_pago", mpSel);
-        }
+        // Gastos en rango
+        const rGas = await supabase
+          .from("gastos")
+          .select("monto, fecha")
+          .gte("fecha", rangoDesde)
+          .lte("fecha", rangoHasta);
 
-        const rFac = await qFac;
-        if (rFac.error) throw rFac.error;
+        const gastos = (rGas.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
-        const ids = (rFac.data || []).map(r => r.id).filter(Boolean);
-
-        // 2) Sumar costos desde factura_detalle
-        let totalCostos = 0;
-
-        if (ids.length){
-          const rDet = await supabase
-            .from("factura_detalle")
-            .select("costo, cantidad, factura_id")
-            .in("factura_id", ids);
-
-          if (rDet.error) throw rDet.error;
-
-          totalCostos = (rDet.data || []).reduce((acc, r) => {
-            const c = Number(r.costo || 0);
-            const q = Number(r.cantidad || 1);
-            return acc + (c * q);
-          }, 0);
-        }
-
-        window.__COSTOS_RANGO = totalCostos;
-
-        // UI: Total costos (rango)
-        setText("k_costos_total", money(totalCostos));
-        setText("k_costos_total_s", `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`);
-        setText("k_costos_sub", `Rango activo: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`);
-
-        // 3) KPI Resultado neto: Ingresos − (Gastos + Costos)
-        const ingresos = Number(window.__INGRESOS_RANGO || 0);
-        const gastos = Number(window.__GASTOS_RANGO || 0);
         const neto = ingresos - (gastos + totalCostos);
-
-        if (document.getElementById("k_resultado_neto_total")){
-          setText("k_resultado_neto_total", money(neto));
-          setText("k_resultado_neto_s", `Ingresos: $ ${money(ingresos)} · Gastos: $ ${money(gastos)} · Costos: $ ${money(totalCostos)}`);
-        }
-      } catch(err){
-        console.error("KPIs Costos error:", err);
-        window.__COSTOS_RANGO = 0;
-        setText("k_costos_total", "0");
-        setText("k_costos_total_s", "No se pudieron calcular costos");
-        setText("k_costos_sub", "Rango activo: —");
-        if (document.getElementById("k_resultado_neto_total")){
-          setText("k_resultado_neto_total", "0");
-          setText("k_resultado_neto_s", "No se pudo calcular el resultado neto");
-        }
+        $("k_resultado_neto").textContent = money(neto);
+        $("k_resultado_neto_s").textContent =
+          `Ingresos: $ ${money(ingresos)} • Gastos: $ ${money(gastos)} • Costos: $ ${money(totalCostos)}`;
+      }catch(err){
+        console.error("actualizarKPIsCostos:", err);
+        $("k_costos_total").textContent = "0";
+        $("k_costos_total_s").textContent = "No disponible";
       }
     }
 
-
-        // Filtro método de pago (si aplica)
-        const mpSel = ($("f_metodo_pago")?.value || "").trim();
-        if (mpSel && mpSel !== "__ALL__"){
-          qFac = qFac.eq("metodo_pago", mpSel);
-        }
-
-        const { data: facs, error: ef } = await qFac;
-        if (ef) throw ef;
-
-        const ids = (facs || []).map(r => r.id).filter(Boolean);
-        if (!ids.length){
-          setText("k_costos_rango", "$ 0");
-          setText("k_costos_rango_hint", `Rango: ${fmtDate(desde || mesStart.slice(0,10))} → ${fmtDate(hasta || mesEnd.slice(0,10))}`);
-          // Resultado neto (si existe el KPI)
-          const ingresos = Number(window.__INGRESOS_RANGO || 0);
-          const gastos = Number(window.__GASTOS_RANGO || 0);
-          const neto = ingresos - (gastos + 0);
-          if (document.getElementById("k_resultado_neto2")){
-            setText("k_resultado_neto2", "$ " + fmtMoney(neto));
-            setText("k_resultado_neto2_hint", `Ingresos (${fmtMoney(ingresos)}) − (Gastos ${fmtMoney(gastos)} + Costos 0)`);
-          }
-          return;
-        }
-
-        // 2) Traer detalle y sumar costo * cantidad (si costo es null, se toma 0)
-        const { data: dets, error: ed } = await supabase
-          .from("factura_detalle")
-          .select("costo, cantidad, factura_id")
-          .in("factura_id", ids);
-
-        if (ed) throw ed;
-
-        const totalCostos = (dets || []).reduce((acc, r) => {
-          const c = Number(r.costo || 0);
-          const q = Number(r.cantidad || 1);
-          return acc + (c * q);
-        }, 0);
-
-        window.__COSTOS_RANGO = totalCostos;
-
-        setText("k_costos_rango", "$ " + fmtMoney(totalCostos));
-        setText("k_costos_rango_hint", `Rango: ${fmtDate(desde || mesStart.slice(0,10))} → ${fmtDate(hasta || mesEnd.slice(0,10))}`);
-
-        // 3) KPI Resultado neto: Ingresos − (Gastos + Costos)
-        const ingresos = Number(window.__INGRESOS_RANGO || 0);
-        const gastos = Number(window.__GASTOS_RANGO || 0);
-        const neto = ingresos - (gastos + totalCostos);
-
-        if (document.getElementById("k_resultado_neto2")){
-          setText("k_resultado_neto2", "$ " + fmtMoney(neto));
-          setText("k_resultado_neto2_hint", `Ingresos (${fmtMoney(ingresos)}) − (Gastos ${fmtMoney(gastos)} + Costos ${fmtMoney(totalCostos)})`);
-        }
-      } catch(err){
-        console.error("KPIs Costos error:", err);
-        setText("k_costos_rango", "$ 0");
-        setText("k_costos_rango_hint", "No se pudieron calcular costos");
-        if (document.getElementById("k_resultado_neto2")){
-          setText("k_resultado_neto2", "$ 0");
-          setText("k_resultado_neto2_hint", "No se pudo calcular el resultado neto");
-        }
+    // Hook al refrescarDashboard
+    try{
+      if (typeof refrescarDashboard === "function"){
+        const __refCostos = refrescarDashboard;
+        refrescarDashboard = async function(){
+          await __refCostos();
+          await actualizarKPIsCostos();
+        };
       }
-    }
+    }catch(e){ console.error(e); }
 
 
-// ===============================
-// KPI RESULTADO NETO
-// Ingresos (abonos en rango) - (gastos + costos)
-// ===============================
-function calcularResultadoNeto() {
-  const ingresos = window.__INGRESOS_RANGO || 0;
-  const gastos = window.__GASTOS_RANGO || 0;
-  const costos = window.__TOTAL_COSTOS_MES || 0;
-
-  const resultado = ingresos - (gastos + costos);
-  document.getElementById("kpi_resultado_neto").textContent =
-    "$ " + resultado.toLocaleString("es-CO");
-}
-
-
-async function init(){
+// =========================
+    // ✅ INIT
+    // =========================
+    async function init(){
       $("year").textContent = new Date().getFullYear();
 
       $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
@@ -2434,61 +2178,8 @@ async function init(){
         toast("Falló init: revisa consola (F12)\\n" + (err?.message || "Error"), "err");
       }
     });
-  
-/* =============================
-   KPI COSTOS + RESULTADO NETO
-   ============================= */
-
-async function calcularCostosYRendimiento() {
-  try {
-    const fechaDesde = document.getElementById("fecha_desde").value;
-    const fechaHasta = document.getElementById("fecha_hasta").value;
-
-    // 1️⃣ COSTOS DESDE factura_detalle (por rango)
-    let q = supabase
-      .from("factura_detalle")
-      .select("costo, created_at");
-
-    if (fechaDesde) q = q.gte("created_at", fechaDesde + "T00:00:00");
-    if (fechaHasta) q = q.lte("created_at", fechaHasta + "T23:59:59");
-
-    const { data: costosRows, error } = await q;
-    if (error) throw error;
-
-    const totalCostos = (costosRows || [])
-      .reduce((a, b) => a + Number(b.costo || 0), 0);
-
-    const costosEl = document.getElementById("kpi-costos-valor");
-    if (costosEl) costosEl.textContent = formatMoney(totalCostos);
-
-    // 2️⃣ INGRESOS (abonos en rango)
-    const ingresos = window.__INGRESOS_RANGO || 0;
-
-    // 3️⃣ GASTOS (ya calculados)
-    const gastos = window.__GASTOS_RANGO || 0;
-
-    // 4️⃣ RESULTADO NETO
-    const resultado = ingresos - (gastos + totalCostos);
-    const resEl = document.getElementById("kpi-resultado-neto-valor");
-    if (resEl) resEl.textContent = formatMoney(resultado);
-
-  } catch (e) {
-    console.error("Error calculando costos / resultado neto:", e);
-  }
-}
-
-// Hook al botón actualizar
-const btnActualizar = document.getElementById("btn-actualizar");
-if (btnActualizar) {
-  btnActualizar.addEventListener("click", () => {
-    setTimeout(calcularCostosYRendimiento, 600);
-  });
-}
-
-// Ejecutar al cargar
-setTimeout(calcularCostosYRendimiento, 1200);
-
-</script>
+  </script>
 </body>
 </html>
+
 
