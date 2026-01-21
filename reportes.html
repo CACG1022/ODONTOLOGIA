@@ -2090,6 +2090,16 @@ const totalCalc = Number(f.valor_total ?? 0)
         $("k_resultado_neto").textContent = money(neto);
         $("k_resultado_neto_s").textContent =
           `Ingresos: $ ${money(ingresos)} • Gastos: $ ${money(gastos)} • Costos: $ ${money(totalCostos)}`;
+        // 📊 Margen (%)
+      const margenPct = ingresos > 0 ? (neto / ingresos) * 100 : 0;
+$("k_margen_pct").textContent = (Math.round(margenPct * 10) / 10).toString();
+$("k_margen_pct_s").textContent =
+  ingresos > 0
+    ? "Utilidad sobre ingresos"
+    : "Sin ingresos en el rango";
+
+
+        
       }catch(err){
         console.error("actualizarKPIsCostos:", err);
         $("k_costos_total").textContent = "0";
