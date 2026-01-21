@@ -435,14 +435,30 @@
     /* =========================
    KPI Resultado Neto
    ========================= */
+/* Base neutra */
 .kpi-neto{
-  background: linear-gradient(135deg, #fff5f5, #ffe3e3);
-  border-color: #f5b5b5;
+  background: #fff;
+  border-color: var(--line);
 }
 
-.kpi-neto .v{
-  color: #b42318; /* rojo cuando es negativo */
+.kpi-neto.positivo{
+  background: linear-gradient(135deg, #ecfdf3, #d1fae5);
+  border-color: #86efac;
 }
+
+.kpi-neto.positivo .v{
+  color: #166534;
+}
+
+.kpi-neto.negativo{
+  background: linear-gradient(135deg, #fff5f5, #fee2e2);
+  border-color: #fca5a5;
+}
+
+.kpi-neto.negativo .v{
+  color: #b42318;
+}
+
 
     
   </style>
@@ -2056,76 +2072,85 @@ const totalCalc = Number(f.valor_total ?? 0)
     // ✅ COSTOS (desde factura_detalle.costo)
     // =========================
     async function actualizarKPIsCostos(){
-      const desde = ($("fecha_desde").value || "").trim();
-      const hasta = ($("fecha_hasta").value || "").trim();
+  const desde = ($("fecha_desde").value || "").trim();
+  const hasta = ($("fecha_hasta").value || "").trim();
 
-      const rangoDesde = desde || firstDayOfMonthISO(new Date());
-      const rangoHasta = hasta || hoyISO();
+  const rangoDesde = desde || firstDayOfMonthISO(new Date());
+  const rangoHasta = hasta || hoyISO();
 
-      const sub = $("k_costos_sub");
-      if (sub){
-        sub.textContent = `Rango activo: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
-      }
+  const sub = $("k_costos_sub");
+  if (sub){
+    sub.textContent = `Rango activo: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
+  }
 
-      try{
-        const { data, error } = await supabase
-  .from("factura_detalle")
-  .select(`
-    costo,
-    facturas!inner (
-      fecha
-    )
-  `)
-  .gte("facturas.fecha", rangoDesde)
-  .lte("facturas.fecha", rangoHasta);
+  let neto = 0; // ✅ CLAVE: scope correcto
 
+  try{
+    const { data, error } = await supabase
+      .from("factura_detalle")
+      .select(`
+        costo,
+        facturas!inner (
+          fecha
+        )
+      `)
+      .gte("facturas.fecha", rangoDesde)
+      .lte("facturas.fecha", rangoHasta);
 
-        if (error) throw error;
+    if (error) throw error;
 
-        const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
+    const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
 
-        $("k_costos_total").textContent = money(totalCostos);
-        $("k_costos_total_s").textContent = `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
+    $("k_costos_total").textContent = money(totalCostos);
+    $("k_costos_total_s").textContent =
+      `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
 
-        // 🔹 Resultado neto = Ingresos − (Gastos + Costos)
-        // Ingresos = abonos en rango
-        const rIng = await supabase
-          .from("abonos")
-          .select("monto, fecha")
-          .gte("fecha", rangoDesde)
-          .lte("fecha", rangoHasta);
+    // Ingresos = abonos en rango
+    const rIng = await supabase
+      .from("abonos")
+      .select("monto")
+      .gte("fecha", rangoDesde)
+      .lte("fecha", rangoHasta);
 
-        const ingresos = (rIng.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
+    const ingresos = (rIng.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
-        // Gastos en rango
-        const rGas = await supabase
-          .from("gastos")
-          .select("monto, fecha")
-          .gte("fecha", rangoDesde)
-          .lte("fecha", rangoHasta);
+    // Gastos en rango
+    const rGas = await supabase
+      .from("gastos")
+      .select("monto")
+      .gte("fecha", rangoDesde)
+      .lte("fecha", rangoHasta);
 
-        const gastos = (rGas.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
+    const gastos = (rGas.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
-        const neto = ingresos - (gastos + totalCostos);
-        $("k_resultado_neto").textContent = money(neto);
-        $("k_resultado_neto_s").textContent =
-          `Ingresos: $ ${money(ingresos)} • Gastos: $ ${money(gastos)} • Costos: $ ${money(totalCostos)}`;
-        // 📊 Margen (%)
-      const margenPct = ingresos > 0 ? (neto / ingresos) * 100 : 0;
-$("k_margen_pct").textContent = (Math.round(margenPct * 10) / 10).toString();
-$("k_margen_pct_s").textContent =
-  ingresos > 0
-    ? "Utilidad sobre ingresos"
-    : "Sin ingresos en el rango";
+    // ✅ Neto
+    neto = ingresos - (gastos + totalCostos);
 
+    $("k_resultado_neto").textContent = money(neto);
+    $("k_resultado_neto_s").textContent =
+      `Ingresos: $ ${money(ingresos)} • Gastos: $ ${money(gastos)} • Costos: $ ${money(totalCostos)}`;
 
-        
-      }catch(err){
-        console.error("actualizarKPIsCostos:", err);
-        $("k_costos_total").textContent = "0";
-        $("k_costos_total_s").textContent = "No disponible";
-      }
-    }
+    // 📊 Margen (%)
+    const margenPct = ingresos > 0 ? (neto / ingresos) * 100 : 0;
+    $("k_margen_pct").textContent = (Math.round(margenPct * 10) / 10).toString();
+    $("k_margen_pct_s").textContent =
+      ingresos > 0 ? "Utilidad sobre ingresos" : "Sin ingresos en el rango";
+
+  }catch(err){
+    console.error("actualizarKPIsCostos:", err);
+    $("k_costos_total").textContent = "0";
+    $("k_costos_total_s").textContent = "No disponible";
+    $("k_resultado_neto").textContent = "0";
+  }
+
+  // ✅ COLOR DINÁMICO (FUERA DEL TRY)
+  const kpiNeto = document.querySelector(".kpi-neto");
+  if (kpiNeto){
+    kpiNeto.classList.remove("positivo", "negativo");
+    kpiNeto.classList.add(neto >= 0 ? "positivo" : "negativo");
+  }
+}
+
 
     // Hook al refrescarDashboard
     try{
