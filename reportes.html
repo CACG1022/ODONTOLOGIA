@@ -599,12 +599,6 @@
           <div class="v mono">$ <span id="k_costos_total">0</span></div>
           <div class="s" id="k_costos_total_s">—</div>
         </div>
-
-        <div class="kpi">
-          <div class="k">📊 Ingresos − (Gastos + Costos)</div>
-          <div class="v mono">$ <span id="k_resultado_neto">0</span></div>
-          <div class="s" id="k_resultado_neto_s">—</div>
-        </div>
       </div>
     </div>
 
@@ -1703,6 +1697,14 @@ const totalCalc = Number(f.valor_total ?? 0)
       renderTablaFacturas();
       renderCharts(kpi);
 
+      // =========================
+      // ✅ KPIs ADICIONALES
+      // =========================
+      await actualizarKPIsGastos();
+      await actualizarKPIsCostos();
+      await cargarReporteAbonos();
+
+
       if ((state.facturasFiltro || []).length === 0){
         setStatus("Sin resultados (si esperabas datos, revisa RLS/permisos en Supabase).");
       } else {
@@ -2049,47 +2051,17 @@ const totalCalc = Number(f.valor_total ?? 0)
 
       try{
         const { data, error } = await supabase
-  .from("factura_detalle")
-  .select(`
-    costo,
-    facturas!inner (
-      fecha
-    )
-  `)
-  .gte("facturas.fecha", rangoDesde)
-  .lte("facturas.fecha", rangoHasta);
-
+          .from("factura_detalle")
+          .select("costo, factura_id, facturas:factura_id (fecha)")
+          .gte("facturas.fecha", dateStartISO(rangoDesde))
+          .lte("facturas.fecha", dateEndISO(rangoHasta));
 
         if (error) throw error;
 
         const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
 
         $("k_costos_total").textContent = money(totalCostos);
-        $("k_costos_total_s").textContent = `Rango: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
-
-        // 🔹 Resultado neto = Ingresos − (Gastos + Costos)
-        // Ingresos = abonos en rango
-        const rIng = await supabase
-          .from("abonos")
-          .select("monto, fecha")
-          .gte("fecha", rangoDesde)
-          .lte("fecha", rangoHasta);
-
-        const ingresos = (rIng.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
-
-        // Gastos en rango
-        const rGas = await supabase
-          .from("gastos")
-          .select("monto, fecha")
-          .gte("fecha", rangoDesde)
-          .lte("fecha", rangoHasta);
-
-        const gastos = (rGas.data || []).reduce((a,b)=> a + (Number(b.monto)||0), 0);
-
-        const neto = ingresos - (gastos + totalCostos);
-        $("k_resultado_neto").textContent = money(neto);
-        $("k_resultado_neto_s").textContent =
-          `Ingresos: $ ${money(ingresos)} • Gastos: $ ${money(gastos)} • Costos: $ ${money(totalCostos)}`;
+        $("k_costos_total_s").textContent = `Costos sumados desde factura_detalle`;
       }catch(err){
         console.error("actualizarKPIsCostos:", err);
         $("k_costos_total").textContent = "0";
