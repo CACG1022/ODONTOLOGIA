@@ -857,14 +857,13 @@
     }
 
     function start(evt) {
-      evt.preventDefault();
-      _setupFirmaCanvas(id);
+  evt.preventDefault();
 
-      firmas[id].drawing = true;
-      const p = getPos(evt);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-    }
+  firmas[id].drawing = true;
+  const p = getPos(evt);
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y);
+}
 
     function move(evt) {
       if (!firmas[id].drawing) return;
