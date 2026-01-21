@@ -583,7 +583,26 @@
           <div class="s" id="k_rel_gastos_ingresos_s">—</div>
         </div>
       </div>
+    
+    <!-- =========================
+         ✅ NUEVA SECCIÓN: COSTOS (KPIs)
+         ========================= -->
+    <div class="section" id="section_costos">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px;">
+        <div style="font-weight:900; font-size:18px;">Costos</div>
+        <div class="mono" style="color:var(--muted); font-size:12px;" id="k_costos_sub">—</div>
+      </div>
+
+      <div class="kpis">
+        <div class="kpi">
+          <div class="k">🧾 Total costos (rango)</div>
+          <div class="v mono">$ <span id="k_costos_total">0</span></div>
+          <div class="s" id="k_costos_total_s">—</div>
+        </div>
+      </div>
     </div>
+
+</div>
 
 
     <div class="section">
@@ -2006,7 +2025,55 @@ const totalCalc = Number(f.valor_total ?? 0)
     }catch(err){
       console.error("Hook reporte abonos falló:", err);
     }
+    
     // =========================
+    // ✅ COSTOS (desde factura_detalle.costo)
+    // =========================
+    async function actualizarKPIsCostos(){
+      const desde = ($("fecha_desde").value || "").trim();
+      const hasta = ($("fecha_hasta").value || "").trim();
+
+      const rangoDesde = desde || firstDayOfMonthISO(new Date());
+      const rangoHasta = hasta || hoyISO();
+
+      const sub = $("k_costos_sub");
+      if (sub){
+        sub.textContent = `Rango activo: ${formatFechaHuman(rangoDesde)} → ${formatFechaHuman(rangoHasta)}`;
+      }
+
+      try{
+        const { data, error } = await supabase
+          .from("factura_detalle")
+          .select("costo, factura_id, facturas:factura_id (fecha)")
+          .gte("facturas.fecha", dateStartISO(rangoDesde))
+          .lte("facturas.fecha", dateEndISO(rangoHasta));
+
+        if (error) throw error;
+
+        const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
+
+        $("k_costos_total").textContent = money(totalCostos);
+        $("k_costos_total_s").textContent = `Costos sumados desde factura_detalle`;
+      }catch(err){
+        console.error("actualizarKPIsCostos:", err);
+        $("k_costos_total").textContent = "0";
+        $("k_costos_total_s").textContent = "No disponible";
+      }
+    }
+
+    // Hook al refrescarDashboard
+    try{
+      if (typeof refrescarDashboard === "function"){
+        const __refCostos = refrescarDashboard;
+        refrescarDashboard = async function(){
+          await __refCostos();
+          await actualizarKPIsCostos();
+        };
+      }
+    }catch(e){ console.error(e); }
+
+
+// =========================
     // ✅ INIT
     // =========================
     async function init(){
