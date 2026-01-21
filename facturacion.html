@@ -1050,13 +1050,15 @@ if ((isFocused || filtro) && count > 0) {
       const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
       const valorU = Math.max(0, num(p.valor || 0));
       const item = {
-        id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-        codigo_cups: p.codigo_cups || "",
-        descripcion: p.procedimiento || "",
-        cantidad,
-        valor_unitario: valorU,
-        valor_total: valorU * cantidad
-      };
+  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+  procedimiento_id: p.id,              // ✅ CLAVE
+  codigo_cups: p.codigo_cups || "",
+  descripcion: p.procedimiento || "",
+  cantidad,
+  valor_unitario: valorU,
+  valor_total: valorU * cantidad
+};
+
       state.items.push(item);
       renderItems();
       recalcularTotales();
@@ -1520,13 +1522,16 @@ if ((isFocused || filtro) && count > 0) {
           fac = fac1;
         }
         const detalle = state.items.map(it => ({
-          factura_id: fac.id,
-          codigo_cups: it.codigo_cups || null,
-          descripcion: it.descripcion || "",
-          cantidad: it.cantidad || 1,
-          valor_unitario: it.valor_unitario || 0,
-          valor_total: it.valor_total || 0
-        }));
+  factura_id: fac.id,
+  procedimiento_id: it.procedimiento_id, // ✅ CLAVE
+  codigo_cups: it.codigo_cups || null,
+  descripcion: it.descripcion || "",
+  cantidad: it.cantidad || 1,
+  valor_unitario: it.valor_unitario || 0,
+  valor_total: it.valor_total || 0
+}));
+
+
         const { error: e2 } = await supabase
           .from("factura_detalle")
           .insert(detalle);
