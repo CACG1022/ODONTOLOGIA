@@ -2049,10 +2049,16 @@ const totalCalc = Number(f.valor_total ?? 0)
 
       try{
         const { data, error } = await supabase
-          .from("factura_detalle")
-          .select("costo, factura_id, facturas:factura_id (fecha)")
-          .gte("facturas.fecha", dateStartISO(rangoDesde))
-          .lte("facturas.fecha", dateEndISO(rangoHasta));
+  .from("factura_detalle")
+  .select(`
+    costo,
+    facturas!inner (
+      fecha
+    )
+  `)
+  .gte("facturas.fecha", rangoDesde)
+  .lte("facturas.fecha", rangoHasta);
+
 
         if (error) throw error;
 
