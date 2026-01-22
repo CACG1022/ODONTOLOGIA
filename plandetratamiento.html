@@ -631,15 +631,25 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
     <label for="descuento">Descuento:</label>
     <select id="descuento" name="descuento">
-    <label for="abono_valor">Abono:</label>
-    <input type="number" id="abono_valor" name="abono_valor" value="0" min="0" step="100">
-
       <option value="0">Sin descuento</option>
       <option value="5">5%</option>
       <option value="10">10%</option>
       <option value="20">20%</option>
       <option value="30">30%</option>
     </select>
+    <!-- ✅ Campo Abono (AGREGADO) -->
+    <label for="abono">Abono:</label>
+    <input
+      type="number"
+      id="abono"
+      name="abono_valor"
+      value="0"
+      min="0"
+      step="100"
+      inputmode="numeric"
+      style="max-width:220px; text-align:left; padding:8px 10px; height:38px;"
+    />
+
 
     <div class="totales">
       <span><strong>Subtotal:</strong> $<span id="subtotal">0</span></span>
@@ -650,7 +660,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <input type="hidden" id="input-subtotal" name="subtotal_real">
     <input type="hidden" id="input-descuento" name="descuento_valor">
     <input type="hidden" id="input-total" name="total_real">
-    <input type="hidden" id="input-abono-hidden" name="abono_valor_hidden" value="0">
 
     <label for="observaciones">Observaciones:</label>
     <textarea id="observaciones" name="observaciones" rows="4"></textarea>
@@ -1136,9 +1145,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
       const porc = parseInt(descuentoSel.value,10) || 0;
       const vDesc = Math.round(subtotal * (porc/100));
-      const abonoInput = document.getElementById('abono_valor');
-      const abono = abonoInput ? parseMoney(abonoInput.value) : 0;
-      const total = Math.max(subtotal - vDesc - abono, 0);
+      const total = subtotal - vDesc;
 
       document.getElementById('subtotal').textContent = subtotal.toLocaleString('es-CO');
       document.getElementById('valor-descuento').textContent = vDesc.toLocaleString('es-CO');
@@ -1147,8 +1154,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       document.getElementById('input-subtotal').value = subtotal;
       document.getElementById('input-descuento').value = vDesc;
       document.getElementById('input-total').value = total;
-      const abHidden = document.getElementById('input-abono-hidden');
-      if(abHidden) abHidden.value = abono;
     }
 
     window.addEventListener('load', async ()=>{
@@ -1569,8 +1574,74 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 })();
 </script>
 
+
+<script>
+/* ==========================
+   ✅ ABONO (AGREGADO)
+   - Recalcula "Total a pagar" restando el abono
+   - Envía el valor a n8n como "abono_valor"
+   - Mantiene subtotal y descuento iguales
+   - SIN modificar funciones existentes (se envuelve calcularTotal)
+   ========================== */
+(function(){
+  function num(v){
+    return Number(String(v ?? "").replace(/[^\d]/g,"")) || 0;
+  }
+  function clamp0(n){ return n < 0 ? 0 : n; }
+
+  function aplicarAbonoPostCalculo(){
+    const abonoInput = document.getElementById("abono");
+    const totalSpan  = document.getElementById("total");
+    const inputTotal = document.getElementById("input-total");
+    if(!abonoInput || !totalSpan || !inputTotal) return;
+
+    const abono = num(abonoInput.value);
+    const totalBase = num(inputTotal.value);
+
+    const totalFinal = clamp0(totalBase - abono);
+
+    // UI
+    totalSpan.textContent = totalFinal.toLocaleString("es-CO");
+
+    // Hidden (lo que llega a n8n)
+    inputTotal.value = String(totalFinal);
+
+    // (opcional útil) exponer en window para depuración
+    window.__ABONO_VALOR = abono;
+    window.__TOTAL_A_PAGAR = totalFinal;
+  }
+
+  // ✅ Envolver calcularTotal SIN editar su cuerpo
+  if(typeof window.calcularTotal === "function" && !window.__CALCULO_ABONO_ENVUELTO){
+    const _calcularTotal = window.calcularTotal;
+    window.calcularTotal = function(){
+      _calcularTotal.apply(this, arguments);
+      aplicarAbonoPostCalculo();
+    };
+    window.__CALCULO_ABONO_ENVUELTO = true;
+  }
+
+  // ✅ Recalcular al digitar abono
+  document.addEventListener("DOMContentLoaded", ()=>{
+    const abonoInput = document.getElementById("abono");
+    if(abonoInput){
+      abonoInput.addEventListener("input", ()=> {
+        if(typeof window.calcularTotal === "function") window.calcularTotal();
+        else aplicarAbonoPostCalculo();
+      });
+    }
+    // Forzar 1 vez al cargar
+    setTimeout(()=> {
+      if(typeof window.calcularTotal === "function") window.calcularTotal();
+      else aplicarAbonoPostCalculo();
+    }, 0);
+  });
+})();
+</script>
+
 </body>
 </html>
+
 
 
 
