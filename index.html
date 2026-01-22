@@ -301,10 +301,40 @@ async function cargarPacientes() {
       }
     }
 
+    // =========================
+// 🚨 CONTAR PENDIENTES POR EVOLUCIONAR
+// =========================
+async function cargarAlertasPendientes() {
+  try {
+    const { count, error } = await supabase
+      .from("pendientes_evolucion")
+      .select("*", { count: "exact", head: true });
+
+    if (error) throw error;
+
+    const el = document.getElementById("alertas-value");
+    if (el) el.textContent = count ?? 0;
+
+    const hint = document.getElementById("alertas-hint");
+    if (hint) {
+      hint.textContent =
+        count === 1
+          ? "Paciente pendiente"
+          : "Pacientes pendientes por evolucionar";
+    }
+
+  } catch (e) {
+    console.error("Error cargando alertas:", e);
+    const el = document.getElementById("alertas-value");
+    if (el) el.textContent = "—";
+  }
+}
+
+
 verificarSesionYPermisos();
     cargarCitasHoy();
     cargarPacientes();
-
+    cargarAlertasPendientes(); // 👈 NUEVO
     supabase.auth.onAuthStateChange((_event, session) => {
       if (!session) window.location.href = LOGIN_URL;
     });
@@ -958,10 +988,11 @@ z-index: 1;
               <div class="hint">Semana actual</div>
             </div>
             <div class="kpi right-align">
-              <div class="label">Alertas</div>
-              <div class="value">2</div>
-              <div class="hint">Seguimientos</div>
-            </div>
+  <div class="label">Alertas</div>
+  <div class="value" id="alertas-value">—</div>
+  <div class="hint" id="alertas-hint">Pendientes por evolucionar</div>
+</div>
+
           </div>
         </div>
       </div>
