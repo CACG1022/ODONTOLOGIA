@@ -13,6 +13,8 @@ const supabase = createClient(
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
+let datosGlobales = [];
+
 /* =========================
    UTILIDADES
 ========================= */
@@ -24,10 +26,9 @@ function diffDias(fecha) {
 }
 
 /* =========================
-   CARGA PRINCIPAL
+   CARGA
 ========================= */
 async function cargarPendientes() {
-
   const { data, error } = await supabase
     .from("pendientes_evolucion")
     .select("*")
@@ -39,7 +40,36 @@ async function cargarPendientes() {
     return;
   }
 
-  render(data || []);
+  datosGlobales = data || [];
+  cargarFiltroProfesional(datosGlobales);
+  render(datosGlobales);
+}
+
+/* =========================
+   FILTRO PROFESIONAL
+========================= */
+function cargarFiltroProfesional(lista) {
+  const select = document.getElementById("filtroProfesional");
+  select.innerHTML = `<option value="">Todos los profesionales</option>`;
+
+  const profesionales = [...new Set(lista.map(r => r.nombre_profesional))];
+
+  profesionales.forEach(p => {
+    const opt = document.createElement("option");
+    opt.value = p;
+    opt.textContent = p;
+    select.appendChild(opt);
+  });
+}
+
+function aplicarFiltro() {
+  const profesional = document.getElementById("filtroProfesional").value;
+
+  const filtrados = profesional
+    ? datosGlobales.filter(r => r.nombre_profesional === profesional)
+    : datosGlobales;
+
+  render(filtrados);
 }
 
 /* =========================
@@ -63,6 +93,8 @@ function render(lista) {
       clase = "rojo"; label = `${atraso} días`; historicos++;
     }
 
+    const url = `https://cacg1022.github.io/ODONTOLOGIA/evoluciones.html?auto=1&cedula=${p.documento_paciente}`;
+
     tbody.insertAdjacentHTML("beforeend", `
       <tr class="${clase}">
         <td>${p.fecha}</td>
@@ -71,6 +103,11 @@ function render(lista) {
         <td>${p.documento_paciente}</td>
         <td>${p.nombre_profesional}</td>
         <td>${label}</td>
+        <td>
+          <a class="btn" href="${url}" target="_blank">
+            Ir a evolucionar
+          </a>
+        </td>
       </tr>
     `);
   });
@@ -81,7 +118,7 @@ function render(lista) {
 
 function mostrarError() {
   document.querySelector("tbody").innerHTML =
-    `<tr><td colspan="6">Error cargando pendientes</td></tr>`;
+    `<tr><td colspan="7">Error cargando pendientes</td></tr>`;
 }
 
 window.onload = cargarPendientes;
@@ -90,18 +127,64 @@ window.onload = cargarPendientes;
 <style>
 body { font-family: system-ui; background:#f6f8fb; padding:20px; }
 h1 { margin-bottom:12px; }
+
+.controls {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:14px;
+}
+
+select {
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
 .cards { display:flex; gap:12px; margin-bottom:14px; }
 .card { background:#fff; padding:12px 18px; border-radius:12px; }
-table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; }
-th,td { padding:10px; border-bottom:1px solid #eee; text-align:left; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  background:#fff;
+  border-radius:12px;
+  overflow:hidden;
+}
+
+th,td {
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+
 tr.hoy { background:#e6f7ff; }
 tr.amarillo { background:#fff4cc; }
 tr.rojo { background:#ffe4e4; }
+
+.btn {
+  padding:6px 10px;
+  background:#2563eb;
+  color:#fff;
+  text-decoration:none;
+  border-radius:6px;
+  font-size:13px;
+}
+.btn:hover {
+  background:#1e40af;
+}
 </style>
 </head>
 
 <body>
+
 <h1>🚨 Pendientes por evolucionar</h1>
+
+<div class="controls">
+  <select id="filtroProfesional" onchange="aplicarFiltro()">
+    <option value="">Cargando profesionales...</option>
+  </select>
+</div>
 
 <div class="cards">
   <div class="card">Pendientes hoy: <b id="hoy">0</b></div>
@@ -117,10 +200,13 @@ tr.rojo { background:#ffe4e4; }
   <th>Documento</th>
   <th>Profesional</th>
   <th>Atraso</th>
+  <th>Acción</th>
 </tr>
 </thead>
 <tbody></tbody>
 </table>
+
 </body>
 </html>
+
 
