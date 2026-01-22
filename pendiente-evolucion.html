@@ -16,65 +16,30 @@ const supabase = createClient(
 /* =========================
    UTILIDADES
 ========================= */
-function soloFecha(ts) {
-  return ts.split("T")[0];
-}
-
 function diffDias(fecha) {
   const hoy = new Date().toISOString().slice(0,10);
-  return Math.floor((new Date(hoy) - new Date(fecha)) / 86400000);
+  return Math.floor(
+    (new Date(hoy) - new Date(fecha)) / 86400000
+  );
 }
 
 /* =========================
-   CARGA
+   CARGA PRINCIPAL
 ========================= */
-async function cargarPendientes(dias = 7) {
+async function cargarPendientes() {
 
-  const hoy = new Date().toISOString().slice(0,10);
-  const desde = new Date(Date.now() - dias*86400000).toISOString().slice(0,10);
+  const { data, error } = await supabase
+    .from("pendientes_evolucion")
+    .select("*")
+    .order("fecha", { ascending: false });
 
-  // 1️⃣ SOLO citas atendidas en rango
-  const { data: citas, error: ec } = await supabase
-    .from("citas_atendidas_public")
-    .select("inicio,nombre_paciente,documento_paciente,nombre_profesional")
-    .gte("inicio", desde)
-    .lte("inicio", hoy + "T23:59:59");
+  if (error) {
+    console.error(error);
+    mostrarError();
+    return;
+  }
 
-  if (ec) return mostrarError();
-
-  // 2️⃣ evoluciones
-  const { data: evols, error: ee } = await supabase
-    .from("EVOLUCIONES")
-    .select("paciente_numdoc,evo_fecha");
-
-  if (ee) return mostrarError();
-
-  // 3️⃣ índice paciente + fecha
-  const index = new Set(
-    evols.map(e =>
-      `${String(e.paciente_numdoc)}|${String(e.evo_fecha)}`
-    )
-  );
-
-  const pendientes = [];
-
-  citas.forEach(c => {
-    const fechaCita = soloFecha(c.inicio);
-    const key = `${String(c.documento_paciente)}|${fechaCita}`;
-
-    if (!index.has(key)) {
-      pendientes.push({
-        fecha: fechaCita,
-        hora: c.inicio.slice(11,16),
-        paciente: c.nombre_paciente,
-        documento: c.documento_paciente,
-        profesional: c.nombre_profesional,
-        atraso: diffDias(fechaCita)
-      });
-    }
-  });
-
-  render(pendientes);
+  render(data || []);
 }
 
 /* =========================
@@ -87,23 +52,24 @@ function render(lista) {
   let hoy = 0, historicos = 0;
 
   lista.forEach(p => {
+    const atraso = diffDias(p.fecha);
     let clase = "", label = "";
 
-    if (p.atraso === 0) {
+    if (atraso === 0) {
       clase = "hoy"; label = "HOY"; hoy++;
-    } else if (p.atraso === 1) {
+    } else if (atraso === 1) {
       clase = "amarillo"; label = "1 día"; historicos++;
     } else {
-      clase = "rojo"; label = `${p.atraso} días`; historicos++;
+      clase = "rojo"; label = `${atraso} días`; historicos++;
     }
 
     tbody.insertAdjacentHTML("beforeend", `
       <tr class="${clase}">
         <td>${p.fecha}</td>
         <td>${p.hora}</td>
-        <td>${p.paciente}</td>
-        <td>${p.documento}</td>
-        <td>${p.profesional}</td>
+        <td>${p.nombre_paciente}</td>
+        <td>${p.documento_paciente}</td>
+        <td>${p.nombre_profesional}</td>
         <td>${label}</td>
       </tr>
     `);
@@ -115,18 +81,19 @@ function render(lista) {
 
 function mostrarError() {
   document.querySelector("tbody").innerHTML =
-    `<tr><td colspan="6">Error cargando datos</td></tr>`;
+    `<tr><td colspan="6">Error cargando pendientes</td></tr>`;
 }
 
-window.onload = () => cargarPendientes(7);
+window.onload = cargarPendientes;
 </script>
 
 <style>
 body { font-family: system-ui; background:#f6f8fb; padding:20px; }
+h1 { margin-bottom:12px; }
 .cards { display:flex; gap:12px; margin-bottom:14px; }
 .card { background:#fff; padding:12px 18px; border-radius:12px; }
 table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; }
-th,td { padding:10px; border-bottom:1px solid #eee; }
+th,td { padding:10px; border-bottom:1px solid #eee; text-align:left; }
 tr.hoy { background:#e6f7ff; }
 tr.amarillo { background:#fff4cc; }
 tr.rojo { background:#ffe4e4; }
@@ -156,3 +123,4 @@ tr.rojo { background:#ffe4e4; }
 </table>
 </body>
 </html>
+
