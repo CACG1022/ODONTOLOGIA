@@ -1,1459 +1,276 @@
-<!-- evoluciones.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  
-  <meta charset="UTF-8" />
-  <title>Evoluciones - Historia Clínica Odontológica</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta charset="UTF-8">
+  <title>Pendientes por evolucionar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- 🔐 SUPABASE + LOGIN -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+    // ✅ Supabase (mismo proyecto)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
 
-    window.supabase = supabase;
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const TZ_CLINICA = "America/Bogota"; // 🇨🇴 Colombia (evita desfases por UTC)
 
-    window.APP_URLS = {
-      LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
-      HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
-    };
-
-    // ✅ AHORA SÍ: este módulo debe coincidir con "modulo" en la tabla modulos_permisos
-    const MODULO = "evoluciones";
-
-    async function verificarSesion() {
+    async function verificarSesion(){
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
-        window.location.href = window.APP_URLS.LOGIN;
-        return null;
+      if (!session){
+        window.location.href = LOGIN_URL;
+        return false;
       }
-      return session;
+      return true;
     }
 
-    async function validarPermisoModulo() {
-      const session = await verificarSesion();
-      if (!session) return;
-
-      const { data: perfil, error: ePerfil } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
-
-      if (ePerfil || !perfil?.role) {
-        alert("No se pudo obtener tu rol.");
-        window.location.href = window.APP_URLS.HOME;
-        return;
-      }
-
-      const rol = perfil.role;
-
-      const { data: permiso, error: ePerm } = await supabase
-        .from("modulos_permisos")
-        .select("admin, doctor, auxiliar, paciente")
-        .eq("modulo", MODULO)
-        .single();
-
-      if (ePerm || !permiso) {
-        alert("Módulo no configurado en permisos.");
-        window.location.href = window.APP_URLS.HOME;
-        return;
-      }
-
-      if (!permiso[rol]) {
-        alert("⛔ No tienes permiso para acceder a Evoluciones.");
-        window.location.href = window.APP_URLS.HOME;
-        return;
-      }
-
-      console.log("✅ Acceso permitido a Evoluciones para:", rol);
+    // ✅ Devuelve YYYY-MM-DD en zona horaria de la clínica (ignora la hora)
+    function ymdClinic(dt){
+      const d = (dt instanceof Date) ? dt : new Date(dt);
+      const fmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ_CLINICA,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+      return fmt.format(d); // en-CA => YYYY-MM-DD
     }
 
-    validarPermisoModulo();
+    function diffDias(ymd){
+      // ymd: YYYY-MM-DD (zona clínica)
+      const [Y,M,D] = ymd.split("-").map(Number);
+      const hoy = new Date();
+      const hoyYMD = ymdClinic(hoy);
+      const [hY,hM,hD] = hoyYMD.split("-").map(Number);
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      if (!session) window.location.href = window.APP_URLS.LOGIN;
-    });
-
-    // ==============================
-    // ✅ DICTADO POR VOZ (Evoluciones: evo_detalle)
-    // ==============================
-    let _srEvo = null;
-    let _srEvoOn = false;
-
-    function _soportaDictado() {
-      return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+      // Construir fechas "locales" neutrales (sin TZ) para diferencia en días
+      const a = new Date(hY, hM-1, hD);
+      const b = new Date(Y,  M-1,  D);
+      const ms = a - b;
+      return Math.floor(ms / (1000*60*60*24));
     }
 
-    function _appendEnTextarea(textarea, texto) {
-  if (!textarea || !texto) return;
+    function setRowMessage(html){
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = `<tr><td colspan="6">${html}</td></tr>`;
+    }
 
-  const start = textarea.selectionStart ?? textarea.value.length;
-  const end = textarea.selectionEnd ?? textarea.value.length;
+    async function cargarPendientes(){
+      if (!await verificarSesion()) return;
 
-  const before = textarea.value.slice(0, start);
-  const after = textarea.value.slice(end);
+      const dias = Number(document.getElementById("dias").value || 7);
 
-  // Si el texto termina en salto de línea, NO agregar espacio
-  const needsSpace = !texto.endsWith("\n") && !before.endsWith(" ");
+      const ahora = new Date();
+      const hoyFin = new Date(ahora); hoyFin.setHours(23,59,59,999);
+      const desde = new Date(ahora);  desde.setDate(desde.getDate() - dias); desde.setHours(0,0,0,0);
 
-  textarea.value = before + texto + (needsSpace ? " " : "") + after;
+      // 1) Citas atendidas en rango (por timestamp real)
+      const { data: citas, error: eCitas } = await supabase
+        .from("citas")
+        .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
+        .eq("estado", "atendida")
+        .gte("inicio", desde.toISOString())
+        .lte("inicio", hoyFin.toISOString());
 
-  const newPos = before.length + texto.length + (needsSpace ? 1 : 0);
-  textarea.selectionStart = textarea.selectionEnd = newPos;
-
-  textarea.focus();
-}
-
-
-
-    function iniciarDictadoEvoDetalle() {
-      const ta = document.getElementById("evo_detalle");
-      const btn = document.getElementById("btnDictadoEvoDetalle");
-      const hint = document.getElementById("dictadoHintEvo");
-
-      if (!_soportaDictado()) {
-        alert("⚠️ Tu navegador no soporta dictado por voz. Usa Chrome o Edge.");
+      if (eCitas){
+        console.error("Error citas:", eCitas);
+        setRowMessage("Error cargando citas");
         return;
       }
 
-      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-      _srEvo = new SR();
+      if (!citas || citas.length === 0){
+        setRowMessage("No hay citas atendidas en este rango");
+        document.getElementById("kpi-hoy").textContent = "0";
+        document.getElementById("kpi-historico").textContent = "0";
+        return;
+      }
 
-      _srEvo.lang = "es-CO";
-      _srEvo.continuous = true;
-      _srEvo.interimResults = false;
+      // 2) Evoluciones (solo necesitamos fecha + documento)
+      const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean).map(String))];
 
+      // Nota: traemos todas las evoluciones de esos documentos (simple),
+      // y cruzamos por FECHA (YYYY-MM-DD) ignorando la hora.
+      const { data: evos, error: eEvos } = await supabase
+        .from("EVOLUCIONES")
+        .select("paciente_numdoc, evo_fecha")
+        .in("paciente_numdoc", documentos);
 
-      // let bufferFinal = "";
+      if (eEvos){
+        console.error("Error evoluciones:", eEvos);
+        setRowMessage("Error cargando evoluciones");
+        return;
+      }
 
-      _srEvo.onstart = () => {
-        _srEvoOn = true;
-        if (btn) btn.classList.add("on");
-        if (hint) hint.style.display = "block";
-      };
+      // 3) Construir un SET por (doc|YYYY-MM-DD)
+      const evoSet = new Set();
+      (evos || []).forEach(e => {
+        const doc = String(e.paciente_numdoc ?? "");
+        if (!doc) return;
+        const f = ymdClinic(e.evo_fecha); // ✅ fecha clínica
+        evoSet.add(doc + "|" + f);
+      });
 
-     _srEvo.onresult = (event) => {
-  for (let i = event.resultIndex; i < event.results.length; i++) {
-    const res = event.results[i];
-    if (!res.isFinal) continue;
+      // 4) Para cada cita, exigir evolución MISMA FECHA (ignorando hora)
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
 
-    let texto = res[0].transcript.trim();
+      let pendientesHoy = 0;
+      let pendientesHistoricos = 0;
 
-    // Comandos de voz para saltos de línea
-    texto = texto
-      .replace(/\b(nueva línea|salto de línea|renglón nuevo)\b/gi, "\n")
-      .replace(/\b(punto y aparte)\b/gi, "\n\n");
+      // Orden: más atrasados primero, luego recientes (opcional, mantiene claridad)
+      const citasOrdenadas = [...citas].sort((a,b)=> new Date(a.inicio) - new Date(b.inicio));
 
-    _appendEnTextarea(ta, texto);
-  }
-};
+      citasOrdenadas.forEach(c => {
+        const doc = String(c.documento_paciente ?? "");
+        const fechaCita = ymdClinic(c.inicio); // ✅ fecha clínica
+        const key = doc + "|" + fechaCita;
 
+        const tieneEvoMismaFecha = evoSet.has(key);
 
-      _srEvo.onerror = (e) => {
-        console.warn("Dictado error:", e);
-        if (e?.error === "not-allowed" || e?.error === "service-not-allowed") {
-          alert("⚠️ Permiso de micrófono denegado. Habilítalo en el navegador.");
-          detenerDictadoEvoDetalle();
+        if (!tieneEvoMismaFecha){
+          const atraso = diffDias(fechaCita);
+          if (atraso === 0) pendientesHoy++;
+          else pendientesHistoricos++;
+
+          const clase =
+            atraso === 0 ? "hoy" :
+            atraso === 1 ? "warn" :
+            "danger";
+
+          const tr = document.createElement("tr");
+          tr.className = clase;
+          tr.innerHTML = `
+            <td>${new Date(c.inicio).toLocaleDateString("es-CO")}</td>
+            <td>${new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
+            <td>${c.nombre_paciente || "—"}</td>
+            <td>${c.documento_paciente || "—"}</td>
+            <td>${c.nombre_profesional || "—"}</td>
+            <td>${atraso === 0 ? "HOY" : atraso + " días"}</td>
+          `;
+          tbody.appendChild(tr);
         }
-      };
+      });
 
-      _srEvo.onend = () => {
-        if (_srEvoOn) {
-          try { _srEvo.start(); } catch (err) {}
-          return;
-        }
-        if (btn) btn.classList.remove("on");
-        if (hint) hint.style.display = "none";
-      };
+      document.getElementById("kpi-hoy").textContent = String(pendientesHoy);
+      document.getElementById("kpi-historico").textContent = String(pendientesHistoricos);
 
-      try { _srEvo.start(); } catch (e) { console.warn("No se pudo iniciar dictado:", e); }
-    }
-
-    function detenerDictadoEvoDetalle() {
-      const btn = document.getElementById("btnDictadoEvoDetalle");
-      const hint = document.getElementById("dictadoHintEvo");
-
-      _srEvoOn = false;
-
-      if (_srEvo) {
-        try { _srEvo.onend = null; } catch(e) {}
-        try { _srEvo.stop(); } catch(e) {}
-        _srEvo = null;
+      if (tbody.children.length === 0){
+        setRowMessage("✅ No hay pacientes pendientes por evolucionar");
       }
-
-      if (btn) btn.classList.remove("on");
-      if (hint) hint.style.display = "none";
     }
 
-    function toggleDictadoEvoDetalle() {
-      if (_srEvoOn) detenerDictadoEvoDetalle();
-      else iniciarDictadoEvoDetalle();
-    }
-
-    window.addEventListener("beforeunload", () => {
-      try { detenerDictadoEvoDetalle(); } catch(e) {}
-    });
-
-    window.toggleDictadoEvoDetalle = toggleDictadoEvoDetalle;
+    window.cargarPendientes = cargarPendientes;
+    window.addEventListener("DOMContentLoaded", cargarPendientes);
   </script>
 
   <style>
-    .btn:disabled{
-      opacity: .55;
-      cursor: not-allowed;
+    body{
+      margin:0;
+      padding:30px;
+      background:#f4f6f8;
+      font-family: Inter, Arial, sans-serif;
+      color:#1f2937;
     }
+    h1{ margin-bottom:10px; }
 
-    :root{
-      --ink:#19324d;
-      --muted:#6b7a90;
-      --bg:#f6f8fb;
-      --card:#ffffff;
-      --brand:#2a5d84;
-      --gap:18px;
-      --radius:14px;
-      --shadow:0 6px 18px rgba(0,0,0,.06);
-      --line:#e7edf5;
-      --input:#cbd5e1;
-    }
-    *{box-sizing:border-box}
-    body{ margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg); }
-    .container{ max-width:1100px; margin:0 auto; }
-    h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
-
-    .card{
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:22px;
-      box-shadow:var(--shadow);
-      margin-bottom:22px;
-    }
-    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
-
-    .grid{ display:grid; gap:var(--gap); }
-    .g-2{ grid-template-columns:1fr 1fr; }
-    .g-3{ grid-template-columns:repeat(3,1fr); }
-    .full{ grid-column:1 / -1; }
-
-    .ctrl{ display:flex; flex-direction:column; gap:8px; }
-    .ctrl label{ font-size:13px; color:var(--muted); }
-
-    input[type="text"], input[type="date"], input[type="time"], textarea{
-      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
-      font-size:15px; background:#fff;
-    }
-    select{
-      width:100%;
-      border:1px solid var(--input);
-      border-radius:10px;
-      padding:12px;
-      font-size:15px;
-      background:#fff;
-      cursor:pointer;
-    }
-    textarea{ min-height:120px; resize:vertical; }
-
-    .rowline{ height:1px; background:var(--line); margin:12px 0; }
-
-    @media (max-width:980px){ .g-3{ grid-template-columns:1fr 1fr; } }
-    @media (max-width:680px){ .g-2,.g-3{ grid-template-columns:1fr; } }
-
-    .btn{
-      width:100%;
-      padding:12px;
-      border-radius:10px;
-      border:none;
-      cursor:pointer;
-      color:white;
-      font-size:14px;
-    }
-    .btn-buscar{ background:#0D47A1; }
-    .btn-agenda{ background:#009688; }
-
-    .tabla-evo{ width:100%; border-collapse:collapse; }
-    .tabla-evo th,.tabla-evo td{ padding:10px; border:1px solid var(--line); vertical-align:top; }
-    .tabla-evo thead tr{ background:#eef6ff; }
-
-    /* Dictado */
-    .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
-    .vwrap .vfield{ flex: 1; }
-    .vbtn{
-      width: 44px; min-width: 44px; height: 44px; border-radius: 10px;
-      border: 1px solid var(--line); background: #F5F5F5; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      color: #111;
-    }
-    .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
-
-    /* ✅ Firmas */
-    .firma-wrapper{ display:none; }
-    .firma-wrapper.show{ display:block; }
-
-    .firma-box{
-      border:1px solid var(--input);
-      border-radius:12px;
-      background:#fff;
-      padding:12px;
+    .top{
       display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .firma-actions{
-      display:flex;
-      gap:10px;
+      gap:20px;
       flex-wrap:wrap;
       align-items:center;
-      justify-content:flex-end;
+      margin-bottom:20px;
     }
-    .btn-mini{
-      width:auto;
-      padding:10px 12px;
-      border-radius:10px;
-      border:none;
-      cursor:pointer;
-      font-size:13px;
-      color:#fff;
-      background:#0D47A1;
-    }
-    canvas.firma-canvas{
-      width:100%;
-      height:180px;
-      border:1px dashed var(--line);
-      border-radius:10px;
-      touch-action:none;
-      background:#fff;
-    }
-    .firma-hint{ font-size:12px; color:var(--muted); }
-
-    /* ✅ Modal firmas */
-    .modal{
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.55);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      z-index:9999;
-    }
-    .modal.show{ display:flex; }
-    .modal-card{
-      width:min(720px, 100%);
-      background:#fff;
-      border-radius:14px;
-      box-shadow:0 16px 40px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
-    .modal-head{
+    .kpis{
       display:flex;
-      justify-content:space-between;
-      align-items:center;
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-      background:#f6fbff;
-      gap:10px;
-    }
-    .modal-title{ font-weight:800; color:var(--brand); }
-    .modal-close{
-      border:none;
-      background:#0D47A1;
-      color:#fff;
-      padding:10px 12px;
-      border-radius:10px;
-      cursor:pointer;
-      font-size:13px;
-      width:auto;
-    }
-    .modal-body{ padding:14px; }
-    .modal-body img{
-      width:100%;
-      height:auto;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:#fff;
-    }
-
-    /* ✅ Bloque nombre paciente */
-    .paciente-box{
-      margin-top:14px;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:12px;
-      background:#fbfdff;
-      display:none;
-    }
-    .paciente-box.show{ display:block; }
-    .paciente-box .t1{ font-size:12px; color:var(--muted); margin-bottom:6px; }
-    .paciente-box .t2{ font-size:16px; font-weight:800; color:var(--brand); }
-
-    /* ✅ Documento Evolución (modal) */
-    .doc-wrap{
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:16px;
-      background:#fff;
-    }
-    .doc-title{
-      font-weight:900;
-      color:var(--brand);
-      font-size:18px;
-      margin:0 0 10px;
-    }
-    .doc-meta{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:10px 14px;
-      font-size:13px;
-      color:var(--ink);
-      margin-bottom:12px;
-    }
-    .doc-meta .k{ color:var(--muted); font-size:12px; margin-bottom:2px; }
-    .doc-box{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px;
-      background:#fbfdff;
-    }
-    .doc-box .k{ color:var(--muted); font-size:12px; margin-bottom:6px; }
-    .doc-box .v{ white-space:pre-wrap; font-size:14px; }
-    .doc-firmas{
-      display:grid;
-      grid-template-columns:1fr 1fr;
       gap:12px;
-      margin-top:12px;
     }
-    @media (max-width:680px){ .doc-meta, .doc-firmas{ grid-template-columns:1fr; } }
-    .doc-firma{
-      border:1px solid var(--line);
+    .kpi{
+      background:#fff;
+      padding:14px 18px;
       border-radius:12px;
-      padding:10px;
-      background:#fff;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      font-weight:800;
+      font-size:14px;
+      min-width:160px;
     }
-    .doc-firma .k{ color:var(--muted); font-size:12px; margin-bottom:8px; }
-    .doc-firma img{
+    .kpi span{
+      display:block;
+      font-size:26px;
+      margin-top:4px;
+    }
+
+    select{
+      padding:8px 12px;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      font-weight:700;
+    }
+
+    table{
       width:100%;
-      height:auto;
-      border:1px solid var(--line);
-      border-radius:10px;
+      border-collapse:collapse;
       background:#fff;
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
     }
-    .doc-nofirma{
+    th,td{
+      padding:12px 14px;
+      border-bottom:1px solid #e5e7eb;
+      font-size:14px;
+    }
+    th{
+      background:#f9fafb;
       font-size:12px;
-      color:var(--muted);
-      padding:10px;
-      border:1px dashed var(--line);
-      border-radius:10px;
-      background:#fbfdff;
-      text-align:center;
+      color:#6b7280;
+      text-align:left;
     }
+
+    tr.hoy td{ background:#ecfeff; }
+    tr.warn td{ background:#fef3c7; }
+    tr.danger td{ background:#fee2e2; }
   </style>
 </head>
 
 <body>
-<div class="container">
+  <h1>🚨 Pendientes por evolucionar</h1>
 
-  <section class="card">
-    <div class="legend">Buscar evoluciones por cédula del paciente</div>
-
-    <div class="grid g-2" style="align-items:end;">
-      <div class="ctrl">
-        <label for="cedula_paciente">Cédula paciente</label>
-        <input id="cedula_paciente" type="text" placeholder="Ej: 10229566001"
-          inputmode="numeric" pattern="[0-9]+"
-          oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-      </div>
-
-      <div class="ctrl">
-        <label>&nbsp;</label>
-        <button type="button" class="btn btn-buscar" onclick="buscarEvolucionesPorCedula()">
-          Buscar evoluciones
-        </button>
-      </div>
+  <div class="top">
+    <div>
+      Ver pendientes últimos
+      <select id="dias" onchange="cargarPendientes()">
+        <option value="7">7 días</option>
+        <option value="14">14 días</option>
+        <option value="30">30 días</option>
+      </select>
     </div>
 
-    <!-- ✅ NOMBRE DEL PACIENTE (aparece después de buscar) -->
-    <div id="pacienteBox" class="paciente-box">
-      <div class="t1">Paciente</div>
-      <div id="pacienteNombre" class="t2">—</div>
-    </div>
-
-    <div style="margin-top:10px; font-size:12px; color:#6b7a90;">
-      Nota: Esto consulta evoluciones desde el mismo webhook de N8N que usa tu historia clínica.
-    </div>
-  </section>
-
-  <h1>Evoluciones (procedimientos realizados)</h1>
-
-  <section class="card">
-    <div class="legend">Registro de evolución</div>
-
-    <div class="grid g-3">
-      <div class="ctrl">
-        <label for="evo_fecha">Fecha</label>
-        <input id="evo_fecha" type="date" disabled>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_hora">Hora</label>
-        <input id="evo_hora" type="time" readonly>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_profesional">Profesional</label>
-        <select id="evo_profesional">
-          <option value="">Seleccione profesional...</option>
-        </select>
-      </div>
-
-      <div class="ctrl">
-        <label for="evo_tipo">Procedimiento</label>
-        <input id="evo_tipo" type="text" list="procedimientos_list_supabase"
-          placeholder="Buscar o escribir procedimiento..." autocomplete="off" />
-      </div>
-
-      <div class="ctrl full">
-        <label for="evo_detalle">Detalle / Observaciones</label>
-        <div class="vwrap">
-          <div class="vfield">
-            <textarea id="evo_detalle" placeholder="Descripción del procedimiento, piezas intervenidas, materiales, etc."></textarea>
-          </div>
-          <button
-            id="btnDictadoEvoDetalle"
-            type="button"
-            class="vbtn"
-            title="Dictar por voz"
-            aria-label="Dictar por voz"
-            onclick="toggleDictadoEvoDetalle()"
-          >🎤</button>
-        </div>
-        <div id="dictadoHintEvo" style="font-size:12px; color:#6b7a90; margin-top:6px; display:none;">
-          🎙️ Dictando... habla normal. (Se agregará al final del texto)
-        </div>
-      </div>
-
-      <!-- ✅ BOTÓN PARA MOSTRAR/OCULTAR FIRMAS -->
-      <div class="ctrl full">
-        <button type="button" id="btnToggleFirmas" class="btn btn-buscar" style="max-width:260px;" onclick="toggleFirmas()">
-          Agregar firmas
-        </button>
-        <div style="font-size:12px; color:#6b7a90; margin-top:6px;">
-          (Opcional) Solo úsalo cuando sea necesario.
-        </div>
-      </div>
-
-      <!-- ✅ FIRMA: ocultas por defecto -->
-      <div id="firmaWrapper" class="firma-wrapper full">
-
-        <div class="ctrl full">
-          <label>Firma del paciente (opcional)</label>
-          <div class="firma-box">
-            <canvas id="firma_paciente" class="firma-canvas"></canvas>
-            <div class="firma-actions">
-              <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
-              <button type="button" class="btn-mini" onclick="limpiarFirma('firma_paciente')">Limpiar firma</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="ctrl full" style="margin-top:14px;">
-          <label>Firma del profesional (opcional)</label>
-          <div class="firma-box">
-            <canvas id="firma_profesional" class="firma-canvas"></canvas>
-            <div class="firma-actions">
-              <span class="firma-hint">Dibuja con el mouse o con el dedo.</span>
-              <button type="button" class="btn-mini" onclick="limpiarFirma('firma_profesional')">Limpiar firma</button>
-            </div>
-          </div>
-        </div>
-
-      </div>
-      <!-- /firmaWrapper -->
-
-    </div>
-
-    <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-      <button type="button" onclick="agregarEvolucion()" class="btn btn-agenda" style="max-width:260px;">Agregar evolución</button>
-      <button type="button" onclick="limpiarEvolucionForm()" class="btn btn-buscar" style="max-width:260px;">Limpiar</button>
-    </div>
-
-    <div class="rowline"></div>
-
-    <div style="overflow:auto;">
-      <table class="tabla-evo">
-        <thead>
-          <tr>
-            <th>ID Evolución</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Profesional</th>
-            <th>Procedimiento</th>
-            <th>Detalle</th>
-            <th>Firmas</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tabla_evoluciones"></tbody>
-      </table>
-    </div>
-  </section>
-
-</div>
-
-<datalist id="procedimientos_list_supabase"></datalist>
-
-<!-- ✅ Modal para ver firmas -->
-<div id="modalFirma" class="modal" onclick="closeFirmaModal(event)">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-head">
-      <div id="modalFirmaTitulo" class="modal-title">Firma</div>
-      <button class="modal-close" type="button" onclick="closeFirmaModal()">Cerrar</button>
-    </div>
-    <div class="modal-body">
-      <img id="modalFirmaImg" alt="Firma" />
+    <div class="kpis">
+      <div class="kpi">Pendientes hoy<span id="kpi-hoy">0</span></div>
+      <div class="kpi">Pendientes históricos<span id="kpi-historico">0</span></div>
     </div>
   </div>
-</div>
 
-<!-- ✅ Modal para ver evolución como documento -->
-<div id="modalEvoDoc" class="modal" onclick="closeEvoDocModal(event)">
-  <div class="modal-card" onclick="event.stopPropagation()">
-    <div class="modal-head">
-      <div id="modalEvoDocTitulo" class="modal-title">Evolución</div>
-      <button class="modal-close" type="button" onclick="closeEvoDocModal()">Cerrar</button>
-    </div>
-    <div class="modal-body">
-      <div id="modalEvoDocBody" class="doc-wrap"></div>
-    </div>
-  </div>
-</div>
-
-<script>
-  // ==============================
-  // CONFIG
-  // ==============================
-  const WEBHOOK_BUSCAR_HISTORIA =
-    "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
-
-  const WEBHOOK_GUARDAR_EVOLUCION =
-    "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
-
-  // ==============================
-  // ✅ UI: NOMBRE DEL PACIENTE
-  // ==============================
-  function mostrarNombrePaciente(nombre) {
-    const box = document.getElementById("pacienteBox");
-    const el = document.getElementById("pacienteNombre");
-    if (!box || !el) return;
-
-    const clean = String(nombre || "").trim();
-    if (clean) {
-      el.textContent = clean;
-      box.classList.add("show");
-    } else {
-      el.textContent = "—";
-      box.classList.remove("show");
-    }
-  }
-
-  function unwrapWebhookRespuesta(data) {
-    if (Array.isArray(data)) return data[0] ?? {};
-    if (data && typeof data === "object" && data.data && typeof data.data === "object") return data.data;
-    return data ?? {};
-  }
-
-  function extraerNombrePaciente(raw) {
-    const data = unwrapWebhookRespuesta(raw);
-
-    const directo = data?.["Nombre y apellido"];
-    if (String(directo || "").trim()) return String(directo).trim();
-
-    const candidatos = [
-      data?.["Nombre y Apellido"],
-      data?.["nombre y apellido"],
-      data?.["NOMBRE Y APELLIDO"],
-      data?.nombre_apellido,
-      data?.nombre_y_apellido,
-      data?.nombreCompleto,
-      data?.nombre_completo,
-      data?.nombre_paciente,
-      data?.paciente?.["Nombre y apellido"],
-      data?.paciente?.nombre,
-      data?.paciente?.nombre_completo,
-      data?.historia?.["Nombre y apellido"],
-      data?.historia?.nombre_paciente,
-      data?.historia?.paciente?.nombre
-    ];
-
-    for (const c of candidatos) {
-      const s = String(c || "").trim();
-      if (s) return s;
-    }
-
-    return "";
-  }
-
-  // ==============================
-  // ✅ FIX: FETCH SEGURO
-  // ==============================
-  async function fetchJSONSeguro(url) {
-    const resp = await fetch(url, { cache: "no-store" });
-    const text = await resp.text();
-
-    try {
-      return { ok: true, data: JSON.parse(text), status: resp.status, raw: text };
-    } catch (e) {
-      return { ok: false, data: null, status: resp.status, raw: text };
-    }
-  }
-
-  // ==============================
-  // UTILIDADES
-  // ==============================
-  function _uuidFallback() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
-  function uuid() {
-    try { return (crypto && crypto.randomUUID) ? crypto.randomUUID() : _uuidFallback(); }
-    catch(e){ return _uuidFallback(); }
-  }
-  function _hoyISO() { return new Date().toISOString().slice(0, 10); }
-  function _horaHHMM() {
-    const d = new Date();
-    return String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0");
-  }
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
-  }
-  function _soloFechaYYYYMMDD(valor) {
-    if (!valor) return "";
-    if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
-    return String(valor);
-  }
-  function _soloHoraHHMM(valor) {
-    if (!valor) return "";
-    const s = String(valor);
-    if (/^\d{2}:\d{2}:\d{2}/.test(s)) return s.slice(0,5);
-    return s;
-  }
-
-  // ==============================
-  // ✅ TOGGLE FIRMAS
-  // ==============================
-  function toggleFirmas(forceState) {
-    const wrap = document.getElementById("firmaWrapper");
-    const btn = document.getElementById("btnToggleFirmas");
-    if (!wrap || !btn) return;
-
-    const isShowing = wrap.classList.contains("show");
-    const next = (typeof forceState === "boolean") ? forceState : !isShowing;
-
-    if (next) {
-      wrap.classList.add("show");
-      btn.textContent = "Ocultar firmas";
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          try {
-            _ensureFirmasInit();
-            _refreshCanvasSizes(true);
-          } catch(e) {}
-        });
-      });
-    } else {
-      wrap.classList.remove("show");
-      btn.textContent = "Agregar firmas";
-    }
-  }
-
-  // ==============================
-  // ✅ FIRMA EN CANVAS
-  // ==============================
-  let _firmasIniciadas = false;
-
-  const firmas = {
-    firma_paciente: { canvas: null, ctx: null, drawing: false, hasInk: false },
-    firma_profesional: { canvas: null, ctx: null, drawing: false, hasInk: false }
-  };
-
-  function _resizeCanvasToCSS(canvas) {
-    const rect = canvas.getBoundingClientRect();
-    if (!rect.width || !rect.height || rect.width < 5 || rect.height < 5) return false;
-
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.max(1, Math.round(rect.width * dpr));
-    const h = Math.max(1, Math.round(rect.height * dpr));
-    if (canvas.width !== w || canvas.height !== h) {
-      canvas.width = w;
-      canvas.height = h;
-    }
-    return true;
-  }
-
-  function _paintWhiteBg(ctx, canvas){
-    ctx.save();
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.globalCompositeOperation = "source-over";
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.restore();
-  }
-
-  function _setupFirmaCanvas(id) {
-    const f = firmas[id];
-    if (!f?.canvas || !f?.ctx) return;
-
-    const ok = _resizeCanvasToCSS(f.canvas);
-    if (!ok) return;
-
-    _paintWhiteBg(f.ctx, f.canvas);
-    f.ctx.lineWidth = 3;
-    f.ctx.lineCap = "round";
-    f.ctx.lineJoin = "round";
-    f.ctx.strokeStyle = "#111";
-  }
-
-  function _initFirma(id) {
-    const canvas = document.getElementById(id);
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    firmas[id].canvas = canvas;
-    firmas[id].ctx = ctx;
-
-    _setupFirmaCanvas(id);
-
-    function getPos(evt) {
-      const rect = canvas.getBoundingClientRect();
-      const dpr = window.devicePixelRatio || 1;
-
-      let clientX, clientY;
-
-      if (evt.touches && evt.touches.length) {
-        clientX = evt.touches[0].clientX;
-        clientY = evt.touches[0].clientY;
-      } else {
-        clientX = evt.clientX;
-        clientY = evt.clientY;
-      }
-
-      const x = (clientX - rect.left) * dpr;
-      const y = (clientY - rect.top) * dpr;
-      return { x, y };
-    }
-
-    function start(evt) {
-  evt.preventDefault();
-
-  firmas[id].drawing = true;
-  const p = getPos(evt);
-  ctx.beginPath();
-  ctx.moveTo(p.x, p.y);
-}
-
-    function move(evt) {
-      if (!firmas[id].drawing) return;
-      evt.preventDefault();
-      const p = getPos(evt);
-      ctx.lineTo(p.x, p.y);
-      ctx.stroke();
-      firmas[id].hasInk = true;
-    }
-
-    function end(evt) {
-      if (!firmas[id].drawing) return;
-      evt.preventDefault();
-      firmas[id].drawing = false;
-      ctx.closePath();
-    }
-
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", end);
-
-    canvas.addEventListener("touchstart", start, { passive: false });
-    canvas.addEventListener("touchmove", move, { passive: false });
-    canvas.addEventListener("touchend", end, { passive: false });
-    canvas.addEventListener("touchcancel", end, { passive: false });
-
-    window.addEventListener("resize", () => {
-      const f = firmas[id];
-      if (!f?.canvas || !f?.ctx) return;
-
-      const wasInk = !!f.hasInk;
-      const dataUrl = wasInk ? f.canvas.toDataURL("image/png") : "";
-
-      _setupFirmaCanvas(id);
-
-      if (dataUrl) {
-        const img = new Image();
-        img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
-        img.src = dataUrl;
-      }
-    });
-  }
-
-  function _ensureFirmasInit() {
-    if (_firmasIniciadas) return;
-    _initFirma("firma_paciente");
-    _initFirma("firma_profesional");
-    _firmasIniciadas = true;
-  }
-
-  function _refreshCanvasSizes(preserveInk = true) {
-    ["firma_paciente", "firma_profesional"].forEach(id => {
-      const f = firmas[id];
-      if (!f?.canvas || !f?.ctx) return;
-
-      const rect = f.canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height || rect.width < 5 || rect.height < 5) return;
-
-      const hadInk = !!f.hasInk;
-      const dataUrl = (preserveInk && hadInk) ? f.canvas.toDataURL("image/png") : "";
-
-      _setupFirmaCanvas(id);
-
-      if (dataUrl) {
-        const img = new Image();
-        img.onload = () => { f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height); };
-        img.src = dataUrl;
-      }
-    });
-  }
-
-  function limpiarFirma(id) {
-    _ensureFirmasInit();
-    const f = firmas[id];
-    if (!f?.canvas || !f?.ctx) return;
-
-    _setupFirmaCanvas(id);
-    if (f.canvas.width > 1 && f.canvas.height > 1) {
-      _paintWhiteBg(f.ctx, f.canvas);
-    }
-    f.hasInk = false;
-  }
-
-  function obtenerFirmaBase64(id) {
-    _ensureFirmasInit();
-    const f = firmas[id];
-    if (!f?.canvas) return "";
-    if (!f.hasInk) return "";
-    return f.canvas.toDataURL("image/png");
-  }
-
-  // ==============================
-  // ✅ MODAL VER FIRMA
-  // ==============================
-  function openFirmaModal(titulo, dataUrl) {
-    const modal = document.getElementById("modalFirma");
-    const img = document.getElementById("modalFirmaImg");
-    const t = document.getElementById("modalFirmaTitulo");
-    if (!modal || !img || !t) return;
-
-    t.textContent = titulo || "Firma";
-    img.src = dataUrl;
-    modal.classList.add("show");
-  }
-
-  function closeFirmaModal(evt) {
-    const modal = document.getElementById("modalFirma");
-    if (!modal) return;
-    modal.classList.remove("show");
-  }
-
-  // ==============================
-  // ✅ MODAL VER EVOLUCIÓN COMO DOCUMENTO
-  // ==============================
-  function openEvolucionDoc(idx) {
-    const modal = document.getElementById("modalEvoDoc");
-    const body = document.getElementById("modalEvoDocBody");
-    const title = document.getElementById("modalEvoDocTitulo");
-    if (!modal || !body || !title) return;
-
-    const evo = evoluciones?.[idx];
-    if (!evo) return;
-
-    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-    const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
-    const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
-    const profesional = evo.profesional ?? evo.evo_profesional ?? "";
-    const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
-    const detalle = evo.detalle ?? evo.evo_detalle ?? "";
-
-    const fp = evo.firma_paciente || "";
-    const fpr = evo.firma_profesional || "";
-
-    const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
-    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
-
-    title.textContent = "Evolución (Documento)";
-
-    body.innerHTML = `
-      <div class="doc-title">Evolución clínica odontológica</div>
-
-      <div class="doc-meta">
-        <div class="doc-box">
-          <div class="k">Paciente</div>
-          <div class="v">${escapeHtml(paciente || "—")}</div>
-        </div>
-        <div class="doc-box">
-          <div class="k">Cédula</div>
-          <div class="v">${escapeHtml(cedula || "—")}</div>
-        </div>
-
-        <div class="doc-box">
-          <div class="k">ID Evolución</div>
-          <div class="v" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-            ${escapeHtml(idEvo)}
-          </div>
-        </div>
-        <div class="doc-box">
-          <div class="k">Fecha / Hora</div>
-          <div class="v">${escapeHtml((fecha || "—") + " " + (hora || ""))}</div>
-        </div>
-
-        <div class="doc-box">
-          <div class="k">Profesional</div>
-          <div class="v">${escapeHtml(String(profesional).toUpperCase())}</div>
-        </div>
-        <div class="doc-box">
-          <div class="k">Procedimiento</div>
-          <div class="v">${escapeHtml(String(procedimiento).toUpperCase())}</div>
-        </div>
-      </div>
-
-      <div class="doc-box">
-        <div class="k">Detalle / Observaciones</div>
-        <div class="v">${escapeHtml(detalle)}</div>
-      </div>
-
-      <div class="doc-firmas">
-        <div class="doc-firma">
-          <div class="k">Firma del paciente</div>
-          ${
-            fp
-              ? `<img src="${fp}" alt="Firma del paciente" />`
-              : `<div class="doc-nofirma">Sin firma del paciente</div>`
-          }
-        </div>
-        <div class="doc-firma">
-          <div class="k">Firma del profesional</div>
-          ${
-            fpr
-              ? `<img src="${fpr}" alt="Firma del profesional" />`
-              : `<div class="doc-nofirma">Sin firma del profesional</div>`
-          }
-        </div>
-      </div>
-    `;
-
-    modal.classList.add("show");
-  }
-
-  function closeEvoDocModal(evt) {
-    const modal = document.getElementById("modalEvoDoc");
-    if (!modal) return;
-    modal.classList.remove("show");
-  }
-
-  // ==============================
-  // ✅ PROCEDIMIENTOS DESDE SUPABASE
-  // ==============================
-  async function cargarProcedimientosDesdeSupabase() {
-    const dl = document.getElementById("procedimientos_list_supabase");
-    if (!dl) return;
-
-    let tries = 0;
-    while (!window.supabase && tries < 40) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.supabase) return;
-
-    try {
-      const { data, error } = await window.supabase
-        .from("procedimientos_precios")
-        .select("procedimiento, activo")
-        .eq("activo", true)
-        .order("procedimiento", { ascending: true });
-
-      if (error) throw error;
-
-      const items = (data || [])
-        .map(x => String(x.procedimiento || "").trim())
-        .filter(Boolean);
-
-      dl.innerHTML = items.map(p => `<option value="${escapeHtml(p)}"></option>`).join("");
-    } catch (e) {
-      console.warn("⚠️ Error cargando procedimientos:", e);
-    }
-  }
-
-  // ==============================
-  // ✅ PROFESIONALES DESDE SUPABASE
-  // ==============================
-  async function cargarProfesionalesDesdeSupabase() {
-    let tries = 0;
-    while (!window.supabase && tries < 40) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.supabase) return;
-
-    const selEvo = document.getElementById("evo_profesional");
-    if (!selEvo) return;
-
-    const placeholder = `<option value="">Seleccione profesional...</option>`;
-    selEvo.innerHTML = placeholder;
-
-    try {
-      const { data, error } = await window.supabase
-        .from("profesionales")
-        .select("id, nombre, cedula, activo")
-        .eq("activo", true)
-        .order("nombre", { ascending: true });
-
-      if (error) throw error;
-
-      const options = (data || []).map(p => {
-        const nombre = (p.nombre || "").trim();
-        const cedula = (p.cedula || "").trim();
-        const valor = nombre;   // ✅ solo nombre
-        return `<option value="${escapeHtml(valor)}">${escapeHtml(nombre)}</option>`;
-
-      }).join("");
-
-      selEvo.innerHTML = placeholder + options;
-
-    } catch (e) {
-      console.warn("⚠️ Error cargando profesionales:", e);
-    }
-  }
-
-  // ==============================
-  // ✅ EVOLUCIONES
-  // ==============================
-  let evoluciones = [];
-  let _cedulaActual = "";
-
-  function limpiarEvolucionForm() {
-    const f = document.getElementById("evo_fecha");
-    const h = document.getElementById("evo_hora");
-    const p = document.getElementById("evo_profesional");
-    const t = document.getElementById("evo_tipo");
-    const d = document.getElementById("evo_detalle");
-
-    if (f) f.value = _hoyISO();
-    if (h) h.value = _horaHHMM();
-    if (p) p.value = "";
-    if (t) t.value = "";
-    if (d) d.value = "";
-
-    limpiarFirma("firma_paciente");
-    limpiarFirma("firma_profesional");
-    toggleFirmas(false);
-  }
-
-  function generarEvolucionId() { return uuid(); }
-
-  function normalizarEvolucionesDeWebhook(raw) {
-    const data = unwrapWebhookRespuesta(raw);
-
-    let evol = data?.evoluciones;
-
-    if (evol && !Array.isArray(evol) && typeof evol === "object" && Array.isArray(evol.evoluciones)) {
-      evol = evol.evoluciones;
-    }
-
-    if (typeof evol === "string") {
-      try { evol = JSON.parse(evol); } catch(e) { evol = []; }
-    }
-    if (!Array.isArray(evol)) evol = [];
-
-    return evol.map((e) => ({
-      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
-      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
-      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
-      profesional: e.profesional ?? e.evo_profesional ?? "",
-      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
-      detalle: e.detalle ?? e.evo_detalle ?? "",
-      firma_paciente: e.firma_paciente ?? "",
-      firma_profesional: e.firma_profesional ?? "",
-      created_at: e.created_at ?? null,
-      ts: e.ts ?? e.created_at ?? new Date().toISOString()
-    }));
-  }
-
-  function renderEvoluciones() {
-    const tbody = document.getElementById("tabla_evoluciones");
-    if (!tbody) return;
-
-    tbody.innerHTML = "";
-
-    if (!evoluciones || evoluciones.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
-            Paciente sin evoluciones
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    evoluciones.forEach((evo, idx) => {
-      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
-      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
-      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
-      const procedimiento = evo.procedimiento ?? evo.evo_tipo ?? "";
-      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
-
-      const fp = evo.firma_paciente || "";
-      const fpr = evo.firma_profesional || "";
-
-      const btnFirmas = `
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          ${
-            fp
-              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-                    onclick="openFirmaModal('Firma del paciente', '${fp}')">Ver firma paciente</button>`
-              : `<span style="font-size:12px; color:#6b7a90;">Sin firma paciente</span>`
-          }
-          ${
-            fpr
-              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-                    onclick="openFirmaModal('Firma del profesional', '${fpr}')">Ver firma profesional</button>`
-              : `<span style="font-size:12px; color:#6b7a90;">Sin firma profesional</span>`
-          }
-        </div>
-      `;
-
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}
-        </td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td>${btnFirmas}</td>
-        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
-          <button
-            type="button"
-            class="btn btn-buscar"
-            style="padding:8px 10px; width:auto;"
-            disabled
-            title="No permitido"
-          >
-            Eliminar
-          </button>
-
-          <button
-            type="button"
-            class="btn btn-agenda"
-            style="padding:8px 10px; width:auto;"
-            onclick="openEvolucionDoc(${idx})"
-            title="Ver evolución como documento"
-          >
-            Ver
-          </button>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    });
-  }
-
-  function eliminarEvolucion(idx) {
-    evoluciones.splice(idx, 1);
-    renderEvoluciones();
-  }
-
-  async function agregarEvolucion() {
-    const fecha = (document.getElementById("evo_fecha").value || _hoyISO()).trim();
-    const hora = (document.getElementById("evo_hora").value || _horaHHMM()).trim();
-    const profesional = (document.getElementById("evo_profesional").value || "").trim();
-    const tipo = (document.getElementById("evo_tipo").value || "").trim();
-    const detalle = (document.getElementById("evo_detalle").value || "").trim();
-
-    if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
-    if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-
-    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
-    if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
-
-    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-
-    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
-    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
-
-    const item = {
-      id: generarEvolucionId(),
-      fecha,
-      hora,
-      profesional,
-      procedimiento: tipo,
-      detalle,
-      firma_paciente: firmaPaciente,
-      firma_profesional: firmaProfesional,
-      cedula_paciente: cedula,
-      usuario,
-      ts: new Date().toISOString()
-    };
-
-    evoluciones.unshift(item);
-    renderEvoluciones();
-    limpiarEvolucionForm();
-
-    try {
-      const payload = {
-        evento: "agregar_evolucion",
-        cedula: cedula,
-        evolucion: item,
-        fecha_envio: new Date().toISOString(),
-        usuario_logueado: usuario
-      };
-
-      const resp = await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-    } catch (err) {
-      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
-      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
-    }
-  }
-
-  async function buscarEvolucionesPorCedula() {
-    const cedula = (document.getElementById("cedula_paciente")?.value || "").trim();
-    if (!cedula) { alert("Ingrese una cédula"); return; }
-
-    _cedulaActual = cedula;
-
-    mostrarNombrePaciente("");
-    evoluciones = [];
-    renderEvoluciones();
-
-    const url = WEBHOOK_BUSCAR_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
-
-    try {
-      const r = await fetchJSONSeguro(url);
-
-      if (!r.ok) {
-        evoluciones = [];
-        renderEvoluciones();
-        return;
-      }
-
-      const raw = r.data;
-      const data = unwrapWebhookRespuesta(raw);
-
-      const nombre = extraerNombrePaciente(raw);
-      mostrarNombrePaciente(nombre);
-
-      const existe = (data?.existe !== undefined) ? !!data.existe
-                   : (raw?.existe !== undefined) ? !!raw.existe
-                   : (data?.historia?.existe !== undefined) ? !!data.historia.existe
-                   : false;
-
-      if (!existe) {
-        evoluciones = [];
-        renderEvoluciones();
-        return;
-      }
-
-      evoluciones = normalizarEvolucionesDeWebhook(raw);
-      renderEvoluciones();
-
-    } catch (err) {
-      console.error(err);
-      alert("Error consultando N8N: " + (err?.message || err));
-    }
-  }
-
-  // ==============================
-  // ✅ AUTOLOAD CONTROLADO (NUEVO)
-  // ==============================
-  function getCedulaAuto() {
-    const params = new URLSearchParams(window.location.search);
-
-    // ✅ Solo autoload si viene explícitamente auto=1
-    const auto = (params.get("auto") || "").trim();
-    if (auto !== "1") return "";
-
-    // 1) si vienes por URL: evoluciones.html?auto=1&cedula=123
-    const q = (params.get("cedula") || "").trim();
-    if (q) return q;
-
-    // 2) si vienes por localStorage (desde historias-clinicas.html)
-    const ls = (localStorage.getItem("cedula_paciente_actual") || "").trim();
-    if (ls) return ls;
-
-    return "";
-  }
-
-  async function autoloadEvolucionesSiHayPaciente() {
-    const ced = getCedulaAuto();
-    if (!ced) return;
-
-    const inp = document.getElementById("cedula_paciente");
-    if (inp) inp.value = ced;
-
-    _cedulaActual = ced;
-    await buscarEvolucionesPorCedula();
-  }
-
-  // ==============================
-  // INIT
-  // ==============================
-  document.addEventListener("DOMContentLoaded", async () => {
-    _ensureFirmasInit();
-    limpiarEvolucionForm();
-    mostrarNombrePaciente("");
-
-    await cargarProcedimientosDesdeSupabase();
-    await cargarProfesionalesDesdeSupabase();
-
-    // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
-    await autoloadEvolucionesSiHayPaciente();
-  });
-
-  // Exponer
-  window.buscarEvolucionesPorCedula = buscarEvolucionesPorCedula;
-  window.agregarEvolucion = agregarEvolucion;
-  window.eliminarEvolucion = eliminarEvolucion;
-  window.limpiarEvolucionForm = limpiarEvolucionForm;
-
-  window.limpiarFirma = limpiarFirma;
-  window.toggleFirmas = toggleFirmas;
-
-  window.openFirmaModal = openFirmaModal;
-  window.closeFirmaModal = closeFirmaModal;
-
-  window.openEvolucionDoc = openEvolucionDoc;
-  window.closeEvoDocModal = closeEvoDocModal;
-</script>
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Hora</th>
+        <th>Paciente</th>
+        <th>Documento</th>
+        <th>Profesional</th>
+        <th>Atraso</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="6">Cargando...</td></tr>
+    </tbody>
+  </table>
 </body>
 </html>
+
 
 
 
