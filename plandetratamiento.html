@@ -533,6 +533,16 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       .panel{ width: 95vw; }
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
+
+    /* ✅ Input Abono más compacto */
+.input-abono{
+  padding: 6px 10px !important;
+  height: 34px;
+  font-size: 14px;
+  border-radius: 10px;
+  width: 160px;
+}
+
   </style>
 </head>
 
@@ -1590,7 +1600,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     const abonoRow = document.createElement("span");
     abonoRow.innerHTML = `
       <strong>Abono:</strong>
-      $ <input id="abono_valor" type="number" min="0" step="100"
+      $ <input id="abono_valor" class="input-abono" type="number" min="0" step="100"
           value="0"
           style="margin-top:6px;width:160px;">
     `;
