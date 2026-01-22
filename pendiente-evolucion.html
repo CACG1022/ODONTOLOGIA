@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Pendientes por evolucionar (últimos días)</title>
+  <title>Pendientes por evolucionar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script type="module">
@@ -15,18 +15,24 @@
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-    async function verificarSesion() {
+    async function verificarSesion(){
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) {
+      if (!session){
         window.location.href = LOGIN_URL;
         return false;
       }
       return true;
     }
 
+    function soloFecha(d){
+      const x = new Date(d);
+      x.setHours(0,0,0,0);
+      return x;
+    }
+
     function diffDias(fecha){
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-      const f = new Date(fecha); f.setHours(0,0,0,0);
+      const hoy = soloFecha(new Date());
+      const f = soloFecha(fecha);
       return Math.floor((hoy - f) / (1000*60*60*24));
     }
 
@@ -42,7 +48,6 @@
       desde.setDate(desde.getDate() - dias);
       desde.setHours(0,0,0,0);
 
-      // 1️⃣ Citas atendidas en rango
       const { data: citas, error: eCitas } = await supabase
         .from("citas")
         .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
@@ -50,20 +55,19 @@
         .gte("inicio", desde.toISOString())
         .lte("inicio", hoy.toISOString());
 
-      if (eCitas) {
+      if (eCitas){
         console.error(eCitas);
         document.getElementById("tbody").innerHTML =
           '<tr><td colspan="6">Error cargando citas</td></tr>';
         return;
       }
 
-      if (!citas || citas.length === 0) {
+      if (!citas || citas.length === 0){
         document.getElementById("tbody").innerHTML =
           '<tr><td colspan="6">No hay citas atendidas en este rango</td></tr>';
         return;
       }
 
-      // 2️⃣ Evoluciones (sin filtrar por fecha)
       const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean))];
 
       const { data: evos, error: eEvos } = await supabase
@@ -71,40 +75,37 @@
         .select("paciente_numdoc, evo_fecha")
         .in("paciente_numdoc", documentos);
 
-      if (eEvos) {
+      if (eEvos){
         console.error(eEvos);
         document.getElementById("tbody").innerHTML =
           '<tr><td colspan="6">Error cargando evoluciones</td></tr>';
         return;
       }
 
-      // Mapear evoluciones por paciente
       const evoMap = {};
       (evos || []).forEach(e => {
         const doc = String(e.paciente_numdoc);
         if (!evoMap[doc]) evoMap[doc] = [];
-        evoMap[doc].push(new Date(e.evo_fecha));
+        evoMap[doc].push(soloFecha(e.evo_fecha));
       });
 
       const tbody = document.getElementById("tbody");
       tbody.innerHTML = "";
 
-      let pendientesHoy = 0;
-      let pendientesHistoricos = 0;
+      let hoyCount = 0;
+      let histCount = 0;
 
       citas.forEach(c => {
         const doc = String(c.documento_paciente || "");
-        const fechaCita = new Date(c.inicio);
+        const fechaCita = soloFecha(c.inicio);
 
-        const evolucionesPaciente = evoMap[doc] || [];
+        const evosPaciente = evoMap[doc] || [];
+        const tieneEvo = evosPaciente.some(f => f >= fechaCita);
 
-        // ¿Existe evolución POSTERIOR a la cita?
-        const tieneEvo = evolucionesPaciente.some(evoFecha => evoFecha >= fechaCita);
-
-        if (!tieneEvo) {
+        if (!tieneEvo){
           const atraso = diffDias(fechaCita);
-          if (atraso === 0) pendientesHoy++;
-          else pendientesHistoricos++;
+          if (atraso === 0) hoyCount++;
+          else histCount++;
 
           const clase =
             atraso === 0 ? "hoy" :
@@ -114,8 +115,8 @@
           const tr = document.createElement("tr");
           tr.className = clase;
           tr.innerHTML = `
-            <td>${fechaCita.toLocaleDateString("es-CO")}</td>
-            <td>${fechaCita.toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
+            <td>${new Date(c.inicio).toLocaleDateString("es-CO")}</td>
+            <td>${new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
             <td>${c.nombre_paciente || "—"}</td>
             <td>${c.documento_paciente || "—"}</td>
             <td>${c.nombre_profesional || "—"}</td>
@@ -125,10 +126,10 @@
         }
       });
 
-      document.getElementById("kpi-hoy").textContent = pendientesHoy;
-      document.getElementById("kpi-historico").textContent = pendientesHistoricos;
+      document.getElementById("kpi-hoy").textContent = hoyCount;
+      document.getElementById("kpi-historico").textContent = histCount;
 
-      if (tbody.children.length === 0) {
+      if (tbody.children.length === 0){
         tbody.innerHTML =
           '<tr><td colspan="6">✅ No hay pacientes pendientes por evolucionar</td></tr>';
       }
@@ -242,3 +243,4 @@
   </table>
 </body>
 </html>
+
