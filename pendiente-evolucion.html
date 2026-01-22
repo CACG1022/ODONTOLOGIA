@@ -2,16 +2,15 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Pacientes pendientes por evolucionar</title>
+  <title>Pendientes por Evolucionar</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // 🔐 Supabase
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsImVmIjoiZG1jZnJtcHFsIiwicm9sZSI6ImFub24ifQ"
     );
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -25,159 +24,187 @@
       return true;
     }
 
-    function soloFechaISO(d){
-      const x = new Date(d);
-      x.setHours(0,0,0,0);
-      return x.toISOString();
+    function daysDiff(fecha) {
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const f = new Date(fecha); f.setHours(0,0,0,0);
+      return Math.floor((hoy - f) / (1000 * 60 * 60 * 24));
     }
 
     async function cargarPendientes() {
-      const ok = await verificarSesion();
-      if (!ok) return;
+      if (!await verificarSesion()) return;
 
-      const hoy = new Date();
-      const inicio = new Date(hoy); inicio.setHours(0,0,0,0);
-      const fin    = new Date(hoy); fin.setHours(23,59,59,999);
+      const dias = Number(document.getElementById("dias").value || 7);
+      const hoy = new Date(); hoy.setHours(23,59,59,999);
+      const desde = new Date(); desde.setDate(desde.getDate() - dias); desde.setHours(0,0,0,0);
 
-      // 1️⃣ Citas atendidas hoy
+      // 1️⃣ Citas atendidas
       const { data: citas, error: eCitas } = await supabase
         .from("citas")
-        .select(`
-          id,
-          inicio,
-          nombre_paciente,
-          documento_paciente,
-          nombre_profesional
-        `)
+        .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
         .eq("estado", "atendida")
-        .gte("inicio", inicio.toISOString())
-        .lte("inicio", fin.toISOString());
+        .gte("inicio", desde.toISOString())
+        .lte("inicio", hoy.toISOString());
 
       if (eCitas) {
-        console.error("Error citas:", eCitas);
-        document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="5">Error cargando citas</td></tr>';
+        console.error(eCitas);
         return;
       }
 
       if (!citas || citas.length === 0) {
         document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="5">No hay citas atendidas hoy</td></tr>';
+          '<tr><td colspan="6">No hay citas atendidas en este rango</td></tr>';
         return;
       }
 
-      const documentos = citas
-        .map(c => c.documento_paciente)
-        .filter(Boolean);
+      const documentos = citas.map(c => c.documento_paciente).filter(Boolean);
 
-      // 2️⃣ Evoluciones de hoy (por documento del paciente)
-      const { data: evos, error: eEvos } = await supabase
+      // 2️⃣ Evoluciones
+      const { data: evos } = await supabase
         .from("EVOLUCIONES")
-        .select("paciente_numdoc, evo_fecha")
-        .in("paciente_numdoc", documentos)
-        .gte("evo_fecha", inicio.toISOString())
-        .lte("evo_fecha", fin.toISOString());
+        .select("paciente_numdoc")
+        .in("paciente_numdoc", documentos);
 
-      if (eEvos) {
-        console.error("Error evoluciones:", eEvos);
-        document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="5">Error cargando evoluciones</td></tr>';
-        return;
-      }
-
-      const evolucionados = new Set(
-        (evos || []).map(e => String(e.paciente_numdoc))
-      );
-
-      const pendientes = citas.filter(c =>
-        !evolucionados.has(String(c.documento_paciente))
-      );
+      const evolucionados = new Set((evos || []).map(e => String(e.paciente_numdoc)));
 
       const tbody = document.getElementById("tbody");
       tbody.innerHTML = "";
 
-      if (pendientes.length === 0) {
-        tbody.innerHTML =
-          '<tr><td colspan="5">✅ Todos los pacientes atendidos hoy tienen evolución</td></tr>';
-        return;
-      }
+      let hoyCount = 0;
+      let historicoCount = 0;
 
-      pendientes.forEach(p => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${new Date(p.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
-          <td>${p.nombre_paciente || "—"}</td>
-          <td>${p.documento_paciente || "—"}</td>
-          <td>${p.nombre_profesional || "—"}</td>
-          <td><span class="alerta">Pendiente</span></td>
-        `;
-        tbody.appendChild(tr);
+      citas.forEach(c => {
+        if (!evolucionados.has(String(c.documento_paciente))) {
+          const atraso = daysDiff(c.inicio);
+          if (atraso === 0) hoyCount++;
+          else historicoCount++;
+
+          const clase =
+            atraso === 0 ? "hoy" :
+            atraso === 1 ? "warn" :
+            "danger";
+
+          const tr = document.createElement("tr");
+          tr.className = clase;
+          tr.innerHTML = `
+            <td>${new Date(c.inicio).toLocaleDateString("es-CO")}</td>
+            <td>${new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
+            <td>${c.nombre_paciente || "—"}</td>
+            <td>${c.documento_paciente || "—"}</td>
+            <td>${c.nombre_profesional || "—"}</td>
+            <td>${atraso === 0 ? "HOY" : atraso + " días"}</td>
+          `;
+          tbody.appendChild(tr);
+        }
       });
+
+      document.getElementById("kpi-hoy").textContent = hoyCount;
+      document.getElementById("kpi-historico").textContent = historicoCount;
     }
 
-    cargarPendientes();
+    window.addEventListener("DOMContentLoaded", cargarPendientes);
   </script>
 
   <style>
     body{
       margin:0;
-      font-family: Inter, Arial, sans-serif;
-      background:#f3f5f7;
       padding:30px;
+      background:#f4f6f8;
+      font-family: Inter, Arial, sans-serif;
       color:#1f2937;
     }
-    h1{
+    h1{ margin-bottom:10px; }
+
+    .top{
+      display:flex;
+      gap:20px;
+      flex-wrap:wrap;
+      align-items:center;
       margin-bottom:20px;
     }
+    .kpis{
+      display:flex;
+      gap:12px;
+    }
+    .kpi{
+      background:#fff;
+      padding:14px 18px;
+      border-radius:12px;
+      box-shadow:0 6px 18px rgba(0,0,0,.08);
+      font-weight:800;
+      font-size:14px;
+    }
+    .kpi span{
+      display:block;
+      font-size:26px;
+      margin-top:4px;
+    }
+
+    select{
+      padding:8px 12px;
+      border-radius:10px;
+      border:1px solid #d1d5db;
+      font-weight:700;
+    }
+
     table{
       width:100%;
       border-collapse:collapse;
       background:#fff;
-      border-radius:12px;
+      border-radius:14px;
       overflow:hidden;
-      box-shadow:0 10px 25px rgba(0,0,0,.08);
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
     }
     th,td{
       padding:12px 14px;
       border-bottom:1px solid #e5e7eb;
-      text-align:left;
       font-size:14px;
     }
     th{
       background:#f9fafb;
-      font-weight:800;
-      font-size:13px;
-      color:#6b7280;
-    }
-    tr:last-child td{
-      border-bottom:none;
-    }
-    .alerta{
-      padding:6px 12px;
-      border-radius:999px;
-      background:#fee2e2;
-      color:#991b1b;
-      font-weight:800;
       font-size:12px;
+      color:#6b7280;
+      text-align:left;
     }
+
+    tr.hoy td{ background:#ecfeff; }
+    tr.warn td{ background:#fef3c7; }
+    tr.danger td{ background:#fee2e2; }
+
   </style>
 </head>
 
 <body>
-  <h1>🚨 Pacientes pendientes por evolucionar (HOY)</h1>
+  <h1>🚨 Pendientes por evolucionar</h1>
+
+  <div class="top">
+    <div>
+      Ver pendientes últimos
+      <select id="dias" onchange="cargarPendientes()">
+        <option value="7">7 días</option>
+        <option value="14">14 días</option>
+        <option value="30">30 días</option>
+      </select>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi">Pendientes hoy<span id="kpi-hoy">0</span></div>
+      <div class="kpi">Pendientes históricos<span id="kpi-historico">0</span></div>
+    </div>
+  </div>
 
   <table>
     <thead>
       <tr>
+        <th>Fecha</th>
         <th>Hora</th>
         <th>Paciente</th>
         <th>Documento</th>
         <th>Profesional</th>
-        <th>Estado</th>
+        <th>Atraso</th>
       </tr>
     </thead>
     <tbody id="tbody">
-      <tr><td colspan="5">Cargando...</td></tr>
+      <tr><td colspan="6">Cargando...</td></tr>
     </tbody>
   </table>
 </body>
