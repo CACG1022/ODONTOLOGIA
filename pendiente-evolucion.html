@@ -69,7 +69,7 @@
         return;
       }
 
-      // 2️⃣ Evoluciones (SOLO FECHA)
+      // 2️⃣ Evoluciones (por documento, SOLO FECHA)
       const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean))];
 
       const { data: evos, error: eEvos } = await supabase
@@ -84,13 +84,13 @@
         return;
       }
 
-      // Mapear evoluciones por documento y FECHA
+      // Mapear evoluciones por documento (lista de fechas)
       const evoMap = {};
       (evos || []).forEach(e => {
         const doc = String(e.paciente_numdoc);
         const f = fechaISO(e.evo_fecha);
-        if (!evoMap[doc]) evoMap[doc] = new Set();
-        evoMap[doc].add(f);
+        if (!evoMap[doc]) evoMap[doc] = [];
+        evoMap[doc].push(f);
       });
 
       const tbody = document.getElementById("tbody");
@@ -103,11 +103,11 @@
         const doc = String(c.documento_paciente || "");
         const fechaCita = fechaISO(c.inicio);
 
-        const fechasEvo = evoMap[doc] || new Set();
+        const fechasEvo = evoMap[doc] || [];
 
-        // 🔑 REGLA FINAL:
-        // Si existe evolución MISMO DÍA de la cita → EVOLUCIONADO
-        const tieneEvo = fechasEvo.has(fechaCita);
+        // 🔑 REGLA DEFINITIVA:
+        // Si existe ALGUNA evolución con fecha >= fecha de la cita → EVOLUCIONADO
+        const tieneEvo = fechasEvo.some(f => f >= fechaCita);
 
         if (!tieneEvo){
           const atraso = diffDias(fechaCita);
@@ -250,4 +250,3 @@
   </table>
 </body>
 </html>
-
