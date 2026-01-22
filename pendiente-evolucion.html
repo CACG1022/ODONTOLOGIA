@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Pacientes pendientes por evolucionar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // 🔐 Supabase
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+
+    async function verificarSesion() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      return true;
+    }
+
+    async function cargarPendientes() {
+      const ok = await verificarSesion();
+      if (!ok) return;
+
+      const inicio = new Date();
+      inicio.setHours(0,0,0,0);
+
+      const fin = new Date();
+      fin.setHours(23,59,59,999);
+
+      // 1️⃣ Citas atendidas hoy
+      const { data: citas, error: eCitas } = await supabase
+        .from("citas")
+        .select("id, inicio, paciente_nombre, paciente_documento, profesional")
+        .eq("estado", "atendida")
+        .gte("inicio", inicio.toISOString())
+        .lte("inicio", fin.toISOString());
+
+      if (eCitas) {
+        console.error(eCitas);
+        return;
+      }
+
+      if (!citas || citas.length === 0) {
+        document.getElementById("tbody").innerHTML =
+          '<tr><td colspan="5">No hay citas atendidas hoy</td></tr>';
+        return;
+      }
+
+      const ids = citas.map(c => c.id);
+
+      // 2️⃣ Evoluciones existentes
+      const { data: evos, error: eEvos } = await supabase
+        .from("evoluciones")
+        .select("cita_id")
+        .in("cita_id", ids);
+
+      if (eEvos) {
+        console.error(eEvos);
+        return;
+      }
+
+      const evolucionadas = new Set((evos || []).map(e => e.cita_id));
+
+      const pendientes = citas.filter(c => !evolucionadas.has(c.id));
+
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = "";
+
+      if (pendientes.length === 0) {
+        tbody.innerHTML =
+          '<tr><td colspan="5">✅ Todos los pacientes tienen evolución registrada</td></tr>';
+        return;
+      }
+
+      pendientes.forEach(p => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${new Date(p.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
+          <td>${p.paciente_nombre || "—"}</td>
+          <td>${p.paciente_documento || "—"}</td>
+          <td>${p.profesional || "—"}</td>
+          <td><span class="alerta">Pendiente</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    cargarPendientes();
+  </script>
+
+  <style>
+    body{
+      margin:0;
+      font-family: Inter, Arial, sans-serif;
+      background:#f3f5f7;
+      padding:30px;
+      color:#1f2937;
+    }
+    h1{
+      margin-bottom:20px;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border-radius:12px;
+      overflow:hidden;
+      box-shadow:0 10px 25px rgba(0,0,0,.08);
+    }
+    th,td{
+      padding:12px 14px;
+      border-bottom:1px solid #e5e7eb;
+      text-align:left;
+      font-size:14px;
+    }
+    th{
+      background:#f9fafb;
+      font-weight:800;
+      font-size:13px;
+      color:#6b7280;
+    }
+    tr:last-child td{
+      border-bottom:none;
+    }
+    .alerta{
+      padding:6px 12px;
+      border-radius:999px;
+      background:#fee2e2;
+      color:#991b1b;
+      font-weight:800;
+      font-size:12px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>🚨 Pacientes pendientes por evolucionar (HOY)</h1>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Hora</th>
+        <th>Paciente</th>
+        <th>Documento</th>
+        <th>Profesional</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody id="tbody">
+      <tr><td colspan="5">Cargando...</td></tr>
+    </tbody>
+  </table>
+</body>
+</html>
