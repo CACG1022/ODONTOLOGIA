@@ -1566,3 +1566,72 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
 
 
+
+<!-- ========================= -->
+<!-- ✅ NUEVO CAMPO ABONO -->
+<!-- ========================= -->
+<script>
+document.addEventListener("DOMContentLoaded", function(){
+  try{
+    const totalSpan = document.getElementById("total") || document.getElementById("total_pagar");
+    if(!totalSpan) return;
+
+    const box = totalSpan.closest(".box") || totalSpan.parentElement;
+    if(!box) return;
+
+    const wrap = document.createElement("div");
+    wrap.style.marginTop = "10px";
+    wrap.innerHTML = `
+      <div style="display:flex; justify-content:space-between; font-weight:700;">
+        <span>Abono</span>
+        <span>$ <input id="abono_valor" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></span>
+      </div>
+      <div style="display:flex; justify-content:space-between; margin-top:6px; font-weight:800;">
+        <span>Saldo pendiente</span>
+        <span>$ <span id="saldo_pendiente">0</span></span>
+      </div>
+    `;
+    box.appendChild(wrap);
+
+    const abonoInput = document.getElementById("abono_valor");
+    const saldoSpan = document.getElementById("saldo_pendiente");
+
+    function num(v){ return Number(v||0); }
+    function money(n){ return Number(n||0).toLocaleString("es-CO"); }
+
+    function recalcular(){
+      const total = num((totalSpan.textContent||"").replace(/[^0-9]/g,""));
+      const abono = num(abonoInput.value);
+      const saldo = Math.max(total - abono, 0);
+      saldoSpan.textContent = money(saldo);
+      window.__ABONO_VALOR = abono;
+      window.__SALDO_PENDIENTE = saldo;
+    }
+
+    abonoInput.addEventListener("input", recalcular);
+    recalcular();
+  }catch(e){
+    console.warn("Abono error", e);
+  }
+});
+</script>
+
+<script>
+(function(){
+  const _fetch = window.fetch;
+  window.fetch = function(){
+    try{
+      if(arguments[1] && arguments[1].body){
+        const b = JSON.parse(arguments[1].body);
+        b.abono_valor = window.__ABONO_VALOR || 0;
+        b.saldo_pendiente = window.__SALDO_PENDIENTE || 0;
+        arguments[1].body = JSON.stringify(b);
+      }
+    }catch(e){}
+    return _fetch.apply(this, arguments);
+  }
+})();
+</script>
+
+
+
