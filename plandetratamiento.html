@@ -1560,6 +1560,87 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
 })();
 </script>
+<!-- ========================= -->
+<!-- ✅ CAMPO ABONO (FIX REAL) -->
+<!-- ========================= -->
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    // Buscar el contenedor del resumen (el cuadro azul)
+    const resumen = Array.from(document.querySelectorAll("div"))
+      .find(d => d.innerText?.includes("Subtotal:") && d.innerText?.includes("Total a pagar"));
+
+    if (!resumen) return;
+
+    // Extraer valores actuales
+    const getValor = (label) => {
+      const m = resumen.innerText.match(new RegExp(label + "\\:\\s*\\$\\s*([0-9\\.]+)"));
+      return m ? Number(m[1].replace(/\./g, "")) : 0;
+    };
+
+    const subtotal = getValor("Subtotal");
+    const descuento = getValor("Descuento");
+    let totalBase = getValor("Total a pagar");
+
+    // Limpiar solo el resumen (NO el contenedor completo)
+    resumen.innerHTML = `
+      <strong>Subtotal: $</strong><br>
+      ${subtotal.toLocaleString("es-CO")}<br><br>
+
+      <strong>Descuento: $</strong><br>
+      ${descuento.toLocaleString("es-CO")}<br><br>
+
+      <strong>Abono:</strong><br>
+      $ <input id="abono_valor"
+        type="number"
+        min="0"
+        step="100"
+        value="0"
+        style="margin-top:4px; margin-bottom:12px; width:160px;"><br>
+
+      <strong>Total a pagar: $</strong><br>
+      <span id="total_pagar_valor">${totalBase.toLocaleString("es-CO")}</span>
+    `;
+
+    const abonoInput = document.getElementById("abono_valor");
+    const totalSpan  = document.getElementById("total_pagar_valor");
+
+    function recalcular() {
+      const abono = Number(abonoInput.value || 0);
+      const nuevoTotal = Math.max(totalBase - abono, 0);
+      totalSpan.textContent = nuevoTotal.toLocaleString("es-CO");
+
+      // Variables globales para N8N
+      window.__ABONO_VALOR = abono;
+      window.__TOTAL_A_PAGAR = nuevoTotal;
+    }
+
+    abonoInput.addEventListener("input", recalcular);
+    recalcular();
+
+  } catch (e) {
+    console.warn("Error campo abono:", e);
+  }
+});
+</script>
+
+<script>
+/* ✅ EXTENSIÓN N8N – sin tocar lógica existente */
+(function(){
+  const _fetch = window.fetch;
+  window.fetch = function(){
+    try{
+      if(arguments[1]?.body){
+        const body = JSON.parse(arguments[1].body);
+        body.abono_valor = window.__ABONO_VALOR || 0;
+        body.total_a_pagar = window.__TOTAL_A_PAGAR || body.total_a_pagar;
+        arguments[1].body = JSON.stringify(body);
+      }
+    }catch(e){}
+    return _fetch.apply(this, arguments);
+  };
+})();
+</script>
 
 </body>
 </html>
