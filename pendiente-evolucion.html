@@ -8,12 +8,14 @@
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
+    // ✅ Supabase (mismo proyecto)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
 
     const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const TZ_CLINICA = "America/Bogota"; // 🇨🇴 Colombia (evita desfases por UTC)
 
     async function verificarSesion(){
       const { data: { session } } = await supabase.auth.getSession();
@@ -24,16 +26,35 @@
       return true;
     }
 
-    function fechaISO(d){
-      const x = new Date(d);
-      x.setHours(0,0,0,0);
-      return x.toISOString().slice(0,10); // YYYY-MM-DD
+    // ✅ Devuelve YYYY-MM-DD en zona horaria de la clínica (ignora la hora)
+    function ymdClinic(dt){
+      const d = (dt instanceof Date) ? dt : new Date(dt);
+      const fmt = new Intl.DateTimeFormat("en-CA", {
+        timeZone: TZ_CLINICA,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+      return fmt.format(d); // en-CA => YYYY-MM-DD
     }
 
-    function diffDias(fechaISOstr){
-      const hoy = new Date(); hoy.setHours(0,0,0,0);
-      const f = new Date(fechaISOstr);
-      return Math.floor((hoy - f) / (1000*60*60*24));
+    function diffDias(ymd){
+      // ymd: YYYY-MM-DD (zona clínica)
+      const [Y,M,D] = ymd.split("-").map(Number);
+      const hoy = new Date();
+      const hoyYMD = ymdClinic(hoy);
+      const [hY,hM,hD] = hoyYMD.split("-").map(Number);
+
+      // Construir fechas "locales" neutrales (sin TZ) para diferencia en días
+      const a = new Date(hY, hM-1, hD);
+      const b = new Date(Y,  M-1,  D);
+      const ms = a - b;
+      return Math.floor(ms / (1000*60*60*24));
+    }
+
+    function setRowMessage(html){
+      const tbody = document.getElementById("tbody");
+      tbody.innerHTML = `<tr><td colspan="6">${html}</td></tr>`;
     }
 
     async function cargarPendientes(){
@@ -41,78 +62,77 @@
 
       const dias = Number(document.getElementById("dias").value || 7);
 
-      const hoy = new Date();
-      hoy.setHours(23,59,59,999);
+      const ahora = new Date();
+      const hoyFin = new Date(ahora); hoyFin.setHours(23,59,59,999);
+      const desde = new Date(ahora);  desde.setDate(desde.getDate() - dias); desde.setHours(0,0,0,0);
 
-      const desde = new Date();
-      desde.setDate(desde.getDate() - dias);
-      desde.setHours(0,0,0,0);
-
-      // 1️⃣ Citas atendidas
+      // 1) Citas atendidas en rango (por timestamp real)
       const { data: citas, error: eCitas } = await supabase
         .from("citas")
         .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
         .eq("estado", "atendida")
         .gte("inicio", desde.toISOString())
-        .lte("inicio", hoy.toISOString());
+        .lte("inicio", hoyFin.toISOString());
 
       if (eCitas){
-        console.error(eCitas);
-        document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="6">Error cargando citas</td></tr>';
+        console.error("Error citas:", eCitas);
+        setRowMessage("Error cargando citas");
         return;
       }
 
       if (!citas || citas.length === 0){
-        document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="6">No hay citas atendidas en este rango</td></tr>';
+        setRowMessage("No hay citas atendidas en este rango");
+        document.getElementById("kpi-hoy").textContent = "0";
+        document.getElementById("kpi-historico").textContent = "0";
         return;
       }
 
-      // 2️⃣ Evoluciones (por documento, SOLO FECHA)
-      const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean))];
+      // 2) Evoluciones (solo necesitamos fecha + documento)
+      const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean).map(String))];
 
+      // Nota: traemos todas las evoluciones de esos documentos (simple),
+      // y cruzamos por FECHA (YYYY-MM-DD) ignorando la hora.
       const { data: evos, error: eEvos } = await supabase
         .from("EVOLUCIONES")
         .select("paciente_numdoc, evo_fecha")
         .in("paciente_numdoc", documentos);
 
       if (eEvos){
-        console.error(eEvos);
-        document.getElementById("tbody").innerHTML =
-          '<tr><td colspan="6">Error cargando evoluciones</td></tr>';
+        console.error("Error evoluciones:", eEvos);
+        setRowMessage("Error cargando evoluciones");
         return;
       }
 
-      // Mapear evoluciones por documento (lista de fechas)
-      const evoMap = {};
+      // 3) Construir un SET por (doc|YYYY-MM-DD)
+      const evoSet = new Set();
       (evos || []).forEach(e => {
-        const doc = String(e.paciente_numdoc);
-        const f = fechaISO(e.evo_fecha);
-        if (!evoMap[doc]) evoMap[doc] = [];
-        evoMap[doc].push(f);
+        const doc = String(e.paciente_numdoc ?? "");
+        if (!doc) return;
+        const f = ymdClinic(e.evo_fecha); // ✅ fecha clínica
+        evoSet.add(doc + "|" + f);
       });
 
+      // 4) Para cada cita, exigir evolución MISMA FECHA (ignorando hora)
       const tbody = document.getElementById("tbody");
       tbody.innerHTML = "";
 
-      let hoyCount = 0;
-      let histCount = 0;
+      let pendientesHoy = 0;
+      let pendientesHistoricos = 0;
 
-      citas.forEach(c => {
-        const doc = String(c.documento_paciente || "");
-        const fechaCita = fechaISO(c.inicio);
+      // Orden: más atrasados primero, luego recientes (opcional, mantiene claridad)
+      const citasOrdenadas = [...citas].sort((a,b)=> new Date(a.inicio) - new Date(b.inicio));
 
-        const fechasEvo = evoMap[doc] || [];
+      citasOrdenadas.forEach(c => {
+        const doc = String(c.documento_paciente ?? "");
+        const fechaCita = ymdClinic(c.inicio); // ✅ fecha clínica
+        const key = doc + "|" + fechaCita;
 
-        // 🔑 REGLA DEFINITIVA:
-        // Si existe ALGUNA evolución con fecha >= fecha de la cita → EVOLUCIONADO
-        const tieneEvo = fechasEvo.some(f => f >= fechaCita);
+        const tieneEvoMismaFecha = evoSet.has(key);
 
-        if (!tieneEvo){
+        if (!tieneEvoMismaFecha){
           const atraso = diffDias(fechaCita);
-          if (atraso === 0) hoyCount++;
-          else histCount++;
+          if (atraso === 0) pendientesHoy++;
+          else pendientesHistoricos++;
 
           const clase =
             atraso === 0 ? "hoy" :
@@ -133,12 +153,11 @@
         }
       });
 
-      document.getElementById("kpi-hoy").textContent = hoyCount;
-      document.getElementById("kpi-historico").textContent = histCount;
+      document.getElementById("kpi-hoy").textContent = String(pendientesHoy);
+      document.getElementById("kpi-historico").textContent = String(pendientesHistoricos);
 
       if (tbody.children.length === 0){
-        tbody.innerHTML =
-          '<tr><td colspan="6">✅ No hay pacientes pendientes por evolucionar</td></tr>';
+        setRowMessage("✅ No hay pacientes pendientes por evolucionar");
       }
     }
 
@@ -174,6 +193,7 @@
       box-shadow:0 6px 18px rgba(0,0,0,.08);
       font-weight:800;
       font-size:14px;
+      min-width:160px;
     }
     .kpi span{
       display:block;
@@ -250,3 +270,4 @@
   </table>
 </body>
 </html>
+
