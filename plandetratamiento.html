@@ -1168,7 +1168,12 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       syncProcedimientoDisplay();
       calcularTotal();
     });
-    descuentoSel.addEventListener('change', calcularTotal);
+    descuentoSel.addEventListener('change', () => {
+  if (typeof window.calcularTotal === "function") {
+    window.calcularTotal(); // versión envuelta
+  }
+});
+
     adicionales.forEach(cb=> cb.addEventListener('change', calcularTotal));
 
     /* ===== Firma ===== */
