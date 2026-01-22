@@ -24,15 +24,15 @@
       return true;
     }
 
-    function soloFecha(d){
+    function fechaISO(d){
       const x = new Date(d);
       x.setHours(0,0,0,0);
-      return x;
+      return x.toISOString().slice(0,10); // YYYY-MM-DD
     }
 
-    function diffDias(fecha){
-      const hoy = soloFecha(new Date());
-      const f = soloFecha(fecha);
+    function diffDias(fechaISOstr){
+      const hoy = new Date(); hoy.setHours(0,0,0,0);
+      const f = new Date(fechaISOstr);
       return Math.floor((hoy - f) / (1000*60*60*24));
     }
 
@@ -48,6 +48,7 @@
       desde.setDate(desde.getDate() - dias);
       desde.setHours(0,0,0,0);
 
+      // 1️⃣ Citas atendidas
       const { data: citas, error: eCitas } = await supabase
         .from("citas")
         .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
@@ -68,6 +69,7 @@
         return;
       }
 
+      // 2️⃣ Evoluciones (SOLO FECHA)
       const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean))];
 
       const { data: evos, error: eEvos } = await supabase
@@ -82,11 +84,13 @@
         return;
       }
 
+      // Mapear evoluciones por documento y FECHA
       const evoMap = {};
       (evos || []).forEach(e => {
         const doc = String(e.paciente_numdoc);
-        if (!evoMap[doc]) evoMap[doc] = [];
-        evoMap[doc].push(soloFecha(e.evo_fecha));
+        const f = fechaISO(e.evo_fecha);
+        if (!evoMap[doc]) evoMap[doc] = new Set();
+        evoMap[doc].add(f);
       });
 
       const tbody = document.getElementById("tbody");
@@ -97,10 +101,13 @@
 
       citas.forEach(c => {
         const doc = String(c.documento_paciente || "");
-        const fechaCita = soloFecha(c.inicio);
+        const fechaCita = fechaISO(c.inicio);
 
-        const evosPaciente = evoMap[doc] || [];
-        const tieneEvo = evosPaciente.some(f => f >= fechaCita);
+        const fechasEvo = evoMap[doc] || new Set();
+
+        // 🔑 REGLA FINAL:
+        // Si existe evolución MISMO DÍA de la cita → EVOLUCIONADO
+        const tieneEvo = fechasEvo.has(fechaCita);
 
         if (!tieneEvo){
           const atraso = diffDias(fechaCita);
