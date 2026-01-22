@@ -1314,6 +1314,14 @@ if (data.abono_valor !== undefined && data.abono_valor !== null) {
 
       
       calcularTotal();
+
+    // Forzar recalculo visual con abono
+setTimeout(() => {
+  if (typeof window.calcularTotal === "function") {
+    window.calcularTotal();
+  }
+}, 0);
+
     }
 
     let lastQuery = "";
