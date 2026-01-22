@@ -1560,87 +1560,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
 })();
 </script>
-<!-- ========================= -->
-<!-- ✅ CAMPO ABONO (FIX REAL) -->
-<!-- ========================= -->
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  try {
-    // Buscar el contenedor del resumen (el cuadro azul)
-    const resumen = Array.from(document.querySelectorAll("div"))
-      .find(d => d.innerText?.includes("Subtotal:") && d.innerText?.includes("Total a pagar"));
-
-    if (!resumen) return;
-
-    // Extraer valores actuales
-    const getValor = (label) => {
-      const m = resumen.innerText.match(new RegExp(label + "\\:\\s*\\$\\s*([0-9\\.]+)"));
-      return m ? Number(m[1].replace(/\./g, "")) : 0;
-    };
-
-    const subtotal = getValor("Subtotal");
-    const descuento = getValor("Descuento");
-    let totalBase = getValor("Total a pagar");
-
-    // Limpiar solo el resumen (NO el contenedor completo)
-    resumen.innerHTML = `
-      <strong>Subtotal: $</strong><br>
-      ${subtotal.toLocaleString("es-CO")}<br><br>
-
-      <strong>Descuento: $</strong><br>
-      ${descuento.toLocaleString("es-CO")}<br><br>
-
-      <strong>Abono:</strong><br>
-      $ <input id="abono_valor"
-        type="number"
-        min="0"
-        step="100"
-        value="0"
-        style="margin-top:4px; margin-bottom:12px; width:160px;"><br>
-
-      <strong>Total a pagar: $</strong><br>
-      <span id="total_pagar_valor">${totalBase.toLocaleString("es-CO")}</span>
-    `;
-
-    const abonoInput = document.getElementById("abono_valor");
-    const totalSpan  = document.getElementById("total_pagar_valor");
-
-    function recalcular() {
-      const abono = Number(abonoInput.value || 0);
-      const nuevoTotal = Math.max(totalBase - abono, 0);
-      totalSpan.textContent = nuevoTotal.toLocaleString("es-CO");
-
-      // Variables globales para N8N
-      window.__ABONO_VALOR = abono;
-      window.__TOTAL_A_PAGAR = nuevoTotal;
-    }
-
-    abonoInput.addEventListener("input", recalcular);
-    recalcular();
-
-  } catch (e) {
-    console.warn("Error campo abono:", e);
-  }
-});
-</script>
-
-<script>
-/* ✅ EXTENSIÓN N8N – sin tocar lógica existente */
-(function(){
-  const _fetch = window.fetch;
-  window.fetch = function(){
-    try{
-      if(arguments[1]?.body){
-        const body = JSON.parse(arguments[1].body);
-        body.abono_valor = window.__ABONO_VALOR || 0;
-        body.total_a_pagar = window.__TOTAL_A_PAGAR || body.total_a_pagar;
-        arguments[1].body = JSON.stringify(body);
-      }
-    }catch(e){}
-    return _fetch.apply(this, arguments);
-  };
-})();
-</script>
 
 </body>
 </html>
@@ -1649,73 +1568,77 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 <!-- ========================= -->
-<!-- ✅ AJUSTE CAMPO ABONO -->
-<!-- - Debajo de Descuento
-     - Alineado a la izquierda
-     - Recalcula TOTAL A PAGAR
-     - SIN campo Saldo pendiente
--->
+<!-- ✅ ABONO INTEGRADO (FIX DEFINITIVO) -->
 <!-- ========================= -->
 <script>
-document.addEventListener("DOMContentLoaded", function(){
-  try{
-    const resumen = document.querySelector(".totales, .resumen, .summary, .box") || document.body;
-    const descuentoLabel = Array.from(document.querySelectorAll("*"))
-      .find(el => el.textContent?.includes("Descuento"));
+(function(){
+  function money(n){ return Number(n||0).toLocaleString("es-CO"); }
+  function num(v){ return Number(String(v||"").replace(/[^0-9]/g,"")) || 0; }
 
-    if(!descuentoLabel) return;
+  function initAbono(){
+    const totales = document.querySelector(".totales");
+    if(!totales) return;
 
-    const fila = document.createElement("div");
-    fila.style.display = "flex";
-    fila.style.justifyContent = "space-between";
-    fila.style.alignItems = "center";
-    fila.style.marginTop = "6px";
-    fila.innerHTML = `
-      <span>Abono:</span>
-      <span>
-        $ <input id="abono_valor" type="number" min="0" step="100"
-        value="0" style="width:140px; text-align:right;">
-      </span>
+    const subtotalEl = document.getElementById("subtotal");
+    const descEl = document.getElementById("valor-descuento");
+    const totalEl = document.getElementById("total");
+    if(!subtotalEl || !totalEl) return;
+
+    // Insertar campo abono debajo de descuento
+    if(document.getElementById("abono_valor")) return;
+
+    const abonoRow = document.createElement("span");
+    abonoRow.innerHTML = `
+      <strong>Abono:</strong>
+      $ <input id="abono_valor" type="number" min="0" step="100"
+          value="0"
+          style="margin-top:6px;width:160px;">
     `;
+    descEl.parentElement.insertAdjacentElement("afterend", abonoRow);
 
-    descuentoLabel.parentElement.insertAdjacentElement("afterend", fila);
-
-    const totalSpan = Array.from(document.querySelectorAll("*"))
-      .find(el => el.textContent?.includes("Total a pagar"))
-      ?.nextElementSibling || document.getElementById("total_pagar");
-
-    function num(v){ return Number(String(v||"").replace(/[^0-9]/g,"")) || 0; }
-    function money(n){ return Number(n||0).toLocaleString("es-CO"); }
-
-    const baseTotal = num(totalSpan.textContent);
+    const abonoInput = document.getElementById("abono_valor");
 
     function recalcular(){
-      const abono = num(document.getElementById("abono_valor").value);
-      const nuevoTotal = Math.max(baseTotal - abono, 0);
-      totalSpan.textContent = money(nuevoTotal);
+      const subtotal = num(subtotalEl.textContent);
+      const descuento = num(descEl.textContent);
+      const baseTotal = subtotal - descuento;
+      const abono = num(abonoInput.value);
+      const finalTotal = Math.max(baseTotal - abono, 0);
+
+      totalEl.textContent = money(finalTotal);
+
+      document.getElementById("input-total").value = finalTotal;
       window.__ABONO_VALOR = abono;
-      window.__TOTAL_PAGAR = nuevoTotal;
+      window.__TOTAL_A_PAGAR = finalTotal;
     }
 
-    document.getElementById("abono_valor").addEventListener("input", recalcular);
+    abonoInput.addEventListener("input", recalcular);
     recalcular();
-
-  }catch(e){
-    console.warn("Error Abono:", e);
   }
-});
+
+  document.addEventListener("DOMContentLoaded", initAbono);
+
+  // Hook seguro para cuando recalcularTotal() vuelva a ejecutarse
+  const _calc = window.calcularTotal;
+  if(typeof _calc === "function"){
+    window.calcularTotal = function(){
+      _calc.apply(this, arguments);
+      setTimeout(initAbono, 0);
+    };
+  }
+})();
 </script>
 
 <script>
-/* ✅ ENVÍO A N8N: agrega abono y total final sin tocar lógica existente */
+/* ✅ ENVÍO A N8N */
 (function(){
   const _fetch = window.fetch;
   window.fetch = function(){
     try{
-      if(arguments[1] && arguments[1].body){
+      if(arguments[1]?.body){
         const body = JSON.parse(arguments[1].body);
         body.abono_valor = window.__ABONO_VALOR || 0;
-        body.total_a_pagar = window.__TOTAL_PAGAR || body.total_a_pagar;
+        body.total_a_pagar = window.__TOTAL_A_PAGAR || body.total_a_pagar;
         arguments[1].body = JSON.stringify(body);
       }
     }catch(e){}
