@@ -304,6 +304,9 @@ async function cargarPacientes() {
     // =========================
 // 🚨 CONTAR PENDIENTES POR EVOLUCIONAR
 // =========================
+// =========================
+// 🚨 CONTAR PENDIENTES POR EVOLUCIONAR + ALERTA VISUAL
+// =========================
 async function cargarAlertasPendientes() {
   try {
     const { count, error } = await supabase
@@ -312,15 +315,28 @@ async function cargarAlertasPendientes() {
 
     if (error) throw error;
 
-    const el = document.getElementById("alertas-value");
-    if (el) el.textContent = count ?? 0;
+    const valueEl = document.getElementById("alertas-value");
+    const hintEl  = document.getElementById("alertas-hint");
+    const cardEl  = document.getElementById("kpi-alertas");
 
-    const hint = document.getElementById("alertas-hint");
-    if (hint) {
-      hint.textContent =
+    if (valueEl) valueEl.textContent = count ?? 0;
+
+    if (hintEl) {
+      hintEl.textContent =
         count === 1
           ? "Paciente pendiente"
           : "Pacientes pendientes por evolucionar";
+    }
+
+    // 🔴 Si hay más de 1 pendiente → ALERTA ROJA
+    if (cardEl) {
+      cardEl.classList.toggle("alerta-roja", count > 1);
+
+      // 👉 doble click para ir a pendientes
+      cardEl.ondblclick = () => {
+        window.location.href =
+          "https://cacg1022.github.io/ODONTOLOGIA/pendiente-evolucion.html";
+      };
     }
 
   } catch (e) {
@@ -329,6 +345,7 @@ async function cargarAlertasPendientes() {
     if (el) el.textContent = "—";
   }
 }
+
 
 
 verificarSesionYPermisos();
@@ -911,6 +928,41 @@ z-index: 1;
     drop-shadow(0 0 70px rgba(32,240,208,.45));
 }
 
+/* =========================
+   🚨 KPI ALERTAS CRÍTICAS
+========================= */
+.kpi-alertas {
+  cursor: pointer;
+  transition: all .25s ease;
+}
+
+.kpi-alertas:hover {
+  transform: translateY(-2px);
+}
+
+.kpi-alertas.alerta-roja {
+  border: 1px solid rgba(255, 80, 80, 0.6);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 80, 80, 0.18),
+    rgba(120, 0, 0, 0.18)
+  );
+  box-shadow:
+    0 0 25px rgba(255, 60, 60, 0.45),
+    0 12px 30px rgba(0,0,0,.35);
+}
+
+.kpi-alertas.alerta-roja .label,
+.kpi-alertas.alerta-roja .value,
+.kpi-alertas.alerta-roja .hint {
+  color: #ffd6d6;
+}
+
+.kpi-alertas.alerta-roja .value {
+  font-weight: 1200;
+}
+    
+
 </style>
 </head>
 
@@ -987,11 +1039,12 @@ z-index: 1;
               <div class="value">$ 8.9M</div>
               <div class="hint">Semana actual</div>
             </div>
-            <div class="kpi right-align">
+           <div class="kpi right-align kpi-alertas" id="kpi-alertas">
   <div class="label">Alertas</div>
   <div class="value" id="alertas-value">—</div>
   <div class="hint" id="alertas-hint">Pendientes por evolucionar</div>
 </div>
+
 
           </div>
         </div>
