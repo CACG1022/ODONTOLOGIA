@@ -1,214 +1,167 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Pendientes por evolucionar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- Supabase -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-    window.supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-    );
-  </script>
-
-  <style>
-    body{
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      background:#f6f8fb;
-      margin:0;
-      padding:24px;
-    }
-    h1{ color:#1f3a5f; }
-
-    .top{
-      display:flex;
-      gap:16px;
-      align-items:center;
-      margin-bottom:18px;
-      flex-wrap:wrap;
-    }
-
-    .kpi{
-      background:#fff;
-      border-radius:14px;
-      padding:14px 18px;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-      min-width:180px;
-    }
-    .kpi b{ font-size:26px; display:block; }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow:0 6px 18px rgba(0,0,0,.06);
-    }
-    th,td{
-      padding:10px 12px;
-      border-bottom:1px solid #e5eaf0;
-      font-size:14px;
-    }
-    th{
-      background:#f0f4fa;
-      text-align:left;
-      font-weight:700;
-    }
-
-    tr.hoy{ background:#e9fbff; }
-    tr.warn{ background:#fff3cd; }
-    tr.danger{ background:#fde2e2; }
-
-    select{
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid #cbd5e1;
-    }
-  </style>
-</head>
-
-<body>
-
-<h1>🚨 Pendientes por evolucionar</h1>
-
-<div class="top">
-  <label>
-    Ver últimos
-    <select id="dias">
-      <option value="7">7 días</option>
-      <option value="14">14 días</option>
-      <option value="30">30 días</option>
-    </select>
-  </label>
-
-  <div class="kpi">
-    Pendientes hoy
-    <b id="kHoy">0</b>
-  </div>
-
-  <div class="kpi">
-    Pendientes históricos
-    <b id="kHist">0</b>
-  </div>
-</div>
-
-<table>
-  <thead>
-    <tr>
-      <th>Fecha</th>
-      <th>Hora</th>
-      <th>Paciente</th>
-      <th>Documento</th>
-      <th>Profesional</th>
-      <th>Atraso</th>
-    </tr>
-  </thead>
-  <tbody id="tbody">
-    <tr><td colspan="6">Cargando...</td></tr>
-  </tbody>
-</table>
+<meta charset="UTF-8">
+<title>Pendientes por evolucionar</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
 <script type="module">
-const tbody = document.getElementById("tbody");
-const kHoy = document.getElementById("kHoy");
-const kHist = document.getElementById("kHist");
-const selDias = document.getElementById("dias");
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-function hoyISO(){
-  return new Date().toISOString().slice(0,10);
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "TU_PUBLIC_ANON_KEY"
+);
+
+/* =========================
+   UTILIDADES DE FECHA
+========================= */
+
+// 👉 convierte timestamp a YYYY-MM-DD SIN timezone
+function fechaLocalYYYYMMDD(ts) {
+  return String(ts).split("T")[0];
 }
 
-function diffDias(fecha){
-  const h = new Date(hoyISO());
-  const f = new Date(fecha);
-  return Math.floor((h - f) / 86400000);
+// diferencia en días (solo fecha)
+function diffDias(fecha) {
+  const hoy = new Date().toISOString().slice(0,10);
+  const f1 = new Date(hoy);
+  const f2 = new Date(fecha);
+  return Math.floor((f1 - f2) / 86400000);
 }
 
-function esCitaAtendida(estado){
-  return String(estado || "").trim().toLowerCase() === "atendida";
-}
+/* =========================
+   CARGA PRINCIPAL
+========================= */
 
-async function cargar(){
-  tbody.innerHTML = `<tr><td colspan="6">Cargando...</td></tr>`;
+async function cargarPendientes(dias = 7) {
+  const hoy = new Date().toISOString().slice(0,10);
+  const desde = new Date(Date.now() - dias*86400000).toISOString().slice(0,10);
 
-  const dias = Number(selDias.value);
-  const desde = new Date();
-  desde.setDate(desde.getDate() - dias);
-  const desdeISO = desde.toISOString().slice(0,10);
-
-  const { data: citas, error } = await supabase
+  // 1️⃣ citas atendidas
+  const { data: citas, error: ec } = await supabase
     .from("citas")
-    .select(`
-      inicio,
-      estado,
-      nombre_paciente,
-      documento_paciente,
-      nombre_profesional
-    `)
-    .gte("inicio", desdeISO);
+    .select("inicio,nombre_paciente,documento_paciente,nombre_profesional,estado")
+    .eq("estado","atendida")
+    .gte("inicio", desde)
+    .lte("inicio", hoy+"T23:59:59");
 
-  if(error){
-    tbody.innerHTML = `<tr><td colspan="6">Error cargando citas</td></tr>`;
-    return;
-  }
+  if (ec) return mostrarError();
 
-  const { data: evols } = await supabase
+  // 2️⃣ evoluciones
+  const { data: evols, error: ee } = await supabase
     .from("EVOLUCIONES")
-    .select("paciente_numdoc, evo_fecha");
+    .select("paciente_numdoc,evo_fecha");
 
-  const mapaEvo = new Set(
-    (evols || []).map(e => `${e.paciente_numdoc}-${e.evo_fecha}`)
+  if (ee) return mostrarError();
+
+  // 3️⃣ indexar evoluciones por paciente+fecha
+  const map = new Set(
+    evols.map(e => `${e.paciente_numdoc}|${e.evo_fecha}`)
   );
 
-  tbody.innerHTML = "";
-  let hoy = 0, hist = 0;
+  let pendientes = [];
 
   citas.forEach(c => {
-    if(!esCitaAtendida(c.estado)) return;
+    const fechaCita = fechaLocalYYYYMMDD(c.inicio);
+    const key = `${c.documento_paciente}|${fechaCita}`;
 
-    const fechaCita = c.inicio.slice(0,10);
-    const key = `${c.documento_paciente}-${fechaCita}`;
+    if (!map.has(key)) {
+      pendientes.push({
+        fecha: fechaCita,
+        hora: c.inicio.slice(11,16),
+        paciente: c.nombre_paciente,
+        documento: c.documento_paciente,
+        profesional: c.nombre_profesional,
+        atraso: diffDias(fechaCita)
+      });
+    }
+  });
 
-    if(mapaEvo.has(key)) return;
+  render(pendientes);
+}
 
-    const atraso = diffDias(fechaCita);
-    if(atraso === 0) hoy++; else hist++;
+/* =========================
+   RENDER
+========================= */
 
-    let cls = "hoy";
-    let txt = "HOY";
-    if(atraso === 1){ cls="warn"; txt="1 día"; }
-    if(atraso >= 2){ cls="danger"; txt=`${atraso} días`; }
+function render(lista) {
+  const tbody = document.querySelector("tbody");
+  tbody.innerHTML = "";
+
+  let hoy = 0, historicos = 0;
+
+  lista.forEach(p => {
+    let clase = "";
+    let label = "";
+
+    if (p.atraso === 0) {
+      clase = "hoy"; label = "HOY"; hoy++;
+    } else if (p.atraso === 1) {
+      clase = "amarillo"; label = "1 día"; historicos++;
+    } else {
+      clase = "rojo"; label = `${p.atraso} días`; historicos++;
+    }
 
     const tr = document.createElement("tr");
-    tr.className = cls;
+    tr.className = clase;
     tr.innerHTML = `
-      <td>${fechaCita}</td>
-      <td>${c.inicio.slice(11,16)}</td>
-      <td>${c.nombre_paciente}</td>
-      <td>${c.documento_paciente}</td>
-      <td>${c.nombre_profesional}</td>
-      <td>${txt}</td>
+      <td>${p.fecha}</td>
+      <td>${p.hora}</td>
+      <td>${p.paciente}</td>
+      <td>${p.documento}</td>
+      <td>${p.profesional}</td>
+      <td>${label}</td>
     `;
     tbody.appendChild(tr);
   });
 
-  if(!tbody.children.length){
-    tbody.innerHTML = `<tr><td colspan="6">Sin pendientes 🎉</td></tr>`;
-  }
-
-  kHoy.textContent = hoy;
-  kHist.textContent = hist;
+  document.getElementById("hoy").textContent = hoy;
+  document.getElementById("historicos").textContent = historicos;
 }
 
-selDias.addEventListener("change", cargar);
-cargar();
+function mostrarError() {
+  document.querySelector("tbody").innerHTML =
+    `<tr><td colspan="6">Error cargando citas</td></tr>`;
+}
+
+window.onload = () => cargarPendientes(7);
 </script>
 
+<style>
+body { font-family: system-ui; background:#f6f8fb; padding:20px; }
+h1 { margin-bottom:10px; }
+.cards { display:flex; gap:12px; margin-bottom:14px; }
+.card { background:#fff; padding:12px 18px; border-radius:12px; }
+table { width:100%; border-collapse:collapse; background:#fff; border-radius:12px; overflow:hidden; }
+th,td { padding:10px; border-bottom:1px solid #eee; }
+tr.hoy { background:#e6f7ff; }
+tr.amarillo { background:#fff4cc; }
+tr.rojo { background:#ffe4e4; }
+</style>
+</head>
+
+<body>
+<h1>🚨 Pendientes por evolucionar</h1>
+
+<div class="cards">
+  <div class="card">Pendientes hoy: <b id="hoy">0</b></div>
+  <div class="card">Pendientes históricos: <b id="historicos">0</b></div>
+</div>
+
+<table>
+<thead>
+<tr>
+  <th>Fecha</th>
+  <th>Hora</th>
+  <th>Paciente</th>
+  <th>Documento</th>
+  <th>Profesional</th>
+  <th>Atraso</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
 </body>
 </html>
 
