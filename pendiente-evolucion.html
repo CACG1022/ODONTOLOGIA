@@ -107,14 +107,10 @@
     }
 
     // ========= REGLA CLÍNICA =========
-    // Ajusta estos estados según tu sistema
-    const ESTADOS_ATENDIDOS = new Set([
-      "ATENDIDO","ATENDIDA",
-      "REALIZADA","REALIZADO",
-      "FINALIZADA","FINALIZADO",
-      "COMPLETADA","COMPLETADO",
-      "CERRADA","CERRADO"
-    ]);
+    function esCitaAtendida(estado) {
+  return String(estado || "").trim().toLowerCase() === "atendida";
+}
+
     function esCitaAtendida(estado) {
       const s = String(estado || "").trim().toUpperCase();
       return ESTADOS_ATENDIDOS.has(s);
