@@ -1302,6 +1302,17 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       const nombre = data.nombre ? ` (${escapeHtml(data.nombre)})` : "";
       setHintHTML(`⚠️ Paciente ya valorado${fecha}${nombre}.`, "#c0392b");
 
+     // ==========================
+// ✅ CARGAR ABONO DESDE N8N
+// ==========================
+if (data.abono_valor !== undefined && data.abono_valor !== null) {
+  const abonoInput = document.getElementById("abono");
+  if (abonoInput) {
+    abonoInput.value = Number(data.abono_valor) || 0;
+  }
+}
+
+      
       calcularTotal();
     }
 
