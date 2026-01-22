@@ -50,14 +50,19 @@ async function cargarPendientes() {
 
   // 3️⃣ indexar evoluciones por DOCUMENTO + FECHA
   const index = new Set(
-    evols.map(e => `${e.paciente_numdoc}|${e.evo_fecha}`)
-  );
+  evols.map(e =>
+    `${String(e.paciente_numdoc).trim()}|${String(e.evo_fecha).trim()}`
+  )
+);
+
 
   const pendientes = [];
 
   citas.forEach(c => {
     const fechaCita = soloFecha(c.inicio);
-    const key = `${c.documento_paciente}|${fechaCita}`;
+    const key =
+  `${String(c.documento_paciente).trim()}|${String(fechaCita).trim()}`;
+
 
     // ❗ regla clínica REAL
     if (!index.has(key)) {
