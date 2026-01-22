@@ -108,9 +108,8 @@
       (evos || []).forEach(e => {
         const doc = String(e.paciente_numdoc ?? "");
         if (!doc) return;
-        const f = ymdClinic(e.evo_fecha); // ✅ fecha clínica
-        evoSet.add(doc + "|" + f);
-      });
+        const f = String(e.evo_fecha).split("T")[0]; // YYYY-MM-DD SIN TZ
+evoSet.add(doc + "|" + f);
 
       // 4) Para cada cita, exigir evolución MISMA FECHA (ignorando hora)
       const tbody = document.getElementById("tbody");
