@@ -277,6 +277,9 @@ body{margin:0;font-family:Inter,Arial;background:linear-gradient(180deg,#fff,var
 .g-3{grid-template-columns:repeat(3,minmax(240px,1fr))}
 .full{grid-column:1/-1}
 input,select{padding:16px;border-radius:14px;border:1px solid var(--border)}
+label{display:block;font-size:12px;font-weight:800;color:#111827;margin-bottom:6px}
+.field{display:flex;flex-direction:column}
+
 button{background:var(--neon);color:#fff;padding:14px 22px;border:none;border-radius:14px;font-weight:900;cursor:pointer}
 .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
 .kpi{font-size:24px;font-weight:900;color:var(--neon)}
@@ -323,36 +326,67 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 <h1>Registrar gasto</h1>
 
 <div class="grid g-4">
-  <input type="date" id="fecha">
-  <select id="tipo">
-    <option value="fijo">Fijo</option>
-    <option value="variable">Variable</option>
-    <option value="extraordinario">Extraordinario</option>
-  </select>
-  <select id="categoria">
-    <option>Consumibles</option>
-    <option>Laboratorio</option>
-    <option>Arriendo</option>
-    <option>Servicios públicos</option>
-    <option>Internet / software</option>
-    <option>Compra de equipos</option>
-    <option>Material desechable</option>
-    <option>Medicamentos</option>
-  </select>
-  <div style="display:flex;gap:10px">
-    <select id="proveedor"></select>
-    <button type="button" onclick="modalProv.style.display='flex'">＋</button>
+  <div class="field">
+    <label>Fecha</label>
+    <input type="date" id="fecha">
+  </div>
+  <div class="field">
+    <label>Tipo</label>
+    <select id="tipo">
+      <option value="fijo">Fijo</option>
+      <option value="variable">Variable</option>
+      <option value="extraordinario">Extraordinario</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Categoría</label>
+    <select id="categoria">
+      <option>Consumibles</option>
+      <option>Laboratorio</option>
+      <option>Arriendo</option>
+      <option>Servicios públicos</option>
+      <option>Internet / software</option>
+      <option>Compra de equipos</option>
+      <option>Material desechable</option>
+      <option>Medicamentos</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Proveedor</label>
+    <div style="display:flex;gap:10px">
+      <select id="proveedor"></select>
+      <button type="button" onclick="modalProv.style.display='flex'">＋</button>
+    </div>
   </div>
 </div>
 
 <div class="grid g-3" style="margin-top:26px">
-  <input id="monto" type="number" placeholder="Monto">
-  <input id="forma_pago" placeholder="Forma de pago">
-  <input id="responsable" readonly>
+  <div class="field">
+    <label>Monto</label>
+    <input id="monto" type="number" placeholder="Monto">
+  </div>
+  <div class="field">
+    <label>Forma de pago</label>
+    <select id="forma_pago">
+      <option value="">Seleccione</option>
+      <option value="Efectivo">Efectivo</option>
+      <option value="Nequi">Nequi</option>
+      <option value="Transferencia">Transferencia</option>
+      <option value="Tarjeta Debito">Tarjeta Debito</option>
+      <option value="Tarjeta de Credito">Tarjeta de Credito</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Responsable</label>
+    <input id="responsable" readonly>
+  </div>
 </div>
 
 <div class="grid" style="margin-top:26px">
-  <input id="descripcion" class="full" placeholder="Descripción">
+  <div class="field full">
+    <label>Descripción</label>
+    <input id="descripcion" class="full" placeholder="Descripción">
+  </div>
 </div>
 
 <button id="btnGuardar" onclick="guardarGasto()">Guardar gasto</button>
@@ -395,6 +429,8 @@ th,td{padding:14px;border-bottom:1px solid var(--border);font-size:13px}
 
 </body>
 </html>
+
+
 
 
 
