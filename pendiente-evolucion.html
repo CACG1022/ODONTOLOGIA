@@ -1,272 +1,418 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Pendientes por evolucionar</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pendientes por evolucionar · DENTOVA</title>
 
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    // ✅ Supabase (mismo proyecto)
     const supabase = createClient(
       "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
+    window.supabase = supabase;
 
-    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
-    const TZ_CLINICA = "America/Bogota"; // 🇨🇴 Colombia (evita desfases por UTC)
+    window.APP_URLS = {
+      LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
+      HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html"
+    };
 
-    async function verificarSesion(){
+    // (Opcional) permisos por módulo: si no lo tienes configurado, igual no bloquea
+    const MODULO = "pendientes_evolucion";
+
+    async function verificarSesion() {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session){
-        window.location.href = LOGIN_URL;
-        return false;
+      if (!session) {
+        window.location.href = window.APP_URLS.LOGIN;
+        return null;
       }
-      return true;
+      return session;
     }
 
-    // ✅ Devuelve YYYY-MM-DD en zona horaria de la clínica (ignora la hora)
-    function ymdClinic(dt){
-      const d = (dt instanceof Date) ? dt : new Date(dt);
-      const fmt = new Intl.DateTimeFormat("en-CA", {
-        timeZone: TZ_CLINICA,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
+    async function validarPermisoModulo() {
+      const session = await verificarSesion();
+      if (!session) return;
+
+      try {
+        const { data: perfil } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        const rol = perfil?.role;
+        if (!rol) return;
+
+        const { data: permiso } = await supabase
+          .from("modulos_permisos")
+          .select("admin, doctor, auxiliar, paciente")
+          .eq("modulo", MODULO)
+          .maybeSingle();
+
+        // Si el módulo no existe en la tabla, no bloquear
+        if (!permiso) return;
+
+        if (!permiso[rol]) {
+          alert("⛔ No tienes permiso para acceder a Pendientes por evolucionar.");
+          window.location.href = window.APP_URLS.HOME;
+          return;
+        }
+      } catch (e) { /* no bloquear */ }
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) window.location.href = window.APP_URLS.LOGIN;
+    });
+
+    // ========= Helpers Bogotá (evita desfase UTC) =========
+    const TZ = "America/Bogota";
+    const fmtBogotaDate = new Intl.DateTimeFormat("sv-SE", {
+      timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit"
+    });
+    const fmtBogotaTime = new Intl.DateTimeFormat("es-CO", {
+      timeZone: TZ, hour: "2-digit", minute: "2-digit"
+    });
+
+    function ymdBogotaFromISO(iso) {
+      try { return fmtBogotaDate.format(new Date(iso)); }
+      catch { return String(iso || "").split("T")[0] || ""; }
+    }
+    function hmBogotaFromISO(iso) {
+      try { return fmtBogotaTime.format(new Date(iso)); }
+      catch { return ""; }
+    }
+    function hoyYMD_Bogota() { return fmtBogotaDate.format(new Date()); }
+
+    function parseYMDToUTCDate(ymd) {
+      const [y, m, d] = String(ymd).split("-").map(n => parseInt(n, 10));
+      if (!y || !m || !d) return null;
+      return new Date(Date.UTC(y, m - 1, d));
+    }
+    function diffDaysYMD(aYMD, bYMD) {
+      const a = parseYMDToUTCDate(aYMD);
+      const b = parseYMDToUTCDate(bYMD);
+      if (!a || !b) return 0;
+      return Math.floor((a.getTime() - b.getTime()) / 86400000);
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // ========= REGLA CLÍNICA =========
+    // Ajusta estos estados según tu sistema
+    const ESTADOS_ATENDIDOS = new Set([
+      "ATENDIDO","ATENDIDA",
+      "REALIZADA","REALIZADO",
+      "FINALIZADA","FINALIZADO",
+      "COMPLETADA","COMPLETADO",
+      "CERRADA","CERRADO"
+    ]);
+    function esCitaAtendida(estado) {
+      const s = String(estado || "").trim().toUpperCase();
+      return ESTADOS_ATENDIDOS.has(s);
+    }
+
+    // ========= UI =========
+    function $(id) { return document.getElementById(id); }
+    function setLoading(on) {
+      const btn = $("btnRefrescar");
+      if (btn) {
+        btn.disabled = !!on;
+        btn.textContent = on ? "Cargando..." : "Refrescar";
+      }
+      const st = $("status");
+      if (st) st.textContent = on ? "Consultando citas y evoluciones..." : "";
+    }
+
+    async function cargarPendientes() {
+      setLoading(true);
+
+      const dias = parseInt(($("selDias")?.value || "7"), 10) || 7;
+      const hoy = hoyYMD_Bogota();
+
+      const desde = (() => {
+        const d = parseYMDToUTCDate(hoy);
+        d.setUTCDate(d.getUTCDate() - (dias - 1));
+        const y = d.getUTCFullYear();
+        const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+        const da = String(d.getUTCDate()).padStart(2, "0");
+        return `${y}-${m}-${da}`;
+      })();
+
+      // 1) Traer CITAS del rango
+      let citas = [];
+      try {
+        const { data, error } = await window.supabase
+          .from("citas")
+          .select("inicio, fin, estado, nombre_paciente, documento_paciente, nombre_profesional")
+          .gte("inicio", `${desde}T00:00:00.000Z`)
+          .lte("inicio", `${hoy}T23:59:59.999Z`)
+          .order("inicio", { ascending: true });
+
+        if (error) throw error;
+        citas = data || [];
+      } catch (e) {
+        console.warn("Error consultando citas:", e);
+        $("tbodyPendientes").innerHTML =
+          `<tr><td colspan="6" style="padding:12px; text-align:center; color:#6b7a90;">Error consultando citas.</td></tr>`;
+        setLoading(false);
+        return;
+      }
+
+      const citasAtendidas = citas.filter(c => esCitaAtendida(c.estado));
+
+      // 2) Traer EVOLUCIONES del rango (evo_fecha es DATE)
+      let evols = [];
+      try {
+        const { data, error } = await window.supabase
+          .from("EVOLUCIONES")
+          .select("paciente_numdoc, evo_fecha")
+          .gte("evo_fecha", desde)
+          .lte("evo_fecha", hoy);
+
+        if (error) throw error;
+        evols = data || [];
+      } catch (e) {
+        console.warn("Error consultando evoluciones:", e);
+        $("tbodyPendientes").innerHTML =
+          `<tr><td colspan="6" style="padding:12px; text-align:center; color:#6b7a90;">Error consultando evoluciones.</td></tr>`;
+        setLoading(false);
+        return;
+      }
+
+      // 3) Indexar evoluciones por clave (cedula|YYYY-MM-DD)
+      const setEvo = new Set();
+      for (const e of evols) {
+        const ced = String(e.paciente_numdoc ?? "").trim();
+        const f = String(e.evo_fecha ?? "").trim(); // DATE => "YYYY-MM-DD"
+        if (ced && f) setEvo.add(`${ced}|${f}`);
+      }
+
+      // 4) Pendientes: cita atendida sin evo ese mismo día (sin hora)
+      const pendientes = [];
+      for (const c of citasAtendidas) {
+        const ced = String(c.documento_paciente ?? "").trim();
+        const citaFecha = ymdBogotaFromISO(c.inicio); // ✅ fecha Bogotá
+        if (!ced || !citaFecha) continue;
+
+        const key = `${ced}|${citaFecha}`;
+        if (!setEvo.has(key)) {
+          pendientes.push({
+            fecha: citaFecha,
+            hora: hmBogotaFromISO(c.inicio),
+            paciente: c.nombre_paciente || "—",
+            documento: ced,
+            profesional: c.nombre_profesional || "—",
+            atrasoDias: diffDaysYMD(hoy, citaFecha)
+          });
+        }
+      }
+
+      // Orden: más antiguos primero
+      pendientes.sort((a, b) => {
+        if (a.fecha !== b.fecha) return a.fecha.localeCompare(b.fecha);
+        return String(a.hora || "").localeCompare(String(b.hora || ""));
       });
-      return fmt.format(d); // en-CA => YYYY-MM-DD
-    }
 
-    function diffDias(ymd){
-      // ymd: YYYY-MM-DD (zona clínica)
-      const [Y,M,D] = ymd.split("-").map(Number);
-      const hoy = new Date();
-      const hoyYMD = ymdClinic(hoy);
-      const [hY,hM,hD] = hoyYMD.split("-").map(Number);
+      // KPI
+      $("kHoy").textContent = String(pendientes.filter(p => p.atrasoDias === 0).length);
+      $("kHis").textContent = String(pendientes.filter(p => p.atrasoDias >= 1).length);
 
-      // Construir fechas "locales" neutrales (sin TZ) para diferencia en días
-      const a = new Date(hY, hM-1, hD);
-      const b = new Date(Y,  M-1,  D);
-      const ms = a - b;
-      return Math.floor(ms / (1000*60*60*24));
-    }
-
-    function setRowMessage(html){
-      const tbody = document.getElementById("tbody");
-      tbody.innerHTML = `<tr><td colspan="6">${html}</td></tr>`;
-    }
-
-    async function cargarPendientes(){
-      if (!await verificarSesion()) return;
-
-      const dias = Number(document.getElementById("dias").value || 7);
-
-      const ahora = new Date();
-      const hoyFin = new Date(ahora); hoyFin.setHours(23,59,59,999);
-      const desde = new Date(ahora);  desde.setDate(desde.getDate() - dias); desde.setHours(0,0,0,0);
-
-      // 1) Citas atendidas en rango (por timestamp real)
-      const { data: citas, error: eCitas } = await supabase
-        .from("citas")
-        .select("inicio, nombre_paciente, documento_paciente, nombre_profesional")
-        .eq("estado", "atendida")
-        .gte("inicio", desde.toISOString())
-        .lte("inicio", hoyFin.toISOString());
-
-      if (eCitas){
-        console.error("Error citas:", eCitas);
-        setRowMessage("Error cargando citas");
-        return;
-      }
-
-      if (!citas || citas.length === 0){
-        setRowMessage("No hay citas atendidas en este rango");
-        document.getElementById("kpi-hoy").textContent = "0";
-        document.getElementById("kpi-historico").textContent = "0";
-        return;
-      }
-
-      // 2) Evoluciones (solo necesitamos fecha + documento)
-      const documentos = [...new Set(citas.map(c => c.documento_paciente).filter(Boolean).map(String))];
-
-      // Nota: traemos todas las evoluciones de esos documentos (simple),
-      // y cruzamos por FECHA (YYYY-MM-DD) ignorando la hora.
-      const { data: evos, error: eEvos } = await supabase
-        .from("EVOLUCIONES")
-        .select("paciente_numdoc, evo_fecha")
-        .in("paciente_numdoc", documentos);
-
-      if (eEvos){
-        console.error("Error evoluciones:", eEvos);
-        setRowMessage("Error cargando evoluciones");
-        return;
-      }
-
-      // 3) Construir un SET por (doc|YYYY-MM-DD)
-      const evoSet = new Set();
-      (evos || []).forEach(e => {
-        const doc = String(e.paciente_numdoc ?? "");
-        if (!doc) return;
-        const f = String(e.evo_fecha).split("T")[0]; // YYYY-MM-DD SIN TZ
-evoSet.add(doc + "|" + f);
-
-      // 4) Para cada cita, exigir evolución MISMA FECHA (ignorando hora)
-      const tbody = document.getElementById("tbody");
+      // Render
+      const tbody = $("tbodyPendientes");
       tbody.innerHTML = "";
 
-      let pendientesHoy = 0;
-      let pendientesHistoricos = 0;
-
-      // Orden: más atrasados primero, luego recientes (opcional, mantiene claridad)
-      const citasOrdenadas = [...citas].sort((a,b)=> new Date(a.inicio) - new Date(b.inicio));
-
-      citasOrdenadas.forEach(c => {
-        const doc = String(c.documento_paciente ?? "");
-        const fechaCita = ymdClinic(c.inicio); // ✅ fecha clínica
-        const key = doc + "|" + fechaCita;
-
-        const tieneEvoMismaFecha = evoSet.has(key);
-
-        if (!tieneEvoMismaFecha){
-          const atraso = diffDias(fechaCita);
-          if (atraso === 0) pendientesHoy++;
-          else pendientesHistoricos++;
-
-          const clase =
-            atraso === 0 ? "hoy" :
-            atraso === 1 ? "warn" :
-            "danger";
-
-          const tr = document.createElement("tr");
-          tr.className = clase;
-          tr.innerHTML = `
-            <td>${new Date(c.inicio).toLocaleDateString("es-CO")}</td>
-            <td>${new Date(c.inicio).toLocaleTimeString("es-CO",{hour:"2-digit",minute:"2-digit"})}</td>
-            <td>${c.nombre_paciente || "—"}</td>
-            <td>${c.documento_paciente || "—"}</td>
-            <td>${c.nombre_profesional || "—"}</td>
-            <td>${atraso === 0 ? "HOY" : atraso + " días"}</td>
-          `;
-          tbody.appendChild(tr);
-        }
-      });
-
-      document.getElementById("kpi-hoy").textContent = String(pendientesHoy);
-      document.getElementById("kpi-historico").textContent = String(pendientesHistoricos);
-
-      if (tbody.children.length === 0){
-        setRowMessage("✅ No hay pacientes pendientes por evolucionar");
+      if (!pendientes.length) {
+        tbody.innerHTML =
+          `<tr><td colspan="6" style="padding:12px; text-align:center; color:#6b7a90;">✅ No hay pendientes por evolucionar en el rango seleccionado.</td></tr>`;
+        setLoading(false);
+        return;
       }
+
+      for (const p of pendientes) {
+        const tr = document.createElement("tr");
+
+        if (p.atrasoDias === 0) tr.className = "row-hoy";
+        else if (p.atrasoDias === 1) tr.className = "row-1";
+        else tr.className = "row-2";
+
+        const atrasoLabel = (p.atrasoDias === 0)
+          ? "HOY"
+          : `${p.atrasoDias} día${p.atrasoDias === 1 ? "" : "s"}`;
+
+        tr.innerHTML = `
+          <td>${escapeHtml(p.fecha)}</td>
+          <td>${escapeHtml(p.hora)}</td>
+          <td>${escapeHtml(p.paciente)}</td>
+          <td>${escapeHtml(p.documento)}</td>
+          <td>${escapeHtml(p.profesional)}</td>
+          <td style="font-weight:700;">${escapeHtml(atrasoLabel)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      setLoading(false);
     }
 
-    window.cargarPendientes = cargarPendientes;
-    window.addEventListener("DOMContentLoaded", cargarPendientes);
+    document.addEventListener("DOMContentLoaded", async () => {
+      await validarPermisoModulo();
+      await cargarPendientes();
+
+      $("selDias")?.addEventListener("change", () => cargarPendientes());
+      $("btnRefrescar")?.addEventListener("click", () => cargarPendientes());
+    });
+
+    window.cargarPendientesEvolucion = cargarPendientes;
   </script>
 
   <style>
+    :root{
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --ink:#102a43;
+      --muted:#6b7a90;
+      --line:#e7edf5;
+      --shadow:0 10px 30px rgba(16,42,67,.08);
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
     body{
-      margin:0;
-      padding:30px;
-      background:#f4f6f8;
-      font-family: Inter, Arial, sans-serif;
-      color:#1f2937;
+      margin:0; padding:28px;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
     }
-    h1{ margin-bottom:10px; }
+    h1{ margin:0 0 18px; font-size: 34px; letter-spacing: -0.3px; }
+    .topbar{
+      display:flex; align-items:center; justify-content:space-between;
+      gap:14px; margin-bottom: 14px; flex-wrap: wrap;
+    }
+    .controls{ display:flex; align-items:center; gap:12px; flex-wrap: wrap; }
+    label{ color:var(--muted); font-size: 13px; }
+    select, button{
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button{
+      background:#0D47A1; color:#fff; border-color:#0D47A1;
+      padding: 10px 14px; font-weight: 700;
+    }
+    button:disabled{ opacity:.6; cursor:not-allowed; }
+    .status{ color: var(--muted); font-size: 12px; margin-top: 6px; min-height: 16px; }
 
-    .top{
-      display:flex;
-      gap:20px;
-      flex-wrap:wrap;
-      align-items:center;
-      margin-bottom:20px;
-    }
-    .kpis{
-      display:flex;
-      gap:12px;
-    }
+    .kpis{ display:flex; gap:14px; flex-wrap: wrap; }
     .kpi{
-      background:#fff;
-      padding:14px 18px;
-      border-radius:12px;
-      box-shadow:0 6px 18px rgba(0,0,0,.08);
-      font-weight:800;
-      font-size:14px;
-      min-width:160px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 14px 16px;
+      min-width: 190px;
     }
-    .kpi span{
-      display:block;
-      font-size:26px;
-      margin-top:4px;
-    }
+    .kpi .t{ color: var(--muted); font-size: 12px; font-weight: 700; }
+    .kpi .v{ font-size: 28px; font-weight: 900; margin-top: 6px; }
 
-    select{
-      padding:8px 12px;
-      border-radius:10px;
-      border:1px solid #d1d5db;
-      font-weight:700;
+    .card{
+      margin-top: 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
     }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border-radius:14px;
-      overflow:hidden;
-      box-shadow:0 10px 30px rgba(0,0,0,.08);
-    }
-    th,td{
-      padding:12px 14px;
-      border-bottom:1px solid #e5e7eb;
-      font-size:14px;
-    }
-    th{
-      background:#f9fafb;
-      font-size:12px;
-      color:#6b7280;
+    table{ width:100%; border-collapse: collapse; font-size: 14px; }
+    thead th{
       text-align:left;
+      font-size: 12px;
+      color: var(--muted);
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfdff;
     }
+    tbody td{
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+    tbody tr:last-child td{ border-bottom: none; }
 
-    tr.hoy td{ background:#ecfeff; }
-    tr.warn td{ background:#fef3c7; }
-    tr.danger td{ background:#fee2e2; }
+    /* colores */
+    .row-hoy{ background: #eafcff; }
+    .row-1{ background: #fff4cc; }
+    .row-2{ background: #ffe1e1; }
+
+    @media (max-width: 900px){
+      body{ padding: 18px; }
+      h1{ font-size: 28px; }
+      .kpi{ min-width: 160px; }
+    }
   </style>
 </head>
 
 <body>
   <h1>🚨 Pendientes por evolucionar</h1>
 
-  <div class="top">
-    <div>
-      Ver pendientes últimos
-      <select id="dias" onchange="cargarPendientes()">
-        <option value="7">7 días</option>
+  <div class="topbar">
+    <div class="controls">
+      <label for="selDias">Ver pendientes últimos</label>
+      <select id="selDias">
+        <option value="1">1 día</option>
+        <option value="3">3 días</option>
+        <option value="7" selected>7 días</option>
         <option value="14">14 días</option>
         <option value="30">30 días</option>
       </select>
+
+      <button id="btnRefrescar" type="button">Refrescar</button>
+      <div id="status" class="status"></div>
     </div>
 
     <div class="kpis">
-      <div class="kpi">Pendientes hoy<span id="kpi-hoy">0</span></div>
-      <div class="kpi">Pendientes históricos<span id="kpi-historico">0</span></div>
+      <div class="kpi">
+        <div class="t">Pendientes hoy</div>
+        <div class="v" id="kHoy">0</div>
+      </div>
+      <div class="kpi">
+        <div class="t">Pendientes históricos</div>
+        <div class="v" id="kHis">0</div>
+      </div>
     </div>
   </div>
 
-  <table>
-    <thead>
-      <tr>
-        <th>Fecha</th>
-        <th>Hora</th>
-        <th>Paciente</th>
-        <th>Documento</th>
-        <th>Profesional</th>
-        <th>Atraso</th>
-      </tr>
-    </thead>
-    <tbody id="tbody">
-      <tr><td colspan="6">Cargando...</td></tr>
-    </tbody>
-  </table>
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:120px;">Fecha</th>
+          <th style="width:120px;">Hora</th>
+          <th>Paciente</th>
+          <th style="width:160px;">Documento</th>
+          <th>Profesional</th>
+          <th style="width:110px;">Atraso</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyPendientes">
+        <tr>
+          <td colspan="6" style="padding:12px; text-align:center; color:#6b7a90;">
+            Cargando...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
 </body>
 </html>
+
 
