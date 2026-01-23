@@ -901,6 +901,11 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
       state.session = guard.session;
       $("user-email").textContent = (guard.session.user?.email || "Usuario").toString();
 
+      // 🔐 aplicar control UI por rol DESPUÉS de conocer el rol real
+      if (typeof window.applyRoleUI === "function") {
+        window.applyRoleUI();
+      }
+
       await refrescarDashboard();
     }
 
@@ -1037,7 +1042,7 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
    No modifica autenticación ni permisos existentes
    ========================================================= */
 (function(){
-  function applyRoleUI(){
+  window.applyRoleUI = function applyRoleUI(){
     try{
       const role = (window.state && state.role) ? String(state.role).toLowerCase() : null;
       if (!role) return;
@@ -1090,6 +1095,9 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 </body>
 </html>
+
+
+
 
 
 
