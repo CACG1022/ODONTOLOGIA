@@ -332,6 +332,26 @@
 }
 </style>
 
+
+<style>
+/* ================================
+   🧩 FIX TABLET – SCROLL HORIZONTAL
+   No modifica estilos existentes
+   ================================ */
+
+@media (max-width: 1024px){
+  .table-scroll-fix{
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  .table-scroll-fix table{
+    min-width: 980px;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -427,7 +447,7 @@
           </h3>
 
            
-           <div style="overflow: visible; border:1px solid var(--line); border-radius: 12px;">
+           <div class="table-scroll-fix" style="overflow: visible; border:1px solid var(--line); border-radius: 12px;">
 
             <table>
               <thead>
