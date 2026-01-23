@@ -424,6 +424,35 @@
   color: #000 !important;
   opacity: 0.6;
 }
+/* ================================
+   🔽 SELECT / OPTION – TEXTO LEGIBLE
+   ================================ */
+
+/* Select cerrado */
+select{
+  color: #000 !important;                 /* texto visible */
+  background-color: #ffffff !important;   /* fondo blanco real */
+}
+
+/* Opciones del desplegable */
+select option{
+  color: #000 !important;
+  background-color: #ffffff !important;
+}
+
+/* Opción seleccionada / hover */
+select option:checked,
+select option:hover{
+  background-color: #e5e7eb !important;   /* gris claro */
+  color: #000 !important;
+}
+
+/* Safari / iOS fix */
+select:focus{
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(32,240,208,.6),
+              0 0 12px rgba(32,240,208,.35);
+}
 
     
 
