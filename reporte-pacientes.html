@@ -352,6 +352,28 @@
 }
 </style>
 
+
+<style>
+/* ================================
+   📱 FIX TABLET VISUAL REAL
+   Oculta columnas extra y mejora texto
+   ================================ */
+
+@media (max-width: 1024px){
+  /* Ocultar columnas de acciones excepto la primera */
+  th:nth-child(n+5),
+  td:nth-child(n+5){
+    display: none;
+  }
+
+  /* Ajustes de texto */
+  td{
+    white-space: normal;
+    word-break: break-word;
+  }
+}
+</style>
+
 </head>
 
 <body>
@@ -978,7 +1000,6 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 </body>
 </html>
-
 
 
 
