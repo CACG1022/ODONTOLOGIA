@@ -549,6 +549,12 @@
 
       <!-- ✅ FIRMA: ocultas por defecto -->
       <div id="firmaWrapper" class="firma-wrapper full">
+        <!-- ✅ RESUMEN DE EVOLUCIÓN A FIRMAR -->
+        <div id="resumenFirma" class="doc-box" style="margin-bottom:14px; display:none;">
+        <div class="k">Resumen de la evolución</div>
+         <div class="v" id="resumenFirmaContenido"></div>
+        </div>
+
 
         <div class="ctrl full">
           <label>Firma del paciente (opcional)</label>
@@ -1299,10 +1305,12 @@
             class="btn btn-buscar"
             style="padding:8px 10px; width:auto;"
             onclick="editarFirmas(${idx})"
-            title="Editar firmas"
-          >
-            Firmar
-          </button>
+            title="${(fp && fpr) ? 'Evolución ya firmada' : 'Firmar evolución'}"
+            ${(fp && fpr) ? 'disabled' : ''}
+            >
+             ${(fp && fpr) ? 'Firmado' : 'Firmar'}
+            </button>
+
         </td>
       `;
       tbody.appendChild(tr);
@@ -1481,6 +1489,30 @@
   window.openEvolucionDoc = openEvolucionDoc;
   window.closeEvoDocModal = closeEvoDocModal;
 
+
+  function cargarResumenFirma(evo) {
+  const box = document.getElementById("resumenFirma");
+  const cont = document.getElementById("resumenFirmaContenido");
+  if (!box || !cont || !evo) return;
+
+  const fecha = (evo.fecha || "");
+  const hora = (evo.hora || "");
+  const profesional = evo.profesional || "";
+  const procedimiento = evo.procedimiento || "";
+  const detalle = evo.detalle || "";
+
+  cont.innerHTML = `
+    <strong>Fecha / Hora:</strong> ${escapeHtml(fecha)} ${escapeHtml(hora)}<br>
+    <strong>Profesional:</strong> ${escapeHtml(profesional)}<br>
+    <strong>Procedimiento:</strong> ${escapeHtml(procedimiento)}<br><br>
+    <strong>Detalle / Observaciones:</strong><br>
+    ${escapeHtml(detalle).replace(/\\n/g, "<br>")}
+  `;
+
+  box.style.display = "block";
+}
+
+
   // ==============================
   // 🆕 EDICIÓN DE FIRMAS POST-GUARDADO (NUEVO)
   // ==============================
@@ -1491,6 +1523,8 @@
 
     const evo = evoluciones[idx];
     if (!evo) return;
+
+    cargarResumenFirma(evo);
 
     toggleFirmas(true);
 
