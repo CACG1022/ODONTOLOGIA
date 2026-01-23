@@ -1217,8 +1217,109 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 })();
 </script>
 
+
+<!-- =========================================================
+     🚀 FUTURISTIC UI + ROW SELECTION (SAFE ADDITIVE OVERRIDE)
+     Basado en imagen DENTOVA (neón cian / vidrio premium)
+     ========================================================= -->
+<style>
+/* Glow accents */
+:root{
+  --neon: #22f3ff;
+  --neon-soft: rgba(34,243,255,.35);
+}
+
+/* Subtle animated glow */
+.container::before{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius: inherit;
+  background: linear-gradient(120deg, transparent, var(--neon-soft), transparent);
+  opacity:.35;
+  pointer-events:none;
+}
+
+/* KPI futuristic accent */
+.kpi{
+  position:relative;
+  overflow:hidden;
+}
+.kpi::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background: radial-gradient(400px 120px at 10% 0%, rgba(34,243,255,.18), transparent 60%);
+  pointer-events:none;
+}
+
+/* Table hover + selected row */
+table tbody tr{
+  transition: background .25s ease, box-shadow .25s ease;
+  cursor:pointer;
+}
+
+table tbody tr:hover{
+  background: rgba(34,243,255,0.08);
+}
+
+table tbody tr.selected{
+  background: linear-gradient(
+    90deg,
+    rgba(34,243,255,0.25),
+    rgba(34,243,255,0.10)
+  );
+  box-shadow: inset 0 0 0 1px rgba(34,243,255,.55),
+              0 0 18px rgba(34,243,255,.35);
+}
+
+/* Header glow */
+.header .title{
+  color: var(--neon);
+  text-shadow: 0 0 18px rgba(34,243,255,.45);
+}
+
+/* Buttons neon hover */
+.btn:hover{
+  box-shadow: 0 0 0 1px rgba(34,243,255,.35),
+              0 0 16px rgba(34,243,255,.35);
+}
+
+/* Inputs focus */
+input:focus, select:focus{
+  box-shadow: 0 0 0 1px rgba(34,243,255,.6),
+              0 0 12px rgba(34,243,255,.35);
+}
+
+/* Scroll indicator neon */
+.table-scroll-x::after{
+  color: #67e8f9;
+}
+</style>
+
+<script>
+/* =========================================================
+   🖱️ SELECCIÓN DE FILA COMPLETA (VISUAL)
+   No interfiere con lógica ni permisos
+   ========================================================= */
+(function(){
+  function enableRowSelection(){
+    const tbody = document.getElementById("tbody_pacientes");
+    if (!tbody) return;
+
+    tbody.addEventListener("click", function(e){
+      const tr = e.target.closest("tr");
+      if (!tr) return;
+
+      tbody.querySelectorAll("tr.selected").forEach(r => r.classList.remove("selected"));
+      tr.classList.add("selected");
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", enableRowSelection);
+})();
+</script>
+
 </body>
 </html>
-
-
 
