@@ -362,7 +362,27 @@
 .table-scroll-x td:nth-child(2){
   white-space: normal;
 }
+/* =========================================================
+   🧼 LIMPIEZA FINAL – BLUR SOLO DONDE DEBE IR
+   ========================================================= */
 
+/* ❌ Quitar blur de capas grandes */
+.section,
+.header,
+.footer{
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: transparent !important;
+}
+
+/* ✅ Mantener vidrio SOLO en cards */
+.card{
+  backdrop-filter: blur(18px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(18px) saturate(160%) !important;
+  background: rgba(255,255,255,0.08) !important;
+}
+
+    
 
   </style>
 
