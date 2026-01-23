@@ -572,6 +572,13 @@
           </div>
         </div>
 
+
+        <div class="ctrl full" style="margin-top:14px;">
+          <button type="button" class="btn btn-agenda" style="max-width:260px;" onclick="guardarFirmasEvolucion()">
+            Guardar firmas
+          </button>
+        </div>
+
       </div>
       <!-- /firmaWrapper -->
 
@@ -1274,6 +1281,16 @@
           >
             Ver
           </button>
+
+          <button
+            type="button"
+            class="btn btn-buscar"
+            style="padding:8px 10px; width:auto;"
+            onclick="editarFirmas(${idx})"
+            title="Editar firmas"
+          >
+            Firmar
+          </button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -1451,9 +1468,93 @@
 
   window.openEvolucionDoc = openEvolucionDoc;
   window.closeEvoDocModal = closeEvoDocModal;
+
+  // ==============================
+  // 🆕 EDICIÓN DE FIRMAS POST-GUARDADO (NUEVO)
+  // ==============================
+  let _idxEvolucionFirmas = null;
+
+  function editarFirmas(idx) {
+    _idxEvolucionFirmas = idx;
+
+    const evo = evoluciones[idx];
+    if (!evo) return;
+
+    toggleFirmas(true);
+
+    limpiarFirma("firma_paciente");
+    limpiarFirma("firma_profesional");
+
+    // Si ya existen firmas, precargarlas
+    if (evo.firma_paciente) {
+      const img = new Image();
+      img.onload = () => {
+        const f = firmas["firma_paciente"];
+        f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height);
+        f.hasInk = true;
+      };
+      img.src = evo.firma_paciente;
+    }
+
+    if (evo.firma_profesional) {
+      const img = new Image();
+      img.onload = () => {
+        const f = firmas["firma_profesional"];
+        f.ctx.drawImage(img, 0, 0, f.canvas.width, f.canvas.height);
+        f.hasInk = true;
+      };
+      img.src = evo.firma_profesional;
+    }
+
+    alert("✍️ Puedes editar las firmas y luego presionar 'Guardar firmas'");
+  }
+
+  async function guardarFirmasEvolucion() {
+    if (_idxEvolucionFirmas === null) {
+      alert("⚠️ No hay evolución seleccionada para firmar");
+      return;
+    }
+
+    const evo = evoluciones[_idxEvolucionFirmas];
+    if (!evo) return;
+
+    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
+    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
+    if (firmaPaciente) evo.firma_paciente = firmaPaciente;
+    if (firmaProfesional) evo.firma_profesional = firmaProfesional;
+
+    renderEvoluciones();
+    toggleFirmas(false);
+
+    const payload = {
+      evento: "actualizar_firmas",
+      cedula: _cedulaActual,
+      id_evolucion: evo.id,
+      firma_paciente: firmaPaciente || null,
+      firma_profesional: firmaProfesional || null,
+      fecha_envio: new Date().toISOString()
+    };
+
+    try {
+      await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      alert("✅ Firmas actualizadas correctamente");
+    } catch (e) {
+      alert("⚠️ Error enviando firmas actualizadas");
+    }
+
+    _idxEvolucionFirmas = null;
+  }
+
 </script>
 </body>
 </html>
+
 
 
 
