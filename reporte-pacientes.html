@@ -345,6 +345,25 @@
   }
 }
 
+  /* =========================================================
+   🛠️ FIX TABLA RESPONSIVE (ANTI-APLASTAMIENTO)
+   ========================================================= */
+.table-scroll-x table{
+  table-layout: auto;          /* ← deja que la tabla respire */
+  white-space: nowrap;         /* ← evita saltos verticales */
+}
+
+.table-scroll-x td,
+.table-scroll-x th{
+  white-space: nowrap;
+}
+
+/* Permitir salto SOLO en nombres largos si quieres */
+.table-scroll-x td:nth-child(2){
+  white-space: normal;
+}
+
+
   </style>
 </head>
 
