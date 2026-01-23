@@ -281,85 +281,6 @@
       .header{ align-items:flex-start; flex-direction:column; }
     }
   </style>
-
-<style>
-/* ================================
-   📱 ADAPTACIÓN RESPONSIVA EXTRA
-   Solo agregados, no modifica estilos existentes
-   ================================ */
-
-@media (max-width: 900px){
-  .grid > .ctrl{ grid-column: span 12 !important; }
-  .cards > .card{ grid-column: span 12 !important; }
-}
-
-@media (max-width: 768px){
-  body{ padding: 10px; }
-  .topbar{ flex-direction: column; align-items: flex-start; }
-  .meta{ justify-content: flex-start; }
-  table{ font-size: 12px; }
-  th, td{ padding: 8px; }
-}
-
-/* ================================
-   🧩 TABLET – SCROLL HORIZONTAL REAL
-   IMPORTANTE: se fuerza overflow-x con !important
-   (el div original trae overflow: visible inline)
-   ================================ */
-@media (max-width: 1100px){
-  .table-scroll-fix{
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-    display: block;
-  }
-  .table-scroll-fix table{
-    /* Permite que la tabla sea más ancha que la pantalla */
-    min-width: 1400px;
-    table-layout: auto;
-  }
-  .table-scroll-fix th,
-  .table-scroll-fix td{
-    white-space: nowrap;
-  }
-}
-
-/* ================================
-   📱 MÓVIL MUY PEQUEÑO – TABLA EN TARJETAS
-   ================================ */
-@media (max-width: 520px){
-  table, thead, tbody, th, td, tr{
-    display: block;
-  }
-
-  thead{ display:none; }
-
-  tr{
-    border: 1px solid var(--line);
-    border-radius: 12px;
-    margin-bottom: 10px;
-    padding: 10px;
-    background: #fff;
-  }
-
-  td{
-    border: none;
-    padding: 6px 0;
-    white-space: normal;
-  }
-
-  td::before{
-    content: attr(data-label);
-    display: block;
-    font-size: 11px;
-    color: var(--muted);
-    font-weight: 700;
-    margin-bottom: 2px;
-  }
-}
-</style>
-
 </head>
 
 <body>
@@ -455,7 +376,7 @@
           </h3>
 
            
-           <div class="table-scroll-fix" style="overflow: visible; border:1px solid var(--line); border-radius: 12px;">
+           <div style="overflow: visible; border:1px solid var(--line); border-radius: 12px;">
 
             <table>
               <thead>
@@ -987,199 +908,37 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 <script>
 /* =========================================================
-   🔧 OVERRIDE SEGURO – data-label para vista móvil (<=520px)
-   No elimina ni modifica lógica existente.
-   Re-usa window.renderTabla actual y luego añade data-labels.
+   🔐 RESTRICCIÓN POR ROL (ADMIN)
+   - Oculta columnas Teléfono y Correo si NO es admin
+   - Desactiva botón Excel si NO es admin
+   No modifica lógica existente
    ========================================================= */
 (function(){
-  function addDataLabels(){
+  function aplicarRestriccionesPorRol(){
     try{
-      const tbody = document.getElementById("tbody_pacientes");
-      if (!tbody) return;
+      var role = (window.state && window.state.role || "").toLowerCase();
+      if (role !== "admin"){
+        // Ocultar columnas Teléfono (3) y Correo (4)
+        document.querySelectorAll("table thead th:nth-child(3), table thead th:nth-child(4)").forEach(el=>el.style.display="none");
+        document.querySelectorAll("table tbody td:nth-child(3), table tbody td:nth-child(4)").forEach(el=>el.style.display="none");
 
-      const isMobile = window.matchMedia && window.matchMedia("(max-width: 520px)").matches;
-      if (!isMobile) return;
-
-      // labels según columnas actuales (8 columnas con botones)
-      const labels = ["Cédula","Nombre","Teléfono","Correo","Historia clínica","Plan tratamiento","Facturación","Evoluciones"];
-
-      for (const tr of Array.from(tbody.querySelectorAll("tr"))){
-        const tds = Array.from(tr.querySelectorAll("td"));
-        tds.forEach((td, idx) => {
-          if (!td.hasAttribute("data-label")){
-            td.setAttribute("data-label", labels[idx] || "");
-          }
-        });
-      }
-    }catch(e){}
-  }
-
-  // envolver renderTabla actual sin reemplazarla
-  const prev = window.renderTabla;
-  if (typeof prev === "function"){
-    window.renderTabla = function(rows){
-      prev(rows);
-      addDataLabels();
-    };
-  }
-
-  window.addEventListener("resize", addDataLabels);
-  document.addEventListener("DOMContentLoaded", addDataLabels);
-})();
-</script>
-
-
-<script>
-/* =========================================================
-   🔐 CONTROL UI POR ROL (SOLO VISUAL)
-   - Teléfono y Correo: SOLO admin
-   - Botón Excel: SOLO admin
-   No modifica autenticación ni permisos existentes
-   ========================================================= */
-(function(){
-  function applyRoleUI(){
-    try{
-      const role = (window.state && state.role) ? String(state.role).toLowerCase() : null;
-      if (!role) return;
-
-      const isAdmin = role === "admin";
-
-      // 🔹 Botón Excel
-      const btnExcel = document.getElementById("btn-export");
-      if (btnExcel){
-        btnExcel.style.display = isAdmin ? "inline-flex" : "none";
-      }
-
-      // 🔹 Columnas Teléfono (3) y Correo (4)
-      const hideCols = !isAdmin;
-
-      const table = document.querySelector("table");
-      if (!table) return;
-
-      const rows = table.querySelectorAll("tr");
-      rows.forEach(tr => {
-        const cells = tr.children;
-        if (cells.length >= 4){
-          if (hideCols){
-            if (cells[2]) cells[2].style.display = "none"; // Teléfono
-            if (cells[3]) cells[3].style.display = "none"; // Correo
-          } else {
-            if (cells[2]) cells[2].style.display = "";
-            if (cells[3]) cells[3].style.display = "";
-          }
+        // Desactivar botón Excel
+        var btn = document.getElementById("btn-export");
+        if (btn){
+          btn.disabled = true;
+          btn.title = "Solo disponible para administradores";
         }
-      });
-    }catch(e){
-      console.warn("Role UI error:", e);
-    }
-  }
-
-  // aplicar después de render
-  const prevRender = window.renderTabla;
-  if (typeof prevRender === "function"){
-    window.renderTabla = function(rows){
-      prevRender(rows);
-      applyRoleUI();
-    };
-  }
-
-  // aplicar al cargar
-  document.addEventListener("DOMContentLoaded", applyRoleUI);
-})();
-</script>
-
-
-<script>
-/* =========================================================
-   🔐 CONTROL UI POR ROL – FINAL (ROBUSTO)
-   - SOLO AGREGA código (no modifica ni elimina existente)
-   - Teléfono/Correo SOLO para admin
-   - Excel SOLO para admin
-   - Reaplica en cada re-render (MutationObserver)
-   - Oculta/mostrar por índice detectado desde <th> (no fijo)
-   ========================================================= */
-(function(){
-  if (window.__ROLE_UI_ROBUST__) return;
-  window.__ROLE_UI_ROBUST__ = true;
-
-  function getRole(){
-    try{
-      return (window.state && state.role) ? String(state.role).toLowerCase().trim() : null;
-    }catch(_){ return null; }
-  }
-
-  function applyUI(){
-    const role = getRole();
-    if (!role) return;
-
-    const isAdmin = role === "admin";
-
-    // ===== Excel =====
-    const btn = document.getElementById("btn-export");
-    if (btn){
-      btn.style.display = isAdmin ? "inline-flex" : "none";
-      btn.disabled = !isAdmin;
-      if (!isAdmin){
-        btn.onclick = function(e){
-          e.preventDefault();
-          e.stopPropagation();
-          alert("⛔ Solo el rol admin puede exportar a Excel");
-          return false;
-        };
       }
-    }
-
-    // ===== Tabla =====
-    const table = document.querySelector("table");
-    if (!table) return;
-
-    const ths = Array.from(table.querySelectorAll("thead th"));
-    if (!ths.length) return;
-
-    const idxToToggle = [];
-    ths.forEach((th, idx)=>{
-      const t = (th.textContent || "").toLowerCase();
-      if (t.includes("teléfono") || t.includes("telefono") || t.includes("correo")){
-        idxToToggle.push(idx);
-      }
-    });
-
-    if (!idxToToggle.length) return;
-
-    // headers
-    idxToToggle.forEach(i=>{
-      if (ths[i]) ths[i].style.display = isAdmin ? "" : "none";
-    });
-
-    // body cells
-    const rows = Array.from(table.querySelectorAll("tbody tr"));
-    rows.forEach(tr=>{
-      const tds = tr.children;
-      idxToToggle.forEach(i=>{
-        if (tds[i]) tds[i].style.display = isAdmin ? "" : "none";
-      });
-    });
-
-    // En móvil (<=520px), también hay data-label; no lo tocamos, solo ocultamos celdas.
+    }catch(e){ console.error(e); }
   }
 
-  // Observa cambios del DOM (re-renders)
-  const obs = new MutationObserver(applyUI);
-  obs.observe(document.body, { childList:true, subtree:true });
-
-  function waitRole(){
-    if (getRole()){
-      applyUI();
-    } else {
-      requestAnimationFrame(waitRole);
-    }
-  }
-
-  document.addEventListener("DOMContentLoaded", waitRole);
-  window.addEventListener("load", waitRole);
+  document.addEventListener("DOMContentLoaded", function(){
+    setTimeout(aplicarRestriccionesPorRol, 500);
+  });
 })();
 </script>
 
 </body>
 </html>
+
 
