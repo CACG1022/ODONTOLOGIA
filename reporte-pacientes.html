@@ -365,6 +365,123 @@
 
 
   </style>
+
+<!-- =========================================================
+     🎨 GLASSMORPHISM OVERRIDE (NO MODIFICA CÓDIGO EXISTENTE)
+     Inspirado en el dashboard DENTOVA / LEIDI SILVA
+     ========================================================= -->
+<style>
+:root{
+  --bg: radial-gradient(1200px 600px at 10% -10%, #0eead01f, transparent),
+        radial-gradient(900px 500px at 90% 10%, #22d3ee1a, transparent),
+        linear-gradient(180deg, #041a22, #031219);
+  --card: rgba(255,255,255,0.08);
+  --text: #e6f6fb;
+  --muted: #9fb7c3;
+  --line: rgba(255,255,255,0.14);
+  --brand: #22d3ee;
+  --brand2: #06b6d4;
+  --shadow: 0 20px 60px rgba(0,0,0,.45);
+}
+
+body{
+  background: var(--bg);
+}
+
+.container,
+.section,
+.header,
+.footer,
+.card,
+.kpi,
+.chip,
+.btn,
+.blocked,
+#toast{
+  background: var(--card) !important;
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  border: 1px solid var(--line) !important;
+}
+
+.header,
+.section,
+.footer{
+  background: linear-gradient(
+    180deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.03)
+  ) !important;
+}
+
+.btn.primary{
+  background: linear-gradient(135deg, #22d3ee, #06b6d4) !important;
+  border: none !important;
+  color: #022c36 !important;
+}
+
+.btn{
+  color: var(--text) !important;
+}
+
+input,
+select,
+table,
+th{
+  background: rgba(255,255,255,0.06) !important;
+  color: var(--text) !important;
+}
+
+th{
+  backdrop-filter: blur(10px);
+}
+
+table td{
+  color: var(--text);
+}
+
+.mono{
+  color: #c9f1f8;
+}
+
+.kpi .v{
+  color: #67e8f9;
+}
+
+.kpi{
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.14),
+    rgba(255,255,255,0.04)
+  ) !important;
+}
+
+.card{
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.16),
+    rgba(255,255,255,0.05)
+  ) !important;
+}
+
+.topbar h1,
+.header .title{
+  letter-spacing: .5px;
+}
+
+::-webkit-scrollbar{
+  height: 8px;
+  width: 8px;
+}
+::-webkit-scrollbar-thumb{
+  background: rgba(255,255,255,.25);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-track{
+  background: transparent;
+}
+</style>
+
 </head>
 
 <body>
@@ -1102,5 +1219,6 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 </body>
 </html>
+
 
 
