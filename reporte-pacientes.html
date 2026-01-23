@@ -1091,35 +1091,21 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 <script>
 /* =========================================================
-   🔐 CONTROL UI POR ROL – SOLUCIÓN ESTABLE CON COLGROUP
-   - NO elimina ni modifica código existente
-   - SOLO agrega código
-   - Teléfono y Correo SOLO visibles para admin
-   - Botón Excel SOLO visible para admin
+   🔐 CONTROL UI POR ROL – FINAL (ROBUSTO)
+   - SOLO AGREGA código (no modifica ni elimina existente)
+   - Teléfono/Correo SOLO para admin
+   - Excel SOLO para admin
+   - Reaplica en cada re-render (MutationObserver)
+   - Oculta/mostrar por índice detectado desde <th> (no fijo)
    ========================================================= */
 (function(){
-  if (window.__ROLE_COLGROUP_GUARD__) return;
-  window.__ROLE_COLGROUP_GUARD__ = true;
+  if (window.__ROLE_UI_ROBUST__) return;
+  window.__ROLE_UI_ROBUST__ = true;
 
   function getRole(){
     try{
-      return window.state && state.role ? String(state.role).toLowerCase().trim() : null;
-    }catch(_){
-      return null;
-    }
-  }
-
-  function ensureColgroup(table){
-    let colgroup = table.querySelector("colgroup");
-    if (colgroup) return colgroup;
-
-    colgroup = document.createElement("colgroup");
-    const cols = table.querySelectorAll("thead th").length || 8;
-    for (let i=0;i<cols;i++){
-      colgroup.appendChild(document.createElement("col"));
-    }
-    table.insertBefore(colgroup, table.firstChild);
-    return colgroup;
+      return (window.state && state.role) ? String(state.role).toLowerCase().trim() : null;
+    }catch(_){ return null; }
   }
 
   function applyUI(){
@@ -1128,7 +1114,7 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
     const isAdmin = role === "admin";
 
-    // ---- Excel ----
+    // ===== Excel =====
     const btn = document.getElementById("btn-export");
     if (btn){
       btn.style.display = isAdmin ? "inline-flex" : "none";
@@ -1136,37 +1122,55 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
       if (!isAdmin){
         btn.onclick = function(e){
           e.preventDefault();
+          e.stopPropagation();
           alert("⛔ Solo el rol admin puede exportar a Excel");
           return false;
         };
       }
     }
 
-    // ---- Tabla ----
+    // ===== Tabla =====
     const table = document.querySelector("table");
     if (!table) return;
 
-    const headers = Array.from(table.querySelectorAll("thead th"));
-    const colgroup = ensureColgroup(table);
-    const cols = colgroup.querySelectorAll("col");
+    const ths = Array.from(table.querySelectorAll("thead th"));
+    if (!ths.length) return;
 
-    headers.forEach((th, idx)=>{
-      const text = th.textContent.toLowerCase();
-      if (text.includes("teléfono") || text.includes("telefono") || text.includes("correo")){
-        th.style.display = isAdmin ? "" : "none";
-        if (cols[idx]) cols[idx].style.display = isAdmin ? "" : "none";
+    const idxToToggle = [];
+    ths.forEach((th, idx)=>{
+      const t = (th.textContent || "").toLowerCase();
+      if (t.includes("teléfono") || t.includes("telefono") || t.includes("correo")){
+        idxToToggle.push(idx);
       }
     });
+
+    if (!idxToToggle.length) return;
+
+    // headers
+    idxToToggle.forEach(i=>{
+      if (ths[i]) ths[i].style.display = isAdmin ? "" : "none";
+    });
+
+    // body cells
+    const rows = Array.from(table.querySelectorAll("tbody tr"));
+    rows.forEach(tr=>{
+      const tds = tr.children;
+      idxToToggle.forEach(i=>{
+        if (tds[i]) tds[i].style.display = isAdmin ? "" : "none";
+      });
+    });
+
+    // En móvil (<=520px), también hay data-label; no lo tocamos, solo ocultamos celdas.
   }
 
-  // Reaplicar en cualquier render
+  // Observa cambios del DOM (re-renders)
   const obs = new MutationObserver(applyUI);
   obs.observe(document.body, { childList:true, subtree:true });
 
   function waitRole(){
     if (getRole()){
       applyUI();
-    }else{
+    } else {
       requestAnimationFrame(waitRole);
     }
   }
@@ -1178,10 +1182,4 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 </body>
 </html>
-
-
-
-
-
-
 
