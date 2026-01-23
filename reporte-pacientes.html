@@ -901,11 +901,6 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
       state.session = guard.session;
       $("user-email").textContent = (guard.session.user?.email || "Usuario").toString();
 
-      // 🔐 aplicar control UI por rol DESPUÉS de conocer el rol real
-      if (typeof window.applyRoleUI === "function") {
-        window.applyRoleUI();
-      }
-
       await refrescarDashboard();
     }
 
@@ -1042,7 +1037,7 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
    No modifica autenticación ni permisos existentes
    ========================================================= */
 (function(){
-  window.applyRoleUI = function applyRoleUI(){
+  function applyRoleUI(){
     try{
       const role = (window.state && state.role) ? String(state.role).toLowerCase() : null;
       if (!role) return;
@@ -1095,69 +1090,112 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 
 <script>
-
-<script>
 /* =========================================================
-   🔒 HARD UI GUARD POR ROL (VERSIÓN SEGURA FINAL)
-   - Espera a que el rol exista
-   - NO oculta nada si el rol aún no está cargado
-   - Admin SIEMPRE ve todo
+   🔐 CONTROL UI POR ROL (SOLO VISUAL) — SOLO SE AGREGA
+   Reglas:
+   - Columnas Teléfono y Correo: SOLO para rol admin
+   - Botón Excel: SOLO habilitado/visible para rol admin
+   Nota: No toca autenticación, permisos, estilos ni módulos.
    ========================================================= */
 (function(){
-  let lastAppliedRole = null;
+  // Evitar doble envoltura si el archivo se incluye dos veces por error
+  if (window.__ROLE_UI_GUARD_INSTALLED__) return;
+  window.__ROLE_UI_GUARD_INSTALLED__ = true;
 
-  function hardGuard(){
+  function getRole(){
     try{
-      if (!window.state || !state.role) return; // ⛔ aún no hay rol
-      const role = String(state.role).toLowerCase().trim();
-      if (role === lastAppliedRole) return;
-
-      const isAdmin = role === "admin";
-      lastAppliedRole = role;
-
-      // ---- Excel ----
-      const btnExcel = document.getElementById("btn-export");
-      if (btnExcel){
-        btnExcel.style.display = isAdmin ? "inline-flex" : "none";
-        if (!isAdmin){
-          btnExcel.onclick = function(e){
-            e.preventDefault();
-            alert("⛔ Solo el rol admin puede exportar a Excel");
-            return false;
-          };
-        }
-      }
-
-      // ---- Tabla ----
-      const table = document.querySelector("table");
-      if (!table) return;
-
-      table.querySelectorAll("tr").forEach(tr=>{
-        const c = tr.children;
-        if (c.length >= 4){
-          c[2].style.display = isAdmin ? "" : "none"; // Teléfono
-          c[3].style.display = isAdmin ? "" : "none"; // Correo
-        }
-      });
-    }catch(e){
-      console.warn("hardGuard error", e);
+      if (!window.state) return null;
+      const r = state.role;
+      if (!r) return null;
+      return String(r).toLowerCase().trim();
+    }catch(_){
+      return null;
     }
   }
 
-  const _render = window.renderTabla;
-  if (typeof _render === "function"){
+  function isAdminRole(){
+    const r = getRole();
+    return r === "admin";
+  }
+
+  function toggleExcelButton(){
+    const btn = document.getElementById("btn-export");
+    if (!btn) return;
+
+    const admin = isAdminRole();
+
+    // Visible y activo solo admin
+    btn.style.display = admin ? "inline-flex" : "none";
+    btn.disabled = !admin;
+
+    // Refuerzo: si por alguna razón lo muestran desde DevTools, igual bloquea
+    if (!admin){
+      btn.onclick = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        try{ alert("⛔ Solo el rol admin puede exportar a Excel"); }catch(_){}
+        return false;
+      };
+    }
+  }
+
+  function toggleContactColumns(){
+    const admin = isAdminRole();
+
+    const table = document.querySelector("table");
+    if (!table) return;
+
+    // Teléfono = col 3 (index 2), Correo = col 4 (index 3)
+    table.querySelectorAll("tr").forEach(tr => {
+      const cells = tr.children;
+      if (!cells || cells.length < 4) return;
+
+      // Importante: forzar display consistente
+      if (cells[2]) cells[2].style.display = admin ? "" : "none";
+      if (cells[3]) cells[3].style.display = admin ? "" : "none";
+    });
+  }
+
+  function applyRoleUI(){
+    // Solo aplicar cuando el rol ya exista
+    const r = getRole();
+    if (!r) return false;
+
+    toggleExcelButton();
+    toggleContactColumns();
+    return true;
+  }
+
+  // 1) Hook a renderTabla FINAL (después de todos los overrides existentes)
+  // Como este script está al final del HTML, envuelve la última versión disponible.
+  const prevRender = window.renderTabla;
+  if (typeof prevRender === "function"){
     window.renderTabla = function(rows){
-      _render(rows);
-      hardGuard();
+      prevRender(rows);
+      applyRoleUI();
     };
   }
 
-  document.addEventListener("DOMContentLoaded", hardGuard);
-  window.addEventListener("load", hardGuard);
+  // 2) Aplicación post-init: esperar a que el rol exista (anti-race)
+  // Usamos requestAnimationFrame por ser liviano y no invasivo.
+  let tries = 0;
+  function waitForRole(){
+    tries++;
+    const ok = applyRoleUI();
+    if (ok) return;
+
+    // limitar intentos para evitar bucles infinitos (pero lo dejamos alto)
+    if (tries < 600){
+      requestAnimationFrame(waitForRole);
+    }
+  }
+
+  document.addEventListener("DOMContentLoaded", waitForRole);
+  window.addEventListener("load", waitForRole);
 })();
 </script>
 
-
 </body>
 </html>
+
 
