@@ -1089,44 +1089,60 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 </script>
 
 
-<style>
-/* =========================================================
-   🔐 CONTROL UI POR ROL – CSS FORZADO (NO-ADMIN)
-   Se ocultan columnas por CSS cuando body tiene .role-no-admin
-   ========================================================= */
-body.role-no-admin table th:nth-child(3),
-body.role-no-admin table td:nth-child(3),
-body.role-no-admin table th:nth-child(4),
-body.role-no-admin table td:nth-child(4){
-  display: none !important;
-}
-</style>
-
 <script>
 /* =========================================================
-   🔐 CONTROL UI POR ROL – JS FINAL (SOLO AGREGA)
-   Marca el body según rol y controla botón Excel
+   🔐 CONTROL UI POR ROL – MUTATION OBSERVER (INFALIBLE)
+   NO elimina ni modifica código existente.
+   Oculta columnas por TEXTO del header (no por índice).
    ========================================================= */
 (function(){
-  function applyRoleClass(){
-    if (!window.state || !state.role) return false;
-    const role = String(state.role).toLowerCase().trim();
-    document.body.classList.remove("role-admin","role-no-admin");
-    if (role === "admin"){
-      document.body.classList.add("role-admin");
-    } else {
-      document.body.classList.add("role-no-admin");
+  if (window.__ROLE_OBSERVER_INSTALLED__) return;
+  window.__ROLE_OBSERVER_INSTALLED__ = true;
+
+  function isAdmin(){
+    try{
+      return window.state && String(state.role).toLowerCase().trim() === "admin";
+    }catch(_){
+      return false;
     }
-    return true;
   }
 
+  function hideSensitiveColumns(){
+    if (isAdmin()) return;
+
+    const table = document.querySelector("table");
+    if (!table) return;
+
+    const ths = Array.from(table.querySelectorAll("thead th"));
+    const targets = [];
+
+    ths.forEach((th, idx) => {
+      const text = th.textContent.toLowerCase();
+      if (text.includes("teléfono") || text.includes("telefono") || text.includes("correo")){
+        targets.push(idx);
+        th.style.display = "none";
+      }
+    });
+
+    if (!targets.length) return;
+
+    table.querySelectorAll("tbody tr").forEach(tr=>{
+      targets.forEach(i=>{
+        if (tr.children[i]) tr.children[i].style.display = "none";
+      });
+    });
+  }
+
+  // Observa cualquier re-render de la tabla
+  const observer = new MutationObserver(hideSensitiveColumns);
+  observer.observe(document.body, { childList:true, subtree:true });
+
+  // Bloqueo Excel
   function controlExcel(){
     const btn = document.getElementById("btn-export");
     if (!btn) return;
-    const isAdmin = document.body.classList.contains("role-admin");
-    btn.style.display = isAdmin ? "inline-flex" : "none";
-    btn.disabled = !isAdmin;
-    if (!isAdmin){
+    if (!isAdmin()){
+      btn.style.display = "none";
       btn.onclick = function(e){
         e.preventDefault();
         alert("⛔ Solo el rol admin puede exportar a Excel");
@@ -1135,29 +1151,24 @@ body.role-no-admin table td:nth-child(4){
     }
   }
 
-  const prev = window.renderTabla;
-  if (typeof prev === "function"){
-    window.renderTabla = function(rows){
-      prev(rows);
-      if (applyRoleClass()) controlExcel();
-    };
-  }
-
-  function waitRole(){
-    if (applyRoleClass()){
-      controlExcel();
-    } else {
-      requestAnimationFrame(waitRole);
+  function init(){
+    if (!window.state || !state.role){
+      requestAnimationFrame(init);
+      return;
     }
+    hideSensitiveColumns();
+    controlExcel();
   }
 
-  document.addEventListener("DOMContentLoaded", waitRole);
-  window.addEventListener("load", waitRole);
+  document.addEventListener("DOMContentLoaded", init);
+  window.addEventListener("load", init);
 })();
 </script>
 
 </body>
 </html>
+
+
 
 
 
