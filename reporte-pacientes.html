@@ -301,6 +301,33 @@
   th, td{ padding: 8px; }
 }
 
+/* ================================
+   🧩 TABLET – SCROLL HORIZONTAL REAL
+   IMPORTANTE: se fuerza overflow-x con !important
+   (el div original trae overflow: visible inline)
+   ================================ */
+@media (max-width: 1100px){
+  .table-scroll-fix{
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    display: block;
+  }
+  .table-scroll-fix table{
+    /* Permite que la tabla sea más ancha que la pantalla */
+    min-width: 1400px;
+    table-layout: auto;
+  }
+  .table-scroll-fix th,
+  .table-scroll-fix td{
+    white-space: nowrap;
+  }
+}
+
+/* ================================
+   📱 MÓVIL MUY PEQUEÑO – TABLA EN TARJETAS
+   ================================ */
 @media (max-width: 520px){
   table, thead, tbody, th, td, tr{
     display: block;
@@ -319,6 +346,7 @@
   td{
     border: none;
     padding: 6px 0;
+    white-space: normal;
   }
 
   td::before{
@@ -328,48 +356,6 @@
     color: var(--muted);
     font-weight: 700;
     margin-bottom: 2px;
-  }
-}
-</style>
-
-
-<style>
-/* ================================
-   🧩 FIX TABLET – SCROLL HORIZONTAL
-   No modifica estilos existentes
-   ================================ */
-
-@media (max-width: 1024px){
-  .table-scroll-fix{
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
-  }
-
-  .table-scroll-fix table{
-    min-width: 980px;
-  }
-}
-</style>
-
-
-<style>
-/* ================================
-   📱 FIX TABLET VISUAL REAL
-   Oculta columnas extra y mejora texto
-   ================================ */
-
-@media (max-width: 1024px){
-  /* Ocultar columnas de acciones excepto la primera */
-  th:nth-child(n+5),
-  td:nth-child(n+5){
-    display: none;
-  }
-
-  /* Ajustes de texto */
-  td{
-    white-space: normal;
-    word-break: break-word;
   }
 }
 </style>
@@ -998,8 +984,54 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
   
 </script>
 
+
+<script>
+/* =========================================================
+   🔧 OVERRIDE SEGURO – data-label para vista móvil (<=520px)
+   No elimina ni modifica lógica existente.
+   Re-usa window.renderTabla actual y luego añade data-labels.
+   ========================================================= */
+(function(){
+  function addDataLabels(){
+    try{
+      const tbody = document.getElementById("tbody_pacientes");
+      if (!tbody) return;
+
+      const isMobile = window.matchMedia && window.matchMedia("(max-width: 520px)").matches;
+      if (!isMobile) return;
+
+      // labels según columnas actuales (8 columnas con botones)
+      const labels = ["Cédula","Nombre","Teléfono","Correo","Historia clínica","Plan tratamiento","Facturación","Evoluciones"];
+
+      for (const tr of Array.from(tbody.querySelectorAll("tr"))){
+        const tds = Array.from(tr.querySelectorAll("td"));
+        tds.forEach((td, idx) => {
+          if (!td.hasAttribute("data-label")){
+            td.setAttribute("data-label", labels[idx] || "");
+          }
+        });
+      }
+    }catch(e){}
+  }
+
+  // envolver renderTabla actual sin reemplazarla
+  const prev = window.renderTabla;
+  if (typeof prev === "function"){
+    window.renderTabla = function(rows){
+      prev(rows);
+      addDataLabels();
+    };
+  }
+
+  window.addEventListener("resize", addDataLabels);
+  document.addEventListener("DOMContentLoaded", addDataLabels);
+})();
+</script>
+
 </body>
 </html>
+
+
 
 
 
