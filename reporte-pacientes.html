@@ -908,78 +908,114 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 <script>
 /* =========================================================
-   🔐 FIX DEFINITIVO POR ROL (ADMIN vs NO ADMIN)
-   - Espera a que el rol esté cargado
-   - Admin: asegura Teléfono/Correo visibles
-   - NO admin: oculta Teléfono/Correo + desactiva Excel
-   - Reaplica tras cada renderTabla
+   🔐 VISIBILIDAD CONTACTO (SOLO ADMIN)
+   REGLA:
+   - Teléfono y Correo SOLO se muestran si rol === "admin"
+   - Para cualquier otro rol: ocultar siempre + desactivar Excel
+   Robusto:
+   - Toma el rol desde state.role y/o #user-role (fallback)
+   - Reaplica en cada renderTabla
+   - Reaplica ante cambios del DOM (MutationObserver)
    ========================================================= */
 (function(){
-  function getRole(){
-    return (window.state && typeof window.state.role === "string")
-      ? window.state.role.toLowerCase()
-      : null;
+  function normalizeRole(v){
+    return String(v || "").trim().toLowerCase();
   }
 
-  function aplicarVisibilidad(){
-    const role = getRole();
+  function getEffectiveRole(){
+    // 1) state.role (fuente principal)
+    var r1 = (window.state && window.state.role) ? window.state.role : "";
+    // 2) fallback: lo que ya se muestra en el chip
+    var chip = document.getElementById("user-role");
+    var r2 = chip ? chip.textContent : "";
+    return normalizeRole(r1 || r2);
+  }
+
+  function setExcelDisabled(disabled){
+    var btn = document.getElementById("btn-export");
+    if (!btn) return;
+    btn.disabled = !!disabled;
+    btn.title = disabled ? "Solo disponible para administradores" : "";
+  }
+
+  function applyContactVisibility(){
+    var role = getEffectiveRole();
     if (!role) return; // aún no cargó
 
-    const table = document.querySelector("table");
+    var show = (role === "admin");
+
+    // Excel: solo admin
+    setExcelDisabled(!show);
+
+    // Tabla (solo afecta las columnas 3 y 4: Teléfono, Correo)
+    var table = document.querySelector("table");
     if (!table) return;
 
-    const headers = Array.from(table.querySelectorAll("thead th"));
-    const idxTel = headers.findIndex(h => h.textContent.trim().toLowerCase() === "teléfono");
-    const idxCor = headers.findIndex(h => h.textContent.trim().toLowerCase() === "correo");
-
-    [idxTel, idxCor].forEach(idx => {
-      if (idx < 0) return;
-      table.querySelectorAll("tr").forEach(tr => {
-        if (!tr.children[idx]) return;
-        // ADMIN -> mostrar / OTROS -> ocultar
-        tr.children[idx].style.display = (role === "admin") ? "" : "none";
-      });
+    // Ocultar/mostrar columnas por índice fijo (robusto con tus 8 columnas)
+    // 1: Cédula, 2: Nombre, 3: Teléfono, 4: Correo, 5-8: botones
+    var selectorHide = "thead th:nth-child(3), thead th:nth-child(4), tbody td:nth-child(3), tbody td:nth-child(4)";
+    table.querySelectorAll(selectorHide).forEach(function(el){
+      el.style.display = show ? "" : "none";
     });
 
-    // Excel
-    const btn = document.getElementById("btn-export");
-    if (btn){
-      btn.disabled = (role !== "admin");
-      btn.title = (role !== "admin") ? "Solo disponible para administradores" : "";
-    }
-
-    // Ajustar colspan
-    table.querySelectorAll("td[colspan]").forEach(td => {
-      td.colSpan = table.querySelectorAll("thead th:not([style*='display: none'])").length;
+    // Ajustar colspan en filas vacías/mensajes
+    var visibleHeaders = table.querySelectorAll("thead th:not([style*='display: none'])").length;
+    table.querySelectorAll("tbody td[colspan]").forEach(function(td){
+      td.colSpan = visibleHeaders || td.colSpan || 1;
     });
   }
 
-  // Hook renderTabla sin romper nada
   function hookRenderTabla(){
-    if (!window.renderTabla || window.renderTabla.__roleFixed) return;
-    const original = window.renderTabla;
+    if (!window.renderTabla || window.renderTabla.__onlyAdminContactHooked) return;
+    var original = window.renderTabla;
     window.renderTabla = function(){
-      const r = original.apply(this, arguments);
-      aplicarVisibilidad();
+      var r = original.apply(this, arguments);
+      applyContactVisibility();
       return r;
     };
-    window.renderTabla.__roleFixed = true;
+    window.renderTabla.__onlyAdminContactHooked = true;
   }
 
-  // Esperar a que state.role exista
-  const wait = setInterval(() => {
-    if (getRole()){
+  // Esperar rol cargado y luego aplicar
+  var tries = 0;
+  var wait = setInterval(function(){
+    tries++;
+    var role = getEffectiveRole();
+    if (role){
       clearInterval(wait);
       hookRenderTabla();
-      aplicarVisibilidad();
+      applyContactVisibility();
+
+      // Observer para cualquier cambio posterior (por seguridad)
+      try{
+        var table = document.querySelector("table");
+        if (table && !window.__contactRoleObserver){
+          window.__contactRoleObserver = new MutationObserver(function(){
+            applyContactVisibility();
+          });
+          window.__contactRoleObserver.observe(table, { childList:true, subtree:true });
+        }
+      }catch(e){}
+    }
+    if (tries > 120){ // ~12s
+      clearInterval(wait);
+      // Aun así intentamos una vez
+      hookRenderTabla();
+      applyContactVisibility();
     }
   }, 100);
+
+  document.addEventListener("DOMContentLoaded", function(){
+    // Primer intento rápido
+    setTimeout(function(){
+      hookRenderTabla();
+      applyContactVisibility();
+    }, 300);
+  });
 })();
 </script>
 
 </body>
 </html>
-
-
 
 
