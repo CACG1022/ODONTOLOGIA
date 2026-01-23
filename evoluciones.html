@@ -1198,8 +1198,20 @@
       profesional: e.profesional ?? e.evo_profesional ?? "",
       procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
       detalle: e.detalle ?? e.evo_detalle ?? "",
-      firma_paciente: e.firma_paciente ?? "",
-      firma_profesional: e.firma_profesional ?? "",
+
+      // ✅ FIX: soportar firmas históricas y actuales (NO rompe nada)
+      firma_paciente:
+        e.firma_paciente ??
+        e.firmaPaciente ??
+        e.firma_paciente_base64 ??
+        "",
+
+      firma_profesional:
+        e.firma_profesional ??
+        e.firmaProfesional ??
+        e.firma_profesional_base64 ??
+        "",
+
       created_at: e.created_at ?? null,
       ts: e.ts ?? e.created_at ?? new Date().toISOString()
     }));
@@ -1554,6 +1566,10 @@
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
