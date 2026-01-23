@@ -408,31 +408,34 @@ body{
   background: var(--bg);
 }
 
+/* ❌ NO aplicar vidrio global */
 .container,
 .section,
 .header,
-.footer,
+.footer{
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+}
+
+/* ✅ Vidrio SOLO donde sí se ve bien */
 .card,
-.kpi,
-.chip,
-.btn,
-.blocked,
-#toast{
+.kpi{
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(18px) saturate(160%);
+  -webkit-backdrop-filter: blur(18px) saturate(160%);
+  border: 1px solid var(--line) !important;
+}
+
+  
   background: var(--card) !important;
   backdrop-filter: blur(14px) saturate(160%);
   -webkit-backdrop-filter: blur(14px) saturate(160%);
   border: 1px solid var(--line) !important;
 }
 
-.header,
-.section,
-.footer{
-  background: linear-gradient(
-    180deg,
-    rgba(255,255,255,0.10),
-    rgba(255,255,255,0.03)
-  ) !important;
-}
+
 
 .btn.primary{
   background: linear-gradient(135deg, #22d3ee, #06b6d4) !important;
