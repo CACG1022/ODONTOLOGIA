@@ -1089,113 +1089,76 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 </script>
 
 
+<style>
+/* =========================================================
+   🔐 CONTROL UI POR ROL – CSS FORZADO (NO-ADMIN)
+   Se ocultan columnas por CSS cuando body tiene .role-no-admin
+   ========================================================= */
+body.role-no-admin table th:nth-child(3),
+body.role-no-admin table td:nth-child(3),
+body.role-no-admin table th:nth-child(4),
+body.role-no-admin table td:nth-child(4){
+  display: none !important;
+}
+</style>
+
 <script>
 /* =========================================================
-   🔐 CONTROL UI POR ROL (SOLO VISUAL) — SOLO SE AGREGA
-   Reglas:
-   - Columnas Teléfono y Correo: SOLO para rol admin
-   - Botón Excel: SOLO habilitado/visible para rol admin
-   Nota: No toca autenticación, permisos, estilos ni módulos.
+   🔐 CONTROL UI POR ROL – JS FINAL (SOLO AGREGA)
+   Marca el body según rol y controla botón Excel
    ========================================================= */
 (function(){
-  // Evitar doble envoltura si el archivo se incluye dos veces por error
-  if (window.__ROLE_UI_GUARD_INSTALLED__) return;
-  window.__ROLE_UI_GUARD_INSTALLED__ = true;
-
-  function getRole(){
-    try{
-      if (!window.state) return null;
-      const r = state.role;
-      if (!r) return null;
-      return String(r).toLowerCase().trim();
-    }catch(_){
-      return null;
+  function applyRoleClass(){
+    if (!window.state || !state.role) return false;
+    const role = String(state.role).toLowerCase().trim();
+    document.body.classList.remove("role-admin","role-no-admin");
+    if (role === "admin"){
+      document.body.classList.add("role-admin");
+    } else {
+      document.body.classList.add("role-no-admin");
     }
+    return true;
   }
 
-  function isAdminRole(){
-    const r = getRole();
-    return r === "admin";
-  }
-
-  function toggleExcelButton(){
+  function controlExcel(){
     const btn = document.getElementById("btn-export");
     if (!btn) return;
-
-    const admin = isAdminRole();
-
-    // Visible y activo solo admin
-    btn.style.display = admin ? "inline-flex" : "none";
-    btn.disabled = !admin;
-
-    // Refuerzo: si por alguna razón lo muestran desde DevTools, igual bloquea
-    if (!admin){
+    const isAdmin = document.body.classList.contains("role-admin");
+    btn.style.display = isAdmin ? "inline-flex" : "none";
+    btn.disabled = !isAdmin;
+    if (!isAdmin){
       btn.onclick = function(e){
         e.preventDefault();
-        e.stopPropagation();
-        try{ alert("⛔ Solo el rol admin puede exportar a Excel"); }catch(_){}
+        alert("⛔ Solo el rol admin puede exportar a Excel");
         return false;
       };
     }
   }
 
-  function toggleContactColumns(){
-    const admin = isAdminRole();
-
-    const table = document.querySelector("table");
-    if (!table) return;
-
-    // Teléfono = col 3 (index 2), Correo = col 4 (index 3)
-    table.querySelectorAll("tr").forEach(tr => {
-      const cells = tr.children;
-      if (!cells || cells.length < 4) return;
-
-      // Importante: forzar display consistente
-      if (cells[2]) cells[2].style.display = admin ? "" : "none";
-      if (cells[3]) cells[3].style.display = admin ? "" : "none";
-    });
-  }
-
-  function applyRoleUI(){
-    // Solo aplicar cuando el rol ya exista
-    const r = getRole();
-    if (!r) return false;
-
-    toggleExcelButton();
-    toggleContactColumns();
-    return true;
-  }
-
-  // 1) Hook a renderTabla FINAL (después de todos los overrides existentes)
-  // Como este script está al final del HTML, envuelve la última versión disponible.
-  const prevRender = window.renderTabla;
-  if (typeof prevRender === "function"){
+  const prev = window.renderTabla;
+  if (typeof prev === "function"){
     window.renderTabla = function(rows){
-      prevRender(rows);
-      applyRoleUI();
+      prev(rows);
+      if (applyRoleClass()) controlExcel();
     };
   }
 
-  // 2) Aplicación post-init: esperar a que el rol exista (anti-race)
-  // Usamos requestAnimationFrame por ser liviano y no invasivo.
-  let tries = 0;
-  function waitForRole(){
-    tries++;
-    const ok = applyRoleUI();
-    if (ok) return;
-
-    // limitar intentos para evitar bucles infinitos (pero lo dejamos alto)
-    if (tries < 600){
-      requestAnimationFrame(waitForRole);
+  function waitRole(){
+    if (applyRoleClass()){
+      controlExcel();
+    } else {
+      requestAnimationFrame(waitRole);
     }
   }
 
-  document.addEventListener("DOMContentLoaded", waitForRole);
-  window.addEventListener("load", waitForRole);
+  document.addEventListener("DOMContentLoaded", waitRole);
+  window.addEventListener("load", waitRole);
 })();
 </script>
 
 </body>
 </html>
+
+
 
 
