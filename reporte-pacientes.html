@@ -908,37 +908,77 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 <script>
 /* =========================================================
-   🔐 RESTRICCIÓN POR ROL (ADMIN)
-   - Oculta columnas Teléfono y Correo si NO es admin
-   - Desactiva botón Excel si NO es admin
-   No modifica lógica existente
+   🔐 PARCHE DEFINITIVO POR ROL (ADMIN)
+   Corrige:
+   - Desorden de columnas
+   - Oculta Teléfono y Correo correctamente
+   - Reaplica ocultamiento tras renderTabla override
+   - Desactiva Excel para NO admin
    ========================================================= */
 (function(){
-  function aplicarRestriccionesPorRol(){
-    try{
-      var role = (window.state && window.state.role || "").toLowerCase();
-      if (role !== "admin"){
-        // Ocultar columnas Teléfono (3) y Correo (4)
-        document.querySelectorAll("table thead th:nth-child(3), table thead th:nth-child(4)").forEach(el=>el.style.display="none");
-        document.querySelectorAll("table tbody td:nth-child(3), table tbody td:nth-child(4)").forEach(el=>el.style.display="none");
-
-        // Desactivar botón Excel
-        var btn = document.getElementById("btn-export");
-        if (btn){
-          btn.disabled = true;
-          btn.title = "Solo disponible para administradores";
-        }
-      }
-    }catch(e){ console.error(e); }
+  function isAdmin(){
+    return (window.state && String(window.state.role).toLowerCase() === "admin");
   }
 
-  document.addEventListener("DOMContentLoaded", function(){
-    setTimeout(aplicarRestriccionesPorRol, 500);
+  function ocultarContacto(){
+    if (isAdmin()) return;
+
+    const table = document.querySelector("table");
+    if (!table) return;
+
+    // Detectar índices reales por texto del header
+    const headers = Array.from(table.querySelectorAll("thead th"));
+    const idxTel = headers.findIndex(h => h.textContent.trim().toLowerCase() === "teléfono");
+    const idxCor = headers.findIndex(h => h.textContent.trim().toLowerCase() === "correo");
+
+    [idxTel, idxCor].forEach(idx => {
+      if (idx >= 0){
+        table.querySelectorAll("tr").forEach(tr => {
+          if (tr.children[idx]) tr.children[idx].style.display = "none";
+        });
+      }
+    });
+
+    // Ajustar colspan si existe fila vacía
+    table.querySelectorAll("td[colspan]").forEach(td => {
+      td.colSpan = table.querySelectorAll("thead th:not([style*='display: none'])").length;
+    });
+  }
+
+  function desactivarExcel(){
+    if (isAdmin()) return;
+    const btn = document.getElementById("btn-export");
+    if (btn){
+      btn.disabled = true;
+      btn.title = "Solo disponible para administradores";
+    }
+  }
+
+  // Hook seguro a renderTabla (si existe)
+  function hookRender(){
+    if (!window.renderTabla || window.renderTabla.__hooked) return;
+    const original = window.renderTabla;
+    window.renderTabla = function(){
+      const res = original.apply(this, arguments);
+      ocultarContacto();
+      return res;
+    };
+    window.renderTabla.__hooked = true;
+  }
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(() => {
+      hookRender();
+      ocultarContacto();
+      desactivarExcel();
+    }, 600);
   });
 })();
 </script>
 
 </body>
 </html>
+
+
 
 
