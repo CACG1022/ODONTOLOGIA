@@ -1028,9 +1028,68 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 })();
 </script>
 
+
+<script>
+/* =========================================================
+   🔐 CONTROL UI POR ROL (SOLO VISUAL)
+   - Teléfono y Correo: SOLO admin
+   - Botón Excel: SOLO admin
+   No modifica autenticación ni permisos existentes
+   ========================================================= */
+(function(){
+  function applyRoleUI(){
+    try{
+      const role = (window.state && state.role) ? String(state.role).toLowerCase() : null;
+      if (!role) return;
+
+      const isAdmin = role === "admin";
+
+      // 🔹 Botón Excel
+      const btnExcel = document.getElementById("btn-export");
+      if (btnExcel){
+        btnExcel.style.display = isAdmin ? "inline-flex" : "none";
+      }
+
+      // 🔹 Columnas Teléfono (3) y Correo (4)
+      const hideCols = !isAdmin;
+
+      const table = document.querySelector("table");
+      if (!table) return;
+
+      const rows = table.querySelectorAll("tr");
+      rows.forEach(tr => {
+        const cells = tr.children;
+        if (cells.length >= 4){
+          if (hideCols){
+            if (cells[2]) cells[2].style.display = "none"; // Teléfono
+            if (cells[3]) cells[3].style.display = "none"; // Correo
+          } else {
+            if (cells[2]) cells[2].style.display = "";
+            if (cells[3]) cells[3].style.display = "";
+          }
+        }
+      });
+    }catch(e){
+      console.warn("Role UI error:", e);
+    }
+  }
+
+  // aplicar después de render
+  const prevRender = window.renderTabla;
+  if (typeof prevRender === "function"){
+    window.renderTabla = function(rows){
+      prevRender(rows);
+      applyRoleUI();
+    };
+  }
+
+  // aplicar al cargar
+  document.addEventListener("DOMContentLoaded", applyRoleUI);
+})();
+</script>
+
 </body>
 </html>
-
 
 
 
