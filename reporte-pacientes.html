@@ -1091,15 +1091,15 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 <script>
 /* =========================================================
-   🔐 CONTROL UI POR ROL – DEFINITIVO Y CORRECTO
-   REGLAS (exactas):
-   - Teléfono y Correo: SOLO visibles para admin
-   - Botón Excel: SOLO visible y usable para admin
+   🔐 CONTROL UI POR ROL – SOLUCIÓN ESTABLE CON COLGROUP
    - NO elimina ni modifica código existente
+   - SOLO agrega código
+   - Teléfono y Correo SOLO visibles para admin
+   - Botón Excel SOLO visible para admin
    ========================================================= */
 (function(){
-  if (window.__ROLE_UI_FINAL__) return;
-  window.__ROLE_UI_FINAL__ = true;
+  if (window.__ROLE_COLGROUP_GUARD__) return;
+  window.__ROLE_COLGROUP_GUARD__ = true;
 
   function getRole(){
     try{
@@ -1109,13 +1109,26 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
     }
   }
 
+  function ensureColgroup(table){
+    let colgroup = table.querySelector("colgroup");
+    if (colgroup) return colgroup;
+
+    colgroup = document.createElement("colgroup");
+    const cols = table.querySelectorAll("thead th").length || 8;
+    for (let i=0;i<cols;i++){
+      colgroup.appendChild(document.createElement("col"));
+    }
+    table.insertBefore(colgroup, table.firstChild);
+    return colgroup;
+  }
+
   function applyUI(){
     const role = getRole();
     if (!role) return;
 
     const isAdmin = role === "admin";
 
-    // ===== BOTÓN EXCEL =====
+    // ---- Excel ----
     const btn = document.getElementById("btn-export");
     if (btn){
       btn.style.display = isAdmin ? "inline-flex" : "none";
@@ -1129,50 +1142,44 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
       }
     }
 
-    // ===== TABLA =====
+    // ---- Tabla ----
     const table = document.querySelector("table");
     if (!table) return;
 
     const headers = Array.from(table.querySelectorAll("thead th"));
-    const hideIdx = [];
+    const colgroup = ensureColgroup(table);
+    const cols = colgroup.querySelectorAll("col");
 
     headers.forEach((th, idx)=>{
-      const t = th.textContent.toLowerCase();
-      if (t.includes("teléfono") || t.includes("telefono") || t.includes("correo")){
-        hideIdx.push(idx);
+      const text = th.textContent.toLowerCase();
+      if (text.includes("teléfono") || text.includes("telefono") || text.includes("correo")){
         th.style.display = isAdmin ? "" : "none";
+        if (cols[idx]) cols[idx].style.display = isAdmin ? "" : "none";
       }
-    });
-
-    table.querySelectorAll("tbody tr").forEach(tr=>{
-      hideIdx.forEach(i=>{
-        if (tr.children[i]){
-          tr.children[i].style.display = isAdmin ? "" : "none";
-        }
-      });
     });
   }
 
-  // Reaplicar SIEMPRE que el DOM cambie
+  // Reaplicar en cualquier render
   const obs = new MutationObserver(applyUI);
   obs.observe(document.body, { childList:true, subtree:true });
 
-  // Esperar rol (anti-race)
-  function wait(){
+  function waitRole(){
     if (getRole()){
       applyUI();
     }else{
-      requestAnimationFrame(wait);
+      requestAnimationFrame(waitRole);
     }
   }
 
-  document.addEventListener("DOMContentLoaded", wait);
-  window.addEventListener("load", wait);
+  document.addEventListener("DOMContentLoaded", waitRole);
+  window.addEventListener("load", waitRole);
 })();
 </script>
 
 </body>
 </html>
+
+
 
 
 
