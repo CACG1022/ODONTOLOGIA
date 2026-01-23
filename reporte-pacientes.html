@@ -1095,45 +1095,48 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 
 
 <script>
+
+<script>
 /* =========================================================
-   🔒 HARD UI GUARD POR ROL (ANTI-RACE / ANTI-OVERRIDE)
-   Garantiza que doctor/otros NUNCA vean Tel/Correo ni Excel
+   🔒 HARD UI GUARD POR ROL (VERSIÓN SEGURA FINAL)
+   - Espera a que el rol exista
+   - NO oculta nada si el rol aún no está cargado
+   - Admin SIEMPRE ve todo
    ========================================================= */
 (function(){
+  let lastAppliedRole = null;
+
   function hardGuard(){
     try{
-      const role = (window.state && state.role) ? String(state.role).toLowerCase() : "";
+      if (!window.state || !state.role) return; // ⛔ aún no hay rol
+      const role = String(state.role).toLowerCase().trim();
+      if (role === lastAppliedRole) return;
+
       const isAdmin = role === "admin";
+      lastAppliedRole = role;
 
       // ---- Excel ----
       const btnExcel = document.getElementById("btn-export");
       if (btnExcel){
+        btnExcel.style.display = isAdmin ? "inline-flex" : "none";
         if (!isAdmin){
-          btnExcel.style.display = "none";
           btnExcel.onclick = function(e){
             e.preventDefault();
             alert("⛔ Solo el rol admin puede exportar a Excel");
             return false;
           };
-        } else {
-          btnExcel.style.display = "inline-flex";
         }
       }
 
-      // ---- Tabla: Teléfono (3) y Correo (4) ----
+      // ---- Tabla ----
       const table = document.querySelector("table");
       if (!table) return;
 
       table.querySelectorAll("tr").forEach(tr=>{
         const c = tr.children;
         if (c.length >= 4){
-          if (!isAdmin){
-            c[2].style.display = "none";
-            c[3].style.display = "none";
-          } else {
-            c[2].style.display = "";
-            c[3].style.display = "";
-          }
+          c[2].style.display = isAdmin ? "" : "none"; // Teléfono
+          c[3].style.display = isAdmin ? "" : "none"; // Correo
         }
       });
     }catch(e){
@@ -1141,7 +1144,6 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
     }
   }
 
-  // ejecutar constantemente después de cualquier render
   const _render = window.renderTabla;
   if (typeof _render === "function"){
     window.renderTabla = function(rows){
@@ -1155,5 +1157,7 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
 })();
 </script>
 
+
 </body>
 </html>
+
