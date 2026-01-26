@@ -641,6 +641,7 @@ table td.mono {
         <div class="title">Factura</div>
         <div class="modal-tools">
           <button class="btn" id="btn-imprimir-verfactura" type="button">🖨 Imprimir</button>
+          <button class="btn primary" id="btn-fe-electronica" type="button" onclick="enviarFacturacionElectronica()">⚡ Facturación electrónica</button>
           <button class="btn danger" id="btn-cerrar-modal-verfactura" type="button">✖ Cerrar</button>
         </div>
       </div>
@@ -2537,10 +2538,10 @@ if (procDrop) procDrop.style.display = "none";
 
 
 
-<!-- ==============================
-     FACTURACIÓN ELECTRÓNICA – CORS SAFE (FORM POST)
-     No modifica lógica existente
-     ============================== -->
+<!-- =========================================================
+     FACTURACIÓN ELECTRÓNICA (CORS SAFE - FORM POST)
+     NO modifica ni interfiere con lógica existente
+     ========================================================= -->
 <script>
 function enviarFacturacionElectronica(){
   try{
@@ -2549,7 +2550,7 @@ function enviarFacturacionElectronica(){
       return;
     }
 
-    // Crear formulario oculto (POST sin CORS)
+    // Envío seguro por FORM (no CORS)
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b";
@@ -2568,16 +2569,12 @@ function enviarFacturacionElectronica(){
     document.body.appendChild(form);
     form.submit();
     document.body.removeChild(form);
-
-    alert("Factura enviada a facturación electrónica");
   }catch(e){
-    console.error(e);
+    console.error("FE error:", e);
     alert("Error enviando a facturación electrónica");
   }
 }
 </script>
-
-
 
 
 
