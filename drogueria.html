@@ -1,0 +1,750 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Droguería - Lista de Precios + Cotizaciones</title>
+
+  <!-- Supabase JS v2 -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- SheetJS (Excel import) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; margin: 16px; background:#fafafa; }
+    h1 { margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .card { background: white; border: 1px solid #e6e6e6; border-radius: 10px; padding: 14px; }
+    label { display:block; font-size: 12px; margin: 8px 0 4px; color:#333; }
+    input, select, textarea { width:100%; padding:10px; border:1px solid #ddd; border-radius:8px; }
+    button { padding:10px 12px; border:1px solid #ddd; background:#fff; border-radius:8px; cursor:pointer; }
+    button.primary { background:#111; color:#fff; border-color:#111; }
+    button.danger { background:#b00020; color:#fff; border-color:#b00020; }
+    .row { display:flex; gap:10px; align-items:center; }
+    .row > * { flex:1; }
+    table { width:100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #eee; padding: 8px; text-align:left; vertical-align: top; }
+    th { font-size: 12px; color:#555; }
+    .muted { color:#777; font-size: 12px; }
+    .pill { display:inline-block; padding:4px 8px; border:1px solid #eee; border-radius: 999px; font-size:12px; }
+    .split { display:grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+    .print-area { background:#fff; padding:16px; border-radius:10px; border:1px solid #e6e6e6; }
+    @media print {
+      body { background:#fff; }
+      .no-print { display:none !important; }
+      .print-area { border:none; }
+    }
+  </style>
+</head>
+<body>
+  <h1>Lista de Precios + Portafolio + Cotización/Remisión</h1>
+  <div class="muted">Supabase + HTML. Importación Excel por <b>código</b>. Precio a 10 días (+10%) y 20 días (+20%).</div>
+
+  <div class="grid" style="margin-top:14px;">
+    <!-- MEDICAMENTOS -->
+    <div class="card">
+      <h2 style="margin:0 0 8px;">Medicamentos</h2>
+
+      <div class="row">
+        <div>
+          <label>Buscar (código / descripción)</label>
+          <input id="medSearch" placeholder="Ej: AMOXI, acetaminofén..." />
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="primary" onclick="loadMedicamentos()">Recargar</button>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+
+      <div class="split">
+        <div>
+          <h3 style="margin:0 0 8px;">Crear / Editar</h3>
+
+          <input type="hidden" id="medId" />
+
+          <label>Referencia</label>
+          <input id="medReferencia" placeholder="Ej: REF-001" />
+
+          <label>Código (único)</label>
+          <input id="medCodigo" placeholder="Ej: 7701234567890" />
+
+          <label>Descripción</label>
+          <input id="medDescripcion" placeholder="Ej: Amoxicilina 500mg cápsulas x 20" />
+
+          <div class="row">
+            <div>
+              <label>Costo</label>
+              <input id="medCosto" type="number" step="0.01" value="0" />
+            </div>
+            <div>
+              <label>Precio (base)</label>
+              <input id="medPrecio" type="number" step="0.01" value="0" />
+            </div>
+          </div>
+
+          <div class="row">
+            <div>
+              <label>Precio a 10 días (+10%)</label>
+              <input id="medPrecio10" type="number" step="0.01" value="0" disabled />
+            </div>
+            <div>
+              <label>Precio a 20 días (+20%)</label>
+              <input id="medPrecio20" type="number" step="0.01" value="0" disabled />
+            </div>
+          </div>
+
+          <div class="row" style="margin-top:10px;">
+            <button class="primary" onclick="saveMedicamento()">Guardar</button>
+            <button onclick="clearMedForm()">Limpiar</button>
+            <button class="danger" onclick="deleteMedicamento()">Eliminar</button>
+          </div>
+
+          <div class="muted" style="margin-top:10px;">
+            * Los precios a 10/20 días se calculan desde el <b>precio base</b>:<br>
+            precio_10 = precio * 1.10, precio_20 = precio * 1.20
+          </div>
+        </div>
+
+        <div>
+          <h3 style="margin:0 0 8px;">Actualizar por Excel</h3>
+          <div class="muted">El Excel debe tener columnas (encabezados): <b>codigo</b>, y opcionalmente <b>referencia</b>, <b>descripcion</b>, <b>costo</b>, <b>precio</b>.</div>
+          <label style="margin-top:10px;">Archivo .xlsx</label>
+          <input id="excelFile" type="file" accept=".xlsx,.xls" />
+          <div class="row" style="margin-top:10px;">
+            <button class="primary" onclick="importExcel()">Importar / Actualizar</button>
+            <button onclick="downloadTemplate()">Descargar plantilla</button>
+          </div>
+          <div id="excelResult" class="muted" style="margin-top:10px;"></div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+
+      <h3 style="margin:0 0 8px;">Listado</h3>
+      <div style="max-height:320px; overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Costo</th>
+              <th>Precio</th>
+              <th>10 días</th>
+              <th>20 días</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="medTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CLIENTES + PORTAFOLIO + COTIZACION -->
+    <div class="card">
+      <h2 style="margin:0 0 8px;">Clientes + Portafolio + Cotización/Remisión</h2>
+
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="card" style="border-radius:12px;">
+          <h3 style="margin:0 0 6px;">Crear cliente</h3>
+          <label>Nombre</label>
+          <input id="cliNombre" placeholder="Ej: Droguería XYZ / Juan Pérez" />
+          <label>Correo</label>
+          <input id="cliCorreo" placeholder="correo@cliente.com" />
+          <label>Contacto</label>
+          <input id="cliContacto" placeholder="Tel / WhatsApp" />
+          <div class="row" style="margin-top:10px;">
+            <button class="primary" onclick="saveCliente()">Guardar</button>
+            <button onclick="loadClientes()">Recargar</button>
+          </div>
+        </div>
+
+        <div class="card" style="border-radius:12px;">
+          <h3 style="margin:0 0 6px;">Seleccionar cliente</h3>
+          <label>Cliente</label>
+          <select id="clienteSelect"></select>
+
+          <label>Tipo documento</label>
+          <select id="docTipo">
+            <option value="COTIZACION">COTIZACIÓN</option>
+            <option value="REMISION">REMISIÓN</option>
+          </select>
+
+          <label>Notas</label>
+          <textarea id="docNotas" rows="3" placeholder="Condiciones, tiempos, observaciones..."></textarea>
+
+          <div class="muted" style="margin-top:6px;">
+            El documento se guarda en Supabase con sus ítems.
+          </div>
+        </div>
+      </div>
+
+      <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+
+      <div class="row">
+        <div>
+          <label>Buscar producto (portafolio)</label>
+          <input id="portSearch" placeholder="Ej: ibuprofeno..." oninput="renderPortafolio()" />
+        </div>
+        <div>
+          <label>Precio a usar</label>
+          <select id="precioModo" onchange="renderCart()">
+            <option value="precio">Contado (Precio base)</option>
+            <option value="precio_10_dias">A 10 días (+10%)</option>
+            <option value="precio_20_dias">A 20 días (+20%)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid" style="margin-top:10px; grid-template-columns: 1fr 1fr; gap: 10px;">
+        <div class="card" style="border-radius:12px;">
+          <h3 style="margin:0 0 8px;">Portafolio</h3>
+          <div id="portafolioList" style="max-height:260px; overflow:auto;"></div>
+        </div>
+
+        <div class="card" style="border-radius:12px;">
+          <h3 style="margin:0 0 8px;">Carrito</h3>
+          <div id="cartList"></div>
+          <div style="margin-top:10px;">
+            <div class="row">
+              <div><span class="pill">Subtotal: <b id="subTotalLbl">$0</b></span></div>
+              <div><span class="pill">Total: <b id="totalLbl">$0</b></span></div>
+            </div>
+            <div class="row" style="margin-top:10px;">
+              <button class="primary" onclick="guardarDocumento()">Guardar documento</button>
+              <button onclick="printDocumento()">Imprimir</button>
+              <button class="danger" onclick="clearCart()">Vaciar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <hr class="no-print" style="border:none;border-top:1px solid #eee;margin:12px 0;">
+
+      <div class="print-area" id="printArea">
+        <div class="muted">Vista previa (impresión)</div>
+        <h2 id="printTitle" style="margin:6px 0;">COTIZACIÓN</h2>
+        <div id="printClient" class="muted"></div>
+        <div id="printMeta" class="muted" style="margin-top:6px;"></div>
+        <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+        <table>
+          <thead>
+            <tr>
+              <th>Código</th>
+              <th>Descripción</th>
+              <th>Cant.</th>
+              <th>Precio Unit.</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="printItems"></tbody>
+        </table>
+        <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+        <div class="row">
+          <div></div>
+          <div>
+            <div style="display:flex; justify-content:space-between;"><span>Subtotal</span><b id="printSubtotal">$0</b></div>
+            <div style="display:flex; justify-content:space-between;"><span>Total</span><b id="printTotal">$0</b></div>
+          </div>
+        </div>
+        <div id="printNotas" class="muted" style="margin-top:10px;"></div>
+      </div>
+
+    </div>
+  </div>
+
+<script>
+  // =========================
+  // CONFIG SUPABASE
+  // =========================
+  const SUPABASE_URL = "SUPABASE_URL";
+  const SUPABASE_ANON_KEY = "SUPABASE_ANON_KEY";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // =========================
+  // ESTADO
+  // =========================
+  let medicamentos = [];
+  let clientes = [];
+  let cart = []; // { medicamento, cantidad }
+
+  // =========================
+  // UTIL
+  // =========================
+  function money(n) {
+    const x = Number(n || 0);
+    return x.toLocaleString("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:2 });
+  }
+
+  function calcPrecios(precioBase) {
+    const p = Number(precioBase || 0);
+    return {
+      precio_10_dias: +(p * 1.10).toFixed(2),
+      precio_20_dias: +(p * 1.20).toFixed(2)
+    };
+  }
+
+  function readNumber(id) {
+    return Number(document.getElementById(id).value || 0);
+  }
+
+  function setValue(id, v) {
+    document.getElementById(id).value = v ?? "";
+  }
+
+  function nowStr() {
+    const d = new Date();
+    return d.toLocaleString("es-CO");
+  }
+
+  // =========================
+  // MEDICAMENTOS CRUD
+  // =========================
+  async function loadMedicamentos() {
+    const q = (document.getElementById("medSearch").value || "").trim().toLowerCase();
+
+    let query = sb.from("medicamentos").select("*").order("descripcion", { ascending: true }).limit(500);
+
+    // filtro simple (cliente) - si necesitas server-side, se arma con ilike/or
+    const { data, error } = await query;
+    if (error) { alert("Error cargando medicamentos: " + error.message); return; }
+
+    medicamentos = data || [];
+    if (q) {
+      medicamentos = medicamentos.filter(m =>
+        (m.codigo || "").toLowerCase().includes(q) ||
+        (m.descripcion || "").toLowerCase().includes(q)
+      );
+    }
+
+    renderMedicamentos();
+    renderPortafolio();
+  }
+
+  function renderMedicamentos() {
+    const tb = document.getElementById("medTableBody");
+    tb.innerHTML = "";
+
+    for (const m of medicamentos) {
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td><b>${m.codigo}</b><div class="muted">${m.referencia || ""}</div></td>
+        <td>${m.descripcion}</td>
+        <td>${money(m.costo)}</td>
+        <td>${money(m.precio)}</td>
+        <td>${money(m.precio_10_dias)}</td>
+        <td>${money(m.precio_20_dias)}</td>
+        <td><button onclick='editMedicamento(${JSON.stringify(m).replaceAll("'", "\\'")})'>Editar</button></td>
+      `;
+      tb.appendChild(tr);
+    }
+  }
+
+  function editMedicamento(m) {
+    setValue("medId", m.id);
+    setValue("medReferencia", m.referencia || "");
+    setValue("medCodigo", m.codigo || "");
+    setValue("medDescripcion", m.descripcion || "");
+    setValue("medCosto", m.costo ?? 0);
+    setValue("medPrecio", m.precio ?? 0);
+
+    const c = calcPrecios(m.precio ?? 0);
+    setValue("medPrecio10", m.precio_10_dias ?? c.precio_10_dias);
+    setValue("medPrecio20", m.precio_20_dias ?? c.precio_20_dias);
+  }
+
+  function clearMedForm() {
+    setValue("medId", "");
+    setValue("medReferencia", "");
+    setValue("medCodigo", "");
+    setValue("medDescripcion", "");
+    setValue("medCosto", 0);
+    setValue("medPrecio", 0);
+    setValue("medPrecio10", 0);
+    setValue("medPrecio20", 0);
+  }
+
+  // recalcula cuando cambias precio base
+  document.getElementById("medPrecio").addEventListener("input", () => {
+    const precio = readNumber("medPrecio");
+    const c = calcPrecios(precio);
+    setValue("medPrecio10", c.precio_10_dias);
+    setValue("medPrecio20", c.precio_20_dias);
+  });
+
+  async function saveMedicamento() {
+    const id = document.getElementById("medId").value || null;
+    const referencia = document.getElementById("medReferencia").value || null;
+    const codigo = (document.getElementById("medCodigo").value || "").trim();
+    const descripcion = (document.getElementById("medDescripcion").value || "").trim();
+    const costo = readNumber("medCosto");
+    const precio = readNumber("medPrecio");
+    const { precio_10_dias, precio_20_dias } = calcPrecios(precio);
+
+    if (!codigo) { alert("El código es obligatorio."); return; }
+    if (!descripcion) { alert("La descripción es obligatoria."); return; }
+
+    const payload = { referencia, codigo, descripcion, costo, precio, precio_10_dias, precio_20_dias };
+
+    let resp;
+    if (id) resp = await sb.from("medicamentos").update(payload).eq("id", id).select().single();
+    else resp = await sb.from("medicamentos").insert(payload).select().single();
+
+    if (resp.error) { alert("Error guardando: " + resp.error.message); return; }
+
+    clearMedForm();
+    await loadMedicamentos();
+  }
+
+  async function deleteMedicamento() {
+    const id = document.getElementById("medId").value || null;
+    if (!id) { alert("Selecciona un medicamento para eliminar."); return; }
+    if (!confirm("¿Seguro que deseas eliminar este medicamento?")) return;
+
+    const { error } = await sb.from("medicamentos").delete().eq("id", id);
+    if (error) { alert("Error eliminando: " + error.message); return; }
+
+    clearMedForm();
+    await loadMedicamentos();
+  }
+
+  // =========================
+  // EXCEL IMPORT (UPSERT por codigo)
+  // =========================
+  function downloadTemplate() {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet([
+      { codigo: "7701234567890", referencia: "REF-001", descripcion: "Ejemplo", costo: 1000, precio: 1500 }
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, "medicamentos");
+    XLSX.writeFile(wb, "plantilla_medicamentos.xlsx");
+  }
+
+  async function importExcel() {
+    const file = document.getElementById("excelFile").files[0];
+    if (!file) { alert("Selecciona un archivo Excel."); return; }
+
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array" });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    let ok = 0, fail = 0;
+    const errors = [];
+
+    // Normaliza encabezados esperados: codigo, referencia, descripcion, costo, precio
+    for (const r of rows) {
+      const codigo = String(r.codigo || r.CODIGO || r.Codigo || "").trim();
+      if (!codigo) { fail++; errors.push("Fila sin codigo"); continue; }
+
+      const referencia = (r.referencia || r.REFERENCIA || r.Referencia || "")?.toString().trim() || null;
+      const descripcion = (r.descripcion || r.DESCRIPCION || r.Descripcion || "")?.toString().trim();
+      const costo = Number(r.costo || r.COSTO || r.Costo || 0);
+      const precio = Number(r.precio || r.PRECIO || r.Precio || 0);
+
+      // si no viene descripción, no la sobreescribimos (para no borrar)
+      const basePayload = { codigo };
+      if (referencia !== null) basePayload.referencia = referencia;
+      if (descripcion) basePayload.descripcion = descripcion;
+      if (!Number.isNaN(costo)) basePayload.costo = costo;
+      if (!Number.isNaN(precio)) basePayload.precio = precio;
+
+      // recalcula 10/20 si viene precio (o si ya está en db, lo recalculamos en una segunda pasada)
+      const recalculo = calcPrecios(basePayload.precio ?? 0);
+      if (basePayload.precio !== undefined) {
+        basePayload.precio_10_dias = recalculo.precio_10_dias;
+        basePayload.precio_20_dias = recalculo.precio_20_dias;
+      }
+
+      // UPSERT por codigo (requiere UNIQUE en codigo - ya está)
+      const { error } = await sb.from("medicamentos")
+        .upsert(basePayload, { onConflict: "codigo" });
+
+      if (error) { fail++; errors.push(`codigo ${codigo}: ${error.message}`); }
+      else ok++;
+    }
+
+    document.getElementById("excelResult").textContent =
+      `Importación finalizada. OK: ${ok}, Fallos: ${fail}` + (errors.length ? ` | Ej: ${errors[0]}` : "");
+
+    await loadMedicamentos();
+  }
+
+  // =========================
+  // CLIENTES
+  // =========================
+  async function loadClientes() {
+    const { data, error } = await sb.from("clientes").select("*").order("nombre", { ascending: true }).limit(500);
+    if (error) { alert("Error cargando clientes: " + error.message); return; }
+    clientes = data || [];
+
+    const sel = document.getElementById("clienteSelect");
+    sel.innerHTML = `<option value="">-- Selecciona --</option>`;
+    for (const c of clientes) {
+      const opt = document.createElement("option");
+      opt.value = c.id;
+      opt.textContent = `${c.nombre}${c.correo ? " - " + c.correo : ""}`;
+      sel.appendChild(opt);
+    }
+    updatePrintHeader();
+  }
+
+  async function saveCliente() {
+    const nombre = (document.getElementById("cliNombre").value || "").trim();
+    const correo = (document.getElementById("cliCorreo").value || "").trim() || null;
+    const contacto = (document.getElementById("cliContacto").value || "").trim() || null;
+
+    if (!nombre) { alert("Nombre del cliente es obligatorio."); return; }
+
+    const { error } = await sb.from("clientes").insert({ nombre, correo, contacto });
+    if (error) { alert("Error guardando cliente: " + error.message); return; }
+
+    document.getElementById("cliNombre").value = "";
+    document.getElementById("cliCorreo").value = "";
+    document.getElementById("cliContacto").value = "";
+
+    await loadClientes();
+  }
+
+  // =========================
+  // PORTAFOLIO + CARRITO
+  // =========================
+  function renderPortafolio() {
+    const q = (document.getElementById("portSearch").value || "").trim().toLowerCase();
+    const list = document.getElementById("portafolioList");
+    list.innerHTML = "";
+
+    let items = medicamentos;
+    if (q) items = items.filter(m =>
+      (m.codigo || "").toLowerCase().includes(q) ||
+      (m.descripcion || "").toLowerCase().includes(q)
+    );
+
+    for (const m of items.slice(0, 300)) {
+      const div = document.createElement("div");
+      div.style.borderBottom = "1px solid #eee";
+      div.style.padding = "8px 0";
+      div.innerHTML = `
+        <div><b>${m.descripcion}</b></div>
+        <div class="muted">Código: ${m.codigo} ${m.referencia ? " | Ref: " + m.referencia : ""}</div>
+        <div class="row" style="margin-top:6px;">
+          <div class="muted">${priceLabel(m)}</div>
+          <div style="flex:0.6;">
+            <button class="primary" onclick='addToCart(${JSON.stringify(m).replaceAll("'", "\\'")})'>Agregar</button>
+          </div>
+        </div>
+      `;
+      list.appendChild(div);
+    }
+  }
+
+  function priceLabel(m) {
+    const mode = document.getElementById("precioModo").value;
+    const p = Number(m[mode] || 0);
+    const title = mode === "precio" ? "Base" : (mode === "precio_10_dias" ? "10 días" : "20 días");
+    return `${title}: <b>${money(p)}</b>`;
+  }
+
+  function addToCart(m) {
+    const found = cart.find(x => x.medicamento.id === m.id);
+    if (found) found.cantidad += 1;
+    else cart.push({ medicamento: m, cantidad: 1 });
+    renderCart();
+  }
+
+  function clearCart() {
+    cart = [];
+    renderCart();
+  }
+
+  function removeFromCart(medId) {
+    cart = cart.filter(x => x.medicamento.id !== medId);
+    renderCart();
+  }
+
+  function updateQty(medId, qty) {
+    const x = cart.find(i => i.medicamento.id === medId);
+    if (!x) return;
+    const q = Number(qty || 0);
+    x.cantidad = q > 0 ? q : 1;
+    renderCart();
+  }
+
+  function cartTotals() {
+    const mode = document.getElementById("precioModo").value;
+    let subtotal = 0;
+    for (const it of cart) {
+      const p = Number(it.medicamento[mode] || 0);
+      subtotal += (p * Number(it.cantidad || 0));
+    }
+    return { subtotal, total: subtotal };
+  }
+
+  function renderCart() {
+    const div = document.getElementById("cartList");
+    div.innerHTML = "";
+
+    const mode = document.getElementById("precioModo").value;
+
+    for (const it of cart) {
+      const m = it.medicamento;
+      const p = Number(m[mode] || 0);
+      const line = p * Number(it.cantidad || 0);
+
+      const row = document.createElement("div");
+      row.style.borderBottom = "1px solid #eee";
+      row.style.padding = "8px 0";
+      row.innerHTML = `
+        <div><b>${m.descripcion}</b></div>
+        <div class="muted">Código: ${m.codigo} | ${money(p)} c/u</div>
+        <div class="row" style="margin-top:6px;">
+          <div>
+            <input type="number" step="1" min="1" value="${it.cantidad}"
+              onchange="updateQty(${m.id}, this.value)" />
+          </div>
+          <div class="muted" style="text-align:right;">Total línea: <b>${money(line)}</b></div>
+          <div style="flex:0.6;">
+            <button class="danger" onclick="removeFromCart(${m.id})">Quitar</button>
+          </div>
+        </div>
+      `;
+      div.appendChild(row);
+    }
+
+    const t = cartTotals();
+    document.getElementById("subTotalLbl").textContent = money(t.subtotal);
+    document.getElementById("totalLbl").textContent = money(t.total);
+
+    updatePrintPreview();
+  }
+
+  // =========================
+  // DOCUMENTO (Cotización/Remisión)
+  // =========================
+  function selectedCliente() {
+    const id = document.getElementById("clienteSelect").value;
+    if (!id) return null;
+    return clientes.find(c => String(c.id) === String(id)) || null;
+  }
+
+  function updatePrintHeader() {
+    const tipo = document.getElementById("docTipo").value;
+    document.getElementById("printTitle").textContent = tipo;
+
+    const c = selectedCliente();
+    document.getElementById("printClient").innerHTML = c
+      ? `<b>Cliente:</b> ${c.nombre}<br><b>Correo:</b> ${c.correo || "-"}<br><b>Contacto:</b> ${c.contacto || "-"}`
+      : `<b>Cliente:</b> (sin seleccionar)`;
+
+    document.getElementById("printMeta").innerHTML =
+      `<b>Fecha:</b> ${nowStr()}<br><b>Precio usado:</b> ${document.getElementById("precioModo").selectedOptions[0].textContent}`;
+  }
+
+  function updatePrintPreview() {
+    updatePrintHeader();
+
+    const tb = document.getElementById("printItems");
+    tb.innerHTML = "";
+
+    const mode = document.getElementById("precioModo").value;
+
+    for (const it of cart) {
+      const m = it.medicamento;
+      const qty = Number(it.cantidad || 0);
+      const pu = Number(m[mode] || 0);
+      const tl = pu * qty;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${m.codigo}</td>
+        <td>${m.descripcion}</td>
+        <td>${qty}</td>
+        <td>${money(pu)}</td>
+        <td>${money(tl)}</td>
+      `;
+      tb.appendChild(tr);
+    }
+
+    const t = cartTotals();
+    document.getElementById("printSubtotal").textContent = money(t.subtotal);
+    document.getElementById("printTotal").textContent = money(t.total);
+
+    const notas = (document.getElementById("docNotas").value || "").trim();
+    document.getElementById("printNotas").innerHTML = notas ? `<b>Notas:</b><br>${notas}` : "";
+  }
+
+  document.getElementById("clienteSelect").addEventListener("change", updatePrintPreview);
+  document.getElementById("docTipo").addEventListener("change", updatePrintPreview);
+  document.getElementById("docNotas").addEventListener("input", updatePrintPreview);
+
+  function printDocumento() {
+    updatePrintPreview();
+    window.print();
+  }
+
+  async function guardarDocumento() {
+    if (!cart.length) { alert("El carrito está vacío."); return; }
+
+    const tipo = document.getElementById("docTipo").value;
+    const c = selectedCliente();
+    const notas = (document.getElementById("docNotas").value || "").trim() || null;
+    const mode = document.getElementById("precioModo").value;
+
+    const totals = cartTotals();
+
+    // 1) Insert header cotizacion
+    const header = {
+      tipo,
+      cliente_id: c ? c.id : null,
+      cliente_nombre: c ? c.nombre : null,
+      cliente_correo: c ? c.correo : null,
+      cliente_contacto: c ? c.contacto : null,
+      notas,
+      subtotal: +totals.subtotal.toFixed(2),
+      total: +totals.total.toFixed(2),
+    };
+
+    const ins = await sb.from("cotizaciones").insert(header).select().single();
+    if (ins.error) { alert("Error guardando documento: " + ins.error.message); return; }
+    const cot = ins.data;
+
+    // 2) Insert items
+    const itemsPayload = cart.map(it => {
+      const m = it.medicamento;
+      const cantidad = Number(it.cantidad || 0);
+      const precio_unit = Number(m[mode] || 0);
+      const total_linea = +(cantidad * precio_unit).toFixed(2);
+
+      return {
+        cotizacion_id: cot.id,
+        medicamento_id: m.id,
+        codigo: m.codigo,
+        descripcion: m.descripcion,
+        cantidad,
+        precio_unit,
+        total_linea
+      };
+    });
+
+    const insItems = await sb.from("cotizacion_items").insert(itemsPayload);
+    if (insItems.error) { alert("Documento guardado, pero error guardando ítems: " + insItems.error.message); return; }
+
+    alert(`${tipo} guardada con ID: ${cot.id}`);
+    // si quieres vaciar el carrito después de guardar:
+    // clearCart();
+  }
+
+  // =========================
+  // INIT
+  // =========================
+  (async function init() {
+    await loadMedicamentos();
+    await loadClientes();
+    renderCart();
+    updatePrintPreview();
+  })();
+</script>
+</body>
+</html>
