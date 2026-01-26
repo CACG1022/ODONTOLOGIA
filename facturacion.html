@@ -641,7 +641,6 @@ table td.mono {
         <div class="title">Factura</div>
         <div class="modal-tools">
           <button class="btn" id="btn-imprimir-verfactura" type="button">🖨 Imprimir</button>
-          <button class="btn primary" id="btn-fe-electronica" type="button" onclick="enviarFacturacionElectronica()">⚡ Facturación electrónica</button>
           <button class="btn danger" id="btn-cerrar-modal-verfactura" type="button">✖ Cerrar</button>
         </div>
       </div>
@@ -1418,150 +1417,39 @@ if ((isFocused || filtro) && count > 0) {
 })();
 <\/script>
 
-  <!-- iframe oculto para envío a n8n sin salir de la página -->
-  <iframe name="n8n_iframe" id="n8n_iframe" style="display:none;width:0;height:0;border:0;"></iframe>
+<!-- =========================================================
+     FIX: Autocarga de paciente desde URL (?paciente_cedula=)
+     NO modifica código existente
+     Solo dispara la lógica ya creada en el sistema
+     ========================================================= -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cedula = params.get("paciente_cedula");
+    if (!cedula) return;
 
+    const inputCedula = document.getElementById("cedula_paciente");
+    if (!inputCedula) return;
 
-  <!-- =========================================================
-       FACTURACIÓN ELECTRÓNICA (N8N SIN CORS, SIN PESTAÑA)
-       - NO modifica lógica existente
-       - Envía por FORM a iframe oculto (sin CORS y sin abrir pestañas)
-       - Extrae datos desde el DOM del modal "Ver factura"
-       ========================================================= -->
-  <script>
-  (function(){
-    function _toast(msg, type){
-      try {
-        if (typeof toast === "function") return toast(msg, type || "info");
-      } catch(e){}
-      alert(msg);
+    // Asignar valor
+    inputCedula.value = cedula;
+
+    // Reutilizar lógica existente
+    const btnAuto = document.getElementById("btn-autocompletar");
+    if (btnAuto) {
+      btnAuto.click();
+      return;
     }
 
-    function _getVisibleInvoiceRoot(){
-      // Busca el contenedor de la factura visible dentro del modal
-      // (usa clases que ya aparecen en el HTML: modal-backdrop, modal, invoice)
-      const backdrops = Array.from(document.querySelectorAll(".modal-backdrop"));
-      const openBackdrop = backdrops.find(b => {
-        const st = window.getComputedStyle(b);
-        return st && st.display !== "none" && st.visibility !== "hidden" && st.opacity !== "0";
-      });
-      if (!openBackdrop) return null;
-
-      const invoice = openBackdrop.querySelector(".invoice") || openBackdrop.querySelector("#print-invoice") || openBackdrop.querySelector(".modal-body");
-      return invoice || openBackdrop;
+    if (typeof autocompletarPaciente === "function") {
+      autocompletarPaciente();
     }
-
-    function _extractKVPairs(invoiceRoot){
-      const pairs = {};
-      const boxes = invoiceRoot.querySelectorAll(".ibox");
-      boxes.forEach(b => {
-        const k = (b.querySelector(".k")?.textContent || "").trim();
-        const v = (b.querySelector(".v")?.textContent || "").trim();
-        if (k) pairs[k] = v || null;
-      });
-      return pairs;
-    }
-
-    function _extractDetalle(invoiceRoot){
-      // Intenta leer la tabla de procedimientos (CUPS, Procedimiento, Cant, V/Unit, Total)
-      const rows = [];
-      const tbl = invoiceRoot.querySelector("table");
-      if (!tbl) return rows;
-      const tbody = tbl.querySelector("tbody") || tbl;
-      tbody.querySelectorAll("tr").forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll("td")).map(td => (td.textContent || "").trim());
-        if (!tds.length) return;
-        // Heurística: ignorar filas vacías
-        if (tds.join("").length < 2) return;
-        rows.push({
-          cups: tds[0] || null,
-          procedimiento: tds[1] || null,
-          cantidad: tds[2] || null,
-          valor_unitario: tds[3] || null,
-          total: tds[4] || null
-        });
-      });
-      return rows;
-    }
-
-    function _extractTotales(invoiceRoot){
-      // Lee el bloque de totales si existe (ej: .totals-card o texto "TOTAL")
-      const totals = {};
-
-      const totalsCard = invoiceRoot.querySelector(".totals-card");
-      if (totalsCard){
-        const lines = totalsCard.querySelectorAll(".trow");
-        lines.forEach(l => {
-          const k = (l.querySelector(".k")?.textContent || l.childNodes[0]?.textContent || "").trim();
-          const v = (l.querySelector("span")?.textContent || "").trim();
-          if (k) totals[k] = v || null;
-        });
-      } else {
-        // Fallback: intenta capturar valores por texto
-        const text = invoiceRoot.innerText || "";
-        const mTotal = text.match(/\bTOTAL\b\s*\$?\s*([0-9\.,]+)/i);
-        if (mTotal) totals["TOTAL"] = mTotal[1];
-      }
-      return totals;
-    }
-
-    function _extractFacturaMeta(invoiceRoot){
-      const text = invoiceRoot.innerText || "";
-      const num = (text.match(/N\s*°\s*Factura\s*:\s*([A-Za-z0-9\-]+)/i) || [])[1] || null;
-      const fecha = (text.match(/Fecha\s*:\s*([0-9]2\/\/[0-9]2\/\/[0-9]4|[0-9]2\/\/[0-9]2\/\/[0-9]4)/i) || [])[1] || null;
-      return { numero: num, fecha: fecha };
-    }
-
-    window.enviarFacturacionElectronica = function(){
-      try {
-        const invoiceRoot = _getVisibleInvoiceRoot();
-        if (!invoiceRoot){
-          _toast("No se encontró una factura abierta para enviar.", "warn");
-          return;
-        }
-
-        const kv = _extractKVPairs(invoiceRoot);
-        const detalle = _extractDetalle(invoiceRoot);
-        const totales = _extractTotales(invoiceRoot);
-        const meta = _extractFacturaMeta(invoiceRoot);
-
-        const payload = {
-          factura: {
-            numero: meta.numero || null,
-            fecha: meta.fecha || null,
-            campos: kv
-          },
-          detalle: detalle,
-          totales: totales,
-          raw_text: (invoiceRoot.innerText || "").trim(),
-          origen: "facturacion.html",
-          fecha_envio: new Date().toISOString()
-        };
-
-        // Envío por FORM al iframe oculto (sin CORS y sin abrir pestaña)
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/a98d155f-561d-470f-b353-e9baab31249b";
-        form.target = "n8n_iframe";
-
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "payload";
-        input.value = JSON.stringify(payload);
-
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
-
-        _toast("Factura enviada a n8n ✅", "ok");
-      } catch(e) {
-        console.error("FE n8n error:", e);
-        _toast("Error enviando a facturación electrónica.", "err");
-      }
-    };
-  })();
-  </script>
+  } catch (e) {
+    console.warn("No se pudo autocompletar paciente desde URL", e);
+  }
+});
+</script>
 
 </body>
 </html>`;
@@ -2673,154 +2561,42 @@ if (procDrop) procDrop.style.display = "none";
 })();
   </script>
 
-  <!-- iframe oculto para envío a n8n sin salir de la página -->
-  <iframe name="n8n_iframe" id="n8n_iframe" style="display:none;width:0;height:0;border:0;"></iframe>
+<!-- =========================================================
+     FIX: Autocarga de paciente desde URL (?paciente_cedula=)
+     NO modifica código existente
+     Solo dispara la lógica ya creada en el sistema
+     ========================================================= -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cedula = params.get("paciente_cedula");
+    if (!cedula) return;
 
+    const inputCedula = document.getElementById("cedula_paciente");
+    if (!inputCedula) return;
 
-  <!-- =========================================================
-       FACTURACIÓN ELECTRÓNICA (N8N SIN CORS, SIN PESTAÑA)
-       - NO modifica lógica existente
-       - Envía por FORM a iframe oculto (sin CORS y sin abrir pestañas)
-       - Extrae datos desde el DOM del modal "Ver factura"
-       ========================================================= -->
-  <script>
-  (function(){
-    function _toast(msg, type){
-      try {
-        if (typeof toast === "function") return toast(msg, type || "info");
-      } catch(e){}
-      alert(msg);
+    // Asignar valor
+    inputCedula.value = cedula;
+
+    // Reutilizar lógica existente
+    const btnAuto = document.getElementById("btn-autocompletar");
+    if (btnAuto) {
+      btnAuto.click();
+      return;
     }
 
-    function _getVisibleInvoiceRoot(){
-      // Busca el contenedor de la factura visible dentro del modal
-      // (usa clases que ya aparecen en el HTML: modal-backdrop, modal, invoice)
-      const backdrops = Array.from(document.querySelectorAll(".modal-backdrop"));
-      const openBackdrop = backdrops.find(b => {
-        const st = window.getComputedStyle(b);
-        return st && st.display !== "none" && st.visibility !== "hidden" && st.opacity !== "0";
-      });
-      if (!openBackdrop) return null;
-
-      const invoice = openBackdrop.querySelector(".invoice") || openBackdrop.querySelector("#print-invoice") || openBackdrop.querySelector(".modal-body");
-      return invoice || openBackdrop;
+    if (typeof autocompletarPaciente === "function") {
+      autocompletarPaciente();
     }
-
-    function _extractKVPairs(invoiceRoot){
-      const pairs = {};
-      const boxes = invoiceRoot.querySelectorAll(".ibox");
-      boxes.forEach(b => {
-        const k = (b.querySelector(".k")?.textContent || "").trim();
-        const v = (b.querySelector(".v")?.textContent || "").trim();
-        if (k) pairs[k] = v || null;
-      });
-      return pairs;
-    }
-
-    function _extractDetalle(invoiceRoot){
-      // Intenta leer la tabla de procedimientos (CUPS, Procedimiento, Cant, V/Unit, Total)
-      const rows = [];
-      const tbl = invoiceRoot.querySelector("table");
-      if (!tbl) return rows;
-      const tbody = tbl.querySelector("tbody") || tbl;
-      tbody.querySelectorAll("tr").forEach(tr => {
-        const tds = Array.from(tr.querySelectorAll("td")).map(td => (td.textContent || "").trim());
-        if (!tds.length) return;
-        // Heurística: ignorar filas vacías
-        if (tds.join("").length < 2) return;
-        rows.push({
-          cups: tds[0] || null,
-          procedimiento: tds[1] || null,
-          cantidad: tds[2] || null,
-          valor_unitario: tds[3] || null,
-          total: tds[4] || null
-        });
-      });
-      return rows;
-    }
-
-    function _extractTotales(invoiceRoot){
-      // Lee el bloque de totales si existe (ej: .totals-card o texto "TOTAL")
-      const totals = {};
-
-      const totalsCard = invoiceRoot.querySelector(".totals-card");
-      if (totalsCard){
-        const lines = totalsCard.querySelectorAll(".trow");
-        lines.forEach(l => {
-          const k = (l.querySelector(".k")?.textContent || l.childNodes[0]?.textContent || "").trim();
-          const v = (l.querySelector("span")?.textContent || "").trim();
-          if (k) totals[k] = v || null;
-        });
-      } else {
-        // Fallback: intenta capturar valores por texto
-        const text = invoiceRoot.innerText || "";
-        const mTotal = text.match(/\bTOTAL\b\s*\$?\s*([0-9\.,]+)/i);
-        if (mTotal) totals["TOTAL"] = mTotal[1];
-      }
-      return totals;
-    }
-
-    function _extractFacturaMeta(invoiceRoot){
-      const text = invoiceRoot.innerText || "";
-      const num = (text.match(/N\s*°\s*Factura\s*:\s*([A-Za-z0-9\-]+)/i) || [])[1] || null;
-      const fecha = (text.match(/Fecha\s*:\s*([0-9]2\/\/[0-9]2\/\/[0-9]4|[0-9]2\/\/[0-9]2\/\/[0-9]4)/i) || [])[1] || null;
-      return { numero: num, fecha: fecha };
-    }
-
-    window.enviarFacturacionElectronica = function(){
-      try {
-        const invoiceRoot = _getVisibleInvoiceRoot();
-        if (!invoiceRoot){
-          _toast("No se encontró una factura abierta para enviar.", "warn");
-          return;
-        }
-
-        const kv = _extractKVPairs(invoiceRoot);
-        const detalle = _extractDetalle(invoiceRoot);
-        const totales = _extractTotales(invoiceRoot);
-        const meta = _extractFacturaMeta(invoiceRoot);
-
-        const payload = {
-          factura: {
-            numero: meta.numero || null,
-            fecha: meta.fecha || null,
-            campos: kv
-          },
-          detalle: detalle,
-          totales: totales,
-          raw_text: (invoiceRoot.innerText || "").trim(),
-          origen: "facturacion.html",
-          fecha_envio: new Date().toISOString()
-        };
-
-        // Envío por FORM al iframe oculto (sin CORS y sin abrir pestaña)
-        const form = document.createElement("form");
-        form.method = "POST";
-        form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/a98d155f-561d-470f-b353-e9baab31249b";
-        form.target = "n8n_iframe";
-
-        const input = document.createElement("input");
-        input.type = "hidden";
-        input.name = "payload";
-        input.value = JSON.stringify(payload);
-
-        form.appendChild(input);
-        document.body.appendChild(form);
-        form.submit();
-        document.body.removeChild(form);
-
-        _toast("Factura enviada a n8n ✅", "ok");
-      } catch(e) {
-        console.error("FE n8n error:", e);
-        _toast("Error enviando a facturación electrónica.", "err");
-      }
-    };
-  })();
-  </script>
+  } catch (e) {
+    console.warn("No se pudo autocompletar paciente desde URL", e);
+  }
+});
+</script>
 
 </body>
 </html>
-
 
 
 
