@@ -6,200 +6,31 @@
   <title>Facturación - Clínica Odontológica</title>
   <!-- ✅ Librería para exportar Excel (SheetJS) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
-
-
 // ==============================
-// FACTURACIÓN ELECTRÓNICA (n8n) - VISTA FACTURA
+// FIX: AUTOCARGA PACIENTE POR URL (?paciente_cedula=)
 // ==============================
-async function enviarFacturacionElectronicaDesdeVerFactura(){
-  try{
-    // Debe existir una factura abierta en el modal
-    if (!state || !state.facturaVer){
-      toast("Primero abre una factura (Ver factura)", "warn");
-      return;
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cedula = params.get("paciente_cedula");
+    if (!cedula) return;
+
+    const inputCedula = document.getElementById("cedula_paciente");
+    if (!inputCedula) return;
+
+    inputCedula.value = cedula;
+
+    // dispara autocompletar existente sin romper lógica
+    const btnAuto = document.getElementById("btn-autocompletar");
+    if (btnAuto) {
+      btnAuto.click();
+    } else if (typeof autocompletarPaciente === "function") {
+      autocompletarPaciente();
     }
-
-    // Usamos cache (si está) para evitar consultas extra
-    let payloadData = state.facturaVerData || null;
-
-    // Fallback: si por alguna razón no está el cache, consultamos a Supabase
-    if (!payloadData){
-      const { data: factura, error: e1 } = await supabase
-        .from("facturas")
-        .select("*")
-        .eq("id", state.facturaVer)
-        .single();
-      if (e1) throw e1;
-
-      const { data: det, error: e2 } = await supabase
-        .from("factura_detalle")
-        .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-        .eq("factura_id", state.facturaVer);
-      if (e2) throw e2;
-
-      let abonos = [];
-      try{
-        const { data: ab, error: e3 } = await supabase
-          .from("abonos")
-          .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
-          .eq("factura_id", state.facturaVer)
-          .order("fecha", { ascending: true });
-        if (!e3) abonos = ab || [];
-      }catch(_e){
-        // tabla abonos puede no existir
-      }
-
-      payloadData = { factura, detalle: (det || []), abonos };
-    }
-
-    const factura = payloadData.factura || payloadData.factura || payloadData.factura;
-    const detalle = payloadData.detalle || [];
-    const abonos = payloadData.abonos || [];
-    const totals = payloadData.totals || null;
-
-    // Construimos payload final (incluye paciente y usuario)
-    const payload = {
-      origen: "facturacion.html",
-      fecha_envio: new Date().toISOString(),
-      usuario: {
-        id: state?.session?.user?.id || null,
-        email: state?.session?.user?.email || null
-      },
-      paciente: {
-        nombre: factura?.paciente_nombre || null,
-        cedula: factura?.paciente_cedula || null,
-        correo: factura?.paciente_correo || null,
-        tipo_usuario: factura?.tipo_usuario || null,
-        eps: factura?.eps || null
-      },
-      factura: factura || null,
-      detalle: detalle,
-      abonos: abonos,
-      totales: totals
-    };
-
-    // UI feedback
-    const btn = document.getElementById("btn-fe-electronica-verfactura");
-    const oldTxt = btn ? btn.textContent : null;
-    if (btn){
-      btn.disabled = true;
-      btn.textContent = "Enviando...";
-    }
-
-    const resp = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    if (!resp.ok){
-      const t = await resp.text().catch(()=>"");
-      throw new Error("Webhook respondió " + resp.status + " " + resp.statusText + (t ? (" - " + t.slice(0,200)) : ""));
-    }
-
-    toast("Facturación electrónica enviada ✅", "ok");
-  }catch(e){
-    console.error(e);
-    toast("Error enviando a facturación electrónica:
-" + (e?.message || e), "err");
-  }finally{
-    const btn = document.getElementById("btn-fe-electronica-verfactura");
-    if (btn){
-      btn.disabled = false;
-      btn.textContent = "⚡ Facturación electrónica";
-    }
-  }
-}
-// ==============================
-// FACTURACIÓN ELECTRÓNICA (n8n)
-// ==============================
-async function enviarFacturacionElectronica(){
-  try{
-    if(!state || !state.facturaVer){
-      alert("No hay factura cargada");
-      return;
-    }
-
-    const { data: factura, error } = await supabase
-      .from("facturas")
-      .select("*")
-      .eq("id", state.facturaVer)
-      .single();
-
-    if(error) throw error;
-
-    await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        factura,
-        fecha_envio: new Date().toISOString()
-      })
-    });
-
-    alert("✅ Enviado a facturación electrónica");
-  }catch(e){
-    console.error(e);
-    alert("❌ Error enviando a facturación electrónica");
-  }
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  const btn = document.getElementById("btn-fe-electronica");
-  if(btn){
-    btn.addEventListener("click", enviarFacturacionElectronica);
+  } catch (e) {
+    console.warn("No se pudo autocompletar paciente por URL", e);
   }
 });
-
-
-// ==============================
-// FACTURACIÓN ELECTRÓNICA (FIX CLICK)
-// ==============================
-async function enviarFacturacionElectronica(){
-  try{
-    console.log("⚡ Click Facturación electrónica");
-
-    if (!window.state || !state.facturaVer) {
-      alert("No hay factura cargada para enviar");
-      return;
-    }
-
-    const { data: factura, error } = await supabase
-      .from("facturas")
-      .select("*")
-      .eq("id", state.facturaVer)
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("Error obteniendo la factura");
-      return;
-    }
-
-    const payload = {
-      factura,
-      fecha_envio: new Date().toISOString()
-    };
-
-    console.log("📦 Payload:", payload);
-
-    const resp = await fetch(
-      "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }
-    );
-
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-    alert("✅ Factura enviada a facturación electrónica");
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error enviando a facturación electrónica");
-  }
-}
 
 </script>
   <style>
@@ -837,7 +668,6 @@ table td.mono {
         <div class="title">Factura</div>
         <div class="modal-tools">
           <button class="btn" id="btn-imprimir-verfactura" type="button">🖨 Imprimir</button>
-          <button class="btn primary" id="btn-fe-electronica-verfactura" type="button">⚡ Facturación electrónica</button>
           <button class="btn danger" id="btn-cerrar-modal-verfactura" type="button">✖ Cerrar</button>
         </div>
       </div>
@@ -1905,24 +1735,6 @@ if ((isFocused || filtro) && count > 0) {
           : (f.total !== undefined && f.total !== null)
             ? Number(f.total || 0)
             : Math.max(0, (subtotal + iva_valor) - copago - cuota);
-        // ✅ Guardamos datos completos de la factura (para Facturación Electrónica)
-        state.facturaVerData = {
-          factura: f,
-          detalle: (det || []),
-          abonos: (ab || []),
-          totals: {
-            subtotal,
-            descuento_pct: Number(f.descuento_pct||0),
-            descuento_valor: Number(f.descuento_valor||0),
-            iva_aplica,
-            iva_pct,
-            iva_valor,
-            copago,
-            cuota_moderadora: cuota,
-            total
-          }
-        };
-
         const htmlDoc = buildInvoiceHTML({
           fac: f,
           detalle: det || [],
@@ -2655,10 +2467,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("btn-imprimir-verfactura").addEventListener("click", async () => {
           if (!state.facturaVer){
             toast("No hay una factura seleccionada", "warn");
-        // ✅ Facturación electrónica (desde Ver factura)
-        if ($("btn-fe-electronica-verfactura")) {
-          $("btn-fe-electronica-verfactura").addEventListener("click", enviarFacturacionElectronicaDesdeVerFactura);
-        }
             return;
           }
           await imprimirFacturaPorId(state.facturaVer);
@@ -2745,95 +2553,30 @@ if (procDrop) procDrop.style.display = "none";
 })();
   
 // ==============================
-// FACTURACIÓN ELECTRÓNICA (n8n)
+// FIX: AUTOCARGA PACIENTE POR URL (?paciente_cedula=)
 // ==============================
-async function enviarFacturacionElectronica(){
-  try{
-    if(!state || !state.facturaVer){
-      alert("No hay factura cargada");
-      return;
+document.addEventListener("DOMContentLoaded", () => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const cedula = params.get("paciente_cedula");
+    if (!cedula) return;
+
+    const inputCedula = document.getElementById("cedula_paciente");
+    if (!inputCedula) return;
+
+    inputCedula.value = cedula;
+
+    // dispara autocompletar existente sin romper lógica
+    const btnAuto = document.getElementById("btn-autocompletar");
+    if (btnAuto) {
+      btnAuto.click();
+    } else if (typeof autocompletarPaciente === "function") {
+      autocompletarPaciente();
     }
-
-    const { data: factura, error } = await supabase
-      .from("facturas")
-      .select("*")
-      .eq("id", state.facturaVer)
-      .single();
-
-    if(error) throw error;
-
-    await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({
-        factura,
-        fecha_envio: new Date().toISOString()
-      })
-    });
-
-    alert("✅ Enviado a facturación electrónica");
-  }catch(e){
-    console.error(e);
-    alert("❌ Error enviando a facturación electrónica");
-  }
-}
-
-document.addEventListener("DOMContentLoaded", ()=>{
-  const btn = document.getElementById("btn-fe-electronica");
-  if(btn){
-    btn.addEventListener("click", enviarFacturacionElectronica);
+  } catch (e) {
+    console.warn("No se pudo autocompletar paciente por URL", e);
   }
 });
-
-
-// ==============================
-// FACTURACIÓN ELECTRÓNICA (FIX CLICK)
-// ==============================
-async function enviarFacturacionElectronica(){
-  try{
-    console.log("⚡ Click Facturación electrónica");
-
-    if (!window.state || !state.facturaVer) {
-      alert("No hay factura cargada para enviar");
-      return;
-    }
-
-    const { data: factura, error } = await supabase
-      .from("facturas")
-      .select("*")
-      .eq("id", state.facturaVer)
-      .single();
-
-    if (error) {
-      console.error(error);
-      alert("Error obteniendo la factura");
-      return;
-    }
-
-    const payload = {
-      factura,
-      fecha_envio: new Date().toISOString()
-    };
-
-    console.log("📦 Payload:", payload);
-
-    const resp = await fetch(
-      "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      }
-    );
-
-    if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-    alert("✅ Factura enviada a facturación electrónica");
-  } catch (err) {
-    console.error(err);
-    alert("❌ Error enviando a facturación electrónica");
-  }
-}
 
 </script>
 </body>
