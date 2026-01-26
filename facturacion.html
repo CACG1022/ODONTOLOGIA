@@ -5,7 +5,46 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Facturación - Clínica Odontológica</title>
   <!-- ✅ Librería para exportar Excel (SheetJS) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js">
+    // ==============================
+    // FACTURACIÓN ELECTRÓNICA (n8n)
+    // ==============================
+    async function enviarFacturacionElectronica(){
+      if (!state.facturaVer){
+        toast("No hay factura seleccionada", "warn");
+        return;
+      }
+      try{
+        setStatus("Enviando a facturación electrónica...");
+        const { data: fac, error } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", state.facturaVer)
+          .single();
+        if (error) throw error;
+
+        const payload = {
+          factura: fac,
+          items: state.items || [],
+          fecha_envio: new Date().toISOString()
+        };
+
+        const resp = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        toast("Enviado a facturación electrónica ✅","ok");
+        setStatus("");
+      }catch(err){
+        console.error(err);
+        setStatus("");
+        toast("Error enviando a facturación electrónica","err");
+      }
+    }
+
+</script>
   <style>
     :root{
       --bg: #f3f5f7;
@@ -2524,9 +2563,49 @@ if (procDrop) procDrop.style.display = "none";
     }, 600);
   });
 })();
-  </script>
+  
+    // ==============================
+    // FACTURACIÓN ELECTRÓNICA (n8n)
+    // ==============================
+    async function enviarFacturacionElectronica(){
+      if (!state.facturaVer){
+        toast("No hay factura seleccionada", "warn");
+        return;
+      }
+      try{
+        setStatus("Enviando a facturación electrónica...");
+        const { data: fac, error } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", state.facturaVer)
+          .single();
+        if (error) throw error;
+
+        const payload = {
+          factura: fac,
+          items: state.items || [],
+          fecha_envio: new Date().toISOString()
+        };
+
+        const resp = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",{
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify(payload)
+        });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        toast("Enviado a facturación electrónica ✅","ok");
+        setStatus("");
+      }catch(err){
+        console.error(err);
+        setStatus("");
+        toast("Error enviando a facturación electrónica","err");
+      }
+    }
+
+</script>
 </body>
 </html>
+
 
 
 
