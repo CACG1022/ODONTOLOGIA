@@ -2543,14 +2543,29 @@ if (procDrop) procDrop.style.display = "none";
      NO modifica ni interfiere con lógica existente
      ========================================================= -->
 <script>
+
 function enviarFacturacionElectronica(){
   try{
-    if(!window.state || !state.facturaVer){
-      alert("No hay factura seleccionada");
-      return;
-    }
+    // ⚠️ NO se requiere seleccionar factura:
+    // se envía la factura que está visible en el modal
 
-    // Envío seguro por FORM (no CORS)
+    const facturaNumeroEl = document.querySelector('[data-factura-numero], #factura-numero, .factura-numero');
+    const facturaNumero = facturaNumeroEl ? facturaNumeroEl.textContent.trim() : null;
+
+    const paciente = {
+      nombre: document.querySelector('[data-paciente-nombre]')?.textContent || null,
+      cedula: document.querySelector('[data-paciente-cedula]')?.textContent || null,
+      correo: document.querySelector('[data-paciente-correo]')?.textContent || null
+    };
+
+    const payload = {
+      factura_visible: true,
+      factura_numero: facturaNumero,
+      paciente,
+      fecha_envio: new Date().toISOString(),
+      origen: "facturacion.html"
+    };
+
     const form = document.createElement("form");
     form.method = "POST";
     form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b";
@@ -2559,11 +2574,7 @@ function enviarFacturacionElectronica(){
     const input = document.createElement("input");
     input.type = "hidden";
     input.name = "payload";
-    input.value = JSON.stringify({
-      factura_id: state.facturaVer,
-      origen: "facturacion.html",
-      fecha_envio: new Date().toISOString()
-    });
+    input.value = JSON.stringify(payload);
 
     form.appendChild(input);
     document.body.appendChild(form);
@@ -2575,6 +2586,7 @@ function enviarFacturacionElectronica(){
   }
 }
 </script>
+
 
 
 
