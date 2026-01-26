@@ -151,6 +151,56 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }
 });
 
+
+// ==============================
+// FACTURACIÓN ELECTRÓNICA (FIX CLICK)
+// ==============================
+async function enviarFacturacionElectronica(){
+  try{
+    console.log("⚡ Click Facturación electrónica");
+
+    if (!window.state || !state.facturaVer) {
+      alert("No hay factura cargada para enviar");
+      return;
+    }
+
+    const { data: factura, error } = await supabase
+      .from("facturas")
+      .select("*")
+      .eq("id", state.facturaVer)
+      .single();
+
+    if (error) {
+      console.error(error);
+      alert("Error obteniendo la factura");
+      return;
+    }
+
+    const payload = {
+      factura,
+      fecha_envio: new Date().toISOString()
+    };
+
+    console.log("📦 Payload:", payload);
+
+    const resp = await fetch(
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    alert("✅ Factura enviada a facturación electrónica");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error enviando a facturación electrónica");
+  }
+}
+
 </script>
   <style>
     :root{
@@ -2735,9 +2785,60 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }
 });
 
+
+// ==============================
+// FACTURACIÓN ELECTRÓNICA (FIX CLICK)
+// ==============================
+async function enviarFacturacionElectronica(){
+  try{
+    console.log("⚡ Click Facturación electrónica");
+
+    if (!window.state || !state.facturaVer) {
+      alert("No hay factura cargada para enviar");
+      return;
+    }
+
+    const { data: factura, error } = await supabase
+      .from("facturas")
+      .select("*")
+      .eq("id", state.facturaVer)
+      .single();
+
+    if (error) {
+      console.error(error);
+      alert("Error obteniendo la factura");
+      return;
+    }
+
+    const payload = {
+      factura,
+      fecha_envio: new Date().toISOString()
+    };
+
+    console.log("📦 Payload:", payload);
+
+    const resp = await fetch(
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    alert("✅ Factura enviada a facturación electrónica");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error enviando a facturación electrónica");
+  }
+}
+
 </script>
 </body>
 </html>
+
 
 
 
