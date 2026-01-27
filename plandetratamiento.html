@@ -1857,6 +1857,8 @@ setTimeout(() => {
         Vista de impresión <small>(solo para PDF)</small>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
+        <button type="button" onclick="imprimirDesdeModal()" style="background:#059669;">🖨️ Imprimir</button>
+        <button type="button" onclick="enviarPDFaN8n()" style="background:#7c3aed;">📤 Enviar a n8n</button>
         <button type="button" onclick="cerrarModalImpresionPDF()">✖ Cerrar</button>
       </div>
     </div>
@@ -2430,10 +2432,6 @@ window.imprimirDesdeModal = function(){
   }
 };
 </script>
-
-
-
-
 
 
 
