@@ -1851,13 +1851,14 @@ setTimeout(() => {
 
     /* Encabezado (franja azul) */
     .header{
-      padding: 48px 20px;   /* más alta */
-      color:#fff;
-      padding: 32px 20px; /* ⬅️ más alto */
-      position: relative;
-      -webkit-print-color-adjust: exact;
-      print-color-adjust: exact;
-    }
+  background: var(--blue); /* ✅ ESTA ES LA CLAVE */
+  padding: 48px 20px;      /* más alto */
+  color:#fff;
+  position: relative;
+
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
     .header .title{
       font-weight: 900;
       font-size: 26px;
