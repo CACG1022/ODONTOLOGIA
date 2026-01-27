@@ -540,13 +540,54 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
        - Oculta odontograma
        - Oculta aviso de paciente valorado
        ========================= -->
+  <!-- =========================
+       ✅ ESTILOS SOLO PARA IMPRESIÓN (AJUSTADOS)
+       - Oculta SOLO el gráfico del odontograma (NO el resumen)
+       - Oculta aviso de paciente valorado
+       - Omite "Procedimientos adicionales"
+       ========================= -->
   <style>
     @media print {
-      .odontograma-wrap { display: none !important; }
-      #cedula-hint { display: none !important; }
-      .topbar, .btn-top, button { display: none !important; }
-      body { background: #fff !important; }
-      form { box-shadow: none !important; border: none !important; }
+
+      /* ❌ Ocultar piezas dentales (pero NO el resumen) */
+      .odontograma-wrap .row-title,
+      .odontograma-wrap .side-labels,
+      .odontograma-wrap .teeth-row {
+        display: none !important;
+      }
+
+      /* ✅ Mantener visible el resumen por diente */
+      .odontograma-summary {
+        display: block !important;
+      }
+
+      /* ❌ Ocultar aviso de paciente valorado */
+      #cedula-hint {
+        display: none !important;
+      }
+
+      /* ❌ Ocultar sección "Procedimientos adicionales" */
+      .checkbox-group,
+      label[for="procedimientos-adicionales"] {
+        display: none !important;
+      }
+
+      /* ❌ Ocultar botones y barra superior */
+      .topbar,
+      .btn-top,
+      button {
+        display: none !important;
+      }
+
+      /* Limpieza visual */
+      body {
+        background: #fff !important;
+      }
+
+      form {
+        box-shadow: none !important;
+        border: none !important;
+      }
     }
   </style>
 
