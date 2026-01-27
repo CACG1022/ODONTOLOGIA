@@ -2129,6 +2129,59 @@ setTimeout(() => {
 
   </div>
   
+
+<!-- =========================
+     ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE (AGREGADO)
+     - NO modifica código existente
+     - Usa el correo del usuario autenticado
+     - Consulta tabla: profesionales
+     - Campo: nombre
+     ========================= -->
+<script>
+(async function(){
+  try{
+    if(!window.supabase) return;
+
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if(!session || !session.user || !session.user.email) return;
+
+    const email = String(session.user.email).trim().toLowerCase();
+
+    const { data, error } = await window.supabase
+      .from("profesionales")
+      .select("nombre, correo, activo")
+      .eq("correo", email)
+      .eq("activo", true)
+      .limit(1)
+      .maybeSingle();
+
+    if(error){
+      console.warn("No se pudo obtener profesional:", error);
+      return;
+    }
+
+    if(data && data.nombre){
+      // Mostrar nombre del profesional en la barra superior (sin reemplazar email)
+      const meta = document.querySelector(".mini-meta");
+      if(meta && !document.getElementById("user-nombre-profesional")){
+        const span = document.createElement("span");
+        span.id = "user-nombre-profesional";
+        span.textContent = data.nombre;
+        span.style.fontWeight = "900";
+        span.style.fontSize = "13px";
+        span.style.color = "#0f172a";
+        meta.prepend(span);
+      }
+
+      // Exponer globalmente por si otros scripts lo necesitan
+      window.NOMBRE_PROFESIONAL = data.nombre;
+    }
+  }catch(e){
+    console.warn("Error cargando nombre del profesional:", e);
+  }
+})();
+</script>
+
 </body>
 </html>
     `;
@@ -2200,8 +2253,62 @@ setTimeout(() => {
   </button>
 </div>
 
+
+<!-- =========================
+     ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE (AGREGADO)
+     - NO modifica código existente
+     - Usa el correo del usuario autenticado
+     - Consulta tabla: profesionales
+     - Campo: nombre
+     ========================= -->
+<script>
+(async function(){
+  try{
+    if(!window.supabase) return;
+
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if(!session || !session.user || !session.user.email) return;
+
+    const email = String(session.user.email).trim().toLowerCase();
+
+    const { data, error } = await window.supabase
+      .from("profesionales")
+      .select("nombre, correo, activo")
+      .eq("correo", email)
+      .eq("activo", true)
+      .limit(1)
+      .maybeSingle();
+
+    if(error){
+      console.warn("No se pudo obtener profesional:", error);
+      return;
+    }
+
+    if(data && data.nombre){
+      // Mostrar nombre del profesional en la barra superior (sin reemplazar email)
+      const meta = document.querySelector(".mini-meta");
+      if(meta && !document.getElementById("user-nombre-profesional")){
+        const span = document.createElement("span");
+        span.id = "user-nombre-profesional";
+        span.textContent = data.nombre;
+        span.style.fontWeight = "900";
+        span.style.fontSize = "13px";
+        span.style.color = "#0f172a";
+        meta.prepend(span);
+      }
+
+      // Exponer globalmente por si otros scripts lo necesitan
+      window.NOMBRE_PROFESIONAL = data.nombre;
+    }
+  }catch(e){
+    console.warn("Error cargando nombre del profesional:", e);
+  }
+})();
+</script>
+
 </body>
 </html>
+
 
 
 
