@@ -1800,6 +1800,8 @@ setTimeout(() => {
   window.cerrarModalImpresionPDF = cerrarModalImpresionPDF;
 
   function construirDocumentoParaImprimir(){
+    const firmaBase64 = document.getElementById("firmaInput")?.value || "";
+
     // Mantener cálculos actuales (sin tocar lógica)
     try{
       if(typeof window.calcularTotal === "function"){ window.calcularTotal(); }
@@ -1992,13 +1994,20 @@ setTimeout(() => {
     </div>
   
     <div class="section">
-      <h3>Firma del profesional</h3>
-      <div class="obs" style="min-height:70px;"></div>
-      <div style="margin-top:8px;font-size:12px;font-weight:700;">
-        Dra. Leidi Silva Oropeza<br>
-        Especialista en Rehabilitación Oral
-      </div>
-    </div>
+  <h3>Firma del profesional</h3>
+
+  ${
+    firmaBase64
+      ? `<img src="${firmaBase64}" style="max-width:220px;max-height:90px;display:block;margin-bottom:6px;">`
+      : `<div class="obs" style="min-height:70px;"></div>`
+  }
+
+  <div style="margin-top:6px;font-size:12px;font-weight:700;">
+    Dra. Leidi Silva Oropeza<br>
+    Especialista en Rehabilitación Oral
+  </div>
+</div>
+
 
   </div>
   
