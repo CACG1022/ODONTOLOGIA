@@ -2433,6 +2433,26 @@ window.imprimirDesdeModal = function(){
 };
 </script>
 
+<!-- =========================
+     🔎 DEBUG BOTÓN ENVIAR N8N (AGREGADO)
+     - Garantiza feedback visual
+     - Reenvía a la función real
+     ========================= -->
+<script>
+(function(){
+  const __origEnviar = window.enviarPDFaN8n;
+  window.enviarPDFaN8n = async function(){
+    alert("Enviando PDF a n8n...");
+    console.log("📤 Click Enviar a n8n");
+    if(typeof __origEnviar === "function"){
+      return __origEnviar.apply(this, arguments);
+    } else {
+      alert("Función enviarPDFaN8n no encontrada");
+      console.error("enviarPDFaN8n no definida");
+    }
+  };
+})();
+</script>
 
 
 
