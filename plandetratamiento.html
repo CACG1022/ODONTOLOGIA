@@ -2000,6 +2000,7 @@ setTimeout(() => {
     </div>
 
   </div>
+  
 </body>
 </html>
     `;
@@ -2050,6 +2051,26 @@ setTimeout(() => {
   };
 })();
 </script>
+<!-- ================= BOTÓN IMPRIMIR PDF (FLOTANTE) ================= -->
+<div style="position:fixed;bottom:80px;right:20px;z-index:9999;">
+  <button
+    onclick="imprimirPDF()"
+    style="
+      padding:12px 16px;
+      border-radius:10px;
+      border:none;
+      background:#059669; /* verde elegante */
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    ">
+    🖨️ Imprimir PDF
+  </button>
+</div>
 
 </body>
 </html>
