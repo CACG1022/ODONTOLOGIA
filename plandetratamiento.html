@@ -2202,75 +2202,94 @@ setTimeout(() => {
 
 
 <!-- =========================
-     ✅ CAMPO NOMBRE PROFESIONAL DEBAJO DE LA FIRMA (AGREGADO)
-     - NO modifica código existente
-     - Muestra el nombre del profesional bajo el canvas de firma
+     ✅ CAMPO FIJO NOMBRE DEL PROFESIONAL (FIX DEFINITIVO)
+     - Se renderiza SIEMPRE debajo de la firma
+     - Muestra placeholder aunque Supabase falle
+     - Luego reemplaza por el nombre real si existe
      ========================= -->
-
-<style>
-  /* Campo nombre profesional bajo firma */
-  #nombre-profesional-firma{
-    margin-top: 6px;
-    font-weight: 800;
-    font-size: 13px;
-    color: #0f172a;
-    text-align: left;
-  }
-</style>
-
 <script>
-(async function(){
-  try{
-    if(!window.supabase) return;
+(function(){
+  function crearCampo(){
+    const canvas = document.getElementById("firma");
+    if(!canvas) return null;
 
-    // 1) Insertar el campo debajo del canvas de firma (solo si no existe)
-    const canvasFirma = document.getElementById("firma");
-    if(canvasFirma && !document.getElementById("nombre-profesional-firma")){
-      const div = document.createElement("div");
-      div.id = "nombre-profesional-firma";
-      div.textContent = " "; // placeholder
-      canvasFirma.insertAdjacentElement("afterend", div);
-    }
+    // Evitar duplicados
+    if(document.getElementById("campo-profesional-firma")) return;
 
-    // 2) Obtener sesión
-    const { data: { session } } = await window.supabase.auth.getSession();
-    if(!session || !session.user?.email) return;
+    const wrap = document.createElement("div");
+    wrap.id = "campo-profesional-firma";
+    wrap.style.marginTop = "8px";
 
-    const email = String(session.user.email).trim();
+    const label = document.createElement("div");
+    label.textContent = "Nombre del profesional:";
+    label.style.fontWeight = "700";
+    label.style.fontSize = "12px";
+    label.style.color = "#475569";
+    label.style.marginBottom = "2px";
 
-    // 3) Consultar nombre del profesional
-    const { data, error } = await window.supabase
-      .from("profesionales")
-      .select("nombre")
-      .ilike("correo", email)
-      .order("creado_en", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+    const value = document.createElement("div");
+    value.id = "nombre-profesional-firma";
+    value.textContent = "—";
+    value.style.fontWeight = "900";
+    value.style.fontSize = "13px";
+    value.style.color = "#0f172a";
 
-    if(error){
-      console.warn("No se pudo obtener nombre profesional:", error);
-      return;
-    }
+    wrap.appendChild(label);
+    wrap.appendChild(value);
 
-    if(data?.nombre){
-      // Mostrar debajo de la firma
-      const el = document.getElementById("nombre-profesional-firma");
-      if(el){
-        el.textContent = data.nombre;
+    canvas.insertAdjacentElement("afterend", wrap);
+    return value;
+  }
+
+  async function cargarNombre(){
+    try{
+      if(!window.supabase) return;
+
+      const valueEl = crearCampo();
+      if(!valueEl) return;
+
+      const { data: { session } } = await window.supabase.auth.getSession();
+      if(!session?.user?.email){
+        valueEl.textContent = "No autenticado";
+        return;
       }
 
-      // Exponer global
-      window.NOMBRE_PROFESIONAL = data.nombre;
+      const email = String(session.user.email).trim();
+
+      const { data, error } = await window.supabase
+        .from("profesionales")
+        .select("nombre")
+        .ilike("correo", email)
+        .limit(1)
+        .maybeSingle();
+
+      if(error){
+        console.warn("RLS o error leyendo profesionales:", error);
+        valueEl.textContent = "Profesional no registrado";
+        return;
+      }
+
+      if(data?.nombre){
+        valueEl.textContent = data.nombre;
+        window.NOMBRE_PROFESIONAL = data.nombre;
+      }else{
+        valueEl.textContent = "Profesional no registrado";
+      }
+    }catch(e){
+      console.warn("Error cargando nombre profesional:", e);
     }
-  }catch(e){
-    console.warn("Error colocando nombre del profesional bajo firma:", e);
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", cargarNombre);
+  }else{
+    cargarNombre();
   }
 })();
 </script>
 
 </body>
 </html>
-
 
 
 
