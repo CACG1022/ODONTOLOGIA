@@ -148,43 +148,53 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     cargarRolActual(session).then(role => validarPermisoModulo(role));
   }
 });
-async function enviarPDFaN8n() {
-  try {
+async function enviarPDFaN8n(){
+  try{
     const iframe = document.getElementById("frame-impresion-pdf");
-    if (!iframe || !iframe.contentWindow) {
-      alert("PDF no disponible");
+    if(!iframe || !iframe.contentWindow){
+      alert("Primero debes generar el PDF.");
       return;
     }
 
     // 1️⃣ Obtener HTML del PDF
     const pdfHTML = iframe.contentWindow.document.documentElement.outerHTML;
 
-    // 2️⃣ Convertir HTML a Blob (PDF ya renderizado)
+    // 2️⃣ Convertir a Blob
     const blob = new Blob([pdfHTML], { type: "text/html" });
 
     // 3️⃣ Convertir a Base64
     const reader = new FileReader();
-    reader.onloadend = async function () {
+    reader.onloadend = async function(){
       const base64 = reader.result.split(",")[1];
 
       // 4️⃣ Enviar a n8n
-      await fetch("TU_WEBHOOK_N8N_PDF", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          pdf_base64: base64,
-          profesional: window.NOMBRE_PROFESIONAL || "",
-          paciente: document.getElementById("nombre")?.value || ""
-        })
-      });
+      const resp = await fetch(
+        "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            pdf_base64: base64,
+            paciente: document.getElementById("nombre")?.value || "",
+            cedula: document.getElementById("cedula")?.value || "",
+            profesional: window.NOMBRE_PROFESIONAL || "",
+            fecha: document.getElementById("fecha-hora")?.textContent || ""
+          })
+        }
+      );
 
-      alert("PDF enviado a n8n ✅");
+      if(!resp.ok){
+        throw new Error("HTTP " + resp.status);
+      }
+
+      alert("PDF enviado a n8n correctamente ✅");
     };
+
     reader.readAsDataURL(blob);
 
-  } catch (e) {
+  }catch(e){
     console.error(e);
-    alert("No se pudo enviar el PDF");
+    alert("No se pudo enviar el PDF a n8n");
   }
 }
 
