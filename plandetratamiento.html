@@ -534,6 +534,22 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
   </style>
+
+  <!-- =========================
+       ✅ ESTILOS SOLO PARA IMPRESIÓN (AGREGADO)
+       - Oculta odontograma
+       - Oculta aviso de paciente valorado
+       ========================= -->
+  <style>
+    @media print {
+      .odontograma-wrap { display: none !important; }
+      #cedula-hint { display: none !important; }
+      .topbar, .btn-top, button { display: none !important; }
+      body { background: #fff !important; }
+      form { box-shadow: none !important; border: none !important; }
+    }
+  </style>
+
 </head>
 
 <body>
@@ -550,6 +566,12 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
           Historia Clínica
         </button>
+      
+        <!-- ✅ BOTÓN IMPRIMIR PDF (AGREGADO, NO MODIFICA LO EXISTENTE) -->
+        <button type="button" class="btn-top" onclick="imprimirPDF()">
+          Imprimir PDF
+        </button>
+
       </div>
     </div>
   </div>
@@ -1663,8 +1685,19 @@ setTimeout(() => {
 })();
 </script>
 
+
+<!-- =========================
+     ✅ FUNCIÓN IMPRIMIR PDF (AGREGADO)
+     ========================= -->
+<script>
+  function imprimirPDF(){
+    window.print();
+  }
+</script>
+
 </body>
 </html>
+
 
 
 
