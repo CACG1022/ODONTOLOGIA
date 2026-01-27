@@ -106,39 +106,6 @@ async function verificarSesion() {
 
 verificarSesion();
 
-async function mostrarUsuarioYRol() {
-  try {
-    const { data: { session } } = await window.supabase.auth.getSession();
-    if (!session) return;
-
-    // Email
-    const email = session.user.email || "";
-    const emailEl = document.getElementById("user-email");
-    if (emailEl) emailEl.textContent = email;
-
-    // Leer rol desde profiles
-    const { data, error } = await window.supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .single();
-
-    let roleRaw = data?.role || "paciente";
-
-    // Mostrar EXACTO como en panel futurista
-    const roleEl = document.getElementById("user-role");
-    if (roleEl) roleEl.textContent = `Rol: ${roleRaw}`;
-
-  } catch (e) {
-    console.warn("No se pudo cargar usuario/rol:", e);
-  }
-}
-
-
-// Ejecutar al cargar
-mostrarUsuarioYRol();
-
-
 window.supabase.auth.onAuthStateChange((_event, session) => {
   if (!session) {
     console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
@@ -198,7 +165,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     .topbar{
       position: relative;
       background: #e5e7eb;
-      border-bottom: 1px solid #152B61;
+      border-bottom: 1px solid #d6dde6;
       padding: 12px 0;
     }
 
@@ -224,7 +191,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       gap: 10px;
       align-items:center;
       justify-content:flex-end;
-      flex-wrap: wrap;  
+      flex-wrap: wrap;
     }
 
     .btn-top{
@@ -566,49 +533,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       .panel{ width: 95vw; }
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
-
-/* ===== Usuario / Rol (MISMO LOOK PANEL FUTURISTA) ===== */
-.mini-meta{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
-#user-email{
-  font-weight: 900;
-  color: #0f172a;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-#user-role{
-  display:inline-flex;
-  align-items:center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(0,150,136,.35);
-  background: rgba(0,150,136,.12);
-  color: #0f172a;
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing:.04em;
-  white-space:nowrap;
-}
-
-#user-role::before{
-  content:"";
-  width:8px;
-  height:8px;
-  border-radius:999px;
-  background:#009688;
-  box-shadow: 0 0 0 4px rgba(0,150,136,.25);
-}
-
-
-      
   </style>
 </head>
 
@@ -616,12 +540,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
-    
-    <div class="mini-meta">
-    <span id="user-email"></span>
-    <span id="user-role">Rol: ...</span>
-    </div>
-      
       <div class="topbar-actions">
         <button type="button" class="btn-top"
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/index.html'">
@@ -632,16 +550,11 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
           Historia Clínica
         </button>
-
-
-        <!-- ✅ BOTÓN IMPRIMIR PDF (AGREGADO - NO MODIFICA LO EXISTENTE) 
-        <button type="button" class="btn-top" onclick="imprimirPDF()">
-          Imprimir PDF
-        </button>-->
-
       </div>
     </div>
   </div>
+
+  <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
 
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
@@ -751,7 +664,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <label for="observaciones">Observaciones:</label>
     <textarea id="observaciones" name="observaciones" rows="4"></textarea>
 
-    <label for="firma">Firma del profesional:</label>
+    <label for="firma">Firma del paciente:</label>
     <canvas id="firma"></canvas>
     <input type="hidden" name="firma" id="firmaInput" />
 
@@ -1357,42 +1270,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       if (data.correo)  document.getElementById('correo').value  = data.correo;
       if (data.celular) document.getElementById('celular').value = data.celular;
       if (typeof data.observaciones === "string") document.getElementById('observaciones').value = data.observaciones;
-      if (typeof data.Firma === "string" && data.Firma.startsWith("data:image")) {
-  const canvas = document.getElementById("firma");
-  const inputFirma = document.getElementById("firmaInput");
-
-  if (canvas) {
-    const ctx = canvas.getContext("2d");
-
-    // Limpiar canvas previo
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    const img = new Image();
-    img.onload = function () {
-      // Ajustar canvas al tamaño visual
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
-
-      // Configurar estilo de trazo
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.strokeStyle = "#000";
-
-      // Dibujar firma
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // ✅ Guardar también en el input oculto (clave para PDF)
-      if (inputFirma) {
-        inputFirma.value = data.Firma;
-      }
-    };
-    img.src = data.Firma;
-  }
-}
-
-      
 
       let pn=null, pp=null;
       if (data.procedimientoRaw){ const [n,p] = String(data.procedimientoRaw).split('|'); pn=n; pp=parseInt(p,10)||null; }
@@ -1787,418 +1664,102 @@ setTimeout(() => {
 </script>
 
 
-<!-- ==========================
-     ✅ MODAL / NODAL DE IMPRESIÓN PDF (AGREGADO)
-     - NO afecta el diseño normal
-     - Arma un documento independiente para imprimir
-     ========================== -->
-<style>
-  /* Solo UI del modal (no toca estilos existentes) */
-  #modal-impresion-pdf{
-    position: fixed;
-    inset: 0;
-    background: rgba(2,6,23,.65);
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 16px;
-    z-index: 20000;
-  }
-  #modal-impresion-pdf.show{ display: flex; }
-
-  #modal-impresion-pdf .card{
-    width: 96vw;
-    height: 96vh;
-    max-width: 980px;
-    background: #fff;
-    border-radius: 14px;
-    box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #e5e7eb;
-  }
-  #modal-impresion-pdf .head{
-    padding: 10px 14px;
-    background: #f8fafc;
-    border-bottom: 1px solid #e5e7eb;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    font-weight: 800;
-    color: #0f172a;
-    font-family: var(--font);
-  }
-  #modal-impresion-pdf .head small{
-    font-weight: 700;
-    color: #64748b;
-  }
-  #modal-impresion-pdf .head button{
-    width: auto !important;
-    margin: 0 !important;
-    padding: 8px 12px !important;
-    border-radius: 10px !important;
-    background: #dc2626 !important;
-    box-shadow: none !important;
-  }
-  #modal-impresion-pdf iframe{
-    flex: 1;
-    width: 100%;
-    border: none;
-    background: #fff;
-  }
-</style>
-
-<div id="modal-impresion-pdf" aria-hidden="true">
-  <div class="card" role="dialog" aria-modal="true" aria-label="Impresión PDF">
-    <div class="head">
-      <div>
-        Vista de impresión <small>(solo para PDF)</small>
-      </div>
-      <div style="display:flex; gap:10px; align-items:center;">
-        <button type="button" onclick="cerrarModalImpresionPDF()">✖ Cerrar</button>
-      </div>
-    </div>
-    <iframe id="frame-impresion-pdf" title="Documento para imprimir"></iframe>
-  </div>
-</div>
-
 <script>
 /* ==========================
-   ✅ IMPRESIÓN PDF EN NODAL (AGREGADO)
-   Requisitos:
-   - NO incluir odontograma (gráfico)
-   - NO incluir alerta "⚠️ Paciente ya valorado..."
-   - NO incluir "Procedimientos adicionales"
-   - Mostrar info paciente compacta (sin inputs visibles)
-   - Incluir logo y encabezado azul #143F80 con texto blanco
+   ✅ OBTENER NOMBRE DEL PROFESIONAL (AGREGADO)
+   - Busca en tabla 'profesionales' por correo
+   - NO modifica lógica existente
    ========================== */
-(function(){
-  const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png";
+(async function(){
+  try{
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if(!session || !session.user || !session.user.email) return;
 
-  function esc(s){
-    return String(s ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll("\"","&quot;")
-      .replaceAll("'","&#039;");
-  }
+    const email = session.user.email.trim().toLowerCase();
 
-  function getText(id){
-    const el = document.getElementById(id);
-    return (el && el.textContent ? el.textContent : "").trim();
-  }
-  function getVal(id){
-    const el = document.getElementById(id);
-    return (el && "value" in el ? el.value : "").trim();
-  }
+    const { data, error } = await window.supabase
+      .from("profesionales")
+      .select("nombre")
+      .eq("correo", email)
+      .limit(1)
+      .maybeSingle();
 
-  function abrirModalImpresionPDF(){
-    const modal = document.getElementById("modal-impresion-pdf");
-    if(modal){
-      modal.classList.add("show");
-      modal.setAttribute("aria-hidden","false");
-    }
-  }
-
-  function cerrarModalImpresionPDF(){
-    const modal = document.getElementById("modal-impresion-pdf");
-    if(modal){
-      modal.classList.remove("show");
-      modal.setAttribute("aria-hidden","true");
-    }
-    const iframe = document.getElementById("frame-impresion-pdf");
-    if(iframe){
-      try{ iframe.src = "about:blank"; }catch(e){}
-    }
-  }
-
-  window.cerrarModalImpresionPDF = cerrarModalImpresionPDF;
-
-  function construirDocumentoParaImprimir(){
-    const firmaBase64 = document.getElementById("firmaInput")?.value || "";
-
-    // Mantener cálculos actuales (sin tocar lógica)
-    try{
-      if(typeof window.calcularTotal === "function"){ window.calcularTotal(); }
-    }catch(e){}
-
-    const fechaHora = esc(getText("fecha-hora"));
-    const nombre = esc(getVal("nombre"));
-    const cedula = esc(getVal("cedula"));
-    const celular = esc(getVal("celular"));
-    const correo = esc(getVal("correo"));
-
-    const resumenList = document.getElementById("summary-list");
-    const resumenItems = resumenList ? resumenList.innerHTML : "";
-
-    const procPrincipal = esc((document.getElementById("resumen-proc-principal")?.textContent || "").trim());
-
-    const subtotal = esc(getText("subtotal"));
-    const descuento = esc(getText("valor-descuento"));
-    const total = esc(getText("total"));
-    const abono = esc(getVal("abono"));
-    const observaciones = esc(getVal("observaciones"));
-
-    const doc = `
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Plan de tratamiento</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-
-  <style>
-    :root{
-      --blue:#143F80;
-      --ink:#0f172a;
-      --muted:#475569;
-      --line:#e2e8f0;
-      --font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    }
-    *{ box-sizing:border-box; }
-    body{
-      font-family: var(--font);
-      margin:0;
-      color: var(--ink);
+    if(error){
+      console.warn("No se pudo obtener nombre del profesional:", error);
+      return;
     }
 
-    /* Encabezado (franja azul) */
-    .header{
-  background: var(--blue); /* ✅ ESTA ES LA CLAVE */
-  padding: 48px 20px;      /* más alto */
-  color:#fff;
-  position: relative;
-
-  -webkit-print-color-adjust: exact;
-  print-color-adjust: exact;
-}
-    .header .title{
-      font-weight: 900;
-      font-size: 26px;
-      line-height: 1.15;
-      margin: 0;
-      padding-right: 170px;
-      text-align:center;
-    }
-    .header img{
-      position:absolute;
-      top: 12px;
-      right: 18px;
-      width: 145px;
-      height: auto;
-    }
-
-    .page{
-      padding: 18px 20px 24px;
-    }
-
-    /* Bloque de datos compacto (sin inputs) */
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 18px;
-      margin-top: 10px;
-      padding: 12px 12px;
-      border:1px solid var(--line);
-      border-radius: 12px;
-    }
-    .item{
-      font-size: 12.5px;
-      line-height: 1.25;
-      color: var(--ink);
-    }
-    .item .lbl{
-      font-weight: 800;
-      color: var(--muted);
-      margin-right: 6px;
-    }
-    .item.full{ grid-column: 1 / -1; }
-
-    .section{
-      margin-top: 14px;
-      border:1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-    }
-    .section h3{
-      margin: 0 0 8px;
-      font-size: 14px;
-      font-weight: 900;
-      color: var(--ink);
-    }
-    ul{
-      margin: 0;
-      padding-left: 18px;
-      font-size: 12.5px;
-      color: var(--ink);
-    }
-    li{ margin: 4px 0; }
-
-    .totales{
-      margin-top: 14px;
-      border:1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      display:block;
-      font-size: 13px;
-    }
-    .totales .row{
-      display:flex;
-      justify-content:flex-start;
-      gap: 10px;
-      padding: 4px 0;
-      border-bottom: 1px dashed #eef2f7;
-    }
-    .totales .row:last-child{ border-bottom:none; }
-    .totales .k{ font-weight: 900; }
-    .totales .v{ font-weight: 800; }
-
-    .obs{
-      margin-top: 14px;
-      border:1px solid var(--line);
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 12.5px;
-      white-space: pre-wrap;
-      min-height: 54px;
-    }
-
-    @page { margin: 14mm; }
-
-    /* Mantener fondos en impresión */
-    @media print{
-      .header{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <img src="${LOGO_URL}" alt="Logo">
-    <h1 class="title">PLAN DE TRATAMIENTO<br></h1>
-  </div>
-
-  <div class="page">
-    <div class="grid">
-      <div class="item full"><span class="lbl">Fecha y hora:</span>${fechaHora}</div>
-      <div class="item"><span class="lbl">Paciente:</span>${nombre}</div>
-      <div class="item"><span class="lbl">Cédula:</span>${cedula}</div>
-      <div class="item"><span class="lbl">Celular:</span>${celular}</div>
-      <div class="item"><span class="lbl">Correo:</span>${correo}</div>
-      <div class="item full"><span class="lbl">Procedimiento principal:</span>${procPrincipal || "No aplica"}</div>
-    </div>
-
-    <div class="section">
-      <h3>Resumen por diente</h3>
-      <ul>${resumenItems || "<li>Sin procedimientos asignados.</li>"}</ul>
-    </div>
-
-    <div class="totales">
-      <div class="row"><span class="k">Subtotal</span><span class="v">$ ${subtotal || "0"}</span></div>
-      <div class="row"><span class="k">Descuento</span><span class="v">$ ${descuento || "0"}</span></div>
-      <div class="row"><span class="k">Abono</span><span class="v">$ ${abono || "0"}</span></div>
-      <div class="row"><span class="k">Total a pagar</span><span class="v">$ ${total || "0"}</span></div>
-    </div>
-
-    <div class="section">
-      <h3>Observaciones</h3>
-      <div class="obs">${observaciones || ""}</div>
-    </div>
-  
-    <div class="section">
-  <h3>Firma del profesional</h3>
-
-  ${
-    firmaBase64
-      ? `<img src="${firmaBase64}" style="max-width:220px;max-height:90px;display:block;margin-bottom:6px;">`
-      : `<div class="obs" style="min-height:70px;"></div>`
-  }
-
-  <div style="margin-top:6px;font-size:12px;font-weight:700;">
-    -<br>
-    -
-  </div>
-</div>
-
-
-  </div>
-  
-</body>
-</html>
-    `;
-    return doc;
-  }
-
-  // ✅ Función pedida por el botón
-  window.imprimirPDF = function(){
-    abrirModalImpresionPDF();
-
-    const iframe = document.getElementById("frame-impresion-pdf");
-    if(!iframe) return;
-
-    const docHTML = construirDocumentoParaImprimir();
-
-    const writeAndPrint = () => {
-      try{
-        const doc = iframe.contentWindow.document;
-        doc.open();
-        doc.write(docHTML);
-        doc.close();
-
-        // esperar fuentes / imágenes
-        setTimeout(()=>{
-          try{
-            iframe.contentWindow.focus();
-            iframe.contentWindow.print();
-          }catch(e){}
-        }, 350);
-      }catch(e){
-        console.error("No se pudo preparar impresión:", e);
+    if(data && data.nombre){
+      let nameEl = document.getElementById("user-profesional-nombre");
+      if(!nameEl){
+        const meta = document.querySelector(".mini-meta");
+        if(meta){
+          nameEl = document.createElement("span");
+          nameEl.id = "user-profesional-nombre";
+          nameEl.style.fontWeight = "800";
+          nameEl.style.fontSize = "13px";
+          nameEl.style.color = "#0f172a";
+          meta.prepend(nameEl);
+        }
       }
-    };
+      if(nameEl){
+        nameEl.textContent = data.nombre;
+      }
+    }
+  }catch(e){
+    console.warn("Error cargando nombre del profesional:", e);
+  }
+})();
 
-    // Para asegurar que contentWindow está listo
-    if(iframe.contentWindow){
-      writeAndPrint();
-    }else{
-      setTimeout(writeAndPrint, 50);
+/* ======================================================
+   ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE
+   - NO modifica código existente
+   - Usa el email de la sesión activa
+   - Consulta tabla: profesionales (correo → nombre)
+   ====================================================== */
+(async function(){
+  try{
+    if(!window.supabase) return;
+
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if(!session || !session.user || !session.user.email) return;
+
+    const email = session.user.email.toLowerCase().trim();
+
+    const { data, error } = await window.supabase
+      .from("profesionales")
+      .select("nombre")
+      .eq("correo", email)
+      .maybeSingle();
+
+    if(error){
+      console.warn("No se pudo leer profesional:", error.message);
+      return;
     }
 
-    // Cerrar modal después de imprimir (cuando sea posible)
-    try{
-      iframe.contentWindow.onafterprint = () => {
-        cerrarModalImpresionPDF();
-      };
-    }catch(e){}
-  };
+    if(data?.nombre){
+      const meta = document.querySelector(".mini-meta");
+      if(!meta) return;
+
+      let nameEl = document.getElementById("user-profesional-nombre");
+      if(!nameEl){
+        nameEl = document.createElement("span");
+        nameEl.id = "user-profesional-nombre";
+        nameEl.style.fontWeight = "900";
+        nameEl.style.fontSize = "13px";
+        nameEl.style.color = "#0f172a";
+        nameEl.style.whiteSpace = "nowrap";
+        meta.prepend(nameEl);
+      }
+
+      nameEl.textContent = data.nombre;
+    }
+  }catch(e){
+    console.warn("Error cargando nombre del profesional:", e);
+  }
 })();
+  
 </script>
-<!-- ================= BOTÓN IMPRIMIR PDF (FLOTANTE) ================= -->
-<div style="position:fixed;bottom:80px;right:20px;z-index:9999;">
-  <button
-    onclick="imprimirPDF()"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#059669; /* verde elegante */
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-      display:flex;
-      align-items:center;
-      gap:8px;
-    ">
-    🖨️ Imprimir PDF
-  </button>
-</div>
 
 </body>
 </html>
