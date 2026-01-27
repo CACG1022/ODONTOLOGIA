@@ -111,37 +111,29 @@ async function mostrarUsuarioYRol() {
     const { data: { session } } = await window.supabase.auth.getSession();
     if (!session) return;
 
+    // Email
     const email = session.user.email || "";
+    const emailEl = document.getElementById("user-email");
+    if (emailEl) emailEl.textContent = email;
 
-    // Nombre visible (puede venir del profile o fallback al email)
-    let nombreVisible = email.split("@")[0];
-
-    // Obtener perfil
-    const { data: perfil } = await window.supabase
+    // Leer rol desde profiles
+    const { data, error } = await window.supabase
       .from("profiles")
-      .select("nombre, role")
-      .eq("email", email)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
 
-    if (perfil?.nombre) {
-      nombreVisible = perfil.nombre;
-    }
+    let roleRaw = data?.role || "paciente";
 
-    const rol = perfil?.role || "user";
-
-    // UI
-    const nameEl = document.getElementById("user-name");
+    // Mostrar EXACTO como en panel futurista
     const roleEl = document.getElementById("user-role");
-
-    if (nameEl) nameEl.textContent = `👤 ${nombreVisible}`;
-    if (roleEl) roleEl.textContent = `Rol: ${rol.charAt(0).toUpperCase() + rol.slice(1)}`;
+    if (roleEl) roleEl.textContent = `Rol: ${roleRaw}`;
 
   } catch (e) {
-    console.warn("No se pudo mostrar usuario y rol:", e);
+    console.warn("No se pudo cargar usuario/rol:", e);
   }
 }
+
 
 // Ejecutar al cargar
 mostrarUsuarioYRol();
@@ -233,6 +225,13 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       align-items:center;
       justify-content:flex-end;
       flex-wrap: wrap;
+
+     <div class="mini-meta">
+     <span id="user-email"></span>
+     <span id="user-role">Rol: ...</span>
+     </div>
+
+      
     }
 
     .btn-top{
@@ -574,6 +573,49 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       .panel{ width: 95vw; }
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
+
+/* ===== Usuario / Rol (MISMO LOOK PANEL FUTURISTA) ===== */
+.mini-meta{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  justify-content:flex-end;
+}
+
+#user-email{
+  font-weight: 900;
+  color: #0f172a;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+#user-role{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,150,136,.35);
+  background: rgba(0,150,136,.12);
+  color: #0f172a;
+  font-weight: 900;
+  font-size: 12px;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+
+#user-role::before{
+  content:"";
+  width:8px;
+  height:8px;
+  border-radius:999px;
+  background:#009688;
+  box-shadow: 0 0 0 4px rgba(0,150,136,.25);
+}
+
+
+      
   </style>
 </head>
 
