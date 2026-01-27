@@ -2129,59 +2129,6 @@ setTimeout(() => {
 
   </div>
   
-
-<!-- =========================
-     ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE (AGREGADO)
-     - NO modifica código existente
-     - Usa el correo del usuario autenticado
-     - Consulta tabla: profesionales
-     - Campo: nombre
-     ========================= -->
-<script>
-(async function(){
-  try{
-    if(!window.supabase) return;
-
-    const { data: { session } } = await window.supabase.auth.getSession();
-    if(!session || !session.user || !session.user.email) return;
-
-    const email = String(session.user.email).trim().toLowerCase();
-
-    const { data, error } = await window.supabase
-      .from("profesionales")
-      .select("nombre, correo, activo")
-      .eq("correo", email)
-      .eq("activo", true)
-      .limit(1)
-      .maybeSingle();
-
-    if(error){
-      console.warn("No se pudo obtener profesional:", error);
-      return;
-    }
-
-    if(data && data.nombre){
-      // Mostrar nombre del profesional en la barra superior (sin reemplazar email)
-      const meta = document.querySelector(".mini-meta");
-      if(meta && !document.getElementById("user-nombre-profesional")){
-        const span = document.createElement("span");
-        span.id = "user-nombre-profesional";
-        span.textContent = data.nombre;
-        span.style.fontWeight = "900";
-        span.style.fontSize = "13px";
-        span.style.color = "#0f172a";
-        meta.prepend(span);
-      }
-
-      // Exponer globalmente por si otros scripts lo necesitan
-      window.NOMBRE_PROFESIONAL = data.nombre;
-    }
-  }catch(e){
-    console.warn("Error cargando nombre del profesional:", e);
-  }
-})();
-</script>
-
 </body>
 </html>
     `;
@@ -2260,6 +2207,7 @@ setTimeout(() => {
      - Usa el correo del usuario autenticado
      - Consulta tabla: profesionales
      - Campo: nombre
+     - Usa ILIKE para evitar problemas por mayúsculas/minúsculas
      ========================= -->
 <script>
 (async function(){
@@ -2269,36 +2217,58 @@ setTimeout(() => {
     const { data: { session } } = await window.supabase.auth.getSession();
     if(!session || !session.user || !session.user.email) return;
 
-    const email = String(session.user.email).trim().toLowerCase();
+    const email = String(session.user.email).trim();
 
-    const { data, error } = await window.supabase
+    // 1) Intento robusto (case-insensitive). No dependemos de "activo" por si está null/false por error de carga.
+    let prof = null;
+
+    const q1 = await window.supabase
       .from("profesionales")
       .select("nombre, correo, activo")
-      .eq("correo", email)
-      .eq("activo", true)
+      .ilike("correo", email)
+      .order("creado_en", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if(error){
-      console.warn("No se pudo obtener profesional:", error);
-      return;
+    if(q1?.error){
+      console.warn("No se pudo obtener profesional (ilike):", q1.error);
+    }else{
+      prof = q1?.data || null;
     }
 
-    if(data && data.nombre){
+    // 2) Fallback: eq con lower(email) por si ILIKE no está permitido por policy/RLS
+    if(!prof){
+      const q2 = await window.supabase
+        .from("profesionales")
+        .select("nombre, correo, activo")
+        .eq("correo", email.toLowerCase())
+        .order("creado_en", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if(q2?.error){
+        console.warn("No se pudo obtener profesional (eq lower):", q2.error);
+      }else{
+        prof = q2?.data || null;
+      }
+    }
+
+    if(prof && prof.nombre){
       // Mostrar nombre del profesional en la barra superior (sin reemplazar email)
       const meta = document.querySelector(".mini-meta");
       if(meta && !document.getElementById("user-nombre-profesional")){
         const span = document.createElement("span");
         span.id = "user-nombre-profesional";
-        span.textContent = data.nombre;
+        span.textContent = String(prof.nombre);
         span.style.fontWeight = "900";
         span.style.fontSize = "13px";
         span.style.color = "#0f172a";
+        span.style.whiteSpace = "nowrap";
         meta.prepend(span);
       }
 
       // Exponer globalmente por si otros scripts lo necesitan
-      window.NOMBRE_PROFESIONAL = data.nombre;
+      window.NOMBRE_PROFESIONAL = String(prof.nombre);
     }
   }catch(e){
     console.warn("Error cargando nombre del profesional:", e);
