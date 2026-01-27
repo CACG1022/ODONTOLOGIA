@@ -1791,8 +1791,89 @@ setTimeout(() => {
   }
 </script>
 
+
+<!-- =========================
+     ✅ MODAL IMPRESIÓN PDF (AGREGADO)
+     - Estructura independiente para imprimir
+     ========================= -->
+<div id="print-modal" style="display:none;">
+  <iframe id="print-frame" style="width:100%;height:100%;border:none;"></iframe>
+</div>
+
+<script>
+function imprimirPDF(){
+  const iframe = document.getElementById("print-frame");
+  const modal = document.getElementById("print-modal");
+
+  const logo = 'https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png';
+
+  const contenido = `
+  <html>
+  <head>
+    <title>Plan de tratamiento</title>
+    <style>
+      body{ font-family: Inter, Arial, sans-serif; margin:0; padding:0; }
+      .header{
+        background:#143F80;
+        color:#fff;
+        padding:20px;
+        position:relative;
+      }
+      .header img{
+        position:absolute;
+        top:20px;
+        right:20px;
+        width:140px;
+      }
+      .section{ padding:20px; }
+      h2{ margin:0; }
+      .field{ margin-bottom:8px; font-size:13px; }
+      .label{ font-weight:700; }
+      .resumen{ margin-top:14px; }
+      @page{ margin:20mm; }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="${logo}">
+      <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
+    </div>
+
+    <div class="section">
+      <div class="field"><span class="label">Fecha y hora:</span> ${document.getElementById("fecha-hora")?.textContent || ""}</div>
+      <div class="field"><span class="label">Paciente:</span> ${document.getElementById("nombre")?.value || ""}</div>
+      <div class="field"><span class="label">Cédula:</span> ${document.getElementById("cedula")?.value || ""}</div>
+      <div class="field"><span class="label">Celular:</span> ${document.getElementById("celular")?.value || ""}</div>
+      <div class="field"><span class="label">Correo:</span> ${document.getElementById("correo")?.value || ""}</div>
+
+      <div class="resumen">
+        <strong>Resumen por diente:</strong>
+        ${document.getElementById("summary-list")?.outerHTML || ""}
+      </div>
+
+      <div class="resumen">
+        <strong>Total a pagar:</strong> $${document.getElementById("total")?.textContent || ""}
+      </div>
+    </div>
+  </body>
+  </html>
+  `;
+
+  iframe.contentDocument.open();
+  iframe.contentDocument.write(contenido);
+  iframe.contentDocument.close();
+
+  iframe.onload = () => {
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  };
+}
+</script>
+
 </body>
 </html>
+
+
 
 
 
