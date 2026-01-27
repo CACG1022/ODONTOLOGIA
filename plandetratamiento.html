@@ -106,6 +106,47 @@ async function verificarSesion() {
 
 verificarSesion();
 
+async function mostrarUsuarioYRol() {
+  try {
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if (!session) return;
+
+    const email = session.user.email || "";
+
+    // Nombre visible (puede venir del profile o fallback al email)
+    let nombreVisible = email.split("@")[0];
+
+    // Obtener perfil
+    const { data: perfil } = await window.supabase
+      .from("profiles")
+      .select("nombre, role")
+      .eq("email", email)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (perfil?.nombre) {
+      nombreVisible = perfil.nombre;
+    }
+
+    const rol = perfil?.role || "user";
+
+    // UI
+    const nameEl = document.getElementById("user-name");
+    const roleEl = document.getElementById("user-role");
+
+    if (nameEl) nameEl.textContent = `👤 ${nombreVisible}`;
+    if (roleEl) roleEl.textContent = `Rol: ${rol.charAt(0).toUpperCase() + rol.slice(1)}`;
+
+  } catch (e) {
+    console.warn("No se pudo mostrar usuario y rol:", e);
+  }
+}
+
+// Ejecutar al cargar
+mostrarUsuarioYRol();
+
+
 window.supabase.auth.onAuthStateChange((_event, session) => {
   if (!session) {
     console.warn("⚠️ Sesión expirada o cerrada, redirigiendo...");
