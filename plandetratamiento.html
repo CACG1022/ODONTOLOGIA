@@ -534,121 +534,9 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
   </style>
-
-  <!-- =========================
-       ✅ ESTILOS SOLO PARA IMPRESIÓN (AGREGADO)
-       - Oculta odontograma
-       - Oculta aviso de paciente valorado
-       ========================= -->
-  <!-- =========================
-       ✅ ESTILOS SOLO PARA IMPRESIÓN (AJUSTADOS)
-       - Oculta SOLO el gráfico del odontograma (NO el resumen)
-       - Oculta aviso de paciente valorado
-       - Omite "Procedimientos adicionales"
-       ========================= -->
-  <style>
-    @media print {
-
-      /* ================= LOGO (SOLO PRIMERA PÁGINA) ================= */
-      #print-logo {
-        position: fixed;
-        top: 12px;
-        right: 20px;
-      }
-      #print-logo img {
-        width: 150px;
-        height: auto;
-      }
-
-      /* Ocultar logo a partir de la segunda página */
-      @page :not(:first) {
-        #print-logo { display: none; }
-      }
-
-      /* ================= ENCABEZADO PRIMERA PÁGINA ================= */
-      h2 {
-        background: #143F80 !important;
-        color: #ffffff !important;
-        padding: 20px 16px 18px !important;
-        border-radius: 0 !important;
-        margin-top: 0 !important;
-        margin-bottom: 18px !important;
-        page-break-after: avoid;
-      }
-
-      /* ❌ Ocultar piezas dentales (pero NO el resumen) */
-      .odontograma-wrap .row-title,
-      .odontograma-wrap .side-labels,
-      .odontograma-wrap .teeth-row {
-        display: none !important;
-      }
-
-      /* ✅ Mantener visible el resumen por diente */
-      .odontograma-summary {
-        display: block !important;
-      }
-
-      /* ❌ Ocultar aviso de paciente valorado */
-      #cedula-hint {
-        display: none !important;
-      }
-
-      /* ❌ Ocultar sección Procedimientos adicionales */
-      .checkbox-group,
-      label:has(+ .checkbox-group) {
-        display: none !important;
-      }
-
-      /* ================= COMPACTAR CAMPOS ================= */
-      input[type="text"],
-      input[type="email"],
-      input[type="number"],
-      select {
-        border: none !important;
-        padding: 2px 0 !important;
-        height: auto !important;
-        font-size: 12px !important;
-        background: transparent !important;
-        box-shadow: none !important;
-      }
-
-      label {
-        font-size: 11px !important;
-        margin-top: 6px !important;
-      }
-
-      /* ❌ Ocultar botones y barra superior */
-      .topbar,
-      .btn-top,
-      button {
-        display: none !important;
-      }
-
-      body {
-        background: #fff !important;
-      }
-
-      form {
-        box-shadow: none !important;
-        border: none !important;
-        padding-top: 50px !important;
-      }
-    }
-  </style>
-
-
-
 </head>
 
 <body>
-
-<!-- =========================
-     ✅ LOGO SOLO PARA IMPRESIÓN (AGREGADO)
-     ========================= -->
-<div id="print-logo">
-  <img src="https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png" alt="Logo">
-</div>
-
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
@@ -662,8 +550,9 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
           onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html'">
           Historia Clínica
         </button>
-      
-        <!-- ✅ BOTÓN IMPRIMIR PDF (AGREGADO, NO MODIFICA LO EXISTENTE) -->
+
+
+        <!-- ✅ BOTÓN IMPRIMIR PDF (AGREGADO - NO MODIFICA LO EXISTENTE) -->
         <button type="button" class="btn-top" onclick="imprimirPDF()">
           Imprimir PDF
         </button>
@@ -1782,96 +1671,384 @@ setTimeout(() => {
 </script>
 
 
-<!-- =========================
-     ✅ FUNCIÓN IMPRIMIR PDF (AGREGADO)
-     ========================= -->
-<script>
-  function imprimirPDF(){
-    window.print();
+<!-- ==========================
+     ✅ MODAL / NODAL DE IMPRESIÓN PDF (AGREGADO)
+     - NO afecta el diseño normal
+     - Arma un documento independiente para imprimir
+     ========================== -->
+<style>
+  /* Solo UI del modal (no toca estilos existentes) */
+  #modal-impresion-pdf{
+    position: fixed;
+    inset: 0;
+    background: rgba(2,6,23,.65);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 20000;
   }
-</script>
+  #modal-impresion-pdf.show{ display: flex; }
 
+  #modal-impresion-pdf .card{
+    width: 96vw;
+    height: 96vh;
+    max-width: 980px;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.35);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid #e5e7eb;
+  }
+  #modal-impresion-pdf .head{
+    padding: 10px 14px;
+    background: #f8fafc;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    font-weight: 800;
+    color: #0f172a;
+    font-family: var(--font);
+  }
+  #modal-impresion-pdf .head small{
+    font-weight: 700;
+    color: #64748b;
+  }
+  #modal-impresion-pdf .head button{
+    width: auto !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    border-radius: 10px !important;
+    background: #dc2626 !important;
+    box-shadow: none !important;
+  }
+  #modal-impresion-pdf iframe{
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: #fff;
+  }
+</style>
 
-<!-- =========================
-     ✅ MODAL IMPRESIÓN PDF (AGREGADO)
-     - Estructura independiente para imprimir
-     ========================= -->
-<div id="print-modal" style="display:none;">
-  <iframe id="print-frame" style="width:100%;height:100%;border:none;"></iframe>
+<div id="modal-impresion-pdf" aria-hidden="true">
+  <div class="card" role="dialog" aria-modal="true" aria-label="Impresión PDF">
+    <div class="head">
+      <div>
+        Vista de impresión <small>(solo para PDF)</small>
+      </div>
+      <div style="display:flex; gap:10px; align-items:center;">
+        <button type="button" onclick="cerrarModalImpresionPDF()">✖ Cerrar</button>
+      </div>
+    </div>
+    <iframe id="frame-impresion-pdf" title="Documento para imprimir"></iframe>
+  </div>
 </div>
 
 <script>
-function imprimirPDF(){
-  const iframe = document.getElementById("print-frame");
-  const modal = document.getElementById("print-modal");
+/* ==========================
+   ✅ IMPRESIÓN PDF EN NODAL (AGREGADO)
+   Requisitos:
+   - NO incluir odontograma (gráfico)
+   - NO incluir alerta "⚠️ Paciente ya valorado..."
+   - NO incluir "Procedimientos adicionales"
+   - Mostrar info paciente compacta (sin inputs visibles)
+   - Incluir logo y encabezado azul #143F80 con texto blanco
+   ========================== */
+(function(){
+  const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png";
 
-  const logo = 'https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png';
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll("\"","&quot;")
+      .replaceAll("'","&#039;");
+  }
 
-  const contenido = `
-  <html>
-  <head>
-    <title>Plan de tratamiento</title>
-    <style>
-      body{ font-family: Inter, Arial, sans-serif; margin:0; padding:0; }
-      .header{
-        background:#143F80;
-        color:#fff;
-        padding:20px;
-        position:relative;
-      }
-      .header img{
-        position:absolute;
-        top:20px;
-        right:20px;
-        width:140px;
-      }
-      .section{ padding:20px; }
-      h2{ margin:0; }
-      .field{ margin-bottom:8px; font-size:13px; }
-      .label{ font-weight:700; }
-      .resumen{ margin-top:14px; }
-      @page{ margin:20mm; }
-    </style>
-  </head>
-  <body>
-    <div class="header">
-      <img src="${logo}">
-      <h2>Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h2>
+  function getText(id){
+    const el = document.getElementById(id);
+    return (el && el.textContent ? el.textContent : "").trim();
+  }
+  function getVal(id){
+    const el = document.getElementById(id);
+    return (el && "value" in el ? el.value : "").trim();
+  }
+
+  function abrirModalImpresionPDF(){
+    const modal = document.getElementById("modal-impresion-pdf");
+    if(modal){
+      modal.classList.add("show");
+      modal.setAttribute("aria-hidden","false");
+    }
+  }
+
+  function cerrarModalImpresionPDF(){
+    const modal = document.getElementById("modal-impresion-pdf");
+    if(modal){
+      modal.classList.remove("show");
+      modal.setAttribute("aria-hidden","true");
+    }
+    const iframe = document.getElementById("frame-impresion-pdf");
+    if(iframe){
+      try{ iframe.src = "about:blank"; }catch(e){}
+    }
+  }
+
+  window.cerrarModalImpresionPDF = cerrarModalImpresionPDF;
+
+  function construirDocumentoParaImprimir(){
+    // Mantener cálculos actuales (sin tocar lógica)
+    try{
+      if(typeof window.calcularTotal === "function"){ window.calcularTotal(); }
+    }catch(e){}
+
+    const fechaHora = esc(getText("fecha-hora"));
+    const nombre = esc(getVal("nombre"));
+    const cedula = esc(getVal("cedula"));
+    const celular = esc(getVal("celular"));
+    const correo = esc(getVal("correo"));
+
+    const resumenList = document.getElementById("summary-list");
+    const resumenItems = resumenList ? resumenList.innerHTML : "";
+
+    const procPrincipal = esc((document.getElementById("resumen-proc-principal")?.textContent || "").trim());
+
+    const subtotal = esc(getText("subtotal"));
+    const descuento = esc(getText("valor-descuento"));
+    const total = esc(getText("total"));
+    const abono = esc(getVal("abono"));
+    const observaciones = esc(getVal("observaciones"));
+
+    const doc = `
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Plan de tratamiento</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --blue:#143F80;
+      --ink:#0f172a;
+      --muted:#475569;
+      --line:#e2e8f0;
+      --font: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      font-family: var(--font);
+      margin:0;
+      color: var(--ink);
+    }
+
+    /* Encabezado (franja azul) */
+    .header{
+      background: var(--blue);
+      color:#fff;
+      padding: 18px 20px;
+      position: relative;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    .header .title{
+      font-weight: 900;
+      font-size: 22px;
+      line-height: 1.15;
+      margin: 0;
+      padding-right: 170px;
+      text-align:center;
+    }
+    .header img{
+      position:absolute;
+      top: 12px;
+      right: 18px;
+      width: 145px;
+      height: auto;
+    }
+
+    .page{
+      padding: 18px 20px 24px;
+    }
+
+    /* Bloque de datos compacto (sin inputs) */
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 18px;
+      margin-top: 10px;
+      padding: 12px 12px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+    }
+    .item{
+      font-size: 12.5px;
+      line-height: 1.25;
+      color: var(--ink);
+    }
+    .item .lbl{
+      font-weight: 800;
+      color: var(--muted);
+      margin-right: 6px;
+    }
+    .item.full{ grid-column: 1 / -1; }
+
+    .section{
+      margin-top: 14px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+    }
+    .section h3{
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 900;
+      color: var(--ink);
+    }
+    ul{
+      margin: 0;
+      padding-left: 18px;
+      font-size: 12.5px;
+      color: var(--ink);
+    }
+    li{ margin: 4px 0; }
+
+    .totales{
+      margin-top: 14px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px 18px;
+      font-size: 13px;
+    }
+    .totales .row{
+      display:flex;
+      justify-content:space-between;
+      gap: 10px;
+      padding: 4px 0;
+      border-bottom: 1px dashed #eef2f7;
+    }
+    .totales .row:last-child{ border-bottom:none; }
+    .totales .k{ font-weight: 900; }
+    .totales .v{ font-weight: 800; }
+
+    .obs{
+      margin-top: 14px;
+      border:1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 12.5px;
+      white-space: pre-wrap;
+      min-height: 54px;
+    }
+
+    @page { margin: 14mm; }
+
+    /* Mantener fondos en impresión */
+    @media print{
+      .header{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <img src="${LOGO_URL}" alt="Logo">
+    <h1 class="title">Doctora Leidi Silva Oropeza<br>Especialista en Rehabilitación Oral</h1>
+  </div>
+
+  <div class="page">
+    <div class="grid">
+      <div class="item full"><span class="lbl">Fecha y hora:</span>${fechaHora}</div>
+      <div class="item"><span class="lbl">Paciente:</span>${nombre}</div>
+      <div class="item"><span class="lbl">Cédula:</span>${cedula}</div>
+      <div class="item"><span class="lbl">Celular:</span>${celular}</div>
+      <div class="item"><span class="lbl">Correo:</span>${correo}</div>
+      <div class="item full"><span class="lbl">Procedimiento principal:</span>${procPrincipal || "No aplica"}</div>
     </div>
 
     <div class="section">
-      <div class="field"><span class="label">Fecha y hora:</span> ${document.getElementById("fecha-hora")?.textContent || ""}</div>
-      <div class="field"><span class="label">Paciente:</span> ${document.getElementById("nombre")?.value || ""}</div>
-      <div class="field"><span class="label">Cédula:</span> ${document.getElementById("cedula")?.value || ""}</div>
-      <div class="field"><span class="label">Celular:</span> ${document.getElementById("celular")?.value || ""}</div>
-      <div class="field"><span class="label">Correo:</span> ${document.getElementById("correo")?.value || ""}</div>
-
-      <div class="resumen">
-        <strong>Resumen por diente:</strong>
-        ${document.getElementById("summary-list")?.outerHTML || ""}
-      </div>
-
-      <div class="resumen">
-        <strong>Total a pagar:</strong> $${document.getElementById("total")?.textContent || ""}
-      </div>
+      <h3>Resumen por diente</h3>
+      <ul>${resumenItems || "<li>Sin procedimientos asignados.</li>"}</ul>
     </div>
-  </body>
-  </html>
-  `;
 
-  iframe.contentDocument.open();
-  iframe.contentDocument.write(contenido);
-  iframe.contentDocument.close();
+    <div class="totales">
+      <div class="row"><span class="k">Subtotal</span><span class="v">$ ${subtotal || "0"}</span></div>
+      <div class="row"><span class="k">Descuento</span><span class="v">$ ${descuento || "0"}</span></div>
+      <div class="row"><span class="k">Abono</span><span class="v">$ ${abono || "0"}</span></div>
+      <div class="row"><span class="k">Total a pagar</span><span class="v">$ ${total || "0"}</span></div>
+    </div>
 
-  iframe.onload = () => {
-    iframe.contentWindow.focus();
-    iframe.contentWindow.print();
+    <div class="section">
+      <h3>Observaciones</h3>
+      <div class="obs">${observaciones || ""}</div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+    return doc;
+  }
+
+  // ✅ Función pedida por el botón
+  window.imprimirPDF = function(){
+    abrirModalImpresionPDF();
+
+    const iframe = document.getElementById("frame-impresion-pdf");
+    if(!iframe) return;
+
+    const docHTML = construirDocumentoParaImprimir();
+
+    const writeAndPrint = () => {
+      try{
+        const doc = iframe.contentWindow.document;
+        doc.open();
+        doc.write(docHTML);
+        doc.close();
+
+        // esperar fuentes / imágenes
+        setTimeout(()=>{
+          try{
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }catch(e){}
+        }, 350);
+      }catch(e){
+        console.error("No se pudo preparar impresión:", e);
+      }
+    };
+
+    // Para asegurar que contentWindow está listo
+    if(iframe.contentWindow){
+      writeAndPrint();
+    }else{
+      setTimeout(writeAndPrint, 50);
+    }
+
+    // Cerrar modal después de imprimir (cuando sea posible)
+    try{
+      iframe.contentWindow.onafterprint = () => {
+        cerrarModalImpresionPDF();
+      };
+    }catch(e){}
   };
-}
+})();
 </script>
 
 </body>
 </html>
+
+
 
 
 
