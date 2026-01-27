@@ -1855,7 +1855,7 @@ setTimeout(() => {
     .header{
       background: var(--blue);
       color:#fff;
-      padding: 18px 20px;
+      padding: 32px 20px; /* ⬅️ más alto */
       position: relative;
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
@@ -1927,14 +1927,12 @@ setTimeout(() => {
       border:1px solid var(--line);
       border-radius: 12px;
       padding: 12px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px 18px;
+      display:block;
       font-size: 13px;
     }
     .totales .row{
       display:flex;
-      justify-content:space-between;
+      justify-content:flex-start;
       gap: 10px;
       padding: 4px 0;
       border-bottom: 1px dashed #eef2f7;
@@ -1993,6 +1991,16 @@ setTimeout(() => {
       <h3>Observaciones</h3>
       <div class="obs">${observaciones || ""}</div>
     </div>
+  
+    <div class="section">
+      <h3>Firma del profesional</h3>
+      <div class="obs" style="min-height:70px;"></div>
+      <div style="margin-top:8px;font-size:12px;font-weight:700;">
+        Dra. Leidi Silva Oropeza<br>
+        Especialista en Rehabilitación Oral
+      </div>
+    </div>
+
   </div>
 </body>
 </html>
@@ -2047,10 +2055,6 @@ setTimeout(() => {
 
 </body>
 </html>
-
-
-
-
 
 
 
