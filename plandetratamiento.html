@@ -2357,8 +2357,61 @@ setTimeout(() => {
 })();
 </script>
 
+
+<!-- =========================
+     ✅ INSERTAR NOMBRE DEL PROFESIONAL EN EL PDF (AGREGADO)
+     - NO modifica el constructor original del PDF
+     - Inyecta el nombre justo antes de imprimir
+     ========================= -->
+<script>
+(function(){
+  if(typeof window.imprimirPDF !== "function") return;
+
+  const _imprimirPDF = window.imprimirPDF;
+
+  window.imprimirPDF = function(){
+    // Ejecutar lógica original
+    _imprimirPDF.apply(this, arguments);
+
+    // Inyectar nombre en el iframe antes de imprimir
+    setTimeout(()=>{
+      try{
+        const iframe = document.getElementById("frame-impresion-pdf");
+        if(!iframe || !iframe.contentDocument) return;
+
+        const doc = iframe.contentDocument;
+        const nombre = window.NOMBRE_PROFESIONAL || "";
+
+        if(!nombre) return;
+
+        // Buscar el bloque de firma
+        const sections = Array.from(doc.querySelectorAll("h3"));
+        const firmaTitle = sections.find(h => h.textContent.toLowerCase().includes("firma"));
+
+        if(firmaTitle){
+          const cont = firmaTitle.parentElement;
+          if(cont && !cont.querySelector(".nombre-profesional-pdf")){
+            const div = doc.createElement("div");
+            div.className = "nombre-profesional-pdf";
+            div.style.fontSize = "12px";
+            div.style.fontWeight = "700";
+            div.style.marginTop = "6px";
+            div.textContent = nombre;
+            cont.appendChild(div);
+          }
+        }
+      }catch(e){
+        console.warn("No se pudo insertar nombre profesional en PDF:", e);
+      }
+    }, 200);
+  };
+})();
+</script>
+
 </body>
 </html>
+
+
 
 
 
