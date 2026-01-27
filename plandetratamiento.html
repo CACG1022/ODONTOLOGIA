@@ -2202,82 +2202,75 @@ setTimeout(() => {
 
 
 <!-- =========================
-     ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE (AGREGADO)
+     ✅ CAMPO NOMBRE PROFESIONAL DEBAJO DE LA FIRMA (AGREGADO)
      - NO modifica código existente
-     - Usa el correo del usuario autenticado
-     - Consulta tabla: profesionales
-     - Campo: nombre
-     - Usa ILIKE para evitar problemas por mayúsculas/minúsculas
+     - Muestra el nombre del profesional bajo el canvas de firma
      ========================= -->
+
+<style>
+  /* Campo nombre profesional bajo firma */
+  #nombre-profesional-firma{
+    margin-top: 6px;
+    font-weight: 800;
+    font-size: 13px;
+    color: #0f172a;
+    text-align: left;
+  }
+</style>
+
 <script>
 (async function(){
   try{
     if(!window.supabase) return;
 
+    // 1) Insertar el campo debajo del canvas de firma (solo si no existe)
+    const canvasFirma = document.getElementById("firma");
+    if(canvasFirma && !document.getElementById("nombre-profesional-firma")){
+      const div = document.createElement("div");
+      div.id = "nombre-profesional-firma";
+      div.textContent = " "; // placeholder
+      canvasFirma.insertAdjacentElement("afterend", div);
+    }
+
+    // 2) Obtener sesión
     const { data: { session } } = await window.supabase.auth.getSession();
-    if(!session || !session.user || !session.user.email) return;
+    if(!session || !session.user?.email) return;
 
     const email = String(session.user.email).trim();
 
-    // 1) Intento robusto (case-insensitive). No dependemos de "activo" por si está null/false por error de carga.
-    let prof = null;
-
-    const q1 = await window.supabase
+    // 3) Consultar nombre del profesional
+    const { data, error } = await window.supabase
       .from("profesionales")
-      .select("nombre, correo, activo")
+      .select("nombre")
       .ilike("correo", email)
       .order("creado_en", { ascending: false })
       .limit(1)
       .maybeSingle();
 
-    if(q1?.error){
-      console.warn("No se pudo obtener profesional (ilike):", q1.error);
-    }else{
-      prof = q1?.data || null;
+    if(error){
+      console.warn("No se pudo obtener nombre profesional:", error);
+      return;
     }
 
-    // 2) Fallback: eq con lower(email) por si ILIKE no está permitido por policy/RLS
-    if(!prof){
-      const q2 = await window.supabase
-        .from("profesionales")
-        .select("nombre, correo, activo")
-        .eq("correo", email.toLowerCase())
-        .order("creado_en", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if(q2?.error){
-        console.warn("No se pudo obtener profesional (eq lower):", q2.error);
-      }else{
-        prof = q2?.data || null;
-      }
-    }
-
-    if(prof && prof.nombre){
-      // Mostrar nombre del profesional en la barra superior (sin reemplazar email)
-      const meta = document.querySelector(".mini-meta");
-      if(meta && !document.getElementById("user-nombre-profesional")){
-        const span = document.createElement("span");
-        span.id = "user-nombre-profesional";
-        span.textContent = String(prof.nombre);
-        span.style.fontWeight = "900";
-        span.style.fontSize = "13px";
-        span.style.color = "#0f172a";
-        span.style.whiteSpace = "nowrap";
-        meta.prepend(span);
+    if(data?.nombre){
+      // Mostrar debajo de la firma
+      const el = document.getElementById("nombre-profesional-firma");
+      if(el){
+        el.textContent = data.nombre;
       }
 
-      // Exponer globalmente por si otros scripts lo necesitan
-      window.NOMBRE_PROFESIONAL = String(prof.nombre);
+      // Exponer global
+      window.NOMBRE_PROFESIONAL = data.nombre;
     }
   }catch(e){
-    console.warn("Error cargando nombre del profesional:", e);
+    console.warn("Error colocando nombre del profesional bajo firma:", e);
   }
 })();
 </script>
 
 </body>
 </html>
+
 
 
 
