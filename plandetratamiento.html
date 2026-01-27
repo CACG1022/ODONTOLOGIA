@@ -148,48 +148,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     cargarRolActual(session).then(role => validarPermisoModulo(role));
   }
 });
-window.enviarPDFaN8n = async function(){
-  try{
-    const iframe = document.getElementById("frame-impresion-pdf");
-    if(!iframe || !iframe.contentWindow){
-      alert("Primero debes generar el PDF.");
-      return;
-    }
-
-    const pdfHTML = iframe.contentWindow.document.documentElement.outerHTML;
-    const blob = new Blob([pdfHTML], { type: "text/html" });
-
-    const reader = new FileReader();
-    reader.onloadend = async function(){
-      const base64 = reader.result.split(",")[1];
-
-      const resp = await fetch(
-        "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bda46f0e-a348-4be9-b9f9-cc194c6541cd",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            pdf_base64: base64,
-            paciente: document.getElementById("nombre")?.value || "",
-            cedula: document.getElementById("cedula")?.value || "",
-            profesional: window.NOMBRE_PROFESIONAL || "",
-            fecha: document.getElementById("fecha-hora")?.textContent || ""
-          })
-        }
-      );
-
-      if(!resp.ok) throw new Error("HTTP " + resp.status);
-
-      alert("PDF enviado correctamente a n8n ✅");
-    };
-
-    reader.readAsDataURL(blob);
-
-  }catch(e){
-    console.error(e);
-    alert("No se pudo enviar el PDF a n8n");
-  }
-};
 
 
     
@@ -680,7 +638,6 @@ window.enviarPDFaN8n = async function(){
         <button type="button" class="btn-top" onclick="imprimirPDF()">
           Imprimir PDF
         </button>-->
-      
 
       </div>
     </div>
@@ -2164,6 +2121,8 @@ setTimeout(() => {
   }
 
   <div style="margin-top:6px;font-size:12px;font-weight:700;">
+    -<br>
+    -
   </div>
 </div>
 
@@ -2196,7 +2155,7 @@ setTimeout(() => {
         setTimeout(()=>{
           try{
             iframe.contentWindow.focus();
-            iframe.contentWindow.print();
+            // iframe.contentWindow.print(); // impresión automática desactivada
           }catch(e){}
         }, 350);
       }catch(e){
@@ -2241,26 +2200,6 @@ setTimeout(() => {
   </button>
 </div>
 
-<!-- ================= BOTÓN ENVIAR PDF A N8N (FLOTANTE) ================= -->
-<div style="position:fixed;bottom:140px;right:20px;z-index:9999;">
-  <button
-    onclick="enviarPDFaN8n()"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#7c3aed; /* morado elegante */
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-      display:flex;
-      align-items:center;
-      gap:8px;
-    ">
-    📤 Enviar PDF a n8n
-  </button>
-</div>
 
 <!-- =========================
      ✅ CAMPO FIJO NOMBRE DEL PROFESIONAL (FIX DEFINITIVO)
@@ -2471,6 +2410,27 @@ setTimeout(() => {
 
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+<script>
+window.imprimirDesdeModal = function(){
+  const iframe = document.getElementById("frame-impresion-pdf");
+  if(iframe && iframe.contentWindow){
+    iframe.contentWindow.focus();
+    iframe.contentWindow.print();
+  }
+};
+</script>
+
 
 
 
