@@ -1710,54 +1710,6 @@ setTimeout(() => {
     console.warn("Error cargando nombre del profesional:", e);
   }
 })();
-
-/* ======================================================
-   ✅ OBTENER NOMBRE DEL PROFESIONAL DESDE SUPABASE
-   - NO modifica código existente
-   - Usa el email de la sesión activa
-   - Consulta tabla: profesionales (correo → nombre)
-   ====================================================== */
-(async function(){
-  try{
-    if(!window.supabase) return;
-
-    const { data: { session } } = await window.supabase.auth.getSession();
-    if(!session || !session.user || !session.user.email) return;
-
-    const email = session.user.email.toLowerCase().trim();
-
-    const { data, error } = await window.supabase
-      .from("profesionales")
-      .select("nombre")
-      .eq("correo", email)
-      .maybeSingle();
-
-    if(error){
-      console.warn("No se pudo leer profesional:", error.message);
-      return;
-    }
-
-    if(data?.nombre){
-      const meta = document.querySelector(".mini-meta");
-      if(!meta) return;
-
-      let nameEl = document.getElementById("user-profesional-nombre");
-      if(!nameEl){
-        nameEl = document.createElement("span");
-        nameEl.id = "user-profesional-nombre";
-        nameEl.style.fontWeight = "900";
-        nameEl.style.fontSize = "13px";
-        nameEl.style.color = "#0f172a";
-        nameEl.style.whiteSpace = "nowrap";
-        meta.prepend(nameEl);
-      }
-
-      nameEl.textContent = data.nombre;
-    }
-  }catch(e){
-    console.warn("Error cargando nombre del profesional:", e);
-  }
-})();
   
 </script>
 
