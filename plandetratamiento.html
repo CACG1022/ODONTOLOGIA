@@ -148,7 +148,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     cargarRolActual(session).then(role => validarPermisoModulo(role));
   }
 });
-async function enviarPDFaN8n(){
+window.enviarPDFaN8n = async function(){
   try{
     const iframe = document.getElementById("frame-impresion-pdf");
     if(!iframe || !iframe.contentWindow){
@@ -156,18 +156,13 @@ async function enviarPDFaN8n(){
       return;
     }
 
-    // 1️⃣ Obtener HTML del PDF
     const pdfHTML = iframe.contentWindow.document.documentElement.outerHTML;
-
-    // 2️⃣ Convertir a Blob
     const blob = new Blob([pdfHTML], { type: "text/html" });
 
-    // 3️⃣ Convertir a Base64
     const reader = new FileReader();
     reader.onloadend = async function(){
       const base64 = reader.result.split(",")[1];
 
-      // 4️⃣ Enviar a N8N (WEBHOOK CORRECTO)
       const resp = await fetch(
         "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bda46f0e-a348-4be9-b9f9-cc194c6541cd",
         {
@@ -183,9 +178,7 @@ async function enviarPDFaN8n(){
         }
       );
 
-      if(!resp.ok){
-        throw new Error("HTTP " + resp.status);
-      }
+      if(!resp.ok) throw new Error("HTTP " + resp.status);
 
       alert("PDF enviado correctamente a n8n ✅");
     };
@@ -196,7 +189,8 @@ async function enviarPDFaN8n(){
     console.error(e);
     alert("No se pudo enviar el PDF a n8n");
   }
-}
+};
+
 
     
   </script>
