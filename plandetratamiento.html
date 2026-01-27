@@ -2454,6 +2454,59 @@ window.imprimirDesdeModal = function(){
 })();
 </script>
 
+<!-- =========================
+     ✅ FUNCIÓN GLOBAL DEFINITIVA enviarPDFaN8n
+     - Accesible desde cualquier botón / modal
+     - No depende de módulos
+     ========================= -->
+<script>
+window.enviarPDFaN8n = async function(){
+  try{
+    const iframe = document.getElementById("frame-impresion-pdf");
+    if(!iframe || !iframe.contentWindow){
+      alert("Primero debes generar el PDF.");
+      return;
+    }
+
+    // Esperar contenido real
+    let html = "";
+    for(let i=0;i<10;i++){
+      html = iframe.contentWindow.document.documentElement.outerHTML || "";
+      if(html.length > 2000) break;
+      await new Promise(r=>setTimeout(r,300));
+    }
+
+    if(html.length < 2000){
+      alert("El PDF aún no está listo.");
+      return;
+    }
+
+    const base64 = btoa(unescape(encodeURIComponent(html)));
+
+    const resp = await fetch(
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bda46f0e-a348-4be9-b9f9-cc194c6541cd",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pdf_base64: base64,
+          paciente: document.getElementById("nombre")?.value || "",
+          cedula: document.getElementById("cedula")?.value || "",
+          profesional: window.NOMBRE_PROFESIONAL || "",
+          fecha: document.getElementById("fecha-hora")?.textContent || ""
+        })
+      }
+    );
+
+    if(!resp.ok) throw new Error("HTTP " + resp.status);
+
+    alert("PDF enviado correctamente a n8n ✅");
+  }catch(e){
+    console.error(e);
+    alert("Error enviando PDF a n8n");
+  }
+};
+</script>
 
 
 
