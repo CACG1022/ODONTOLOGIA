@@ -2492,6 +2492,8 @@ window.enviarPDFaN8n = async function(){
           pdf_base64: base64,
           paciente: document.getElementById("nombre")?.value || "",
           cedula: document.getElementById("cedula")?.value || "",
+          celular: document.getElementById("celular")?.value || "",
+          correo:document.getElementById("correo")?.value || "",
           profesional: window.NOMBRE_PROFESIONAL || "",
           fecha: document.getElementById("fecha-hora")?.textContent || ""
         })
