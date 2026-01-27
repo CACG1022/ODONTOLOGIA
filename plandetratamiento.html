@@ -2202,54 +2202,163 @@ setTimeout(() => {
 
 
 <!-- =========================
-     ✅ ENVÍO NOMBRE PROFESIONAL A N8N (AGREGADO)
-     - Crea input hidden dentro del formulario
-     - Asigna el nombre del profesional automáticamente
-     - Se envía tanto en Guardar como en Enviar
+     ✅ CAMPO FIJO NOMBRE DEL PROFESIONAL (FIX DEFINITIVO)
+     - Se renderiza SIEMPRE debajo de la firma
+     - Muestra placeholder aunque Supabase falle
+     - Luego reemplaza por el nombre real si existe
      ========================= -->
 <script>
 (function(){
-  function asegurarInput(){
+  function crearCampo(){
+    const canvas = document.getElementById("firma");
+    if(!canvas) return null;
+
+    // Evitar duplicados
+    if(document.getElementById("campo-profesional-firma")) return;
+
+    const wrap = document.createElement("div");
+    wrap.id = "campo-profesional-firma";
+    wrap.style.marginTop = "8px";
+
+    const label = document.createElement("div");
+    label.textContent = "Nombre del profesional:";
+    label.style.fontWeight = "700";
+    label.style.fontSize = "12px";
+    label.style.color = "#475569";
+    label.style.marginBottom = "2px";
+
+    const value = document.createElement("div");
+    value.id = "nombre-profesional-firma";
+    value.textContent = "—";
+    value.style.fontWeight = "900";
+    value.style.fontSize = "13px";
+    value.style.color = "#0f172a";
+
+    wrap.appendChild(label);
+    wrap.appendChild(value);
+
+    canvas.insertAdjacentElement("afterend", wrap);
+    return value;
+  }
+
+  async function cargarNombre(){
+    try{
+      if(!window.supabase) return;
+
+      const valueEl = crearCampo();
+      if(!valueEl) return;
+
+      const { data: { session } } = await window.supabase.auth.getSession();
+      if(!session?.user?.email){
+        valueEl.textContent = "No autenticado";
+        return;
+      }
+
+      const email = String(session.user.email).trim();
+
+      const { data, error } = await window.supabase
+        .from("profesionales")
+        .select("nombre")
+        .ilike("correo", email)
+        .limit(1)
+        .maybeSingle();
+
+      if(error){
+        console.warn("RLS o error leyendo profesionales:", error);
+        valueEl.textContent = "Profesional no registrado";
+        return;
+      }
+
+      if(data?.nombre){
+        valueEl.textContent = data.nombre;
+        window.NOMBRE_PROFESIONAL = data.nombre;
+      }else{
+        valueEl.textContent = "Profesional no registrado";
+      }
+    }catch(e){
+      console.warn("Error cargando nombre profesional:", e);
+    }
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", cargarNombre);
+  }else{
+    cargarNombre();
+  }
+})();
+</script>
+
+
+<!-- =========================
+     ✅ ENVIAR NOMBRE DEL PROFESIONAL A N8N (AGREGADO)
+     - NO modifica submit ni botón Guardar
+     - Usa FormData existente
+     - Campo enviado: profesional_nombre
+     ========================= -->
+<script>
+(function(){
+  function ensureHiddenInput(){
     const form = document.getElementById("cotizacion-form");
     if(!form) return null;
 
-    let input = document.getElementById("input-nombre-profesional");
-    if(!input){
-      input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "nombre_profesional";
-      input.id = "input-nombre-profesional";
-      form.appendChild(input);
-    }
+    let input = document.getElementById("input-profesional-nombre");
+    if(input) return input;
+
+    input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "profesional_nombre";
+    input.id = "input-profesional-nombre";
+    input.value = "";
+
+    form.appendChild(input);
     return input;
   }
 
-  function syncNombre(){
-    const input = asegurarInput();
+  function syncNombreProfesional(){
+    const input = ensureHiddenInput();
     if(!input) return;
 
+    // Prioridad 1: variable global
     if(window.NOMBRE_PROFESIONAL){
-      input.value = window.NOMBRE_PROFESIONAL;
+      input.value = String(window.NOMBRE_PROFESIONAL);
+      return;
     }
+
+    // Prioridad 2: texto visible bajo firma
+    const el = document.getElementById("nombre-profesional-firma");
+    if(el && el.textContent && el.textContent.trim() && el.textContent.trim() !== "—"){
+      input.value = el.textContent.trim();
+      return;
+    }
+
+    input.value = "";
   }
 
-  // Sincronizar cuando el DOM esté listo
+  // Sincronizar al cargar
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", syncNombre);
+    document.addEventListener("DOMContentLoaded", syncNombreProfesional);
   }else{
-    syncNombre();
+    syncNombreProfesional();
   }
 
-  // Re-sincronizar justo antes de enviar o guardar
-  document.addEventListener("submit", syncNombre, true);
-  document.addEventListener("click", syncNombre, true);
+  // Sincronizar antes de guardar / enviar
+  document.addEventListener("click", (e)=>{
+    const t = e.target;
+    if(!t) return;
+
+    if(
+      t.id === "btn-guardar" ||
+      (t.tagName === "BUTTON" && t.type === "submit")
+    ){
+      syncNombreProfesional();
+    }
+  });
+
 })();
 </script>
 
 </body>
 </html>
-
-
 
 
 
