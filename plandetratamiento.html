@@ -549,16 +549,31 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   <style>
     @media print {
 
-      /* ================= LOGO ================= */
+      /* ================= LOGO (SOLO PRIMERA PÁGINA) ================= */
       #print-logo {
         position: fixed;
-        top: 10px;
+        top: 12px;
         right: 20px;
-        display: block;
       }
       #print-logo img {
-        width: 160px;
+        width: 150px;
         height: auto;
+      }
+
+      /* Ocultar logo a partir de la segunda página */
+      @page :not(:first) {
+        #print-logo { display: none; }
+      }
+
+      /* ================= ENCABEZADO PRIMERA PÁGINA ================= */
+      h2 {
+        background: #143F80 !important;
+        color: #ffffff !important;
+        padding: 20px 16px 18px !important;
+        border-radius: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 18px !important;
+        page-break-after: avoid;
       }
 
       /* ❌ Ocultar piezas dentales (pero NO el resumen) */
@@ -616,10 +631,11 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       form {
         box-shadow: none !important;
         border: none !important;
-        padding-top: 40px !important;
+        padding-top: 50px !important;
       }
     }
   </style>
+
 
 
 </head>
@@ -1777,6 +1793,7 @@ setTimeout(() => {
 
 </body>
 </html>
+
 
 
 
