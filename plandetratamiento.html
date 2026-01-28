@@ -1852,6 +1852,54 @@ setTimeout(() => {
   }
 </style>
 
+<style>
+/* =========================================================
+   FIX DEFINITIVO COLORES BOTONES MODAL IMPRESIÓN PDF
+   NO rompe nada existente
+   ========================================================= */
+
+/* Reset base (pisar inline styles) */
+#modal-impresion-pdf .head button{
+  background: #dc2626 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  padding: 8px 14px !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18) !important;
+  transition: all .15s ease !important;
+}
+
+/* 🖨️ Imprimir (primer botón del grupo derecho) */
+#modal-impresion-pdf .head > div:last-child > button:nth-child(1){
+  background: #059669 !important;
+}
+#modal-impresion-pdf .head > div:last-child > button:nth-child(1):hover{
+  background: #047857 !important;
+  transform: translateY(-1px);
+}
+
+/* 📤 Enviar a paciente */
+#modal-impresion-pdf .head > div:last-child > button:nth-child(2){
+  background: #2563eb !important;
+}
+#modal-impresion-pdf .head > div:last-child > button:nth-child(2):hover{
+  background: #1e40af !important;
+  transform: translateY(-1px);
+}
+
+/* ❌ Cerrar */
+#modal-impresion-pdf .head > div:last-child > button:nth-child(3){
+  background: #dc2626 !important;
+}
+#modal-impresion-pdf .head > div:last-child > button:nth-child(3):hover{
+  background: #991b1b !important;
+}
+</style>
+
+  
 <div id="modal-impresion-pdf" aria-hidden="true">
   <div class="card" role="dialog" aria-modal="true" aria-label="Impresión PDF">
     <div class="head">
