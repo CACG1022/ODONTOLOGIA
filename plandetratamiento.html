@@ -1851,19 +1851,6 @@ setTimeout(() => {
    NO rompe nada existente
    ========================================================= */
 
-/* Reset base (pisar inline styles) */
-#modal-impresion-pdf .head button{
-  background: #dc2626 !important;
-  color: #fff !important;
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 8px 14px !important;
-  font-weight: 800 !important;
-  font-size: 13px !important;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(0,0,0,.18) !important;
-  transition: all .15s ease !important;
-}
 
 /* 🖨️ Imprimir (primer botón del grupo derecho) */
 #modal-impresion-pdf .head > div:last-child > button:nth-child(1){
@@ -1900,9 +1887,10 @@ setTimeout(() => {
         Vista de impresión <small>(solo para PDF)</small>
       </div>
       <div style="display:flex; gap:10px; align-items:center;">
-        <button type="button" onclick="imprimirDesdeModal()" style="background:#059669;">🖨️ Imprimir</button>
-        <button type="button" onclick="enviarPDFaN8n()" style="background:#7c3aed;">📤 Enviar a paciente</button>
-        <button type="button" onclick="cerrarModalImpresionPDF()">✖ Cerrar</button>
+        <button type="button" onclick="imprimirDesdeModal()">🖨️ Imprimir</button>
+       <button type="button" onclick="enviarPDFaN8n()">📤 Enviar a paciente</button>
+       <button type="button" onclick="cerrarModalImpresionPDF()">✖ Cerrar</button>
+
       </div>
     </div>
     <iframe id="frame-impresion-pdf" title="Documento para imprimir"></iframe>
@@ -2134,74 +2122,7 @@ setTimeout(() => {
     @media print{
       .header{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     }
-   /* ===== BOTONES MODAL PDF (ESTILO PREMIUM) ===== */
 
-/* 🖨️ Imprimir */
-#modal-impresion-pdf .head button:nth-child(1){
-  background: #009688 !important;
-}
-#modal-impresion-pdf .head button:nth-child(1):hover{
-  background: #00796b !important;
-  transform: translateY(-1px);
-}
-
-/* 📤 Enviar a paciente */
-#modal-impresion-pdf .head button:nth-child(2){
-  background: #2563eb !important;
-}
-#modal-impresion-pdf .head button:nth-child(2):hover{
-  background: #1e40af !important;
-  transform: translateY(-1px);
-}
-
-/* ❌ Cerrar */
-#modal-impresion-pdf .head button:nth-child(3){
-  background: #dc2626 !important;
-}
-#modal-impresion-pdf .head button:nth-child(3):hover{
-  background: #991b1b !important;
-}
-
-/* ===== BOTONES MODAL PDF – ESTILO FINAL ===== */
-#modal-impresion-pdf .head button{
-  border: none !important;
-  border-radius: 10px !important;
-  padding: 8px 14px !important;
-  font-weight: 800 !important;
-  font-size: 13px !important;
-  cursor: pointer;
-  color: #fff !important;
-  box-shadow: 0 8px 18px rgba(0,0,0,.18);
-  transition: all .15s ease;
-}
-
-/* 🖨️ Imprimir */
-#modal-impresion-pdf .head button:nth-of-type(1){
-  background: #009688 !important;
-}
-#modal-impresion-pdf .head button:nth-of-type(1):hover{
-  background: #00796b !important;
-  transform: translateY(-1px);
-}
-
-/* 📤 Enviar a paciente */
-#modal-impresion-pdf .head button:nth-of-type(2){
-  background: #2563eb !important;
-}
-#modal-impresion-pdf .head button:nth-of-type(2):hover{
-  background: #1e40af !important;
-  transform: translateY(-1px);
-}
-
-/* ❌ Cerrar */
-#modal-impresion-pdf .head button:nth-of-type(3){
-  background: #dc2626 !important;
-}
-#modal-impresion-pdf .head button:nth-of-type(3):hover{
-  background: #991b1b !important;
-}
-
-    
   </style>
 </head>
 <body>
