@@ -1850,31 +1850,33 @@ setTimeout(() => {
    FIX DEFINITIVO COLORES BOTONES MODAL IMPRESIÓN PDF
    NO rompe nada existente
    ========================================================= */
-
-
-/* 🖨️ Imprimir (primer botón del grupo derecho) */
-#modal-impresion-pdf .head > div:last-child > button:nth-child(1){
-  background: #059669 !important;
+#modal-impresion-pdf .head button{
+  background: #1CD4BB !important;
+  color: #ffffff !important;
+  padding: 8px 14px;          /* 🔑 MISMA ALTURA PARA TODOS */
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1;             /* 🔑 evita que uno se vea más alto */
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(0,0,0,.18);
 }
-#modal-impresion-pdf .head > div:last-child > button:nth-child(1):hover{
-  background: #047857 !important;
+
+#modal-impresion-pdf .head button:hover{
+  background: #16bfb0 !important;
   transform: translateY(-1px);
 }
 
-/* 📤 Enviar a paciente */
-#modal-impresion-pdf .head > div:last-child > button:nth-child(2){
-  background: #2563eb !important;
-}
-#modal-impresion-pdf .head > div:last-child > button:nth-child(2):hover{
-  background: #1e40af !important;
-  transform: translateY(-1px);
-}
-
-/* ❌ Cerrar */
-#modal-impresion-pdf .head > div:last-child > button:nth-child(3){
+/* ❌ Botón cerrar en rojo */
+#modal-impresion-pdf .head button:last-child{
   background: #dc2626 !important;
 }
-#modal-impresion-pdf .head > div:last-child > button:nth-child(3):hover{
+
+#modal-impresion-pdf .head button:last-child:hover{
   background: #991b1b !important;
 }
 </style>
