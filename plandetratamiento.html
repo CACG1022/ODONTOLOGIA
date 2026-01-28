@@ -1850,17 +1850,30 @@ setTimeout(() => {
    FIX DEFINITIVO COLORES BOTONES MODAL IMPRESIÓN PDF
    NO rompe nada existente
    ========================================================= */
+/* ===============================
+   FIX DEFINITIVO BOTONES MODAL PDF
+   =============================== */
+
 #modal-impresion-pdf .head button{
   background: #1CD4BB !important;
-  color: #ffffff !important;
-  padding: 8px 14px;          /* 🔑 MISMA ALTURA PARA TODOS */
+  color: #fff !important;
+
+  height: 36px;                 /* 🔥 MISMA ALTURA REAL */
+  padding: 0 14px;              /* horizontal solamente */
+
   border-radius: 10px;
   font-weight: 800;
   font-size: 13px;
-  line-height: 1;             /* 🔑 evita que uno se vea más alto */
+  line-height: 1;
+
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+
+  white-space: nowrap;          /* 🔥 CLAVE: NO SALTO DE LÍNEA */
+  flex-wrap: nowrap;
+
   border: none;
   cursor: pointer;
   box-shadow: 0 6px 14px rgba(0,0,0,.18);
@@ -1871,14 +1884,14 @@ setTimeout(() => {
   transform: translateY(-1px);
 }
 
-/* ❌ Botón cerrar en rojo */
+/* ❌ Cerrar */
 #modal-impresion-pdf .head button:last-child{
   background: #dc2626 !important;
 }
-
 #modal-impresion-pdf .head button:last-child:hover{
   background: #991b1b !important;
 }
+
 </style>
 
   
