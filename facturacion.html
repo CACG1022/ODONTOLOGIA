@@ -1419,10 +1419,19 @@ if ((isFocused || filtro) && count > 0) {
 <\/script>
 
 <!-- =========================
-     RECIBIR DESDE PLAN DE TRATAMIENTO
+     RECIBIR DESDE PLAN DE TRATAMIENTO (SAFE)
      ========================= -->
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
+  function waitForProcedimientos(cb){
+    if(window.state && Array.isArray(state.procedimientos) && state.procedimientos.length){
+      cb();
+    }else{
+      setTimeout(()=>waitForProcedimientos(cb), 150);
+    }
+  }
+
+  waitForProcedimientos(()=>{
   try{
     const raw = localStorage.getItem("plan_a_facturacion");
     if(!raw) return;
@@ -1453,6 +1462,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }catch(e){
     console.warn("No se pudo cargar plan a facturación", e);
   }
+  });
 });
 </script>
 
@@ -2567,10 +2577,19 @@ if (procDrop) procDrop.style.display = "none";
   </script>
 
 <!-- =========================
-     RECIBIR DESDE PLAN DE TRATAMIENTO
+     RECIBIR DESDE PLAN DE TRATAMIENTO (SAFE)
      ========================= -->
 <script>
 document.addEventListener("DOMContentLoaded", ()=>{
+  function waitForProcedimientos(cb){
+    if(window.state && Array.isArray(state.procedimientos) && state.procedimientos.length){
+      cb();
+    }else{
+      setTimeout(()=>waitForProcedimientos(cb), 150);
+    }
+  }
+
+  waitForProcedimientos(()=>{
   try{
     const raw = localStorage.getItem("plan_a_facturacion");
     if(!raw) return;
@@ -2601,6 +2620,7 @@ document.addEventListener("DOMContentLoaded", ()=>{
   }catch(e){
     console.warn("No se pudo cargar plan a facturación", e);
   }
+  });
 });
 </script>
 
