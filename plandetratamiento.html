@@ -2466,6 +2466,67 @@ setTimeout(() => {
     }, 200);
   };
 })();
+(function(){
+  // Evitar duplicar el botón
+  if (document.getElementById("btn-facturar-plan")) return;
+
+  function extraerResumen(){
+    const resumen = {};
+    // IMPORTANTE: este selector debe existir en tu HTML
+    // Es la lista "Resumen por diente"
+    document.querySelectorAll("#summary-list li").forEach(li=>{
+      // Formato esperado:
+      // Diente 11: RESINA VESTIBULAR — $85.000
+      const m = li.textContent.match(/:\s*(.*?)\s+—\s*\$\s*([\d\.]+)/);
+      if(!m) return;
+
+      const procedimiento = m[1].trim();
+      if(!resumen[procedimiento]){
+        resumen[procedimiento] = {
+          procedimiento,
+          cantidad: 0
+        };
+      }
+      resumen[procedimiento].cantidad++;
+    });
+    return Object.values(resumen);
+  }
+
+  const btn = document.createElement("button");
+  btn.id = "btn-facturar-plan";
+  btn.textContent = "💳 Facturar";
+  btn.style.position = "fixed";
+  btn.style.top = "90px";
+  btn.style.right = "20px";
+  btn.style.zIndex = "500";
+  btn.style.padding = "12px 16px";
+  btn.style.borderRadius = "10px";
+  btn.style.border = "none";
+  btn.style.background = "#16a34a";
+  btn.style.color = "#fff";
+  btn.style.fontWeight = "700";
+  btn.style.cursor = "pointer";
+
+  btn.onclick = () => {
+    const data = extraerResumen();
+    if(!data.length){
+      alert("No hay procedimientos para facturar");
+      return;
+    }
+
+    // Guardamos el resumen para facturación
+    localStorage.setItem("plan_a_facturacion", JSON.stringify(data));
+
+    // Tomamos la cédula del paciente (ya existe en tu formulario)
+    const cedula = document.getElementById("cedula")?.value || "";
+
+    // Redirigir a facturación
+    window.location.href = `facturacion.html?paciente_cedula=${cedula}`;
+  };
+
+  document.body.appendChild(btn);
+})();
+  
 </script>
 
 </body>
