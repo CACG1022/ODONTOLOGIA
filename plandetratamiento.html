@@ -2471,26 +2471,32 @@ setTimeout(() => {
   if (document.getElementById("btn-facturar-plan")) return;
 
   function extraerResumen(){
-    const resumen = {};
-    // IMPORTANTE: este selector debe existir en tu HTML
-    // Es la lista "Resumen por diente"
-    document.querySelectorAll("#summary-list li").forEach(li=>{
-      // Formato esperado:
-      // Diente 11: RESINA VESTIBULAR — $85.000
-      const m = li.textContent.match(/:\s*(.*?)\s+—\s*\$\s*([\d\.]+)/);
-      if(!m) return;
+  const resumen = {};
 
-      const procedimiento = m[1].trim();
-      if(!resumen[procedimiento]){
-        resumen[procedimiento] = {
-          procedimiento,
-          cantidad: 0
-        };
-      }
-      resumen[procedimiento].cantidad++;
-    });
-    return Object.values(resumen);
-  }
+  document.querySelectorAll("#summary-list li").forEach(li=>{
+    const texto = li.textContent
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Acepta:
+    // Diente 46: TERAPIA ENDODONTICA — $240.000
+    const m = texto.match(/Diente\s+\d+:\s*(.*?)\s+—\s*\$([\d\.]+)/i);
+    if(!m) return;
+
+    const procedimiento = m[1].trim();
+
+    if(!resumen[procedimiento]){
+      resumen[procedimiento] = {
+        procedimiento,
+        cantidad: 0
+      };
+    }
+    resumen[procedimiento].cantidad++;
+  });
+
+  return Object.values(resumen);
+}
+
 
   const btn = document.createElement("button");
   btn.id = "btn-facturar-plan";
