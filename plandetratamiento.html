@@ -2191,7 +2191,7 @@ setTimeout(() => {
   
 
 <!-- =========================
-     EXPORTAR A FACTURACIÓN
+     EXPORTAR A FACTURACIÓN (SAFE)
      ========================= -->
 <script>
 (function(){
@@ -2230,10 +2230,12 @@ setTimeout(() => {
 
   // botón flotante
   const btn = document.createElement("button");
+  btn.id = "btn-facturar-plan";
   btn.textContent = "💳 Facturar";
   btn.style.position = "fixed";
   btn.style.bottom = "20px";
   btn.style.left = "20px";
+  btn.style.bottom = "90px";
   btn.style.zIndex = "9999";
   btn.style.padding = "12px 16px";
   btn.style.borderRadius = "12px";
@@ -2528,7 +2530,7 @@ setTimeout(() => {
 
 
 <!-- =========================
-     EXPORTAR A FACTURACIÓN
+     EXPORTAR A FACTURACIÓN (SAFE)
      ========================= -->
 <script>
 (function(){
@@ -2567,10 +2569,12 @@ setTimeout(() => {
 
   // botón flotante
   const btn = document.createElement("button");
+  btn.id = "btn-facturar-plan";
   btn.textContent = "💳 Facturar";
   btn.style.position = "fixed";
   btn.style.bottom = "20px";
   btn.style.left = "20px";
+  btn.style.bottom = "90px";
   btn.style.zIndex = "9999";
   btn.style.padding = "12px 16px";
   btn.style.borderRadius = "12px";
@@ -2683,6 +2687,10 @@ window.enviarPDFaN8n = async function(){
   }
 };
 </script>
+
+
+
+
 
 
 
