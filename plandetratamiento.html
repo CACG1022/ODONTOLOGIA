@@ -2229,22 +2229,16 @@ setTimeout(() => {
   }
 
   // botón flotante
+  if(document.getElementById("btn-facturar-plan")) return;
   const btn = document.createElement("button");
   btn.id = "btn-facturar-plan";
   btn.textContent = "💳 Facturar";
   btn.style.position = "fixed";
-  btn.style.bottom = "20px";
-  btn.style.left = "20px";
-  btn.style.bottom = "90px";
-  btn.style.zIndex = "9999";
-  btn.style.padding = "12px 16px";
-  btn.style.borderRadius = "12px";
-  btn.style.border = "none";
-  btn.style.background = "#16a34a";
-  btn.style.color = "#fff";
-  btn.style.fontWeight = "800";
-  btn.style.cursor = "pointer";
-  btn.onclick = irAFacturacion;
+  btn.style.top = "90px";
+  btn.style.right = "20px";
+  btn.style.bottom = "auto";
+  btn.style.left = "auto";
+  btn.style.zIndex = "500";
   document.body.appendChild(btn);
 })();
 </script>
@@ -2568,22 +2562,16 @@ setTimeout(() => {
   }
 
   // botón flotante
+  if(document.getElementById("btn-facturar-plan")) return;
   const btn = document.createElement("button");
   btn.id = "btn-facturar-plan";
   btn.textContent = "💳 Facturar";
   btn.style.position = "fixed";
-  btn.style.bottom = "20px";
-  btn.style.left = "20px";
-  btn.style.bottom = "90px";
-  btn.style.zIndex = "9999";
-  btn.style.padding = "12px 16px";
-  btn.style.borderRadius = "12px";
-  btn.style.border = "none";
-  btn.style.background = "#16a34a";
-  btn.style.color = "#fff";
-  btn.style.fontWeight = "800";
-  btn.style.cursor = "pointer";
-  btn.onclick = irAFacturacion;
+  btn.style.top = "90px";
+  btn.style.right = "20px";
+  btn.style.bottom = "auto";
+  btn.style.left = "auto";
+  btn.style.zIndex = "500";
   document.body.appendChild(btn);
 })();
 </script>
@@ -2687,6 +2675,9 @@ window.enviarPDFaN8n = async function(){
   }
 };
 </script>
+
+
+
 
 
 
