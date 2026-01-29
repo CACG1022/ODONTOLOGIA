@@ -2547,7 +2547,7 @@ if (procDrop) procDrop.style.display = "none";
   const params = new URLSearchParams(window.location.search);
   const cedula =
     params.get("cedula") ||
-    document.getElementById("cedula")?.value;
+    document.getElementById("paciente_cedula")?.value;
 
   if (!cedula) {
     alert("No se encontró la cédula del paciente");
