@@ -2568,6 +2568,58 @@ if (procDrop) procDrop.style.display = "none";
     }
   });
 })();
+/* =========================================
+   ✅ CARGA DESDE PLAN DE TRATAMIENTO
+   (SIN CLICKS, DIRECTO AL STATE)
+   ========================================= */
+(function(){
+  function waitForProcedimientos(cb){
+    if (window.state && Array.isArray(state.procedimientos) && state.procedimientos.length){
+      cb();
+    } else {
+      setTimeout(() => waitForProcedimientos(cb), 150);
+    }
+  }
+
+  waitForProcedimientos(() => {
+    try {
+      const raw = localStorage.getItem("plan_a_facturacion");
+      if (!raw) return;
+
+      const items = JSON.parse(raw);
+      if (!Array.isArray(items) || !items.length) return;
+
+      items.forEach(it => {
+        const proc = state.procedimientos.find(p =>
+          String(p.procedimiento).toLowerCase() === String(it.procedimiento).toLowerCase()
+        );
+        if (!proc) return;
+
+        state.items.push({
+          id_local: crypto.randomUUID(),
+          procedimiento_id: proc.id,
+          codigo_cups: proc.codigo_cups || "",
+          descripcion: proc.procedimiento,
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(proc.valor || 0),
+          valor_total: Number(proc.valor || 0) * Number(it.cantidad || 1)
+        });
+      });
+
+      renderItems();
+      recalcularTotales();
+
+      // 🔥 limpiar SOLO cuando ya cargó bien
+      localStorage.removeItem("plan_a_facturacion");
+
+      console.log("✅ Plan cargado en facturación");
+
+    } catch (e) {
+      console.warn("❌ Error cargando plan a facturación:", e);
+    }
+  });
+})();
+
     
   </script>
 </body>
