@@ -2189,60 +2189,6 @@ setTimeout(() => {
 
   </div>
   
-
-<!-- =========================
-     EXPORTAR A FACTURACIÓN (SAFE)
-     ========================= -->
-<script>
-(function(){
-  function extraerResumen(){
-    const items = [];
-    document.querySelectorAll("#summary-list li").forEach(li=>{
-      const txt = li.textContent || "";
-      // Ej: "Diente 11: RESINA VESTIBULAR — $85.000"
-      const m = txt.match(/:\s*(.*?)\s+—\s*\$\s*([\d\.]+)/);
-      if(!m) return;
-      const proc = m[1].trim();
-      const valor = parseInt(m[2].replace(/\./g,''),10)||0;
-      items.push({ procedimiento: proc, valor });
-    });
-    // agrupar por procedimiento
-    const map = {};
-    items.forEach(it=>{
-      if(!map[it.procedimiento]){
-        map[it.procedimiento] = { procedimiento: it.procedimiento, cantidad: 0, valor_unitario: it.valor };
-      }
-      map[it.procedimiento].cantidad += 1;
-    });
-    return Object.values(map);
-  }
-
-  function irAFacturacion(){
-    const data = extraerResumen();
-    if(!data.length){
-      alert("No hay procedimientos para facturar.");
-      return;
-    }
-    const cedula = document.getElementById("cedula")?.value || "";
-    localStorage.setItem("plan_a_facturacion", JSON.stringify(data));
-    window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html?paciente_cedula=" + encodeURIComponent(cedula);
-  }
-
-  // botón flotante
-  if(document.getElementById("btn-facturar-plan")) return;
-  const btn = document.createElement("button");
-  btn.id = "btn-facturar-plan";
-  btn.textContent = "💳 Facturar";
-  btn.style.position = "fixed";
-  btn.style.top = "90px";
-  btn.style.right = "20px";
-  btn.style.bottom = "auto";
-  btn.style.left = "auto";
-  btn.style.zIndex = "500";
-  document.body.appendChild(btn);
-})();
-</script>
-
 </body>
 </html>
     `;
@@ -2522,60 +2468,6 @@ setTimeout(() => {
 })();
 </script>
 
-
-<!-- =========================
-     EXPORTAR A FACTURACIÓN (SAFE)
-     ========================= -->
-<script>
-(function(){
-  function extraerResumen(){
-    const items = [];
-    document.querySelectorAll("#summary-list li").forEach(li=>{
-      const txt = li.textContent || "";
-      // Ej: "Diente 11: RESINA VESTIBULAR — $85.000"
-      const m = txt.match(/:\s*(.*?)\s+—\s*\$\s*([\d\.]+)/);
-      if(!m) return;
-      const proc = m[1].trim();
-      const valor = parseInt(m[2].replace(/\./g,''),10)||0;
-      items.push({ procedimiento: proc, valor });
-    });
-    // agrupar por procedimiento
-    const map = {};
-    items.forEach(it=>{
-      if(!map[it.procedimiento]){
-        map[it.procedimiento] = { procedimiento: it.procedimiento, cantidad: 0, valor_unitario: it.valor };
-      }
-      map[it.procedimiento].cantidad += 1;
-    });
-    return Object.values(map);
-  }
-
-  function irAFacturacion(){
-    const data = extraerResumen();
-    if(!data.length){
-      alert("No hay procedimientos para facturar.");
-      return;
-    }
-    const cedula = document.getElementById("cedula")?.value || "";
-    localStorage.setItem("plan_a_facturacion", JSON.stringify(data));
-    window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html?paciente_cedula=" + encodeURIComponent(cedula);
-  }
-
-  // botón flotante
-  if(document.getElementById("btn-facturar-plan")) return;
-  const btn = document.createElement("button");
-  btn.id = "btn-facturar-plan";
-  btn.textContent = "💳 Facturar";
-  btn.style.position = "fixed";
-  btn.style.top = "90px";
-  btn.style.right = "20px";
-  btn.style.bottom = "auto";
-  btn.style.left = "auto";
-  btn.style.zIndex = "500";
-  document.body.appendChild(btn);
-})();
-</script>
-
 </body>
 </html>
 
@@ -2675,6 +2567,10 @@ window.enviarPDFaN8n = async function(){
   }
 };
 </script>
+
+
+
+
 
 
 
