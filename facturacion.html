@@ -2525,6 +2525,50 @@ if (procDrop) procDrop.style.display = "none";
     }, 600);
   });
 })();
+(function(){
+  function waitForProcedimientos(cb){
+    if (window.state && Array.isArray(state.procedimientos) && state.procedimientos.length){
+      cb();
+    } else {
+      setTimeout(() => waitForProcedimientos(cb), 150);
+    }
+  }
+
+  waitForProcedimientos(() => {
+    try {
+      const raw = localStorage.getItem("plan_a_facturacion");
+      if (!raw) return;
+
+      const items = JSON.parse(raw);
+      if (!Array.isArray(items) || !items.length) return;
+
+      items.forEach(it => {
+        const proc = state.procedimientos.find(p =>
+          String(p.procedimiento).toLowerCase() === String(it.procedimiento).toLowerCase()
+        );
+        if (!proc) return;
+
+        state.items.push({
+          id_local: crypto.randomUUID(),
+          procedimiento_id: proc.id,
+          codigo_cups: proc.codigo_cups || "",
+          descripcion: proc.procedimiento,
+          cantidad: it.cantidad,
+          valor_unitario: proc.valor,
+          valor_total: proc.valor * it.cantidad
+        });
+      });
+
+      renderItems();
+      recalcularTotales();
+      localStorage.removeItem("plan_a_facturacion");
+
+    } catch (e) {
+      console.warn("Error cargando plan a facturación:", e);
+    }
+  });
+})();
+    
   </script>
 </body>
 </html>
@@ -2822,6 +2866,8 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
 
 
 
