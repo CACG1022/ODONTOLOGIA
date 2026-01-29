@@ -2541,6 +2541,80 @@ if (procDrop) procDrop.style.display = "none";
     }, 600);
   });
 })();
+
+   async function cargarPlanDesdeSupabase() {
+  // 1️⃣ Obtener cédula desde la URL o input
+  const params = new URLSearchParams(window.location.search);
+  const cedula =
+    params.get("cedula") ||
+    document.getElementById("cedula")?.value;
+
+  if (!cedula) {
+    alert("No se encontró la cédula del paciente");
+    return;
+  }
+
+  // 2️⃣ Consultar tabla temporal
+  const { data, error } = await supabase
+    .from("facturacion_temporal")
+    .select("*")
+    .eq("cedula", cedula);
+
+  if (error) {
+    console.error(error);
+    alert("Error consultando plan de tratamiento");
+    return;
+  }
+
+  if (!data || !data.length) {
+    alert("No hay procedimientos pendientes por cargar");
+    return;
+  }
+
+  console.log("📦 Plan recibido desde Supabase:", data);
+
+  // 3️⃣ Insertar en state.items
+  data.forEach(it => {
+    const proc = state.procedimientos.find(p =>
+      p.procedimiento.trim().toLowerCase() ===
+      it.procedimiento.trim().toLowerCase()
+    );
+
+    if (!proc) {
+      console.warn("⚠️ No existe en catálogo:", it.procedimiento);
+      return;
+    }
+
+    state.items.push({
+      id_local: crypto.randomUUID(),
+      procedimiento_id: proc.id,
+      codigo_cups: proc.codigo_cups || "",
+      descripcion: proc.procedimiento,
+      cantidad: Number(it.cantidad || 1),
+      valor_unitario: Number(proc.valor || 0),
+      valor_total: Number(proc.valor || 0) * Number(it.cantidad || 1)
+    });
+  });
+
+  // 4️⃣ Renderizar
+  renderItems();
+  recalcularTotales();
+
+  // 5️⃣ (OPCIONAL PERO RECOMENDADO) limpiar tabla temporal
+  await supabase
+    .from("facturacion_temporal")
+    .delete()
+    .eq("cedula", cedula);
+
+  console.log("✅ Plan cargado y tabla temporal limpiada");
+}
+ // ===============================
+// 📥 BOTÓN CARGAR PLAN DE TRATAMIENTO
+// ===============================
+document
+  .getElementById("btn-cargar-plan")
+  ?.addEventListener("click", cargarPlanDesdeSupabase);
+
   </script>
 </body>
 </html>
