@@ -648,6 +648,33 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 .fab-pdf{
   background: #059669; /* verde elegante */
 }
+/* ================= BOTONES FLOTANTES ================= */
+.floating-actions{
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  z-index: 9999;
+}
+
+.fab{
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  color: #fff;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(0,0,0,.18);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fab-facturacion{ background:#16a34a; }
+.fab-pdf{ background:#059669; }
+.fab-precios{ background:#2563eb; }
 
       
   </style>
@@ -1556,27 +1583,6 @@ setTimeout(() => {
 
   </script>
 
-<!-- BOTÓN ACTUALIZACIÓN DE PRECIOS (AGREGADO) -->
-<div style="position:fixed;bottom:20px;right:20px;z-index:9999;">
-  <button
-    onclick="window.location.href='actualizacion-precios.html'"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#2563eb;
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-    ">
-    💲 Actualización de precios
-  </button>
-</div>
-
-
-
-
 <!-- ================= MODAL ACTUALIZACIÓN DE PRECIOS ================= -->
 <style>
   #modal-precios{
@@ -1677,7 +1683,16 @@ function obtenerResumenParaFacturacion() {
 
 
   
-document.getElementById("btn-facturacion").addEventListener("click", async () => {
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btn-facturacion");
+  if (!btn) return;
+
+  btn.addEventListener("click", async () => {
+  });
+});
+
+
+  
   const cedula = document.getElementById("cedula")?.value?.trim();
   if (!cedula) {
     alert("Debe ingresar la cédula del paciente");
@@ -2360,49 +2375,24 @@ document.getElementById("btn-facturacion").addEventListener("click", async () =>
   };
 })();
 </script>
-<!-- ================= BOTÓN IMPRIMIR PDF (FLOTANTE) ================= -->
-<div style="position:fixed;bottom:80px;right:20px;z-index:9999;">
-  <button
-    onclick="imprimirPDF()"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#059669; /* verde elegante */
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-      display:flex;
-      align-items:center;
-      gap:8px;
-    ">
-    🖨️ Imprimir PDF
-  </button>
-</div>
 
-  <!-- ================= BOTONES FLOTANTES ================= -->
+<!-- ================= BOTONES FLOTANTES (STACK ÚNICO) ================= -->
 <div class="floating-actions">
 
-  <!-- FACTURACIÓN -->
-  <button
-    type="button"
-    id="btn-facturacion"
-    class="fab fab-facturacion"
-  >
+  <button type="button" id="btn-facturacion" class="fab fab-facturacion">
     💳 Facturación
   </button>
 
-  <!-- IMPRIMIR PDF -->
-  <button
-    type="button"
-    class="fab fab-pdf"
-    onclick="imprimirPDF()"
-  >
+  <button type="button" class="fab fab-pdf" onclick="imprimirPDF()">
     🖨️ Imprimir PDF
   </button>
 
+  <button type="button" class="fab fab-precios" onclick="abrirModalPrecios()">
+    💲 Actualización de precios
+  </button>
+
 </div>
+
 
 
 <!-- =========================
