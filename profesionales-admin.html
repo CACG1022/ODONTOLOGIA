@@ -129,6 +129,7 @@
       $("correo").value = "";
       $("profesion").value = "";
       $("especialidad").value = "";
+      $("celular").value = "";
       $("activo").checked = true;
     }
 
@@ -143,6 +144,7 @@
       $("correo").value = row.correo ?? "";
       $("profesion").value = row.profesion ?? "";
       $("especialidad").value = row.especialidad ?? "";
+      $("celular").value = row.celular?? "";
       $("activo").checked = !!row.activo;
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -175,6 +177,7 @@
           <td>${escapeHtml(r.correo)}</td>
           <td>${escapeHtml(r.profesion)}</td>
           <td>${escapeHtml(r.especialidad)}</td>
+          <td>${escapeHtml(r.celular)}</td>
           <td>
             <span class="pill ${r.activo ? "on":"off"}">${r.activo ? "Activo" : "Inactivo"}</span>
           </td>
@@ -206,7 +209,7 @@
 
       let query = supabase
         .from("profesionales")
-        .select("id, cedula, nombre, correo, activo, creado_en, profesion, especialidad")
+        .select("id, cedula, nombre, correo, activo, creado_en, profesion, especialidad, celular")
         .order("creado_en", { ascending: false });
 
       if (onlyActive) query = query.eq("activo", true);
@@ -232,9 +235,10 @@
       const correo = ($("correo").value || "").trim();
       const profesion = ($("profesion").value || "").trim();
       const especialidad = ($("especialidad").value || "").trim();
+      const celular = ($("celular").value || "").trim();
       const activo = !!$("activo").checked;
 
-      if (!cedula || !nombre || !correo){
+      if (!cedula || !nombre || !correo || !celular){
         alert("⚠️ Cédula, nombre y correo son obligatorios.");
         return;
       }
@@ -249,7 +253,7 @@
         if (editingId){
           const { error } = await supabase
             .from("profesionales")
-            .update({ cedula, nombre, correo, profesion: profesion || null, especialidad: especialidad || null, activo })
+            .update({ cedula, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo })
             .eq("id", editingId);
 
           if (error) throw error;
@@ -257,7 +261,7 @@
         } else {
           const { error } = await supabase
             .from("profesionales")
-            .insert([{ cedula, nombre, correo, profesion: profesion || null, especialidad: especialidad || null, activo }]);
+            .insert([{ cedula, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
 
           if (error) throw error;
           toast("✅ Profesional agregado");
@@ -785,6 +789,11 @@
             <input type="text" id="especialidad" placeholder="Ej: Ortodoncia" />
           </label>
 
+          <label>
+            Celular
+            <input type="text" id="celular" placeholder="Ej: Ortodoncia" />
+          </label>
+
           <label class="check">
             <input type="checkbox" id="activo" checked />
             Activo
@@ -825,6 +834,7 @@
               <th style="width:220px;">Correo</th>
               <th style="width:160px;">Profesión</th>
               <th style="width:160px;">Especialidad</th>
+              <th style="width:160px;">Celular</th>
               <th style="width:110px;">Estado</th>
               <th style="width:190px;">Acciones</th>
             </tr>
