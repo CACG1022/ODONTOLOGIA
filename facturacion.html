@@ -2578,7 +2578,7 @@ if (procDrop) procDrop.style.display = "none";
     state.items.push({
   id_local: crypto.randomUUID(),
   procedimiento_id: null, // 👈 no lo necesitamos aquí
-  codigo_cups: null,
+  codigo_cups: it.codigo_cups || "",
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
