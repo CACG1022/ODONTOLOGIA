@@ -607,6 +607,11 @@
       } else {
         actualizarPreviewTitulo();
       }
+
+      // 🔔 Notificar paciente (por defecto SI)
+$("notificar_paciente").checked =
+  payload?.notificar_paciente !== false;
+
     }
 
     function closeModal(){
@@ -916,6 +921,31 @@
         // ✅ Guardar en DB como hora local Colombia (timestamp sin tz)
         const inicioDB = toDbLocalTimestamp(inicioLocal);
         const finDB = toDbLocalTimestamp(finLocal);
+        const notificarPaciente = $("notificar_paciente").checked;
+
+        const row = {
+  usuario_id: currentSession.user.id,
+  profesional_id: profesionalId,
+
+  nombre_paciente: normalizeText($("nombre_paciente").value),
+  documento_paciente: normalizeText($("documento_paciente").value),
+  telefono_paciente: normalizeText($("telefono_paciente").value),
+  correo_paciente: normalizeText($("correo_paciente").value),
+
+  especialidad: normalizeText(especialidad),
+  titulo: tituloAuto,
+  estado: $("estado").value || "programada",
+  notas: normalizeText($("notas").value),
+
+  inicio: inicioDB,
+  fin: finDB,
+
+  nombre_profesional: getNombreProfesionalPorId(profesionalId),
+  usuario_email: currentSession.user.email,
+
+  // 🔔 NUEVO
+  notificar_paciente: notificarPaciente
+};
 
         const row = {
   usuario_id: currentSession.user.id,
@@ -951,6 +981,7 @@
         // 🔔 Enviar a n8n (crear o actualizar)
         enviarCitaAN8N({
           accion: id ? "actualizada" : "creada",
+          notificar_paciente: notificarPaciente,
           cita: citaResult,
           usuario: {
             id: currentSession.user.id,
@@ -1533,6 +1564,19 @@
               <option value="cancelada">Cancelada</option>
             </select>
           </div>
+
+          <div class="field" style="grid-column: 1 / -1;">
+  <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+    <input
+      type="checkbox"
+      id="notificar_paciente"
+      checked
+      style="width:16px; height:16px;"
+    />
+    Notificar al paciente
+  </label>
+</div>
+
 
           <div class="field">
             <label for="inicio">Inicio</label>
