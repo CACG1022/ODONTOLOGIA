@@ -1684,10 +1684,56 @@ function obtenerResumenParaFacturacion() {
 
   
 document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btn-facturacion");
-  if (!btn) return;
+  const btnFact = document.getElementById("btn-facturacion");
+  if (!btnFact) return;
 
-  btn.addEventListener("click", async () => {
+  btnFact.addEventListener("click", async () => {
+    try {
+      const cedula = document.getElementById("cedula")?.value?.trim();
+      if (!cedula) {
+        alert("Debe ingresar la cédula del paciente");
+        return;
+      }
+
+      const items = obtenerResumenParaFacturacion();
+      if (!items.length) {
+        alert("No hay procedimientos para facturar");
+        return;
+      }
+
+      // 1️⃣ Limpiar temporales
+      await window.supabase
+        .from("facturacion_temporal")
+        .delete()
+        .eq("cedula", cedula);
+
+      // 2️⃣ Insertar nuevos
+      const payload = items.map(it => ({
+        cedula,
+        procedimiento: it.procedimiento,
+        cantidad: it.cantidad,
+        valor_unitario: it.valor_unitario,
+        valor_total: it.valor_total
+      }));
+
+      const { error } = await window.supabase
+        .from("facturacion_temporal")
+        .insert(payload);
+
+      if (error) {
+        console.error(error);
+        alert("Error enviando a facturación");
+        return;
+      }
+
+      // 3️⃣ Redirigir
+      window.location.href =
+        `facturacion.html?paciente_cedula=${encodeURIComponent(cedula)}`;
+
+    } catch (e) {
+      console.error(e);
+      alert("Error inesperado en facturación");
+    }
   });
 });
 
@@ -1737,25 +1783,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   
 </script>
-
-
-<!-- BOTÓN ACTUALIZACIÓN DE PRECIOS (MODAL) -->
-<div style="position:fixed;bottom:20px;right:20px;z-index:9999;">
-  <button
-    onclick="abrirModalPrecios()"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#2563eb;
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-    ">
-    💲 Actualización de precios
-  </button>
-</div>
 
 
 <!-- ================= FIX DESFASE FIRMA CANVAS (NO MODIFICA LOGICA EXISTENTE) ================= -->
