@@ -1612,10 +1612,11 @@ setTimeout(() => {
 function obtenerResumenParaFacturacion() {
   const resumen = {};
 
+  // 🔥 AQUÍ usamos EXCLUSIVAMENTE selectedTeeth (odontograma)
   Object.values(selectedTeeth).forEach(arr => {
     arr.forEach(p => {
       const nombre = String(p.label).trim();
-      const valor = Number(p.price || 0);
+      const precioReal = Number(p.price || 0); // ✅ PRECIO EDITADO POR EL USUARIO
 
       if (!resumen[nombre]) {
         resumen[nombre] = {
@@ -1626,19 +1627,21 @@ function obtenerResumenParaFacturacion() {
       }
 
       resumen[nombre].cantidad += 1;
-      resumen[nombre].valor_total += valor;
+      resumen[nombre].valor_total += precioReal;
     });
   });
 
+  // 🔁 Convertir a formato para facturación
   return Object.values(resumen).map(r => ({
     procedimiento: r.procedimiento,
     cantidad: r.cantidad,
-    valor_unitario: r.cantidad
+    valor_unitario: r.cantidad > 0
       ? Math.round(r.valor_total / r.cantidad)
       : 0,
     valor_total: r.valor_total
   }));
 }
+
 
 
   
