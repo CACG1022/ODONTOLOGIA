@@ -1621,28 +1621,27 @@ function obtenerResumenParaFacturacion() {
         resumen[nombre] = {
           procedimiento: nombre,
           cantidad: 0,
-          if (!resumen[nombre]) {
-  resumen[nombre] = {
-    procedimiento: nombre,
-    cantidad: 0,
-    valor_total: 0
-  };
-}
-
-resumen[nombre].cantidad += 1;
-resumen[nombre].valor_total += valor;
-
+          valor_total: 0
         };
       }
 
       resumen[nombre].cantidad += 1;
+      resumen[nombre].valor_total += valor;
     });
+  });
 
   return Object.values(resumen).map(r => ({
-    ...r,
-    valor_total: r.cantidad * r.valor_unitario
+    procedimiento: r.procedimiento,
+    cantidad: r.cantidad,
+    valor_unitario: r.cantidad
+      ? Math.round(r.valor_total / r.cantidad)
+      : 0,
+    valor_total: r.valor_total
   }));
 }
+
+
+  
 document.getElementById("btn-facturacion").addEventListener("click", async () => {
   const cedula = document.getElementById("cedula")?.value?.trim();
   if (!cedula) {
