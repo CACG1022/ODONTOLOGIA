@@ -2336,7 +2336,31 @@ async function ejecutarFacturacion() {
   </button>
 </div>
 
+<!-- ================= BOTÓN FACTURACIÓN (FLOTANTE) ================= -->
+<div style="position:fixed;bottom:140px;right:20px;z-index:9999;">
+  <button
+    type="button"
+    onclick="ejecutarFacturacion()"
+    style="
+      padding:12px 16px;
+      border-radius:10px;
+      border:none;
+      background:#16a34a;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      gap:8px;
+      width:auto;
+    "
+  >
+    💳 Facturación
+  </button>
+</div>
 
+  
 <!-- =========================
      ✅ CAMPO FIJO NOMBRE DEL PROFESIONAL (FIX DEFINITIVO)
      - Se renderiza SIEMPRE debajo de la firma
@@ -2652,11 +2676,7 @@ window.enviarPDFaN8n = async function(){
      - Ubicado MÁS ARRIBA que Imprimir PDF
      - No reemplaza ni elimina el botón existente
      ========================= -->
-<button
-  type="button"
-  onclick="ejecutarFacturacion()"
->
-  💳 Facturación
-</button>
+
+
 </div>
 
