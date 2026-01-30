@@ -2575,25 +2575,16 @@ if (procDrop) procDrop.style.display = "none";
 
   // 3️⃣ Insertar en state.items
   data.forEach(it => {
-    const proc = state.procedimientos.find(p =>
-      p.procedimiento.trim().toLowerCase() ===
-      it.procedimiento.trim().toLowerCase()
-    );
-
-    if (!proc) {
-      console.warn("⚠️ No existe en catálogo:", it.procedimiento);
-      return;
-    }
-
     state.items.push({
-      id_local: crypto.randomUUID(),
-      procedimiento_id: proc.id,
-      codigo_cups: proc.codigo_cups || "",
-      descripcion: proc.procedimiento,
-      cantidad: Number(it.cantidad || 1),
-      valor_unitario: Number(proc.valor || 0),
-      valor_total: Number(proc.valor || 0) * Number(it.cantidad || 1)
-    });
+  id_local: crypto.randomUUID(),
+  procedimiento_id: null, // 👈 no lo necesitamos aquí
+  codigo_cups: null,
+  descripcion: it.procedimiento,
+  cantidad: Number(it.cantidad || 1),
+  valor_unitario: Number(it.valor_unitario || 0),
+  valor_total: Number(it.valor_total || 0)
+});
+
   });
 
   // 4️⃣ Renderizar
