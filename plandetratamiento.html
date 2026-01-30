@@ -1536,8 +1536,6 @@ setTimeout(() => {
 </div>
 
 
-
-
 <!-- ================= MODAL ACTUALIZACIÓN DE PRECIOS ================= -->
 <style>
   #modal-precios{
@@ -1636,9 +1634,7 @@ function obtenerResumenParaFacturacion() {
 }
 
 
-
-  
-document.getElementById("btn-facturacion").addEventListener("click", async () => {
+async function ejecutarFacturacion() {
   const cedula = document.getElementById("cedula")?.value?.trim();
   if (!cedula) {
     alert("Debe ingresar la cédula del paciente");
@@ -1651,13 +1647,11 @@ document.getElementById("btn-facturacion").addEventListener("click", async () =>
     return;
   }
 
-  // 1️⃣ Limpiar previos
   await window.supabase
     .from("facturacion_temporal")
     .delete()
     .eq("cedula", cedula);
 
-  // 2️⃣ Insertar nuevos
   const payload = items.map(it => ({
     cedula,
     procedimiento: it.procedimiento,
@@ -1676,10 +1670,10 @@ document.getElementById("btn-facturacion").addEventListener("click", async () =>
     return;
   }
 
-  // 3️⃣ Redirigir
   window.location.href =
     `facturacion.html?paciente_cedula=${encodeURIComponent(cedula)}`;
-});
+}
+
 
   
 </script>
@@ -2652,28 +2646,17 @@ window.enviarPDFaN8n = async function(){
 
 
 
+
 <!-- =========================
      ✅ BOTÓN FACTURACIÓN (FLOTANTE - AGREGADO SIN MODIFICAR LO EXISTENTE)
      - Ubicado MÁS ARRIBA que Imprimir PDF
      - No reemplaza ni elimina el botón existente
      ========================= -->
-<div style="position:fixed;bottom:140px;right:20px;z-index:10001;">
-  <button
-    type="button"
-    onclick="document.getElementById('btn-facturacion')?.click()"
-    style="
-      padding:12px 16px;
-      border-radius:10px;
-      border:none;
-      background:#16a34a;
-      color:#fff;
-      font-weight:700;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(0,0,0,.18);
-      display:flex;
-      align-items:center;
-      gap:8px;
-    ">
-    💳 Facturación
-  </button>
+<button
+  type="button"
+  onclick="ejecutarFacturacion()"
+>
+  💳 Facturación
+</button>
 </div>
+
