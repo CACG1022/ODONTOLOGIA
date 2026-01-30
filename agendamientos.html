@@ -734,6 +734,9 @@ $("notificar_paciente").checked =
               // ✅ timestamp sin tz -> input datetime-local directo
               inicio_local: dbTimestampToDatetimeLocal(row.inicio),
               fin_local: dbTimestampToDatetimeLocal(row.fin),
+
+              notificar_paciente: row.notificar_paciente,
+
             });
 
           } catch(e){
@@ -946,28 +949,6 @@ $("notificar_paciente").checked =
   // 🔔 NUEVO
   notificar_paciente: notificarPaciente
 };
-
-        const row = {
-  usuario_id: currentSession.user.id,
-  profesional_id: profesionalId,
-
-  nombre_paciente: normalizeText($("nombre_paciente").value),
-  documento_paciente: normalizeText($("documento_paciente").value),
-  telefono_paciente: normalizeText($("telefono_paciente").value),
-  correo_paciente: normalizeText($("correo_paciente").value),
-
-  especialidad: normalizeText(especialidad),
-  titulo: tituloAuto,
-  estado: $("estado").value || "programada",
-  notas: normalizeText($("notas").value),
-
-  inicio: inicioDB,
-  fin: finDB,
-
-  nombre_profesional: getNombreProfesionalPorId(profesionalId),
-  usuario_email: currentSession.user.email
-};
-
 
         let citaResult = null;
         if (id){
