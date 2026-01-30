@@ -1621,7 +1621,17 @@ function obtenerResumenParaFacturacion() {
         resumen[nombre] = {
           procedimiento: nombre,
           cantidad: 0,
-          valor_unitario: valor
+          if (!resumen[nombre]) {
+  resumen[nombre] = {
+    procedimiento: nombre,
+    cantidad: 0,
+    valor_total: 0
+  };
+}
+
+resumen[nombre].cantidad += 1;
+resumen[nombre].valor_total += valor;
+
         };
       }
 
