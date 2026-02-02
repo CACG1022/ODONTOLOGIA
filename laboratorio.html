@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Módulo Laboratorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --border:#d6e3f3;
+      --label:#475569;
+      --title:#1f4e72;
+      --btn:#009688;
+      --btn2:#64748b;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(16,24,40,.08);
+      --font: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    *{ box-sizing:border-box; }
+
+    body{
+      margin:0;
+      padding:24px;
+      font-family:var(--font);
+      background:var(--bg);
+      color:#0f172a;
+    }
+
+    h1{
+      margin:0 0 16px;
+      color:var(--title);
+      font-size:28px;
+      font-weight:900;
+      text-align:center;
+    }
+
+    .card{
+      max-width:900px;
+      margin:auto;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+    }
+
+    .grid{
+      display:grid;
+      gap:16px;
+    }
+
+    .g-2{ grid-template-columns:1fr 1fr; }
+    .g-3{ grid-template-columns:repeat(3,1fr); }
+
+    @media(max-width:800px){
+      .g-2,.g-3{ grid-template-columns:1fr; }
+    }
+
+    label{
+      font-size:13px;
+      font-weight:600;
+      color:var(--label);
+      display:block;
+      margin-bottom:6px;
+    }
+
+    input, select{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1.5px solid var(--border);
+      font-size:15px;
+      outline:none;
+    }
+
+    input:focus, select:focus{
+      border-color:#94a3b8;
+    }
+
+    canvas{
+      width:100%;
+      height:140px;
+      border:1.5px dashed var(--border);
+      border-radius:12px;
+      background:#fff;
+      cursor:crosshair;
+    }
+
+    .firma-box{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      background:#f8fafc;
+    }
+
+    .firma-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:8px;
+    }
+
+    button{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:var(--font);
+    }
+
+    .btn-main{ background:var(--btn); color:#fff; }
+    .btn-clear{ background:var(--btn2); color:#fff; }
+
+    .footer-actions{
+      display:flex;
+      gap:12px;
+      margin-top:20px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Laboratorio</h1>
+
+  <div class="card">
+    <form id="formLaboratorio">
+
+      <!-- FECHAS + ESTADO -->
+      <div class="grid g-3">
+        <div>
+          <label>Fecha de envío</label>
+          <input type="date" id="fecha_envio" required />
+        </div>
+
+        <div>
+          <label>Fecha de entrega</label>
+          <input type="date" id="fecha_entrega" />
+        </div>
+
+        <div>
+          <label>Estado</label>
+          <select id="estado" required>
+            <option value="Pendiente de enviar">Pendiente de enviar</option>
+            <option value="Enviado">Enviado</option>
+            <option value="En laboratorio">En laboratorio</option>
+            <option value="Entregado">Entregado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TRABAJO + PROVEEDOR -->
+      <div class="grid g-2">
+        <div>
+          <label>Nombre del trabajo</label>
+          <input type="text" id="nombre_trabajo" required />
+        </div>
+
+        <div>
+          <label>Proveedor (Laboratorio)</label>
+          <input type="text" id="proveedor" required />
+        </div>
+      </div>
+
+      <!-- PACIENTE -->
+      <div class="grid g-2">
+        <div>
+          <label>Nombre del paciente</label>
+          <input type="text" id="nombre_paciente" required />
+        </div>
+
+        <div>
+          <label>Cédula del paciente</label>
+          <input type="text" id="cedula_paciente" required />
+        </div>
+      </div>
+
+      <!-- COSTO -->
+      <div class="grid g-2">
+        <div>
+          <label>Costo</label>
+          <input
+            type="number"
+            id="costo"
+            min="0"
+            step="1"
+            placeholder="Ej: 120000"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- FIRMA ENVÍO -->
+      <div class="firma-box">
+        <label>Firma de quien envía</label>
+        <canvas id="firmaEnvio"></canvas>
+        <div class="firma-actions">
+          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEnvio')">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- FIRMA RECEPCIÓN -->
+      <div class="firma-box">
+        <label>Firma de quien recibe la entrega</label>
+        <canvas id="firmaRecepcion"></canvas>
+        <div class="firma-actions">
+          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecepcion')">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button type="submit" class="btn-main">
+          Guardar registro
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+<script>
+  // Fecha actual por defecto
+  document.getElementById("fecha_envio").value =
+    new Date().toISOString().split("T")[0];
+
+  // ===============================
+  // FIRMA CANVAS
+  // ===============================
+  function initFirma(canvas){
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
+
+    function getPos(e){
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
+        y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+      };
+    }
+
+    function start(e){
+      drawing = true;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      e.preventDefault();
+    }
+
+    function move(e){
+      if(!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function end(){
+      drawing = false;
+    }
+
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    canvas.addEventListener("mouseup", end);
+    canvas.addEventListener("mouseleave", end);
+
+    canvas.addEventListener("touchstart", start);
+    canvas.addEventListener("touchmove", move);
+    canvas.addEventListener("touchend", end);
+  }
+
+  function limpiarFirma(id){
+    const c = document.getElementById(id);
+    c.getContext("2d").clearRect(0,0,c.width,c.height);
+  }
+
+  function firmaToBase64(id){
+    return document.getElementById(id).toDataURL("image/png");
+  }
+
+  initFirma(document.getElementById("firmaEnvio"));
+  initFirma(document.getElementById("firmaRecepcion"));
+
+  // ===============================
+  // SUBMIT (LISTO PARA SUPABASE)
+  // ===============================
+  document.getElementById("formLaboratorio").addEventListener("submit", e=>{
+    e.preventDefault();
+
+    const payload = {
+      fecha_envio: fecha_envio.value,
+      fecha_entrega: fecha_entrega.value || null,
+      estado: estado.value,
+      nombre_trabajo: nombre_trabajo.value,
+      proveedor: proveedor.value,
+      nombre_paciente: nombre_paciente.value,
+      cedula_paciente: cedula_paciente.value,
+      costo: Number(costo.value),
+      firma_envio: firmaToBase64("firmaEnvio"),
+      firma_recepcion: firmaToBase64("firmaRecepcion")
+    };
+
+    console.log("LISTO PARA SUPABASE:", payload);
+    alert("Formulario correcto. Revisa consola.");
+  });
+</script>
+
+</body>
+</html>
