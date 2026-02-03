@@ -1,369 +1,320 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Laboratorio</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <title>Módulo Laboratorio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <style>
+    :root{
+      --bg:#f4f7fb;
+      --card:#ffffff;
+      --border:#d6e3f3;
+      --label:#475569;
+      --title:#1f4e72;
+      --btn:#009688;
+      --btn2:#64748b;
+      --radius:14px;
+      --shadow:0 10px 30px rgba(16,24,40,.08);
+      --font: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
 
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
+    *{ box-sizing:border-box; }
+ 
+    body{
+      margin:0;
+      padding:24px;
+      font-family:var(--font);
+      background:var(--bg);
+      color:#0f172a;
+    }
 
-const $ = id => document.getElementById(id);
+    h1{
+      margin:0 0 16px;
+      color:var(--title);
+      font-size:28px;
+      font-weight:900;
+      text-align:center;
+    }
 
-document.addEventListener("DOMContentLoaded", async () => {
-  $("fecha_envio").value = new Date().toISOString().split("T")[0];
-  initFirma($("firmaRecoge"));
-  initFirma($("firmaEntrega"));
-  await cargarProveedores();
-  await cargarRegistros();
-});
+    .card{
+      max-width:900px;
+      margin:auto;
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:22px;
+    }
 
-/* ========== FIRMAS ========== */
-function initFirma(canvas){
-  const ctx = canvas.getContext("2d");
-  let draw = false;
-  const pos = e => {
-    const r = canvas.getBoundingClientRect();
-    return {
-      x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
-      y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
-    };
-  };
-  canvas.onmousedown=e=>{draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};
-  canvas.onmousemove=e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};
-  canvas.onmouseup=()=>draw=false;
-  canvas.ontouchstart=e=>canvas.onmousedown(e);
-  canvas.ontouchmove=e=>canvas.onmousemove(e);
-  canvas.ontouchend=()=>draw=false;
-}
+    .grid{
+      display:grid;
+      gap:16px;
+    }
 
-window.limpiarFirma = id => {
-  const c=$(id);
-  c.getContext("2d").clearRect(0,0,c.width,c.height);
-};
+    .g-2{ grid-template-columns:1fr 1fr; }
+    .g-3{ grid-template-columns:repeat(3,1fr); }
 
-/* ========== PROVEEDORES ========== */
-async function cargarProveedores(){
-  const { data } = await supabase
-    .from("proveedores")
-    .select("id,nombre,telefono")
-    .eq("activo",true)
-    .order("nombre");
+    @media(max-width:800px){
+      .g-2,.g-3{ grid-template-columns:1fr; }
+    }
 
-  $("proveedor").innerHTML = "<option value=''>Seleccione proveedor</option>";
-  $("filtroProveedor").innerHTML = "<option value=''>Todos los proveedores</option>";
+    label{
+      font-size:13px;
+      font-weight:600;
+      color:var(--label);
+      display:block;
+      margin-bottom:6px;
+    }
 
-  data.forEach(p=>{
-    const o=document.createElement("option");
-    o.value=p.id;
-    o.textContent=p.nombre;
-    o.dataset.tel=p.telefono||"";
-    $("proveedor").appendChild(o);
-    $("filtroProveedor").appendChild(o.cloneNode(true));
-  });
+    input, select{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1.5px solid var(--border);
+      font-size:15px;
+      outline:none;
+    }
 
-  $("proveedor").onchange=()=>{
-    const o=$("proveedor").selectedOptions[0];
-    $("telefono_proveedor").value=o?.dataset.tel||"";
-  };
-}
+    input:focus, select:focus{
+      border-color:#94a3b8;
+    }
 
-/* ========== GUARDAR ========== */
-$("formLaboratorio").addEventListener("submit", async e=>{
-  e.preventDefault();
+    canvas{
+      width:100%;
+      height:140px;
+      border:1.5px dashed var(--border);
+      border-radius:12px;
+      background:#fff;
+      cursor:crosshair;
+    }
 
-  await supabase.from("laboratorios").insert([{
-    fecha_envio: $("fecha_envio").value,
-    fecha_entrega: $("fecha_entrega").value||null,
-    estado: $("estado").value,
-    nombre_trabajo: $("nombre_trabajo").value,
-    proveedor_id: $("proveedor").value,
-    nombre_paciente: $("nombre_paciente").value,
-    cedula_paciente: $("cedula_paciente").value,
-    costo: Number($("costo").value),
-    firma_recoge: $("firmaRecoge").toDataURL(),
-    nombre_recoge: $("nombre_recoge").value,
-    firma_entrega: $("firmaEntrega").toDataURL(),
-    nombre_entrega: $("nombre_entrega").value
-  }]);
+    .firma-box{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:12px;
+      background:#f8fafc;
+    }
 
-  e.target.reset();
-  $("fecha_envio").value = new Date().toISOString().split("T")[0];
-  await cargarRegistros();
-});
+    .firma-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      margin-top:8px;
+    }
 
-/* ========== LISTADO ========== */
-async function cargarRegistros(){
-  let q = supabase
-    .from("laboratorios")
-    .select(`
-      fecha_envio,
-      nombre_paciente,
-      cedula_paciente,
-      estado,
-      costo,
-      proveedores ( nombre )
-    `)
-    .order("created_at",{ascending:false});
+    button{
+      border:none;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:var(--font);
+    }
 
-  if($("fEstado").value) q=q.eq("estado",$("fEstado").value);
-  if($("fPaciente").value) q=q.ilike("nombre_paciente","%"+$("fPaciente").value+"%");
-  if($("fCedula").value) q=q.ilike("cedula_paciente","%"+$("fCedula").value+"%");
-  if($("filtroProveedor").value) q=q.eq("proveedor_id",$("filtroProveedor").value);
+    .btn-main{ background:var(--btn); color:#fff; }
+    .btn-clear{ background:var(--btn2); color:#fff; }
 
-  const { data } = await q;
-  const tb=$("tbody");
-  tb.innerHTML="";
-
-  data.forEach(r=>{
-    tb.innerHTML+=`
-      <tr>
-        <td>${r.fecha_envio||""}</td>
-        <td>${r.nombre_paciente}</td>
-        <td>${r.cedula_paciente}</td>
-        <td>${r.proveedores?.nombre||""}</td>
-        <td>${r.estado}</td>
-        <td>$ ${Number(r.costo||0).toLocaleString("es-CO")}</td>
-      </tr>`;
-  });
-}
-
-["fEstado","fPaciente","fCedula","filtroProveedor"]
-.forEach(id=>$(id).oninput=cargarRegistros);
-</script>
-
-<style>
-body{
-  background:#f3f6fb;
-  font-family:system-ui,Segoe UI,Arial;
-  padding:24px;
-}
-
-h1{
-  text-align:center;
-  color:#1f4e72;
-  margin-bottom:18px;
-}
-
-.card{
-  max-width:980px;
-  margin:auto;
-  background:#fff;
-  border-radius:16px;
-  border:1px solid #dbe7f5;
-  padding:24px;
-  margin-bottom:24px;
-}
-
-.form-grid{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px 20px;
-}
-
-.form-grid.full{
-  grid-template-columns:1fr;
-}
-
-label{
-  font-size:12px;
-  font-weight:600;
-  color:#475569;
-  margin-bottom:4px;
-  display:block;
-}
-
-input,select{
-  width:100%;
-  padding:10px 12px;
-  border-radius:10px;
-  border:1.5px solid #cfe0ff;
-  font-size:14px;
-}
-
-input:focus,select:focus{
-  outline:none;
-  border-color:#5aa9ff;
-}
-
-canvas{
-  width:100%;
-  height:120px;
-  border:1.5px dashed #cfe0ff;
-  border-radius:12px;
-}
-
-.btn-row{
-  display:flex;
-  justify-content:flex-end;
-  margin-top:16px;
-}
-
-.btn-save{
-  background:#009688;
-  color:#fff;
-  padding:10px 22px;
-  border:none;
-  border-radius:12px;
-  font-weight:700;
-  cursor:pointer;
-}
-
-.btn-clear{
-  margin-top:6px;
-  background:#64748b;
-  color:#fff;
-  padding:6px 14px;
-  border:none;
-  border-radius:10px;
-  font-size:12px;
-  cursor:pointer;
-}
-
-table{
-  width:100%;
-  border-collapse:collapse;
-  margin-top:12px;
-}
-
-th,td{
-  padding:10px;
-  font-size:13px;
-  border-bottom:1px solid #e5eefb;
-}
-
-th{
-  background:#f4f8ff;
-  text-align:left;
-}
-</style>
+    .footer-actions{
+      display:flex;
+      gap:12px;
+      margin-top:20px;
+    }
+  </style>
 </head>
 
 <body>
 
-<h1>Laboratorio</h1>
+  <h1>Laboratorio</h1>
 
-<div class="card">
-<form id="formLaboratorio">
+  <div class="card">
+    <form id="formLaboratorio">
 
-<div class="form-grid">
-  <div>
-    <label>Fecha de envío</label>
-    <input type="date" id="fecha_envio">
+      <!-- FECHAS + ESTADO -->
+      <div class="grid g-3">
+        <div>
+          <label>Fecha de envío</label>
+          <input type="date" id="fecha_envio" required />
+        </div>
+
+        <div>
+          <label>Fecha de entrega</label>
+          <input type="date" id="fecha_entrega" />
+        </div>
+
+        <div>
+          <label>Estado</label>
+          <select id="estado" required>
+            <option value="Pendiente de enviar">Pendiente de enviar</option>
+            <option value="Enviado">Enviado</option>
+            <option value="En laboratorio">En laboratorio</option>
+            <option value="Entregado">Entregado</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TRABAJO + PROVEEDOR -->
+      <div class="grid g-2">
+        <div>
+          <label>Nombre del trabajo</label>
+          <input type="text" id="nombre_trabajo" required />
+        </div>
+
+        <div>
+          <label>Proveedor (Laboratorio)</label>
+          <input type="text" id="proveedor" required />
+        </div>
+      </div>
+
+      <!-- PACIENTE -->
+      <div class="grid g-2">
+        <div>
+          <label>Nombre del paciente</label>
+          <input type="text" id="nombre_paciente" required />
+        </div>
+
+        <div>
+          <label>Cédula del paciente</label>
+          <input type="text" id="cedula_paciente" required />
+        </div>
+      </div>
+
+      <!-- COSTO -->
+      <div class="grid g-2">
+        <div>
+          <label>Costo</label>
+          <input
+            type="number"
+            id="costo"
+            min="0"
+            step="1"
+            placeholder="Ej: 120000"
+            required
+          />
+        </div>
+      </div>
+
+      <!-- FIRMA ENVÍO -->
+      <div class="firma-box">
+        <label>Firma de quien envía</label>
+        <canvas id="firmaEnvio"></canvas>
+        <div class="firma-actions">
+          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEnvio')">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <!-- FIRMA RECEPCIÓN -->
+      <div class="firma-box">
+        <label>Firma de quien recibe la entrega</label>
+        <canvas id="firmaRecepcion"></canvas>
+        <div class="firma-actions">
+          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecepcion')">
+            Limpiar
+          </button>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button type="submit" class="btn-main">
+          Guardar registro
+        </button>
+      </div>
+
+    </form>
   </div>
-  <div>
-    <label>Fecha de entrega</label>
-    <input type="date" id="fecha_entrega">
-  </div>
 
-  <div>
-    <label>Estado</label>
-    <select id="estado">
-      <option>Pendiente de enviar</option>
-      <option>Enviado</option>
-      <option>En laboratorio</option>
-      <option>Entregado</option>
-    </select>
-  </div>
+<script>
+  // Fecha actual por defecto
+  document.getElementById("fecha_envio").value =
+    new Date().toISOString().split("T")[0];
 
-  <div>
-    <label>Costo (COP)</label>
-    <input id="costo" type="number">
-  </div>
+  // ===============================
+  // FIRMA CANVAS
+  // ===============================
+  function initFirma(canvas){
+    const ctx = canvas.getContext("2d");
+    let drawing = false;
 
-  <div>
-    <label>Nombre del trabajo</label>
-    <input id="nombre_trabajo">
-  </div>
+    function getPos(e){
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
+        y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
+      };
+    }
 
-  <div>
-    <label>Proveedor</label>
-    <select id="proveedor"></select>
-  </div>
+    function start(e){
+      drawing = true;
+      const p = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(p.x, p.y);
+      e.preventDefault();
+    }
 
-  <div>
-    <label>Teléfono proveedor</label>
-    <input id="telefono_proveedor" readonly>
-  </div>
+    function move(e){
+      if(!drawing) return;
+      const p = getPos(e);
+      ctx.lineTo(p.x, p.y);
+      ctx.strokeStyle = "#0f172a";
+      ctx.lineWidth = 2;
+      ctx.lineCap = "round";
+      ctx.stroke();
+      e.preventDefault();
+    }
 
-  <div>
-    <label>Nombre del paciente</label>
-    <input id="nombre_paciente">
-  </div>
+    function end(){
+      drawing = false;
+    }
 
-  <div>
-    <label>Cédula del paciente</label>
-    <input id="cedula_paciente">
-  </div>
-</div>
+    canvas.addEventListener("mousedown", start);
+    canvas.addEventListener("mousemove", move);
+    canvas.addEventListener("mouseup", end);
+    canvas.addEventListener("mouseleave", end);
 
-<div class="form-grid full" style="margin-top:18px">
-  <label>Firma de quien recoge</label>
-  <canvas id="firmaRecoge"></canvas>
-  <input id="nombre_recoge" placeholder="Nombre de quien recoge">
-  <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecoge')">Limpiar</button>
+    canvas.addEventListener("touchstart", start);
+    canvas.addEventListener("touchmove", move);
+    canvas.addEventListener("touchend", end);
+  }
 
-  <label style="margin-top:14px">Firma de quien recibe la entrega</label>
-  <canvas id="firmaEntrega"></canvas>
-  <input id="nombre_entrega" placeholder="Nombre de quien recibe la entrega">
-  <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEntrega')">Limpiar</button>
-</div>
+  function limpiarFirma(id){
+    const c = document.getElementById(id);
+    c.getContext("2d").clearRect(0,0,c.width,c.height);
+  }
 
-<div class="btn-row">
-  <button class="btn-save" type="submit">Guardar</button>
-</div>
+  function firmaToBase64(id){
+    return document.getElementById(id).toDataURL("image/png");
+  }
 
-</form>
-</div>
+  initFirma(document.getElementById("firmaEnvio"));
+  initFirma(document.getElementById("firmaRecepcion"));
 
-<div class="card">
-<h2>Registros</h2>
+  // ===============================
+  // SUBMIT (LISTO PARA SUPABASE)
+  // ===============================
+  document.getElementById("formLaboratorio").addEventListener("submit", e=>{
+    e.preventDefault();
 
-<div class="form-grid" style="margin-bottom:12px">
-  <div>
-    <label>Estado</label>
-    <select id="fEstado">
-      <option value="">Todos</option>
-      <option>Pendiente de enviar</option>
-      <option>Enviado</option>
-      <option>En laboratorio</option>
-      <option>Entregado</option>
-    </select>
-  </div>
-  <div>
-    <label>Paciente</label>
-    <input id="fPaciente">
-  </div>
-  <div>
-    <label>Cédula</label>
-    <input id="fCedula">
-  </div>
-  <div>
-    <label>Proveedor</label>
-    <select id="filtroProveedor"></select>
-  </div>
-</div>
+    const payload = {
+      fecha_envio: fecha_envio.value,
+      fecha_entrega: fecha_entrega.value || null,
+      estado: estado.value,
+      nombre_trabajo: nombre_trabajo.value,
+      proveedor: proveedor.value,
+      nombre_paciente: nombre_paciente.value,
+      cedula_paciente: cedula_paciente.value,
+      costo: Number(costo.value),
+      firma_envio: firmaToBase64("firmaEnvio"),
+      firma_recepcion: firmaToBase64("firmaRecepcion")
+    };
 
-<table>
-<thead>
-<tr>
-  <th>Fecha</th>
-  <th>Paciente</th>
-  <th>Cédula</th>
-  <th>Proveedor</th>
-  <th>Estado</th>
-  <th>Costo</th>
-</tr>
-</thead>
-<tbody id="tbody"></tbody>
-</table>
-</div>
+    console.log("LISTO PARA SUPABASE:", payload);
+    alert("Formulario correcto. Revisa consola.");
+  });
+</script>
 
 </body>
 </html>
+
 
