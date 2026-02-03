@@ -322,6 +322,46 @@
   // ============== UTIL ==============
   const $ = (id) => document.getElementById(id);
 
+// =========================================
+// AUTOCOMPLETAR PACIENTE POR CÉDULA
+// =========================================
+let cedulaTimeout = null;
+
+$("cedula_paciente").addEventListener("input", () => {
+  clearTimeout(cedulaTimeout);
+
+  const cedula = $("cedula_paciente").value.trim();
+
+  // limpiar nombre si está escribiendo
+  $("nombre_paciente").value = "";
+
+  if (cedula.length < 5) return;
+
+  // pequeño debounce para no consultar en cada tecla
+  cedulaTimeout = setTimeout(() => {
+    buscarPacientePorCedula(cedula);
+  }, 400);
+});
+
+async function buscarPacientePorCedula(cedula){
+  const { data, error } = await supabase
+    .from("HISTORIAS CLINICAS")        // 🔴 CAMBIA AQUÍ si tu tabla se llama diferente
+    .select("Nombre y apellido")
+    .eq("cedula", cedula)
+    .single();
+
+  if (error || !data) {
+    // no existe paciente → dejar vacío
+    return;
+  }
+
+  // ✅ Autocompletar nombre
+  ("nombre_paciente").value = data["Nombre y apellido"];
+}
+
+
+  
+
   // Estado de edición
   let editId = null;
   let editRowSnapshot = null; // guardamos el registro original para no sobreescribir firmas
