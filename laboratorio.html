@@ -376,19 +376,20 @@ window.editar = async id=>{
   $("nombre_recoge").value = data.nombre_recoge || "";
   $("nombre_entrega").value = data.nombre_entrega || "";
 
-  // 🔥 CARGAR FIRMAS EN CANVAS
+  // Cargar firmas existentes
   cargarFirmaEnCanvas($("firmaRecoge"), data.firma_recoge);
   cargarFirmaEnCanvas($("firmaEntrega"), data.firma_entrega);
 
-  alert("Registro cargado para edición");
-};
-
-  // 🔒 Bloquear firma de entrega si ya está entregado
+  // 🔒 Bloquear firma de entrega si ya fue entregado
   if (data.estado === "Entregado") {
     $("firmaEntrega").style.pointerEvents = "none";
   } else {
     $("firmaEntrega").style.pointerEvents = "auto";
   }
+
+  alert("Registro cargado para edición");
+};
+
 
 
 // ================== ELIMINAR ==================
