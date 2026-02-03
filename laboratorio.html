@@ -345,6 +345,13 @@ if (cedulaFromUrl) {
   }, 300);
 }
 
+// aplicar filtro automático en registros
+$("fCedula").value = cedulaFromUrl;
+
+// esperar a que carguen los registros y filtrar
+setTimeout(() => {
+  cargarRegistros();
+}, 500);
 
   
 // =========================================
