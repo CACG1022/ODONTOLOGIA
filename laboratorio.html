@@ -10,7 +10,7 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "TU_PUBLIC_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
 const $ = id => document.getElementById(id);
@@ -23,13 +23,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   await cargarRegistros();
 });
 
-/* =========================
-   FIRMAS
-========================= */
+/* ========== FIRMAS ========== */
 function initFirma(canvas){
   const ctx = canvas.getContext("2d");
   let draw = false;
-
   const pos = e => {
     const r = canvas.getBoundingClientRect();
     return {
@@ -37,11 +34,9 @@ function initFirma(canvas){
       y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
     };
   };
-
   canvas.onmousedown=e=>{draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};
   canvas.onmousemove=e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};
   canvas.onmouseup=()=>draw=false;
-
   canvas.ontouchstart=e=>canvas.onmousedown(e);
   canvas.ontouchmove=e=>canvas.onmousemove(e);
   canvas.ontouchend=()=>draw=false;
@@ -52,9 +47,7 @@ window.limpiarFirma = id => {
   c.getContext("2d").clearRect(0,0,c.width,c.height);
 };
 
-/* =========================
-   PROVEEDORES
-========================= */
+/* ========== PROVEEDORES ========== */
 async function cargarProveedores(){
   const { data } = await supabase
     .from("proveedores")
@@ -62,8 +55,8 @@ async function cargarProveedores(){
     .eq("activo",true)
     .order("nombre");
 
-  $("proveedor").innerHTML = "<option value=''>Seleccione...</option>";
-  $("filtroProveedor").innerHTML = "<option value=''>Todos</option>";
+  $("proveedor").innerHTML = "<option value=''>Seleccione proveedor</option>";
+  $("filtroProveedor").innerHTML = "<option value=''>Todos los proveedores</option>";
 
   data.forEach(p=>{
     const o=document.createElement("option");
@@ -71,7 +64,6 @@ async function cargarProveedores(){
     o.textContent=p.nombre;
     o.dataset.tel=p.telefono||"";
     $("proveedor").appendChild(o);
-
     $("filtroProveedor").appendChild(o.cloneNode(true));
   });
 
@@ -81,9 +73,7 @@ async function cargarProveedores(){
   };
 }
 
-/* =========================
-   GUARDAR
-========================= */
+/* ========== GUARDAR ========== */
 $("formLaboratorio").addEventListener("submit", async e=>{
   e.preventDefault();
 
@@ -107,9 +97,7 @@ $("formLaboratorio").addEventListener("submit", async e=>{
   await cargarRegistros();
 });
 
-/* =========================
-   LISTADO + FILTROS
-========================= */
+/* ========== LISTADO ========== */
 async function cargarRegistros(){
   let q = supabase
     .from("laboratorios")
@@ -152,34 +140,42 @@ async function cargarRegistros(){
 <style>
 body{
   background:#f3f6fb;
-  font-family:system-ui;
+  font-family:system-ui,Segoe UI,Arial;
   padding:24px;
 }
 
 h1{
   text-align:center;
   color:#1f4e72;
-  margin-bottom:16px;
+  margin-bottom:18px;
 }
 
 .card{
-  max-width:1000px;
+  max-width:980px;
   margin:auto;
   background:#fff;
-  border-radius:14px;
+  border-radius:16px;
   border:1px solid #dbe7f5;
   padding:24px;
   margin-bottom:24px;
 }
 
-.grid{display:grid;gap:16px}
-.g2{grid-template-columns:1fr 1fr}
-.g3{grid-template-columns:repeat(3,1fr)}
+.form-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:16px 20px;
+}
+
+.form-grid.full{
+  grid-template-columns:1fr;
+}
 
 label{
   font-size:12px;
-  color:#475569;
   font-weight:600;
+  color:#475569;
+  margin-bottom:4px;
+  display:block;
 }
 
 input,select{
@@ -187,6 +183,12 @@ input,select{
   padding:10px 12px;
   border-radius:10px;
   border:1.5px solid #cfe0ff;
+  font-size:14px;
+}
+
+input:focus,select:focus{
+  outline:none;
+  border-color:#5aa9ff;
 }
 
 canvas{
@@ -196,16 +198,32 @@ canvas{
   border-radius:12px;
 }
 
-button{
-  padding:10px 18px;
-  border-radius:12px;
+.btn-row{
+  display:flex;
+  justify-content:flex-end;
+  margin-top:16px;
+}
+
+.btn-save{
+  background:#009688;
+  color:#fff;
+  padding:10px 22px;
   border:none;
+  border-radius:12px;
   font-weight:700;
   cursor:pointer;
 }
 
-.btn-save{background:#009688;color:#fff}
-.btn-clear{background:#64748b;color:#fff}
+.btn-clear{
+  margin-top:6px;
+  background:#64748b;
+  color:#fff;
+  padding:6px 14px;
+  border:none;
+  border-radius:10px;
+  font-size:12px;
+  cursor:pointer;
+}
 
 table{
   width:100%;
@@ -215,11 +233,14 @@ table{
 
 th,td{
   padding:10px;
-  border-bottom:1px solid #e5eefb;
   font-size:13px;
+  border-bottom:1px solid #e5eefb;
 }
 
-th{background:#f4f8ff}
+th{
+  background:#f4f8ff;
+  text-align:left;
+}
 </style>
 </head>
 
@@ -230,44 +251,72 @@ th{background:#f4f8ff}
 <div class="card">
 <form id="formLaboratorio">
 
-<div class="grid g3">
-<input type="date" id="fecha_envio">
-<input type="date" id="fecha_entrega">
-<select id="estado">
-<option>Pendiente de enviar</option>
-<option>Enviado</option>
-<option>En laboratorio</option>
-<option>Entregado</option>
-</select>
+<div class="form-grid">
+  <div>
+    <label>Fecha de envío</label>
+    <input type="date" id="fecha_envio">
+  </div>
+  <div>
+    <label>Fecha de entrega</label>
+    <input type="date" id="fecha_entrega">
+  </div>
+
+  <div>
+    <label>Estado</label>
+    <select id="estado">
+      <option>Pendiente de enviar</option>
+      <option>Enviado</option>
+      <option>En laboratorio</option>
+      <option>Entregado</option>
+    </select>
+  </div>
+
+  <div>
+    <label>Costo (COP)</label>
+    <input id="costo" type="number">
+  </div>
+
+  <div>
+    <label>Nombre del trabajo</label>
+    <input id="nombre_trabajo">
+  </div>
+
+  <div>
+    <label>Proveedor</label>
+    <select id="proveedor"></select>
+  </div>
+
+  <div>
+    <label>Teléfono proveedor</label>
+    <input id="telefono_proveedor" readonly>
+  </div>
+
+  <div>
+    <label>Nombre del paciente</label>
+    <input id="nombre_paciente">
+  </div>
+
+  <div>
+    <label>Cédula del paciente</label>
+    <input id="cedula_paciente">
+  </div>
 </div>
 
-<div class="grid g2">
-<input id="nombre_trabajo" placeholder="Nombre del trabajo">
-<input id="costo" type="number" placeholder="Costo (COP)">
+<div class="form-grid full" style="margin-top:18px">
+  <label>Firma de quien recoge</label>
+  <canvas id="firmaRecoge"></canvas>
+  <input id="nombre_recoge" placeholder="Nombre de quien recoge">
+  <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecoge')">Limpiar</button>
+
+  <label style="margin-top:14px">Firma de quien recibe la entrega</label>
+  <canvas id="firmaEntrega"></canvas>
+  <input id="nombre_entrega" placeholder="Nombre de quien recibe la entrega">
+  <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEntrega')">Limpiar</button>
 </div>
 
-<div class="grid g2">
-<select id="proveedor"></select>
-<input id="telefono_proveedor" readonly placeholder="Teléfono proveedor">
+<div class="btn-row">
+  <button class="btn-save" type="submit">Guardar</button>
 </div>
-
-<div class="grid g2">
-<input id="nombre_paciente" placeholder="Nombre del paciente">
-<input id="cedula_paciente" placeholder="Cédula del paciente">
-</div>
-
-<label>Firma de quien recoge</label>
-<canvas id="firmaRecoge"></canvas>
-<input id="nombre_recoge" placeholder="Nombre de quien recoge">
-<button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecoge')">Limpiar</button>
-
-<label>Firma de quien recibe la entrega</label>
-<canvas id="firmaEntrega"></canvas>
-<input id="nombre_entrega" placeholder="Nombre de quien recibe la entrega">
-<button type="button" class="btn-clear" onclick="limpiarFirma('firmaEntrega')">Limpiar</button>
-
-<br><br>
-<button class="btn-save" type="submit">Guardar</button>
 
 </form>
 </div>
@@ -275,28 +324,40 @@ th{background:#f4f8ff}
 <div class="card">
 <h2>Registros</h2>
 
-<div class="grid g3">
-<select id="fEstado">
-<option value="">Todos los estados</option>
-<option>Pendiente de enviar</option>
-<option>Enviado</option>
-<option>En laboratorio</option>
-<option>Entregado</option>
-</select>
-<input id="fPaciente" placeholder="Paciente">
-<input id="fCedula" placeholder="Cédula">
-<select id="filtroProveedor"></select>
+<div class="form-grid" style="margin-bottom:12px">
+  <div>
+    <label>Estado</label>
+    <select id="fEstado">
+      <option value="">Todos</option>
+      <option>Pendiente de enviar</option>
+      <option>Enviado</option>
+      <option>En laboratorio</option>
+      <option>Entregado</option>
+    </select>
+  </div>
+  <div>
+    <label>Paciente</label>
+    <input id="fPaciente">
+  </div>
+  <div>
+    <label>Cédula</label>
+    <input id="fCedula">
+  </div>
+  <div>
+    <label>Proveedor</label>
+    <select id="filtroProveedor"></select>
+  </div>
 </div>
 
 <table>
 <thead>
 <tr>
-<th>Fecha</th>
-<th>Paciente</th>
-<th>Cédula</th>
-<th>Proveedor</th>
-<th>Estado</th>
-<th>Costo</th>
+  <th>Fecha</th>
+  <th>Paciente</th>
+  <th>Cédula</th>
+  <th>Proveedor</th>
+  <th>Estado</th>
+  <th>Costo</th>
 </tr>
 </thead>
 <tbody id="tbody"></tbody>
@@ -305,5 +366,4 @@ th{background:#f4f8ff}
 
 </body>
 </html>
-
 
