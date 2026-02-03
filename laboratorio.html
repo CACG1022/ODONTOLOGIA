@@ -245,16 +245,18 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  "TU_ANON_KEY"
 );
 
-// ---------- UTIL ----------
 const $ = id => document.getElementById(id);
 
-// ---------- FECHA ----------
+// ================== ESTADO EDICIÓN ==================
+let editId = null;
+
+// ================== FECHA ==================
 $("fecha_envio").value = new Date().toISOString().split("T")[0];
 
-// ---------- CANVAS ----------
+// ================== CANVAS ==================
 function initFirma(canvas){
   const ctx = canvas.getContext("2d");
 
@@ -296,7 +298,7 @@ const clearEntrega = initFirma($("firmaEntrega"));
 $("clearRecoge").onclick = clearRecoge;
 $("clearEntrega").onclick = clearEntrega;
 
-// ---------- PROVEEDORES ----------
+// ================== PROVEEDORES ==================
 async function cargarProveedores(){
   const { data } = await supabase
     .from("proveedores")
@@ -322,11 +324,11 @@ async function cargarProveedores(){
   };
 }
 
-// ---------- REGISTROS ----------
+// ================== REGISTROS ==================
 async function cargarRegistros(){
   let q = supabase
     .from("laboratorios")
-    .select(`fecha_envio,nombre_paciente,cedula_paciente,estado,costo,proveedores(nombre)`)
+    .select(`id,fecha_envio,nombre_paciente,cedula_paciente,estado,costo,proveedor`)
     .order("created_at",{ascending:false});
 
   if($("fEstado").value) q=q.eq("estado",$("fEstado").value);
@@ -343,65 +345,94 @@ async function cargarRegistros(){
         <td>${r.fecha_envio||""}</td>
         <td>${r.nombre_paciente}</td>
         <td>${r.cedula_paciente}</td>
-        <td>${r.proveedores?.nombre||""}</td>
+        <td>${r.proveedor||""}</td>
         <td>${r.estado}</td>
         <td>$ ${Number(r.costo||0).toLocaleString("es-CO")}</td>
+        <td>
+          <button onclick="editar('${r.id}')">✏️</button>
+          <button onclick="eliminar('${r.id}')">🗑️</button>
+        </td>
       </tr>`;
   });
 }
 
-// ---------- SUBMIT ----------
+// ================== EDITAR ==================
+window.editar = async id=>{
+  const { data } = await supabase
+    .from("laboratorios")
+    .select("*")
+    .eq("id",id)
+    .single();
+
+  editId = id;
+
+  $("fecha_envio").value = data.fecha_envio;
+  $("fecha_entrega").value = data.fecha_entrega || "";
+  $("estado").value = data.estado;
+  $("nombre_trabajo").value = data.nombre_trabajo;
+  $("nombre_paciente").value = data.nombre_paciente;
+  $("cedula_paciente").value = data.cedula_paciente;
+  $("costo").value = data.costo;
+  $("nombre_recoge").value = data.nombre_recoge || "";
+  $("nombre_entrega").value = data.nombre_entrega || "";
+
+  alert("Registro cargado para edición");
+};
+
+// ================== ELIMINAR ==================
+window.eliminar = async id=>{
+  if(!confirm("¿Eliminar este registro?")) return;
+
+  await supabase.from("laboratorios").delete().eq("id",id);
+  cargarRegistros();
+};
+
+// ================== SUBMIT ==================
 $("formLaboratorio").onsubmit = async e=>{
   e.preventDefault();
 
- const proveedorSelect = $("proveedor");
-const proveedorNombre =
-  proveedorSelect.selectedOptions[0]?.textContent || "";
+  const proveedorSelect = $("proveedor");
+  const proveedorNombre =
+    proveedorSelect.selectedOptions[0]?.textContent || "";
 
-const { error } = await supabase
-  .from("laboratorios")
-  .insert([{
+  const payload = {
     fecha_envio: $("fecha_envio").value,
     fecha_entrega: $("fecha_entrega").value || null,
     estado: $("estado").value,
     nombre_trabajo: $("nombre_trabajo").value,
-
-    // ✅ AMBOS CAMPOS
     proveedor_id: proveedorSelect.value,
     proveedor: proveedorNombre,
-
     nombre_paciente: $("nombre_paciente").value,
     cedula_paciente: $("cedula_paciente").value,
     costo: Number($("costo").value),
-
     firma_recoge: $("firmaRecoge").toDataURL(),
     nombre_recoge: $("nombre_recoge").value,
-
     firma_entrega: $("firmaEntrega").toDataURL(),
     nombre_entrega: $("nombre_entrega").value
-  }]);
+  };
 
-if (error) {
-  console.error("❌ ERROR SUPABASE:", error);
-  alert(error.message);
-  return;
-}
-
+  if(editId){
+    await supabase.from("laboratorios").update(payload).eq("id",editId);
+    editId = null;
+  }else{
+    await supabase.from("laboratorios").insert([payload]);
+  }
 
   e.target.reset();
-  $("fecha_envio").value = new Date().toISOString().split("T")[0];
   clearRecoge();
   clearEntrega();
+  $("fecha_envio").value = new Date().toISOString().split("T")[0];
   cargarRegistros();
 };
 
-// ---------- INIT ----------
+// ================== INIT ==================
 ["fEstado","fPaciente","fCedula","fProveedor"]
   .forEach(id=>$(id).oninput=cargarRegistros);
 
 await cargarProveedores();
 await cargarRegistros();
 </script>
+
 
 </body>
 </html>
