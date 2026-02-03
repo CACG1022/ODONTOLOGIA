@@ -321,6 +321,32 @@
 
   // ============== UTIL ==============
   const $ = (id) => document.getElementById(id);
+
+// =========================================
+// LEER CÉDULA DESDE LA URL (?cedula=)
+// EJ: laboratorio.html?cedula=1029999017
+// =========================================
+function getQueryParam(param){
+  const params = new URLSearchParams(window.location.search);
+  return params.get(param);
+}
+
+const cedulaFromUrl = getQueryParam("cedula");
+
+if (cedulaFromUrl) {
+  $("cedula_paciente").value = cedulaFromUrl;
+
+  // opcional: bloquear edición de la cédula
+  $("cedula_paciente").readOnly = true;
+
+  // buscar automáticamente el paciente
+  setTimeout(() => {
+    buscarPacientePorCedula(cedulaFromUrl);
+  }, 300);
+}
+
+
+  
 // =========================================
 // AUTOCOMPLETAR PACIENTE DESDE HISTORIAS CLINICAS
 // TABLA: "HISTORIAS CLINICAS"
