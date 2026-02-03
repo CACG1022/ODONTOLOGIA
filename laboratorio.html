@@ -383,6 +383,14 @@ window.editar = async id=>{
   alert("Registro cargado para edición");
 };
 
+  // 🔒 Bloquear firma de entrega si ya está entregado
+  if (data.estado === "Entregado") {
+    $("firmaEntrega").style.pointerEvents = "none";
+  } else {
+    $("firmaEntrega").style.pointerEvents = "auto";
+  }
+
+
 // ================== ELIMINAR ==================
 window.eliminar = async id=>{
   if(!confirm("¿Eliminar este registro?")) return;
