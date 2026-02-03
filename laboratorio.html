@@ -376,6 +376,10 @@ window.editar = async id=>{
   $("nombre_recoge").value = data.nombre_recoge || "";
   $("nombre_entrega").value = data.nombre_entrega || "";
 
+  // 🔥 CARGAR FIRMAS EN CANVAS
+  cargarFirmaEnCanvas($("firmaRecoge"), data.firma_recoge);
+  cargarFirmaEnCanvas($("firmaEntrega"), data.firma_entrega);
+
   alert("Registro cargado para edición");
 };
 
@@ -431,6 +435,21 @@ $("formLaboratorio").onsubmit = async e=>{
 
 await cargarProveedores();
 await cargarRegistros();
+
+function cargarFirmaEnCanvas(canvas, base64){
+  if(!base64) return;
+
+  const ctx = canvas.getContext("2d");
+  const img = new Image();
+
+  img.onload = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  };
+
+  img.src = base64;
+}
+
 </script>
 
 
