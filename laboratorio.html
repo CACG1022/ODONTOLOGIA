@@ -354,26 +354,39 @@ async function cargarRegistros(){
 $("formLaboratorio").onsubmit = async e=>{
   e.preventDefault();
 
-  const { error } = await supabase.from("laboratorios").insert([{
-    fecha_envio:$("fecha_envio").value,
-    fecha_entrega:$("fecha_entrega").value||null,
-    estado:$("estado").value,
-    nombre_trabajo:$("nombre_trabajo").value,
-    proveedor_id:$("proveedor").value,
-    nombre_paciente:$("nombre_paciente").value,
-    cedula_paciente:$("cedula_paciente").value,
-    costo:Number($("costo").value),
-    firma_recoge:$("firmaRecoge").toDataURL(),
-    nombre_recoge:$("nombre_recoge").value,
-    firma_entrega:$("firmaEntrega").toDataURL(),
-    nombre_entrega:$("nombre_entrega").value
+ const proveedorSelect = $("proveedor");
+const proveedorNombre =
+  proveedorSelect.selectedOptions[0]?.textContent || "";
+
+const { error } = await supabase
+  .from("laboratorios")
+  .insert([{
+    fecha_envio: $("fecha_envio").value,
+    fecha_entrega: $("fecha_entrega").value || null,
+    estado: $("estado").value,
+    nombre_trabajo: $("nombre_trabajo").value,
+
+    // ✅ AMBOS CAMPOS
+    proveedor_id: proveedorSelect.value,
+    proveedor: proveedorNombre,
+
+    nombre_paciente: $("nombre_paciente").value,
+    cedula_paciente: $("cedula_paciente").value,
+    costo: Number($("costo").value),
+
+    firma_recoge: $("firmaRecoge").toDataURL(),
+    nombre_recoge: $("nombre_recoge").value,
+
+    firma_entrega: $("firmaEntrega").toDataURL(),
+    nombre_entrega: $("nombre_entrega").value
   }]);
 
-  if(error){
-    alert("Error al guardar, revisa consola");
-    console.error(error);
-    return;
-  }
+if (error) {
+  console.error("❌ ERROR SUPABASE:", error);
+  alert(error.message);
+  return;
+}
+
 
   e.target.reset();
   $("fecha_envio").value = new Date().toISOString().split("T")[0];
