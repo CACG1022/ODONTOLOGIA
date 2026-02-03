@@ -1,165 +1,249 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Módulo Laboratorio</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="UTF-8">
+<title>Laboratorio</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-    const supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-    );
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "TU_PUBLIC_ANON_KEY"
+);
 
-    const $ = id => document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-    document.addEventListener("DOMContentLoaded", async () => {
-      $("fecha_envio").value = new Date().toISOString().split("T")[0];
-      initFirma($("firmaRecoge"));
-      initFirma($("firmaEntrega"));
-      await cargarProveedores();
-      await cargarRegistros();
-    });
+document.addEventListener("DOMContentLoaded", async () => {
+  $("fecha_envio").value = new Date().toISOString().split("T")[0];
+  initFirma($("firmaRecoge"));
+  initFirma($("firmaEntrega"));
+  await cargarProveedores();
+  await cargarRegistros();
+});
 
-    function initFirma(canvas){
-      const ctx = canvas.getContext("2d");
-      let draw = false;
-      const pos = e => {
-        const r = canvas.getBoundingClientRect();
-        return {
-          x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
-          y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
-        };
-      };
-      canvas.onmousedown=e=>{draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};
-      canvas.onmousemove=e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};
-      canvas.onmouseup=()=>draw=false;
-      canvas.ontouchstart=e=>canvas.onmousedown(e);
-      canvas.ontouchmove=e=>canvas.onmousemove(e);
-      canvas.ontouchend=()=>draw=false;
-    }
+/* =========================
+   FIRMAS
+========================= */
+function initFirma(canvas){
+  const ctx = canvas.getContext("2d");
+  let draw = false;
 
-    window.limpiarFirma = id => {
-      const c=$(id); c.getContext("2d").clearRect(0,0,c.width,c.height);
+  const pos = e => {
+    const r = canvas.getBoundingClientRect();
+    return {
+      x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,
+      y:(e.touches?e.touches[0].clientY:e.clientY)-r.top
     };
+  };
 
-    async function cargarProveedores(){
-      const { data } = await supabase
-        .from("proveedores")
-        .select("id,nombre,telefono")
-        .eq("activo",true)
-        .order("nombre");
+  canvas.onmousedown=e=>{draw=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y)};
+  canvas.onmousemove=e=>{if(!draw)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.stroke()};
+  canvas.onmouseup=()=>draw=false;
 
-      $("proveedor").innerHTML = "<option value=''>Seleccione...</option>";
-      $("filtroProveedor").innerHTML = "<option value=''>Todos</option>";
+  canvas.ontouchstart=e=>canvas.onmousedown(e);
+  canvas.ontouchmove=e=>canvas.onmousemove(e);
+  canvas.ontouchend=()=>draw=false;
+}
 
-      data.forEach(p=>{
-        const o=document.createElement("option");
-        o.value=p.id; o.textContent=p.nombre; o.dataset.tel=p.telefono||"";
-        $("proveedor").appendChild(o);
+window.limpiarFirma = id => {
+  const c=$(id);
+  c.getContext("2d").clearRect(0,0,c.width,c.height);
+};
 
-        const f=o.cloneNode(true);
-        $("filtroProveedor").appendChild(f);
-      });
+/* =========================
+   PROVEEDORES
+========================= */
+async function cargarProveedores(){
+  const { data } = await supabase
+    .from("proveedores")
+    .select("id,nombre,telefono")
+    .eq("activo",true)
+    .order("nombre");
 
-      $("proveedor").onchange=()=>{
-        const o=$("proveedor").selectedOptions[0];
-        $("telefono_proveedor").value=o?.dataset.tel||"";
-      };
-    }
+  $("proveedor").innerHTML = "<option value=''>Seleccione...</option>";
+  $("filtroProveedor").innerHTML = "<option value=''>Todos</option>";
 
-    $("formLaboratorio").onsubmit = async e => {
-      e.preventDefault();
-      await supabase.from("laboratorios").insert([{
-        fecha_envio: $("fecha_envio").value,
-        fecha_entrega: $("fecha_entrega").value||null,
-        estado: $("estado").value,
-        nombre_trabajo: $("nombre_trabajo").value,
-        proveedor_id: $("proveedor").value,
-        nombre_paciente: $("nombre_paciente").value,
-        cedula_paciente: $("cedula_paciente").value,
-        costo: Number($("costo").value),
-        firma_recoge: $("firmaRecoge").toDataURL(),
-        nombre_recoge: $("nombre_recoge").value,
-        firma_entrega: $("firmaEntrega").toDataURL(),
-        nombre_entrega: $("nombre_entrega").value
-      }]);
-      alert("Registro guardado");
-      e.target.reset();
-      await cargarRegistros();
-    };
+  data.forEach(p=>{
+    const o=document.createElement("option");
+    o.value=p.id;
+    o.textContent=p.nombre;
+    o.dataset.tel=p.telefono||"";
+    $("proveedor").appendChild(o);
 
-    async function cargarRegistros(){
-      let q = supabase
-        .from("laboratorios")
-        .select(`
-          id, fecha_envio, fecha_entrega, estado,
-          nombre_paciente, cedula_paciente, costo,
-          proveedores ( nombre )
-        `)
-        .order("created_at",{ascending:false});
+    $("filtroProveedor").appendChild(o.cloneNode(true));
+  });
 
-      if($("fEstado").value) q=q.eq("estado",$("fEstado").value);
-      if($("fPaciente").value) q=q.ilike("nombre_paciente","%"+$("fPaciente").value+"%");
-      if($("fCedula").value) q=q.ilike("cedula_paciente","%"+$("fCedula").value+"%");
-      if($("filtroProveedor").value) q=q.eq("proveedor_id",$("filtroProveedor").value);
+  $("proveedor").onchange=()=>{
+    const o=$("proveedor").selectedOptions[0];
+    $("telefono_proveedor").value=o?.dataset.tel||"";
+  };
+}
 
-      const { data } = await q;
-      const tb=$("tbody");
-      tb.innerHTML="";
-      data.forEach(r=>{
-        tb.innerHTML+=`
-          <tr>
-            <td>${r.fecha_envio||""}</td>
-            <td>${r.nombre_paciente}</td>
-            <td>${r.cedula_paciente}</td>
-            <td>${r.proveedores?.nombre||""}</td>
-            <td>${r.estado}</td>
-            <td>$${Number(r.costo||0).toLocaleString("es-CO")}</td>
-          </tr>`;
-      });
-    }
+/* =========================
+   GUARDAR
+========================= */
+$("formLaboratorio").addEventListener("submit", async e=>{
+  e.preventDefault();
 
-    ["fEstado","fPaciente","fCedula","filtroProveedor"].forEach(id=>{
-      $(id).oninput=cargarRegistros;
-    });
-  </script>
+  await supabase.from("laboratorios").insert([{
+    fecha_envio: $("fecha_envio").value,
+    fecha_entrega: $("fecha_entrega").value||null,
+    estado: $("estado").value,
+    nombre_trabajo: $("nombre_trabajo").value,
+    proveedor_id: $("proveedor").value,
+    nombre_paciente: $("nombre_paciente").value,
+    cedula_paciente: $("cedula_paciente").value,
+    costo: Number($("costo").value),
+    firma_recoge: $("firmaRecoge").toDataURL(),
+    nombre_recoge: $("nombre_recoge").value,
+    firma_entrega: $("firmaEntrega").toDataURL(),
+    nombre_entrega: $("nombre_entrega").value
+  }]);
 
-  <style>
-    body{font-family:system-ui;background:#f4f7fb;padding:20px}
-    h1,h2{text-align:center}
-    .card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px}
-    .grid{display:grid;gap:12px}
-    .g2{grid-template-columns:1fr 1fr}
-    .g3{grid-template-columns:repeat(3,1fr)}
-    label{font-size:13px;font-weight:600}
-    input,select{padding:10px;border-radius:8px;border:1px solid #ccc}
-    canvas{border:1px dashed #aaa;height:120px}
-    table{width:100%;border-collapse:collapse}
-    th,td{border:1px solid #ddd;padding:8px;font-size:13px}
-    th{background:#eef}
-    button{padding:10px 14px;border:none;border-radius:8px;background:#009688;color:white}
-  </style>
+  e.target.reset();
+  $("fecha_envio").value = new Date().toISOString().split("T")[0];
+  await cargarRegistros();
+});
+
+/* =========================
+   LISTADO + FILTROS
+========================= */
+async function cargarRegistros(){
+  let q = supabase
+    .from("laboratorios")
+    .select(`
+      fecha_envio,
+      nombre_paciente,
+      cedula_paciente,
+      estado,
+      costo,
+      proveedores ( nombre )
+    `)
+    .order("created_at",{ascending:false});
+
+  if($("fEstado").value) q=q.eq("estado",$("fEstado").value);
+  if($("fPaciente").value) q=q.ilike("nombre_paciente","%"+$("fPaciente").value+"%");
+  if($("fCedula").value) q=q.ilike("cedula_paciente","%"+$("fCedula").value+"%");
+  if($("filtroProveedor").value) q=q.eq("proveedor_id",$("filtroProveedor").value);
+
+  const { data } = await q;
+  const tb=$("tbody");
+  tb.innerHTML="";
+
+  data.forEach(r=>{
+    tb.innerHTML+=`
+      <tr>
+        <td>${r.fecha_envio||""}</td>
+        <td>${r.nombre_paciente}</td>
+        <td>${r.cedula_paciente}</td>
+        <td>${r.proveedores?.nombre||""}</td>
+        <td>${r.estado}</td>
+        <td>$ ${Number(r.costo||0).toLocaleString("es-CO")}</td>
+      </tr>`;
+  });
+}
+
+["fEstado","fPaciente","fCedula","filtroProveedor"]
+.forEach(id=>$(id).oninput=cargarRegistros);
+</script>
+
+<style>
+body{
+  background:#f3f6fb;
+  font-family:system-ui;
+  padding:24px;
+}
+
+h1{
+  text-align:center;
+  color:#1f4e72;
+  margin-bottom:16px;
+}
+
+.card{
+  max-width:1000px;
+  margin:auto;
+  background:#fff;
+  border-radius:14px;
+  border:1px solid #dbe7f5;
+  padding:24px;
+  margin-bottom:24px;
+}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+
+label{
+  font-size:12px;
+  color:#475569;
+  font-weight:600;
+}
+
+input,select{
+  width:100%;
+  padding:10px 12px;
+  border-radius:10px;
+  border:1.5px solid #cfe0ff;
+}
+
+canvas{
+  width:100%;
+  height:120px;
+  border:1.5px dashed #cfe0ff;
+  border-radius:12px;
+}
+
+button{
+  padding:10px 18px;
+  border-radius:12px;
+  border:none;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.btn-save{background:#009688;color:#fff}
+.btn-clear{background:#64748b;color:#fff}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  margin-top:12px;
+}
+
+th,td{
+  padding:10px;
+  border-bottom:1px solid #e5eefb;
+  font-size:13px;
+}
+
+th{background:#f4f8ff}
+</style>
 </head>
 
 <body>
 
-<h1>Módulo Laboratorio</h1>
+<h1>Laboratorio</h1>
 
 <div class="card">
 <form id="formLaboratorio">
+
 <div class="grid g3">
-<input type="date" id="fecha_envio"><input type="date" id="fecha_entrega">
+<input type="date" id="fecha_envio">
+<input type="date" id="fecha_entrega">
 <select id="estado">
-<option>Pendiente de enviar</option><option>Enviado</option><option>En laboratorio</option><option>Entregado</option>
+<option>Pendiente de enviar</option>
+<option>Enviado</option>
+<option>En laboratorio</option>
+<option>Entregado</option>
 </select>
 </div>
 
 <div class="grid g2">
-<input id="nombre_trabajo" placeholder="Trabajo">
-<input id="costo" type="number" placeholder="Costo">
+<input id="nombre_trabajo" placeholder="Nombre del trabajo">
+<input id="costo" type="number" placeholder="Costo (COP)">
 </div>
 
 <div class="grid g2">
@@ -168,19 +252,23 @@
 </div>
 
 <div class="grid g2">
-<input id="nombre_paciente" placeholder="Paciente">
-<input id="cedula_paciente" placeholder="Cédula">
+<input id="nombre_paciente" placeholder="Nombre del paciente">
+<input id="cedula_paciente" placeholder="Cédula del paciente">
 </div>
 
-<label>Firma recoge</label>
+<label>Firma de quien recoge</label>
 <canvas id="firmaRecoge"></canvas>
-<input id="nombre_recoge" placeholder="Nombre recoge">
+<input id="nombre_recoge" placeholder="Nombre de quien recoge">
+<button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecoge')">Limpiar</button>
 
-<label>Firma entrega</label>
+<label>Firma de quien recibe la entrega</label>
 <canvas id="firmaEntrega"></canvas>
-<input id="nombre_entrega" placeholder="Nombre entrega">
+<input id="nombre_entrega" placeholder="Nombre de quien recibe la entrega">
+<button type="button" class="btn-clear" onclick="limpiarFirma('firmaEntrega')">Limpiar</button>
 
-<button type="submit">Guardar</button>
+<br><br>
+<button class="btn-save" type="submit">Guardar</button>
+
 </form>
 </div>
 
@@ -188,15 +276,28 @@
 <h2>Registros</h2>
 
 <div class="grid g3">
-<select id="fEstado"><option value="">Todos</option><option>Pendiente de enviar</option><option>Enviado</option><option>En laboratorio</option><option>Entregado</option></select>
-<input id="fPaciente" placeholder="Filtrar paciente">
-<input id="fCedula" placeholder="Filtrar cédula">
+<select id="fEstado">
+<option value="">Todos los estados</option>
+<option>Pendiente de enviar</option>
+<option>Enviado</option>
+<option>En laboratorio</option>
+<option>Entregado</option>
+</select>
+<input id="fPaciente" placeholder="Paciente">
+<input id="fCedula" placeholder="Cédula">
 <select id="filtroProveedor"></select>
 </div>
 
 <table>
 <thead>
-<tr><th>Fecha</th><th>Paciente</th><th>Cédula</th><th>Proveedor</th><th>Estado</th><th>Costo</th></tr>
+<tr>
+<th>Fecha</th>
+<th>Paciente</th>
+<th>Cédula</th>
+<th>Proveedor</th>
+<th>Estado</th>
+<th>Costo</th>
+</tr>
 </thead>
 <tbody id="tbody"></tbody>
 </table>
@@ -204,4 +305,5 @@
 
 </body>
 </html>
+
 
