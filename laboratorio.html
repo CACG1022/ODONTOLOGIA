@@ -321,9 +321,11 @@
 
   // ============== UTIL ==============
   const $ = (id) => document.getElementById(id);
-
 // =========================================
-// AUTOCOMPLETAR PACIENTE POR CÉDULA
+// AUTOCOMPLETAR PACIENTE DESDE HISTORIAS CLINICAS
+// TABLA: "HISTORIAS CLINICAS"
+// CÉDULA: "Numero de Identificacion"
+// NOMBRE: "Nombre y apellido"
 // =========================================
 let cedulaTimeout = null;
 
@@ -332,33 +334,36 @@ $("cedula_paciente").addEventListener("input", () => {
 
   const cedula = $("cedula_paciente").value.trim();
 
-  // limpiar nombre si está escribiendo
+  // limpiar nombre mientras escribe
   $("nombre_paciente").value = "";
 
   if (cedula.length < 5) return;
 
-  // pequeño debounce para no consultar en cada tecla
   cedulaTimeout = setTimeout(() => {
     buscarPacientePorCedula(cedula);
   }, 400);
 });
 
-async function buscarPacientePorCedula(cedula){
+async function buscarPacientePorCedula(cedula) {
   const { data, error } = await supabase
-    .from("HISTORIAS CLINICAS")        // 🔴 CAMBIA AQUÍ si tu tabla se llama diferente
-    .select("Nombre y apellido")
-    .eq("cedula", cedula)
-    .single();
+    .from("HISTORIAS CLINICAS")
+    .select(`"Nombre y apellido"`)
+    .eq(`"Numero de Identificacion"`, cedula)
+    .maybeSingle(); // mejor que single() para que no reviente si no encuentra
 
-  if (error || !data) {
-    // no existe paciente → dejar vacío
+  if (error) {
+    console.error("Error buscando historia clínica:", error);
+    return;
+  }
+
+  if (!data) {
+    // No encontró → deja vacío
     return;
   }
 
   // ✅ Autocompletar nombre
-  ("nombre_paciente").value = data["Nombre y apellido"];
+  $("nombre_paciente").value = data["Nombre y apellido"] || "";
 }
-
 
   
 
