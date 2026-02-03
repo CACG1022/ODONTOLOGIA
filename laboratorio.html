@@ -5,6 +5,18 @@
   <title>Módulo Laboratorio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <!-- SUPABASE -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    window.supabase = supabase;
+  </script>
+
   <style>
     :root{
       --bg:#f4f7fb;
@@ -45,6 +57,7 @@
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       padding:22px;
+      margin-bottom:24px;
     }
 
     .grid{
@@ -115,206 +128,247 @@
     .btn-main{ background:var(--btn); color:#fff; }
     .btn-clear{ background:var(--btn2); color:#fff; }
 
-    .footer-actions{
-      display:flex;
-      gap:12px;
-      margin-top:20px;
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:12px;
+    }
+
+    th,td{
+      padding:10px;
+      border-bottom:1px solid var(--border);
+      font-size:13px;
+      text-align:left;
+    }
+
+    th{
+      background:#f4f7fb;
     }
   </style>
 </head>
 
 <body>
 
-  <h1>Laboratorio</h1>
+<h1>Laboratorio</h1>
 
-  <div class="card">
-    <form id="formLaboratorio">
+<!-- ================= FORMULARIO ================= -->
+<div class="card">
+<form id="formLaboratorio">
 
-      <!-- FECHAS + ESTADO -->
-      <div class="grid g-3">
-        <div>
-          <label>Fecha de envío</label>
-          <input type="date" id="fecha_envio" required />
-        </div>
-
-        <div>
-          <label>Fecha de entrega</label>
-          <input type="date" id="fecha_entrega" />
-        </div>
-
-        <div>
-          <label>Estado</label>
-          <select id="estado" required>
-            <option value="Pendiente de enviar">Pendiente de enviar</option>
-            <option value="Enviado">Enviado</option>
-            <option value="En laboratorio">En laboratorio</option>
-            <option value="Entregado">Entregado</option>
-          </select>
-        </div>
-      </div>
-
-      <!-- TRABAJO + PROVEEDOR -->
-      <div class="grid g-2">
-        <div>
-          <label>Nombre del trabajo</label>
-          <input type="text" id="nombre_trabajo" required />
-        </div>
-
-        <div>
-          <label>Proveedor (Laboratorio)</label>
-          <input type="text" id="proveedor" required />
-        </div>
-      </div>
-
-      <!-- PACIENTE -->
-      <div class="grid g-2">
-        <div>
-          <label>Nombre del paciente</label>
-          <input type="text" id="nombre_paciente" required />
-        </div>
-
-        <div>
-          <label>Cédula del paciente</label>
-          <input type="text" id="cedula_paciente" required />
-        </div>
-      </div>
-
-      <!-- COSTO -->
-      <div class="grid g-2">
-        <div>
-          <label>Costo</label>
-          <input
-            type="number"
-            id="costo"
-            min="0"
-            step="1"
-            placeholder="Ej: 120000"
-            required
-          />
-        </div>
-      </div>
-
-      <!-- FIRMA ENVÍO -->
-      <div class="firma-box">
-        <label>Firma de quien envía</label>
-        <canvas id="firmaEnvio"></canvas>
-        <div class="firma-actions">
-          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEnvio')">
-            Limpiar
-          </button>
-        </div>
-      </div>
-
-      <!-- FIRMA RECEPCIÓN -->
-      <div class="firma-box">
-        <label>Firma de quien recibe la entrega</label>
-        <canvas id="firmaRecepcion"></canvas>
-        <div class="firma-actions">
-          <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecepcion')">
-            Limpiar
-          </button>
-        </div>
-      </div>
-
-      <div class="footer-actions">
-        <button type="submit" class="btn-main">
-          Guardar registro
-        </button>
-      </div>
-
-    </form>
+  <div class="grid g-3">
+    <div>
+      <label>Fecha de envío</label>
+      <input type="date" id="fecha_envio" required />
+    </div>
+    <div>
+      <label>Fecha de entrega</label>
+      <input type="date" id="fecha_entrega" />
+    </div>
+    <div>
+      <label>Estado</label>
+      <select id="estado" required>
+        <option>Pendiente de enviar</option>
+        <option>Enviado</option>
+        <option>En laboratorio</option>
+        <option>Entregado</option>
+      </select>
+    </div>
   </div>
 
-<script>
-  // Fecha actual por defecto
-  document.getElementById("fecha_envio").value =
-    new Date().toISOString().split("T")[0];
+  <div class="grid g-2">
+    <div>
+      <label>Nombre del trabajo</label>
+      <input id="nombre_trabajo" required />
+    </div>
+    <div>
+      <label>Costo (COP)</label>
+      <input id="costo" type="number" min="0" required />
+    </div>
+  </div>
 
-  // ===============================
-  // FIRMA CANVAS
-  // ===============================
+  <div class="grid g-2">
+    <div>
+      <label>Proveedor</label>
+      <select id="proveedor" required></select>
+    </div>
+    <div>
+      <label>Teléfono proveedor</label>
+      <input id="telefono_proveedor" readonly />
+    </div>
+  </div>
+
+  <div class="grid g-2">
+    <div>
+      <label>Nombre del paciente</label>
+      <input id="nombre_paciente" required />
+    </div>
+    <div>
+      <label>Cédula del paciente</label>
+      <input id="cedula_paciente" required />
+    </div>
+  </div>
+
+  <div class="firma-box">
+    <label>Firma de quien recoge</label>
+    <canvas id="firmaRecoge"></canvas>
+    <input id="nombre_recoge" placeholder="Nombre de quien recoge" />
+    <div class="firma-actions">
+      <button type="button" class="btn-clear" onclick="limpiarFirma('firmaRecoge')">Limpiar</button>
+    </div>
+  </div>
+
+  <div class="firma-box">
+    <label>Firma de quien recibe la entrega</label>
+    <canvas id="firmaEntrega"></canvas>
+    <input id="nombre_entrega" placeholder="Nombre de quien recibe la entrega" />
+    <div class="firma-actions">
+      <button type="button" class="btn-clear" onclick="limpiarFirma('firmaEntrega')">Limpiar</button>
+    </div>
+  </div>
+
+  <div class="firma-actions" style="margin-top:16px">
+    <button type="submit" class="btn-main">Guardar</button>
+  </div>
+
+</form>
+</div>
+
+<!-- ================= LISTADO ================= -->
+<div class="card">
+  <h2 style="margin-top:0">Registros</h2>
+
+  <div class="grid g-3">
+    <select id="fEstado">
+      <option value="">Todos los estados</option>
+      <option>Pendiente de enviar</option>
+      <option>Enviado</option>
+      <option>En laboratorio</option>
+      <option>Entregado</option>
+    </select>
+    <input id="fPaciente" placeholder="Paciente" />
+    <input id="fCedula" placeholder="Cédula" />
+    <select id="fProveedor"></select>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Paciente</th>
+        <th>Cédula</th>
+        <th>Proveedor</th>
+        <th>Estado</th>
+        <th>Costo</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<script>
+  fecha_envio.value = new Date().toISOString().split("T")[0];
+
   function initFirma(canvas){
     const ctx = canvas.getContext("2d");
-    let drawing = false;
+    let drawing=false;
 
-    function getPos(e){
-      const rect = canvas.getBoundingClientRect();
-      return {
-        x: (e.touches ? e.touches[0].clientX : e.clientX) - rect.left,
-        y: (e.touches ? e.touches[0].clientY : e.clientY) - rect.top
-      };
+    function pos(e){
+      const r=canvas.getBoundingClientRect();
+      return {x:(e.touches?e.touches[0].clientX:e.clientX)-r.left,y:(e.touches?e.touches[0].clientY:e.clientY)-r.top};
     }
 
-    function start(e){
-      drawing = true;
-      const p = getPos(e);
-      ctx.beginPath();
-      ctx.moveTo(p.x, p.y);
-      e.preventDefault();
-    }
+    function start(e){drawing=true;const p=pos(e);ctx.beginPath();ctx.moveTo(p.x,p.y);e.preventDefault();}
+    function move(e){if(!drawing)return;const p=pos(e);ctx.lineTo(p.x,p.y);ctx.strokeStyle="#0f172a";ctx.lineWidth=2;ctx.lineCap="round";ctx.stroke();e.preventDefault();}
+    function end(){drawing=false;}
 
-    function move(e){
-      if(!drawing) return;
-      const p = getPos(e);
-      ctx.lineTo(p.x, p.y);
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2;
-      ctx.lineCap = "round";
-      ctx.stroke();
-      e.preventDefault();
-    }
-
-    function end(){
-      drawing = false;
-    }
-
-    canvas.addEventListener("mousedown", start);
-    canvas.addEventListener("mousemove", move);
-    canvas.addEventListener("mouseup", end);
-    canvas.addEventListener("mouseleave", end);
-
-    canvas.addEventListener("touchstart", start);
-    canvas.addEventListener("touchmove", move);
-    canvas.addEventListener("touchend", end);
+    canvas.addEventListener("mousedown",start);
+    canvas.addEventListener("mousemove",move);
+    canvas.addEventListener("mouseup",end);
+    canvas.addEventListener("mouseleave",end);
+    canvas.addEventListener("touchstart",start);
+    canvas.addEventListener("touchmove",move);
+    canvas.addEventListener("touchend",end);
   }
 
   function limpiarFirma(id){
-    const c = document.getElementById(id);
+    const c=document.getElementById(id);
     c.getContext("2d").clearRect(0,0,c.width,c.height);
   }
 
-  function firmaToBase64(id){
-    return document.getElementById(id).toDataURL("image/png");
+  initFirma(firmaRecoge);
+  initFirma(firmaEntrega);
+
+  async function cargarProveedores(){
+    const { data } = await supabase.from("proveedores").select("id,nombre,telefono").eq("activo",true).order("nombre");
+
+    proveedor.innerHTML="<option value=''>Seleccione...</option>";
+    fProveedor.innerHTML="<option value=''>Todos los proveedores</option>";
+
+    data.forEach(p=>{
+      const o=document.createElement("option");
+      o.value=p.id;
+      o.textContent=p.nombre;
+      o.dataset.tel=p.telefono||"";
+      proveedor.appendChild(o);
+      fProveedor.appendChild(o.cloneNode(true));
+    });
+
+    proveedor.onchange=()=>{
+      const o=proveedor.selectedOptions[0];
+      telefono_proveedor.value=o?.dataset.tel||"";
+    };
   }
 
-  initFirma(document.getElementById("firmaEnvio"));
-  initFirma(document.getElementById("firmaRecepcion"));
+  async function cargarRegistros(){
+    let q=supabase.from("laboratorios").select(`fecha_envio,nombre_paciente,cedula_paciente,estado,costo,proveedores(nombre)`).order("created_at",{ascending:false});
+    if(fEstado.value) q=q.eq("estado",fEstado.value);
+    if(fPaciente.value) q=q.ilike("nombre_paciente","%"+fPaciente.value+"%");
+    if(fCedula.value) q=q.ilike("cedula_paciente","%"+fCedula.value+"%");
+    if(fProveedor.value) q=q.eq("proveedor_id",fProveedor.value);
 
-  // ===============================
-  // SUBMIT (LISTO PARA SUPABASE)
-  // ===============================
-  document.getElementById("formLaboratorio").addEventListener("submit", e=>{
+    const { data } = await q;
+    tbody.innerHTML="";
+    data.forEach(r=>{
+      tbody.innerHTML+=`<tr>
+        <td>${r.fecha_envio||""}</td>
+        <td>${r.nombre_paciente}</td>
+        <td>${r.cedula_paciente}</td>
+        <td>${r.proveedores?.nombre||""}</td>
+        <td>${r.estado}</td>
+        <td>$ ${Number(r.costo||0).toLocaleString("es-CO")}</td>
+      </tr>`;
+    });
+  }
+
+  formLaboratorio.addEventListener("submit",async e=>{
     e.preventDefault();
-
-    const payload = {
-      fecha_envio: fecha_envio.value,
-      fecha_entrega: fecha_entrega.value || null,
-      estado: estado.value,
-      nombre_trabajo: nombre_trabajo.value,
-      proveedor: proveedor.value,
-      nombre_paciente: nombre_paciente.value,
-      cedula_paciente: cedula_paciente.value,
-      costo: Number(costo.value),
-      firma_envio: firmaToBase64("firmaEnvio"),
-      firma_recepcion: firmaToBase64("firmaRecepcion")
-    };
-
-    console.log("LISTO PARA SUPABASE:", payload);
-    alert("Formulario correcto. Revisa consola.");
+    await supabase.from("laboratorios").insert([{
+      fecha_envio:fecha_envio.value,
+      fecha_entrega:fecha_entrega.value||null,
+      estado:estado.value,
+      nombre_trabajo:nombre_trabajo.value,
+      proveedor_id:proveedor.value,
+      nombre_paciente:nombre_paciente.value,
+      cedula_paciente:cedula_paciente.value,
+      costo:Number(costo.value),
+      firma_recoge:firmaRecoge.toDataURL(),
+      nombre_recoge:nombre_recoge.value,
+      firma_entrega:firmaEntrega.toDataURL(),
+      nombre_entrega:nombre_entrega.value
+    }]);
+    e.target.reset();
+    fecha_envio.value=new Date().toISOString().split("T")[0];
+    await cargarRegistros();
   });
+
+  ["fEstado","fPaciente","fCedula","fProveedor"].forEach(i=>document.getElementById(i).addEventListener("input",cargarRegistros));
+
+  cargarProveedores();
+  cargarRegistros();
 </script>
 
 </body>
 </html>
+
 
 
