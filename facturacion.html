@@ -2578,7 +2578,7 @@ if (procDrop) procDrop.style.display = "none";
   data.forEach(it => {
   state.items.push({
   id_local: crypto.randomUUID(),
-  procedimiento_id: it.procedimiento_id
+  procedimiento_id: it.procedimiento_id,
   codigo_cups: it.codigo_cups,
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
