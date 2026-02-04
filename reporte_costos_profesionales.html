@@ -240,7 +240,7 @@
     if ($("f_procedimiento").value)
       query = query.ilike("descripcion", `%${$("f_procedimiento").value}%`);
 
-    const { data, error } = await query.order("created_at", { ascending:false });
+    const { data, error } = await query;
 
     if (error){
       alert(error.message);
@@ -281,6 +281,8 @@
   }
 
   $("btn-buscar").addEventListener("click", cargarReporte);
+
+  cargarReporte();
 </script>
 </body>
 </html>
