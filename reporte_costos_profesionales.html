@@ -229,40 +229,54 @@ const $ = id => document.getElementById(id);
 const money = n => Number(n||0).toLocaleString("es-CO");
 let currentRows = [];
 
-/* ====== AUTH + ROL (MISMO MODELO DEL INDEX) ====== */
+/* ===== AUTH + ROL ROBUSTO ===== */
 const { data:{ user } } = await supabase.auth.getUser();
 
 if (!user) {
   $("noAccess").classList.remove("hidden");
+  $("userBox").textContent = "No autenticado";
   throw new Error("No autenticado");
 }
 
-const { data: perfil, error } = await supabase
-  .from("profiles")
-  .select("rol")
-  .eq("id", user.id)
-  .single();
+let role = null;
 
-if (error || !perfil) {
-  $("noAccess").classList.remove("hidden");
-  throw new Error("No se pudo obtener el rol");
+/* Intentar desde profiles */
+try {
+  const { data: perfil, error } = await supabase
+    .from("profiles")
+    .select("rol")
+    .eq("id", user.id)
+    .single();
+
+  if (!error && perfil?.rol) {
+    role = perfil.rol;
+  }
+} catch (e) {
+  console.warn("No se pudo leer profiles");
 }
 
-const role = perfil.rol;
+/* Fallback admins */
+const ADMIN_EMAILS = [
+  "fernav07@hotmail.com"
+];
+
+if (!role && ADMIN_EMAILS.includes(user.email)) {
+  role = "admin";
+}
 
 $("userBox").innerHTML = `
   👤 ${user.email}<br>
-  🛡️ Rol: <b>${role}</b>
+  🛡️ Rol: <b>${role || "usuario"}</b>
 `;
 
 if (role !== "admin") {
   $("noAccess").classList.remove("hidden");
-  throw new Error("Acceso no autorizado");
+  throw new Error("Acceso denegado");
 }
 
 $("app").classList.remove("hidden");
 
-/* ====== DATA ====== */
+/* ===== DATA ===== */
 async function cargarReporte(){
   let q = supabase.from("factura_detalle_ext").select("*");
 
