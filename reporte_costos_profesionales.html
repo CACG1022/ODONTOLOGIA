@@ -2,141 +2,211 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reporte de Facturación por Profesional</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- Tipografía -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     :root{
       --bg:#f4f6f8;
       --card:#ffffff;
-      --line:#e5e7eb;
       --text:#1f2937;
       --muted:#6b7280;
       --brand:#1f6aa5;
-      --green:#16a34a;
-      --red:#dc2626;
+      --brand2:#114a75;
+      --line:#e5e7eb;
       --radius:14px;
       --shadow:0 10px 25px rgba(0,0,0,.08);
+      --green:#16a34a;
+      --red:#dc2626;
     }
     *{box-sizing:border-box}
-    body{margin:0;padding:24px;font-family:Inter;background:var(--bg)}
-    .container{max-width:1400px;margin:auto}
-
-    .topbar{
-      display:flex;justify-content:flex-end;margin-bottom:16px
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:24px;
     }
-    .userbox{
-      background:#fff;border:1px solid var(--line);
-      border-radius:12px;padding:8px 12px;
-      box-shadow:var(--shadow);font-size:13px
-    }
+    h1{font-size:20px;margin:0 0 6px}
+    .muted{color:var(--muted);font-size:13px}
+    .container{max-width:1400px;margin:0 auto}
 
     .card{
-      background:var(--card);border-radius:var(--radius);
-      box-shadow:var(--shadow);border:1px solid var(--line)
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+      margin-bottom:18px;
     }
 
-    .hidden{display:none}
+    .card-header{
+      padding:16px 20px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
 
     .filters{
-      display:grid;grid-template-columns:repeat(6,1fr);
-      gap:12px;padding:16px
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:12px;
+      padding:16px 20px;
     }
-    label{font-size:12px;color:var(--muted);font-weight:600}
+
+    .filters label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+      margin-bottom:4px;
+      display:block;
+    }
+
     input{
-      width:100%;padding:10px;border-radius:10px;
-      border:1px solid var(--line)
-    }
-
-    table{width:100%;border-collapse:collapse;font-size:13px}
-    th,td{padding:10px;border-bottom:1px solid var(--line)}
-    th{background:#f9fafb;color:var(--muted)}
-
-    .summary{display:flex;gap:16px;padding:16px}
-    .box{
-      background:#fff;border:1px solid var(--line);
-      border-radius:12px;padding:12px;min-width:220px;
-      display:flex;justify-content:space-between
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      font-size:14px;
+      outline:none;
+      background:#fff;
     }
 
     .btn{
-      padding:10px 14px;border-radius:10px;
+      padding:10px 14px;
+      border-radius:10px;
       border:1px solid var(--brand);
-      background:var(--brand);color:#fff;font-weight:700;
-      cursor:pointer
+      background:var(--brand);
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
     }
-    .btn.secondary{background:#fff;color:var(--brand)}
+    .btn:hover{background:var(--brand2)}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+    thead th{
+      background:#f9fafb;
+      color:var(--muted);
+      font-weight:700;
+      text-align:left;
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      position:sticky;
+      top:0;
+    }
+    tbody td{
+      padding:10px 14px;
+      border-bottom:1px solid var(--line);
+    }
+    tbody tr:hover{background:#f8fafc}
+
+    .mono{font-family:ui-monospace,monospace}
+    .right{text-align:right}
+
+    .summary{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      padding:16px 20px;
+      border-top:1px solid var(--line);
+      background:#fbfcfd;
+    }
+    .summary .box{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px 14px;
+      min-width:220px;
+      background:#fff;
+    }
+    .summary .box div{
+      display:flex;
+      justify-content:space-between;
+      font-size:13px;
+      padding:4px 0;
+    }
+
+    @media(max-width:1200px){
+      .filters{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:700px){
+      .filters{grid-template-columns:1fr}
+    }
   </style>
 </head>
 
 <body>
 <div class="container">
 
-  <div class="topbar">
-    <div class="userbox" id="userBox">Cargando usuario…</div>
-  </div>
-
-  <div id="noAccess" class="card hidden" style="padding:24px;text-align:center">
-    ⛔ Acceso denegado. Este módulo es solo para administradores.
-  </div>
-
-  <div class="card hidden" id="app">
-
-    <div style="padding:16px;display:flex;justify-content:space-between">
+  <div class="card">
+    <div class="card-header">
       <div>
-        <h3>Reporte de Facturación por Profesional</h3>
-        <small class="muted">Vista: factura_detalle_ext</small>
+        <h1>Reporte de Facturación por Profesional</h1>
+        <div class="muted">Detalle completo desde <b>factura_detalle_ext</b></div>
       </div>
-      <div>
-        <button class="btn secondary" id="btn-excel">📊 Excel</button>
-        <button class="btn" id="btn-buscar">🔎 Buscar</button>
-      </div>
+      <button class="btn" id="btn-buscar">🔎 Buscar</button>
     </div>
 
     <div class="filters">
       <div>
         <label>Profesional</label>
-        <input id="f_profesional" list="dl_profesionales">
-        <datalist id="dl_profesionales"></datalist>
+        <input id="f_profesional" list="lista_profesionales" placeholder="Buscar profesional..." />
+        <datalist id="lista_profesionales"></datalist>
       </div>
 
       <div>
-        <label>Factura</label>
-        <input id="f_factura">
+        <label>N° Factura</label>
+        <input id="f_factura" placeholder="FAC-2026..." />
       </div>
 
       <div>
-        <label>Cédula</label>
-        <input id="f_cedula">
+        <label>Cédula paciente</label>
+        <input id="f_cedula" placeholder="Solo números" />
       </div>
 
       <div>
         <label>Paciente</label>
-        <input id="f_paciente" list="dl_pacientes">
-        <datalist id="dl_pacientes"></datalist>
+        <input id="f_paciente" list="lista_pacientes" placeholder="Buscar paciente..." />
+        <datalist id="lista_pacientes"></datalist>
       </div>
 
       <div>
         <label>Desde</label>
-        <input type="date" id="f_desde">
+        <input type="date" id="f_desde" />
       </div>
 
       <div>
         <label>Hasta</label>
-        <input type="date" id="f_hasta">
+        <input type="date" id="f_hasta" />
+      </div>
+
+      <div>
+        <label>Procedimiento</label>
+        <input id="f_procedimiento" placeholder="Texto libre" />
       </div>
     </div>
 
-    <div style="max-height:60vh;overflow:auto">
+    <div style="overflow:auto; max-height:65vh;">
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Profesional</th><th>Factura</th>
-            <th>Cédula</th><th>Paciente</th><th>Procedimiento</th>
-            <th>Cant</th><th>Costo</th><th>Valor</th>
+            <th>Fecha</th>
+            <th>Profesional</th>
+            <th>N° Factura</th>
+            <th>Cédula</th>
+            <th>Paciente</th>
+            <th>Procedimiento</th>
+            <th class="right">Cantidad</th>
+            <th class="right">Costo</th>
+            <th class="right">Valor Total</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -144,112 +214,125 @@
     </div>
 
     <div class="summary">
-      <div class="box"><span>Registros</span><b id="s_count">0</b></div>
-      <div class="box"><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div>
-      <div class="box"><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div>
-      <div class="box"><span>Margen</span><b id="s_margen">$ 0</b></div>
+      <div class="box"><div><span>Registros</span><b id="s_count">0</b></div></div>
+      <div class="box"><div><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div></div>
+      <div class="box"><div><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div></div>
+      <div class="box">
+        <div>
+          <span>Margen de ganancia</span>
+          <b id="s_margen">$ 0</b>
+        </div>
+      </div>
     </div>
   </div>
+
 </div>
 
 <script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
+  const supabase = createClient(
+    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  );
 
-const $ = id => document.getElementById(id);
-const money = n => Number(n||0).toLocaleString("es-CO");
-let rows = [];
+  const $ = id => document.getElementById(id);
+  const money = n => Number(n||0).toLocaleString("es-CO");
 
-/* 🔐 AUTH + ROL REAL */
-const { data:{ session } } = await supabase.auth.getSession();
-if (!session) location.href = "login.html";
+  async function cargarListas(){
+    const { data: profs } = await supabase
+      .from("factura_detalle_ext")
+      .select("profesional")
+      .not("profesional", "is", null);
 
-const { data: profile } = await supabase
-  .from("profiles")
-  .select("role")
-  .eq("id", session.user.id)
-  .single();
+    $("lista_profesionales").innerHTML =
+      [...new Set((profs||[]).map(p=>p.profesional))]
+        .map(p=>`<option value="${p}"></option>`).join("");
 
-const role = (profile?.role || "").toLowerCase();
+    const { data: pacs } = await supabase
+      .from("factura_detalle_ext")
+      .select("paciente_nombre");
 
-$("userBox").innerHTML = `👤 ${session.user.email}<br>🛡️ Rol: <b>${role}</b>`;
+    $("lista_pacientes").innerHTML =
+      [...new Set((pacs||[]).map(p=>p.paciente_nombre))]
+        .map(p=>`<option value="${p}"></option>`).join("");
+  }
 
-if (role !== "admin"){
-  $("noAccess").classList.remove("hidden");
-  throw new Error("No admin");
-}
+  async function cargarReporte(){
+    let q = supabase.from("factura_detalle_ext").select("*");
 
-$("app").classList.remove("hidden");
+    if ($("f_profesional").value)
+      q = q.ilike("profesional", `%${$("f_profesional").value}%`);
 
-/* 📋 LISTAS */
-async function cargarListas(){
-  const { data: p } = await supabase.from("factura_detalle_ext").select("profesional").not("profesional","is",null);
-  [...new Set(p.map(x=>x.profesional))].forEach(v=>dl_profesionales.innerHTML+=`<option value="${v}">`);
+    if ($("f_factura").value)
+      q = q.ilike("numero_factura", `%${$("f_factura").value}%`);
 
-  const { data: pa } = await supabase.from("factura_detalle_ext").select("paciente_nombre");
-  [...new Set(pa.map(x=>x.paciente_nombre))].forEach(v=>dl_pacientes.innerHTML+=`<option value="${v}">`);
-}
+    if ($("f_cedula").value)
+      q = q.ilike("paciente_cedula", `%${$("f_cedula").value}%`);
 
-/* 📊 DATA */
-async function cargarReporte(){
-  let q = supabase.from("factura_detalle_ext").select("*");
-  if (f_profesional.value) q=q.ilike("profesional",`%${f_profesional.value}%`);
-  if (f_factura.value) q=q.ilike("numero_factura",`%${f_factura.value}%`);
-  if (f_cedula.value) q=q.ilike("paciente_cedula",`%${f_cedula.value}%`);
-  if (f_paciente.value) q=q.ilike("paciente_nombre",`%${f_paciente.value}%`);
-  if (f_desde.value) q=q.gte("fecha_factura",f_desde.value);
-  if (f_hasta.value) q=q.lte("fecha_factura",f_hasta.value);
+    if ($("f_paciente").value)
+      q = q.ilike("paciente_nombre", `%${$("f_paciente").value}%`);
 
-  const { data } = await q;
-  rows = data || [];
-  render();
-}
+    if ($("f_procedimiento").value)
+      q = q.ilike("descripcion", `%${$("f_procedimiento").value}%`);
 
-function render(){
-  tbody.innerHTML="";
-  let total=0,costo=0;
-  rows.forEach(r=>{
-    total+=r.valor_total||0;
-    costo+=r.costo||0;
-    tbody.innerHTML+=`
-      <tr>
-        <td>${r.fecha_factura}</td>
-        <td>${r.profesional}</td>
-        <td>${r.numero_factura}</td>
-        <td>${r.paciente_cedula}</td>
-        <td>${r.paciente_nombre}</td>
-        <td>${r.descripcion}</td>
-        <td>${r.cantidad}</td>
-        <td>$ ${money(r.costo)}</td>
-        <td>$ ${money(r.valor_total)}</td>
-      </tr>`;
-  });
+    if ($("f_desde").value)
+      q = q.gte("fecha_factura", $("f_desde").value);
 
-  s_count.textContent=rows.length;
-  s_total.textContent=money(total);
-  s_costo.textContent=money(costo);
+    if ($("f_hasta").value)
+      q = q.lte("fecha_factura", $("f_hasta").value);
 
-  const m = total-costo;
-  s_margen.textContent="$ "+money(m);
-  s_margen.style.color = m>=0?"var(--green)":"var(--red)";
-}
+    const { data, error } = await q;
+    if (error) return alert(error.message);
 
-btn-buscar.onclick=cargarReporte;
-btn-excel.onclick=()=>{
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),"Reporte");
-  XLSX.writeFile(wb,"reporte_facturacion.xlsx");
-};
+    renderTabla(data||[]);
+  }
 
-await cargarListas();
-await cargarReporte();
+  function renderTabla(rows){
+    const tbody = $("tbody");
+    tbody.innerHTML = "";
+
+    let total = 0;
+    let costo = 0;
+
+    rows.forEach(r=>{
+      total += Number(r.valor_total||0);
+      costo += Number(r.costo||0);
+
+      tbody.innerHTML += `
+        <tr>
+          <td class="mono">${r.fecha_factura||"—"}</td>
+          <td>${r.profesional||"—"}</td>
+          <td class="mono">${r.numero_factura||"—"}</td>
+          <td class="mono">${r.paciente_cedula||"—"}</td>
+          <td>${r.paciente_nombre||"—"}</td>
+          <td>${r.descripcion||"—"}</td>
+          <td class="right mono">${r.cantidad||0}</td>
+          <td class="right mono">$ ${money(r.costo)}</td>
+          <td class="right mono">$ ${money(r.valor_total)}</td>
+        </tr>
+      `;
+    });
+
+    const margen = total - costo;
+    const margenEl = $("s_margen");
+
+    margenEl.textContent = `$ ${money(margen)}`;
+    margenEl.style.color = margen >= 0 ? "var(--green)" : "var(--red)";
+
+    $("s_count").textContent = rows.length;
+    $("s_total").textContent = money(total);
+    $("s_costo").textContent = money(costo);
+  }
+
+  $("btn-buscar").addEventListener("click", cargarReporte);
+
+  await cargarListas();
+  await cargarReporte();
 </script>
 </body>
 </html>
+
 
 
 
