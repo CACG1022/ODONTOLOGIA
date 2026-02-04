@@ -19,6 +19,8 @@
       --line:#e5e7eb;
       --radius:14px;
       --shadow:0 10px 25px rgba(0,0,0,.08);
+      --green:#16a34a;
+      --red:#dc2626;
     }
     *{box-sizing:border-box}
     body{
@@ -154,45 +156,38 @@
     </div>
 
     <div class="filters">
-      <!-- Profesional -->
       <div>
         <label>Profesional</label>
         <input id="f_profesional" list="lista_profesionales" placeholder="Buscar profesional..." />
         <datalist id="lista_profesionales"></datalist>
       </div>
 
-      <!-- N° factura -->
       <div>
         <label>N° Factura</label>
         <input id="f_factura" placeholder="FAC-2026..." />
       </div>
 
-      <!-- Cédula -->
       <div>
         <label>Cédula paciente</label>
         <input id="f_cedula" placeholder="Solo números" />
       </div>
 
-      <!-- Paciente -->
       <div>
         <label>Paciente</label>
         <input id="f_paciente" list="lista_pacientes" placeholder="Buscar paciente..." />
         <datalist id="lista_pacientes"></datalist>
       </div>
 
-      <!-- Desde -->
       <div>
         <label>Desde</label>
         <input type="date" id="f_desde" />
       </div>
 
-      <!-- Hasta -->
       <div>
         <label>Hasta</label>
         <input type="date" id="f_hasta" />
       </div>
 
-      <!-- Procedimiento -->
       <div>
         <label>Procedimiento</label>
         <input id="f_procedimiento" placeholder="Texto libre" />
@@ -222,12 +217,17 @@
       <div class="box"><div><span>Registros</span><b id="s_count">0</b></div></div>
       <div class="box"><div><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div></div>
       <div class="box"><div><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div></div>
+      <div class="box">
+        <div>
+          <span>Margen de ganancia</span>
+          <b id="s_margen">$ 0</b>
+        </div>
+      </div>
     </div>
   </div>
 
 </div>
 
-<!-- Supabase -->
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -283,11 +283,7 @@
       q = q.lte("fecha_factura", $("f_hasta").value);
 
     const { data, error } = await q;
-
-    if (error){
-      alert(error.message);
-      return;
-    }
+    if (error) return alert(error.message);
 
     renderTabla(data||[]);
   }
@@ -317,6 +313,12 @@
         </tr>
       `;
     });
+
+    const margen = total - costo;
+    const margenEl = $("s_margen");
+
+    margenEl.textContent = `$ ${money(margen)}`;
+    margenEl.style.color = margen >= 0 ? "var(--green)" : "var(--red)";
 
     $("s_count").textContent = rows.length;
     $("s_total").textContent = money(total);
