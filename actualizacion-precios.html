@@ -104,6 +104,21 @@
       }
     }
 
+    function llenarFiltroProfesionales(){
+  const sel = document.getElementById("filter-profesional");
+  if(!sel) return;
+
+  sel.innerHTML = `<option value="">Todos los profesionales</option>`;
+
+  PROFESIONALES_CACHE.forEach(p=>{
+    const o = document.createElement("option");
+    o.value = p.nombre;
+    o.textContent = p.nombre;
+    sel.appendChild(o);
+  });
+}
+
+
     function crearSelectProfesional(valor){
       const sel = document.createElement("select");
       sel.style.width = "100%";
@@ -303,19 +318,39 @@ function render(){
     }
 
     function applyFilter(){
-      const q = String(document.getElementById("search").value || "")
-        .trim()
-        .toLowerCase();
+  const q = String(document.getElementById("search").value || "")
+    .trim()
+    .toLowerCase();
 
-      if (!q) {
-        state.filtered = [...state.all];
-      } else {
-        state.filtered = state.all.filter(r =>
-          String(r.procedimiento || "").toLowerCase().includes(q) || String(r.codigo_cups || "").toLowerCase().includes(q)
-        );
-      }
-      render();
+  const fProf = document.getElementById("filter-profesional")?.value || "";
+  const fEsp  = document.getElementById("filter-especialidad")?.value || "";
+  const fCosto = document.getElementById("filter-costo")?.value || "";
+
+  state.filtered = state.all.filter(r => {
+    // 🔍 texto
+    if(q){
+      const matchText =
+        String(r.procedimiento || "").toLowerCase().includes(q) ||
+        String(r.codigo_cups || "").toLowerCase().includes(q);
+      if(!matchText) return false;
     }
+
+    // 👤 profesional
+    if(fProf && r.profesional !== fProf) return false;
+
+    // 🦷 especialidad
+    if(fEsp && r.especialidad !== fEsp) return false;
+
+    // 💰 costo
+    if(fCosto === "con" && (r.costo === null || r.costo === "")) return false;
+    if(fCosto === "sin" && (r.costo !== null && r.costo !== "")) return false;
+
+    return true;
+  });
+
+  render();
+}
+
 
     async function cargarProcedimientos(){
       setStatus("Cargando procedimientos...");
@@ -381,8 +416,8 @@ function render(){
       }
 
       showToast("Guardado ✅", "ok");
-      await cargarProfesionales();
       await cargarProcedimientos();
+      applyFilter();
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
 
@@ -404,6 +439,8 @@ function render(){
 
       showToast("Eliminado ✅", "ok");
       await cargarProfesionales();
+     llenarFiltroProfesionales();
+      
       await cargarProcedimientos();
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
@@ -477,8 +514,15 @@ function render(){
       document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
       document.getElementById("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
 
+      document.getElementById("filter-profesional")?.addEventListener("change", applyFilter);
+     document.getElementById("filter-especialidad")?.addEventListener("change", applyFilter);
+     document.getElementById("filter-costo")?.addEventListener("change", applyFilter);
+
+
       await cargarProfesionales();
+      llenarFiltroProfesionales();
       await cargarProcedimientos();
+
     }
 
     // ===== Formato y color en fila "Agregar" =====
@@ -644,6 +688,7 @@ if (newValor) {
       background:#fff;
     }
     input[type="number"]{ min-width: 160px; }
+
 
     .btn{
       border: 1px solid var(--line);
@@ -863,10 +908,35 @@ td.col-valor input {
       </div>
       <div class="header-actions">
         <input id="search" type="text" placeholder="Buscar (ej: resina, endodoncia...)" />
+       <select id="filter-profesional">
+  <option value="">Todos los profesionales</option>
+</select>
+
+<select id="filter-especialidad">
+  <option value="">Todas las especialidades</option>
+  <option>Odontología General</option>
+  <option>Rehabilitación Oral</option>
+  <option>Periodoncia</option>
+  <option>Endodoncia</option>
+  <option>Cirugía</option>
+  <option>Ortodoncia</option>
+  <option>Odontopediatría</option>
+  <option>Implantologia</option>
+</select>
+
+<select id="filter-costo">
+  <option value="">Todos</option>
+  <option value="con">Con costo</option>
+  <option value="sin">Sin costo</option>
+</select>
+
+
+        
         <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
         <button class="btn" type="button" id="btn-back">Volver</button>
       </div>
     </div>
+    
 
     <div class="new-row">
       <input id="new-costo" type="text" inputmode="numeric" placeholder="Costo (opcional)" />
