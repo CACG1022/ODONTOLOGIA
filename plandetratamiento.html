@@ -836,7 +836,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       try {
         const { data, error } = await window.supabase
           .from("procedimientos_precios")
-          .select("id, procedimiento, valor, activo")
+          .select("id, procedimiento, valor, activo, profesional")
           .eq("activo", true)
           .order("procedimiento", { ascending: true });
 
@@ -845,7 +845,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
         PROC_CATALOGO = (data || []).map(row => ({
           key: String(row.id),
           label: String(row.procedimiento),
-          price: row.valor == null ? null : Number(row.valor)
+          price: row.valor == null ? null : Number(row.valor),
+          profesional: row.profesional || null // ✅ NUEVO
         }));
 
         PROC_READY = true;
@@ -1614,12 +1615,18 @@ function obtenerResumenParaFacturacion() {
           procedimiento: nombre,
           procedimiento_id: procId, // ✅ GUARDADO
           cantidad: 0,
-          valor_total: 0
+          valor_total: 0,
+          profesional: null // ✅ NUEVO
         };
       }
 
       resumen[nombre].cantidad += 1;
       resumen[nombre].valor_total += precioReal;
+
+      if (!resumen[nombre].profesional) {
+        const found = (PROC_CATALOGO || []).find(p => String(p.key) === String(procId));
+        resumen[nombre].profesional = found?.profesional || null;
+      }
     });
   });
 
@@ -1659,7 +1666,8 @@ async function ejecutarFacturacion() {
     procedimiento_id: it.procedimiento_id, // ✅ AHORA SÍ
     cantidad: it.cantidad,
     valor_unitario: it.valor_unitario,
-    valor_total: it.valor_total
+    valor_total: it.valor_total,
+    profesional: it.profesional || null // ✅ NUEVO
   }));
 
   const { error } = await window.supabase
@@ -2681,6 +2689,4 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
-
-
 
