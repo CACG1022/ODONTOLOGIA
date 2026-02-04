@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reporte de Facturación por Profesional</title>
 
-  <!-- Supabase -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
   <!-- Tipografía -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -22,6 +19,9 @@
       --line:#e5e7eb;
       --radius:14px;
       --shadow:0 10px 25px rgba(0,0,0,.08);
+      --danger:#b42318;
+      --ok:#067647;
+      --warn:#b54708;
     }
     *{box-sizing:border-box}
     body{
@@ -31,25 +31,17 @@
       color:var(--text);
       padding:24px;
     }
-    h1{
-      font-size:20px;
-      margin:0 0 6px 0;
-    }
+    h1{ font-size:20px; margin:0 0 6px 0; }
     .muted{color:var(--muted);font-size:13px}
-
-    .container{
-      max-width:1400px;
-      margin:0 auto;
-    }
-
+    .container{ max-width:1400px; margin:0 auto; }
     .card{
       background:var(--card);
       border-radius:var(--radius);
       box-shadow:var(--shadow);
       border:1px solid var(--line);
       margin-bottom:18px;
+      overflow:hidden;
     }
-
     .card-header{
       padding:16px 20px;
       border-bottom:1px solid var(--line);
@@ -59,14 +51,14 @@
       gap:12px;
       flex-wrap:wrap;
     }
-
     .filters{
       display:grid;
-      grid-template-columns:repeat(5,1fr);
+      grid-template-columns:repeat(4,1fr);
       gap:12px;
       padding:16px 20px;
+      border-bottom:1px solid var(--line);
+      background:#fff;
     }
-
     .filters label{
       font-size:12px;
       color:var(--muted);
@@ -74,8 +66,7 @@
       margin-bottom:4px;
       display:block;
     }
-
-    input, select{
+    input{
       width:100%;
       padding:10px 12px;
       border-radius:10px;
@@ -84,7 +75,6 @@
       outline:none;
       background:#fff;
     }
-
     .btn{
       padding:10px 14px;
       border-radius:10px;
@@ -93,15 +83,25 @@
       color:#fff;
       font-weight:700;
       cursor:pointer;
+      display:inline-flex;
+      gap:8px;
+      align-items:center;
     }
     .btn:hover{background:var(--brand2)}
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      font-size:13px;
+    .btn.secondary{
+      background:#fff;
+      color:var(--text);
+      border-color:var(--line);
+    }
+    .btn.secondary:hover{filter:brightness(.98)}
+    .btn.danger{
+      background:#fff;
+      color:var(--danger);
+      border-color:#f2c6c6;
     }
 
+    .table-wrap{ overflow:auto; max-height:65vh; }
+    table{ width:100%; border-collapse:collapse; font-size:13px; }
     thead th{
       background:#f9fafb;
       color:var(--muted);
@@ -112,16 +112,14 @@
       position:sticky;
       top:0;
       z-index:1;
+      white-space:nowrap;
     }
-
     tbody td{
       padding:10px 14px;
       border-bottom:1px solid var(--line);
       vertical-align:middle;
     }
-
     tbody tr:hover{background:#f8fafc}
-
     .mono{font-family:ui-monospace,monospace}
     .right{text-align:right}
 
@@ -133,7 +131,6 @@
       border-top:1px solid var(--line);
       background:#fbfcfd;
     }
-
     .summary .box{
       border:1px solid var(--line);
       border-radius:12px;
@@ -141,46 +138,62 @@
       min-width:220px;
       background:#fff;
     }
-
     .summary .box div{
       display:flex;
       justify-content:space-between;
       font-size:13px;
       padding:4px 0;
+      gap:10px;
     }
 
-    @media(max-width:1100px){
-      .filters{grid-template-columns:repeat(3,1fr)}
+    /* DEBUG */
+    .debug{
+      margin: 14px 20px 0;
+      border:1px dashed var(--line);
+      border-radius:12px;
+      padding:12px 14px;
+      background:#fff;
+      font-size:12px;
+      color:var(--muted);
+      white-space:pre-wrap;
     }
-    @media(max-width:700px){
-      .filters{grid-template-columns:1fr}
-    }
+    .tag{font-weight:800}
+    .tag.ok{color:var(--ok)}
+    .tag.err{color:var(--danger)}
+    .tag.warn{color:var(--warn)}
+
+    @media(max-width:1100px){ .filters{grid-template-columns:repeat(2,1fr)} }
+    @media(max-width:700px){ .filters{grid-template-columns:1fr} }
   </style>
 </head>
+
 <body>
   <div class="container">
-
     <div class="card">
       <div class="card-header">
         <div>
           <h1>Reporte de Facturación por Profesional</h1>
           <div class="muted">Detalle completo desde <b>factura_detalle_ext</b></div>
         </div>
-        <button class="btn" id="btn-buscar">🔎 Buscar</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn secondary" id="btn-limpiar" type="button">🧹 Limpiar</button>
+          <button class="btn" id="btn-buscar" type="button">🔎 Buscar</button>
+          <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
+        </div>
       </div>
 
       <div class="filters">
         <div>
           <label>Profesional</label>
-          <input id="f_profesional" placeholder="Nombre o cédula" />
+          <input id="f_profesional" placeholder="Ej: Carmina / cédula" />
         </div>
         <div>
           <label>N° Factura</label>
-          <input id="f_factura" placeholder="FAC-2026..." />
+          <input id="f_factura" placeholder="Ej: FAC-2026..." />
         </div>
         <div>
           <label>Cédula paciente</label>
-          <input id="f_cedula" placeholder="Solo números" />
+          <input id="f_cedula" placeholder="Solo números" inputmode="numeric" />
         </div>
         <div>
           <label>Procedimiento</label>
@@ -188,7 +201,9 @@
         </div>
       </div>
 
-      <div style="overflow:auto; max-height:65vh;">
+      <div id="debug" class="debug">DEBUG: esperando...</div>
+
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -202,7 +217,9 @@
               <th class="right">Valor Total</th>
             </tr>
           </thead>
-          <tbody id="tbody"></tbody>
+          <tbody id="tbody">
+            <tr><td colspan="8" class="muted" style="padding:14px;text-align:center;">Cargando...</td></tr>
+          </tbody>
         </table>
       </div>
 
@@ -214,75 +231,161 @@
     </div>
   </div>
 
-<script>
-  const supabase = window.supabase.createClient(
-    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-  );
+  <!-- ✅ IMPORT ESM (más estable que UMD en GitHub Pages) -->
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-  const $ = id => document.getElementById(id);
-  const money = n => Number(n||0).toLocaleString("es-CO");
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 
-  async function cargarReporte(){
-    let query = supabase.from("factura_detalle_ext").select("*");
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    if ($("f_profesional").value)
-      query = query.or(
-  `profesional.ilike.%${$("f_profesional").value}%,profesional.is.null`
-);
+    const $ = (id) => document.getElementById(id);
+    const money = (n) => Number(n||0).toLocaleString("es-CO");
+    const debug = (lines) => { $("debug").textContent = lines.join("\n"); };
 
-    if ($("f_factura").value)
-      query = query.ilike("numero_factura", `%${$("f_factura").value}%`);
-
-    if ($("f_cedula").value)
-      query = query.ilike("paciente_cedula", `%${$("f_cedula").value}%`);
-
-    if ($("f_procedimiento").value)
-      query = query.ilike("descripcion", `%${$("f_procedimiento").value}%`);
-
-    const { data, error } = await query;
-
-    if (error){
-      alert(error.message);
-      return;
+    function setEmpty(msg){
+      $("tbody").innerHTML = `<tr><td colspan="8" class="muted" style="padding:14px;text-align:center;">${msg}</td></tr>`;
+      $("s_count").textContent = "0";
+      $("s_total").textContent = "0";
+      $("s_costo").textContent = "0";
     }
 
-    renderTabla(data || []);
-  }
+    async function proteger(){
+      // ✅ Esto fuerza a usar el JWT si hay sesión. Si no, te manda a login.
+      const { data: { session }, error } = await supabase.auth.getSession();
+      if (error){
+        debug([`[ERR] getSession: ${error.message}`]);
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      if (!session){
+        debug([`[WARN] No hay sesión (rol anon). Redirigiendo a login...`]);
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      debug([
+        `[OK] Sesión activa`,
+        `Email: ${session.user?.email || "—"}`,
+        `User ID: ${session.user?.id || "—"}`,
+        `Tip: si ves 0 registros, es porque la vista/tablas no permiten SELECT para tu rol (RLS/policies).`
+      ]);
+      return true;
+    }
 
-  function renderTabla(rows){
-    const tbody = $("tbody");
-    tbody.innerHTML = "";
+    async function cargarReporte(){
+      setEmpty("Cargando...");
 
-    let total = 0;
-    let costo = 0;
+      const fProf = ($("f_profesional").value || "").trim();
+      const fFac  = ($("f_factura").value || "").trim();
+      const fCed  = ($("f_cedula").value || "").trim().replace(/[^\d]/g,"");
+      const fProc = ($("f_procedimiento").value || "").trim();
 
-    rows.forEach(r =>{
-      total += Number(r.valor_total||0);
-      costo += Number(r.costo||0);
+      $("f_cedula").value = fCed;
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${r.profesional||"—"}</td>
-        <td class="mono">${r.numero_factura||"—"}</td>
-        <td class="mono">${r.paciente_cedula||"—"}</td>
-        <td>${r.paciente_nombre||"—"}</td>
-        <td>${r.descripcion||"—"}</td>
-        <td class="right mono">${r.cantidad||0}</td>
-        <td class="right mono">$ ${money(r.costo)}</td>
-        <td class="right mono">$ ${money(r.valor_total)}</td>
-      `;
-      tbody.appendChild(tr);
+      // ✅ Pedimos explícitamente columnas típicas (y evitamos columnas que no existan)
+      // Si tu vista NO tiene "descripcion" o "cantidad", igual verás filas y las celdas saldrán "—".
+      let q = supabase
+        .from("factura_detalle_ext")
+        .select("profesional,numero_factura,paciente_cedula,paciente_nombre,descripcion,cantidad,costo,valor_total,procedimiento_id");
+
+      // ✅ Importante: si hay filtros, aplicar
+      if (fProf) q = q.ilike("profesional", `%${fProf}%`);
+      if (fFac)  q = q.ilike("numero_factura", `%${fFac}%`);
+      if (fCed)  q = q.ilike("paciente_cedula", `%${fCed}%`);
+      if (fProc) q = q.ilike("descripcion", `%${fProc}%`);
+
+      // ✅ Traer más de 1000 por si acaso
+      q = q.range(0, 9999);
+
+      const { data, error } = await q;
+
+      if (error){
+        debug([
+          `[ERR] Supabase error`,
+          `Code: ${error.code || "—"}`,
+          `Message: ${error.message}`,
+          ``,
+          `⚠️ Si dice "permission denied" o similar:`,
+          `- Tu vista/tablas NO permiten SELECT para tu rol.`,
+          `- O RLS está bloqueando.`,
+        ]);
+        setEmpty("Error cargando datos. Mira el recuadro DEBUG.");
+        return;
+      }
+
+      debug([
+        `[OK] Consulta ejecutada`,
+        `Registros devueltos: ${(data||[]).length}`,
+        `Filtros: prof="${fProf}" factura="${fFac}" ced="${fCed}" proc="${fProc}"`
+      ]);
+
+      renderTabla(data || []);
+    }
+
+    function renderTabla(rows){
+      const tbody = $("tbody");
+      tbody.innerHTML = "";
+
+      if (!rows.length){
+        setEmpty("No hay registros para ese filtro (o tu rol no tiene permiso).");
+        return;
+      }
+
+      let total = 0;
+      let costo = 0;
+
+      for (const r of rows){
+        total += Number(r.valor_total||0);
+        costo += Number(r.costo||0);
+
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${r.profesional ?? "—"}</td>
+          <td class="mono">${r.numero_factura ?? "—"}</td>
+          <td class="mono">${r.paciente_cedula ?? "—"}</td>
+          <td>${r.paciente_nombre ?? "—"}</td>
+          <td>${r.descripcion ?? (r.procedimiento_id ? ("ID " + r.procedimiento_id) : "—")}</td>
+          <td class="right mono">${r.cantidad ?? "—"}</td>
+          <td class="right mono">$ ${money(r.costo)}</td>
+          <td class="right mono">$ ${money(r.valor_total)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+
+      $("s_count").textContent = String(rows.length);
+      $("s_total").textContent = money(total);
+      $("s_costo").textContent = money(costo);
+    }
+
+    async function logout(){
+      try{ await supabase.auth.signOut(); }catch(_){}
+      window.location.href = LOGIN_URL;
+    }
+
+    function limpiar(){
+      $("f_profesional").value = "";
+      $("f_factura").value = "";
+      $("f_cedula").value = "";
+      $("f_procedimiento").value = "";
+      cargarReporte();
+    }
+
+    // ✅ Eventos
+    $("btn-buscar").addEventListener("click", cargarReporte);
+    $("btn-limpiar").addEventListener("click", limpiar);
+    $("btn-logout").addEventListener("click", logout);
+
+    // Enter = buscar
+    ["f_profesional","f_factura","f_cedula","f_procedimiento"].forEach(id=>{
+      $(id).addEventListener("keydown", (e)=>{ if(e.key==="Enter") cargarReporte(); });
     });
 
-    $("s_count").textContent = rows.length;
-    $("s_total").textContent = money(total);
-    $("s_costo").textContent = money(costo);
-  }
-
-  $("btn-buscar").addEventListener("click", cargarReporte);
-
-  cargarReporte();
-</script>
+    // ✅ ARRANQUE
+    const ok = await proteger();
+    if (ok) await cargarReporte();
+  </script>
 </body>
 </html>
+
