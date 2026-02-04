@@ -791,11 +791,12 @@ if (newValor) {
     table{
       table-layout: auto;
       width: 100%;
+      max-width: 100%;
     }
     th, td{
       overflow: hidden;
       text-overflow: ellipsis;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     /* Scroll horizontal solo si hace falta en pantallas pequeñas */
@@ -821,6 +822,12 @@ td.col-valor input {
       font-size: 13px;
       background: #fff;
       width: 100%;
+    }
+
+
+    /* ===== OVERRIDE RESPONSIVE FINAL ===== */
+    table, thead, tbody, tr, th, td{
+      max-width: 100% !important;
     }
 
 </style>
@@ -868,7 +875,7 @@ td.col-valor input {
       <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
     </div>
 
-    <div style="max-height: 62vh; overflow:auto;">
+    <div style="max-height: 62vh; overflow-y:auto; overflow-x:hidden;">
       <table>
         <thead>
           <tr>
@@ -894,7 +901,6 @@ td.col-valor input {
   <div id="toast"></div>
 </body>
 </html>
-
 
 
 
