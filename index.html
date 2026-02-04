@@ -33,6 +33,8 @@
       facturacion: "https://cacg1022.github.io/ODONTOLOGIA/facturacion.html",
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
       reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
+      reporte_costos_profesionales: "https://cacg1022.github.io/ODONTOLOGIA/reporte_costos_profesionales.html",
+
 
       // ✅ NUEVO: Gastos (misma pestaña)
       gastos: "https://cacg1022.github.io/ODONTOLOGIA/gastos.html",
@@ -129,6 +131,8 @@
 
       // ✅ NUEVO: Gastos (debe existir como "gastos" en modulos_permisos.modulo)
       "go-gastos":            "gastos",
+      "go-reporte-costos-profesionales": "reporte_costos_profesionales",
+
     };
 
     function getModuloCandidates(mod) {
@@ -225,6 +229,8 @@
       wireNav("go-facturacion", URLS.facturacion, "href");
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
       wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
+      wireNav("go-reporte-costos-profesionales", URLS.reporte_costos_profesionales,"href");
+
 
       // ✅ NUEVO: Gastos (misma pestaña)
       wireNav("go-gastos", URLS.gastos, "href");
@@ -1106,6 +1112,24 @@ z-index: 1;
           <h4>Reporte de pacientes</h4>
           <p>Buscar por cédula o nombre.</p>
         </a>
+
+ <a class="module" href="#" id="go-reporte-costos-profesionales">
+  <div class="module-top">
+    <div class="micon" aria-hidden="true">
+      <!-- icono (puedes cambiarlo después si quieres) -->
+      <svg viewBox="0 0 24 24">
+        <path d="M12 2a10 10 0 1 0 10 10A10.01 10.01 0 0 0 12 2Zm1 15h-2v-6h2Zm0-8h-2V7h2Z"/>
+      </svg>
+    </div>
+    <span class="mgo">Abrir</span>
+  </div>
+  <h4>Reporte costos x profesionales</h4>
+  <p>Costos detallados por profesional.</p>
+</a>
+
+
+
+        
 
         <a class="module" href="#" id="go-plan">
           <div class="module-top">
