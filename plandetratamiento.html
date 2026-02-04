@@ -1603,15 +1603,16 @@ setTimeout(() => {
 function obtenerResumenParaFacturacion() {
   const resumen = {};
 
-  // 🔥 AQUÍ usamos EXCLUSIVAMENTE selectedTeeth (odontograma)
   Object.values(selectedTeeth).forEach(arr => {
     arr.forEach(p => {
       const nombre = String(p.label).trim();
-      const precioReal = Number(p.price || 0); // ✅ PRECIO EDITADO POR EL USUARIO
+      const procId = p.key; // ✅ ESTE ES EL procedimiento_id REAL
+      const precioReal = Number(p.price || 0);
 
       if (!resumen[nombre]) {
         resumen[nombre] = {
           procedimiento: nombre,
+          procedimiento_id: procId, // ✅ GUARDADO
           cantidad: 0,
           valor_total: 0
         };
@@ -1622,16 +1623,16 @@ function obtenerResumenParaFacturacion() {
     });
   });
 
-  // 🔁 Convertir a formato para facturación
   return Object.values(resumen).map(r => ({
     procedimiento: r.procedimiento,
+    procedimiento_id: r.procedimiento_id, // ✅
     cantidad: r.cantidad,
-    valor_unitario: r.cantidad > 0
-      ? Math.round(r.valor_total / r.cantidad)
-      : 0,
+    valor_unitario:
+      r.cantidad > 0 ? Math.round(r.valor_total / r.cantidad) : 0,
     valor_total: r.valor_total
   }));
 }
+
 
 
 async function ejecutarFacturacion() {
@@ -1655,6 +1656,7 @@ async function ejecutarFacturacion() {
   const payload = items.map(it => ({
     cedula,
     procedimiento: it.procedimiento,
+    procedimiento_id: it.procedimiento_id, // ✅ AHORA SÍ
     cantidad: it.cantidad,
     valor_unitario: it.valor_unitario,
     valor_total: it.valor_total
