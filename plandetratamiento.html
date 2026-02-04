@@ -1642,6 +1642,23 @@ function obtenerResumenParaFacturacion() {
 
 
 
+
+async function obtenerProfesionalPorProcedimientoId(procedimientoId){
+  try{
+    const { data, error } = await window.supabase
+      .from("procedimientos_precios")
+      .select("profesional")
+      .eq("id", procedimientoId)
+      .single();
+    if(error) throw error;
+    return data?.profesional || null;
+  }catch(e){
+    console.error("Error obteniendo profesional:", e);
+    return null;
+  }
+}
+
+
 async function ejecutarFacturacion() {
   const cedula = document.getElementById("cedula")?.value?.trim();
   if (!cedula) {
@@ -1660,15 +1677,19 @@ async function ejecutarFacturacion() {
     .delete()
     .eq("cedula", cedula);
 
-  const payload = items.map(it => ({
-    cedula,
-    procedimiento: it.procedimiento,
-    procedimiento_id: it.procedimiento_id, // ✅ AHORA SÍ
-    cantidad: it.cantidad,
-    valor_unitario: it.valor_unitario,
-    valor_total: it.valor_total,
-    profesional: it.profesional || null // ✅ NUEVO
-  }));
+  const payload = [];
+  for (const it of items){
+    const profesional = await obtenerProfesionalPorProcedimientoId(it.procedimiento_id);
+    payload.push({
+      cedula,
+      procedimiento: it.procedimiento,
+      procedimiento_id: it.procedimiento_id, // ✅ AHORA SÍ
+      cantidad: it.cantidad,
+      valor_unitario: it.valor_unitario,
+      valor_total: it.valor_total,
+      profesional // ✅ PROFESIONAL REAL DESDE SUPABASE
+    });
+  }
 
   const { error } = await window.supabase
     .from("facturacion_temporal")
@@ -2689,4 +2710,6 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
+
+
 
