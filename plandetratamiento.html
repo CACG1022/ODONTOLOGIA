@@ -1626,7 +1626,6 @@ function obtenerResumenParaFacturacion() {
   return Object.values(resumen).map(r => ({
     procedimiento: r.procedimiento,
     procedimiento_id: r.procedimiento_id, // ✅
-    profesional: it.profesional, // ✅ AHORA SÍ
     cantidad: r.cantidad,
     valor_unitario:
       r.cantidad > 0 ? Math.round(r.valor_total / r.cantidad) : 0,
@@ -1658,7 +1657,6 @@ async function ejecutarFacturacion() {
     cedula,
     procedimiento: it.procedimiento,
     procedimiento_id: it.procedimiento_id, // ✅ AHORA SÍ
-    profesional: it.profesional, // ✅ AHORA SÍ
     cantidad: it.cantidad,
     valor_unitario: it.valor_unitario,
     valor_total: it.valor_total
@@ -2683,4 +2681,6 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
+
+
 
