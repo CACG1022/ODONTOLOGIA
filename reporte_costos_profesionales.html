@@ -227,7 +227,9 @@
     let query = supabase.from("factura_detalle_ext").select("*");
 
     if ($("f_profesional").value)
-      query = query.ilike("profesional", `%${$("f_profesional").value}%`);
+      query = query.or(
+  `profesional.ilike.%${$("f_profesional").value}%,profesional.is.null`
+);
 
     if ($("f_factura").value)
       query = query.ilike("numero_factura", `%${$("f_factura").value}%`);
