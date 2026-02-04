@@ -153,8 +153,25 @@ function render(){
 
         // ===== Especialidad =====
         const tdEsp = document.createElement("td");
-        const inpEsp = document.createElement("input");
-        inpEsp.type = "text";
+        const inpEsp = document.createElement("select");
+        const ESP_OPS = [
+          "",
+          "Odontología General",
+          "Rehabilitación Oral",
+          "Periodoncia",
+          "Endodoncia",
+          "Cirugía",
+          "Ortodoncia",
+          "Odontopediatría",
+          "Implantologia"
+        ];
+        ESP_OPS.forEach(v=>{
+          const o=document.createElement("option");
+          o.value=v;
+          o.textContent=v||"— Seleccione —";
+          if(v===row.especialidad) o.selected=true;
+          inpEsp.appendChild(o);
+        });
         inpEsp.value = row.especialidad ?? "";
         inpEsp.addEventListener("input", ()=>{
           const prev = state.editing.get(row.id) || {
@@ -618,7 +635,7 @@ if (newValor) {
     input[type="text"], input[type="number"]{
       border: 1px solid var(--line);
       border-radius: 10px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       outline: none;
       min-width: 240px;
       font-size: 14px;
@@ -629,7 +646,7 @@ if (newValor) {
     .btn{
       border: 1px solid var(--line);
       background: #fff;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 10px;
       cursor: pointer;
       font-weight: 700;
@@ -718,7 +735,7 @@ if (newValor) {
       position: fixed;
       right: 16px;
       bottom: 16px;
-      padding: 10px 12px;
+      padding: 8px 10px;
       border-radius: 12px;
       border: 1px solid var(--line);
       background: #fff;
@@ -795,7 +812,18 @@ td.col-valor input {
   font-weight: 700;
 }
 
-  </style>
+  
+    /* ===== NUEVO: selects compactos ===== */
+    select{
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      background: #fff;
+      width: 100%;
+    }
+
+</style>
 </head>
 
 <body>
@@ -844,13 +872,13 @@ td.col-valor input {
       <table>
         <thead>
           <tr>
-            <th style="width: 200px;">Profesional</th>
-            <th style="width: 200px;">Especialidad</th>
-            <th class="col-costo" style="width: 180px;">Costo</th>
+            <th style="width: 150px;">Profesional</th>
+            <th style="width: 160px;">Especialidad</th>
+            <th class="col-costo" style="width: 140px;">Costo</th>
             <th>Procedimiento</th>
             <th style="width: 180px;">CUPS</th>
-            <th style="width: 220px;">Precio</th>
-            <th style="width: 240px;">Acciones</th>
+            <th style="width: 160px;">Precio</th>
+            <th style="width: 180px;">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -866,6 +894,11 @@ td.col-valor input {
   <div id="toast"></div>
 </body>
 </html>
+
+
+
+
+
 
 
 
