@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Reporte de Facturación por Profesional</title>
+
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Tipografía -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f4f6f8;
+      --card:#ffffff;
+      --text:#1f2937;
+      --muted:#6b7280;
+      --brand:#1f6aa5;
+      --brand2:#114a75;
+      --line:#e5e7eb;
+      --radius:14px;
+      --shadow:0 10px 25px rgba(0,0,0,.08);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:'Inter',system-ui,Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      padding:24px;
+    }
+    h1{
+      font-size:20px;
+      margin:0 0 6px 0;
+    }
+    .muted{color:var(--muted);font-size:13px}
+
+    .container{
+      max-width:1400px;
+      margin:0 auto;
+    }
+
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      border:1px solid var(--line);
+      margin-bottom:18px;
+    }
+
+    .card-header{
+      padding:16px 20px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .filters{
+      display:grid;
+      grid-template-columns:repeat(5,1fr);
+      gap:12px;
+      padding:16px 20px;
+    }
+
+    .filters label{
+      font-size:12px;
+      color:var(--muted);
+      font-weight:600;
+      margin-bottom:4px;
+      display:block;
+    }
+
+    input, select{
+      width:100%;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--line);
+      font-size:14px;
+      outline:none;
+      background:#fff;
+    }
+
+    .btn{
+      padding:10px 14px;
+      border-radius:10px;
+      border:1px solid var(--brand);
+      background:var(--brand);
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .btn:hover{background:var(--brand2)}
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      font-size:13px;
+    }
+
+    thead th{
+      background:#f9fafb;
+      color:var(--muted);
+      font-weight:700;
+      text-align:left;
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    tbody td{
+      padding:10px 14px;
+      border-bottom:1px solid var(--line);
+      vertical-align:middle;
+    }
+
+    tbody tr:hover{background:#f8fafc}
+
+    .mono{font-family:ui-monospace,monospace}
+    .right{text-align:right}
+
+    .summary{
+      display:flex;
+      gap:16px;
+      flex-wrap:wrap;
+      padding:16px 20px;
+      border-top:1px solid var(--line);
+      background:#fbfcfd;
+    }
+
+    .summary .box{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px 14px;
+      min-width:220px;
+      background:#fff;
+    }
+
+    .summary .box div{
+      display:flex;
+      justify-content:space-between;
+      font-size:13px;
+      padding:4px 0;
+    }
+
+    @media(max-width:1100px){
+      .filters{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:700px){
+      .filters{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <h1>Reporte de Facturación por Profesional</h1>
+          <div class="muted">Detalle completo desde <b>factura_detalle_ext</b></div>
+        </div>
+        <button class="btn" id="btn-buscar">🔎 Buscar</button>
+      </div>
+
+      <div class="filters">
+        <div>
+          <label>Profesional</label>
+          <input id="f_profesional" placeholder="Nombre o cédula" />
+        </div>
+        <div>
+          <label>N° Factura</label>
+          <input id="f_factura" placeholder="FAC-2026..." />
+        </div>
+        <div>
+          <label>Cédula paciente</label>
+          <input id="f_cedula" placeholder="Solo números" />
+        </div>
+        <div>
+          <label>Procedimiento</label>
+          <input id="f_procedimiento" placeholder="Texto libre" />
+        </div>
+      </div>
+
+      <div style="overflow:auto; max-height:65vh;">
+        <table>
+          <thead>
+            <tr>
+              <th>Profesional</th>
+              <th>N° Factura</th>
+              <th>Cédula</th>
+              <th>Paciente</th>
+              <th>Procedimiento</th>
+              <th class="right">Cantidad</th>
+              <th class="right">Costo</th>
+              <th class="right">Valor Total</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="summary">
+        <div class="box"><div><span>Registros</span><b id="s_count">0</b></div></div>
+        <div class="box"><div><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div></div>
+        <div class="box"><div><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  const supabase = window.supabase.createClient(
+    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  );
+
+  const $ = id => document.getElementById(id);
+  const money = n => Number(n||0).toLocaleString("es-CO");
+
+  async function cargarReporte(){
+    let query = supabase.from("factura_detalle_ext").select("*");
+
+    if ($("f_profesional").value)
+      query = query.ilike("profesional", `%${$("f_profesional").value}%`);
+
+    if ($("f_factura").value)
+      query = query.ilike("numero_factura", `%${$("f_factura").value}%`);
+
+    if ($("f_cedula").value)
+      query = query.ilike("paciente_cedula", `%${$("f_cedula").value}%`);
+
+    if ($("f_procedimiento").value)
+      query = query.ilike("descripcion", `%${$("f_procedimiento").value}%`);
+
+    const { data, error } = await query.order("created_at", { ascending:false });
+
+    if (error){
+      alert(error.message);
+      return;
+    }
+
+    renderTabla(data || []);
+  }
+
+  function renderTabla(rows){
+    const tbody = $("tbody");
+    tbody.innerHTML = "";
+
+    let total = 0;
+    let costo = 0;
+
+    rows.forEach(r =>{
+      total += Number(r.valor_total||0);
+      costo += Number(r.costo||0);
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td>${r.profesional||"—"}</td>
+        <td class="mono">${r.numero_factura||"—"}</td>
+        <td class="mono">${r.paciente_cedula||"—"}</td>
+        <td>${r.paciente_nombre||"—"}</td>
+        <td>${r.descripcion||"—"}</td>
+        <td class="right mono">${r.cantidad||0}</td>
+        <td class="right mono">$ ${money(r.costo)}</td>
+        <td class="right mono">$ ${money(r.valor_total)}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    $("s_count").textContent = rows.length;
+    $("s_total").textContent = money(total);
+    $("s_costo").textContent = money(costo);
+  }
+
+  $("btn-buscar").addEventListener("click", cargarReporte);
+</script>
+</body>
+</html>
