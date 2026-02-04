@@ -62,7 +62,7 @@
     const state = {
       all: [],
       filtered: [],
-      editing: new Map(), // id -> {procedimiento, valor, costo, codigo_cups}
+      editing: new Map(), // id -> {profesional, especialidad, procedimiento, valor, costo, codigo_cups}
       isAdmin: false
     };
 
@@ -84,7 +84,45 @@
       tr.classList.toggle("dirty", !!dirty);
     }
 
-    function render(){
+    
+    // =========================
+    // 🔽 PROFESIONALES (NUEVO)
+    // =========================
+    let PROFESIONALES_CACHE = [];
+
+    async function cargarProfesionales(){
+      try{
+        const { data, error } = await supabase
+          .from("profesionales")
+          .select("nombre")
+          .eq("activo", true)
+          .order("nombre", { ascending: true });
+
+        if(!error) PROFESIONALES_CACHE = data || [];
+      }catch(e){
+        console.warn("Error cargando profesionales", e);
+      }
+    }
+
+    function crearSelectProfesional(valor){
+      const sel = document.createElement("select");
+      sel.style.width = "100%";
+      const opt = document.createElement("option");
+      opt.value = "";
+      opt.textContent = "— Seleccione —";
+      sel.appendChild(opt);
+
+      PROFESIONALES_CACHE.forEach(p=>{
+        const o = document.createElement("option");
+        o.value = p.nombre;
+        o.textContent = p.nombre;
+        if(p.nombre === valor) o.selected = true;
+        sel.appendChild(o);
+      });
+      return sel;
+    }
+
+function render(){
       const tbody = document.getElementById("tbody");
       const count = document.getElementById("count");
       count.textContent = `${state.filtered.length} procedimientos`;
@@ -94,7 +132,46 @@
       state.filtered.forEach((row)=>{
         const tr = document.createElement("tr");
 
-        // ===== Costo (primera columna) =====
+        
+        // ===== Profesional =====
+        const tdProf = document.createElement("td");
+        const selProf = crearSelectProfesional(row.profesional);
+        selProf.addEventListener("change", ()=>{
+          const prev = state.editing.get(row.id) || {
+            profesional: row.profesional,
+            especialidad: row.especialidad,
+            procedimiento: row.procedimiento,
+            valor: row.valor,
+            costo: row.costo,
+            codigo_cups: row.codigo_cups
+          };
+          prev.profesional = selProf.value;
+          state.editing.set(row.id, prev);
+          markDirty(tr, true);
+        });
+        tdProf.appendChild(selProf);
+
+        // ===== Especialidad =====
+        const tdEsp = document.createElement("td");
+        const inpEsp = document.createElement("input");
+        inpEsp.type = "text";
+        inpEsp.value = row.especialidad ?? "";
+        inpEsp.addEventListener("input", ()=>{
+          const prev = state.editing.get(row.id) || {
+            profesional: row.profesional,
+            especialidad: row.especialidad,
+            procedimiento: row.procedimiento,
+            valor: row.valor,
+            costo: row.costo,
+            codigo_cups: row.codigo_cups
+          };
+          prev.especialidad = inpEsp.value;
+          state.editing.set(row.id, prev);
+          markDirty(tr, true);
+        });
+        tdEsp.appendChild(inpEsp);
+
+// ===== Costo (primera columna) =====
         const tdCosto = document.createElement("td");
         tdCosto.className = "col-costo";
         const inpCosto = document.createElement("input");
@@ -196,6 +273,8 @@
         tdAcc.appendChild(btnSave);
         tdAcc.appendChild(btnDel);
 
+        tr.appendChild(tdProf);
+        tr.appendChild(tdEsp);
         tr.appendChild(tdCosto);
         tr.appendChild(tdProc);
         tr.appendChild(tdCups);
@@ -226,7 +305,7 @@
       try{
         const { data, error } = await supabase
           .from("procedimientos_precios")
-          .select("id,costo,procedimiento,valor,codigo_cups,updated_at")
+          .select("id,profesional,especialidad,costo,procedimiento,valor,codigo_cups,updated_at")
           .order("procedimiento", { ascending: true });
 
         if (error){
@@ -262,7 +341,14 @@
         return;
       }
 
-      const payload = { procedimiento, valor: valor === null ? null : valor, costo: costo === null ? null : costo, codigo_cups: edit.codigo_cups || null };
+      const payload = {
+        profesional: edit.profesional || null,
+        especialidad: edit.especialidad || null,
+        procedimiento,
+        valor: valor === null ? null : valor,
+        costo: costo === null ? null : costo,
+        codigo_cups: edit.codigo_cups || null
+      };
 
       setStatus("Guardando...");
       const { error } = await supabase
@@ -278,6 +364,7 @@
       }
 
       showToast("Guardado ✅", "ok");
+      await cargarProfesionales();
       await cargarProcedimientos();
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
@@ -299,6 +386,7 @@
       }
 
       showToast("Eliminado ✅", "ok");
+      await cargarProfesionales();
       await cargarProcedimientos();
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
@@ -331,6 +419,7 @@
       document.getElementById("new-cups").value = "";
 
       showToast("Creado ✅", "ok");
+      await cargarProfesionales();
       await cargarProcedimientos();
       applyFilter();
     }
@@ -371,6 +460,7 @@
       document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
       document.getElementById("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
 
+      await cargarProfesionales();
       await cargarProcedimientos();
     }
 
@@ -754,6 +844,8 @@ td.col-valor input {
       <table>
         <thead>
           <tr>
+            <th style="width: 200px;">Profesional</th>
+            <th style="width: 200px;">Especialidad</th>
             <th class="col-costo" style="width: 180px;">Costo</th>
             <th>Procedimiento</th>
             <th style="width: 180px;">CUPS</th>
@@ -772,51 +864,8 @@ td.col-valor input {
   </div>
 
   <div id="toast"></div>
-
-<!-- ========================= -->
-<!-- 🔽 EXTENSION PROFESIONAL + ESPECIALIDAD (NO MODIFICA LO EXISTENTE) -->
-<!-- ========================= -->
-<script type="module">
-  // 🔽 Cache profesionales
-  let PROFESIONALES_CACHE = [];
-
-  async function cargarProfesionalesDropdown() {
-    try {
-      const { data, error } = await supabase
-        .from("profesionales")
-        .select("nombre")
-        .eq("activo", true)
-        .order("nombre", { ascending: true });
-
-      if (!error) PROFESIONALES_CACHE = data || [];
-    } catch(e){
-      console.warn("No se pudieron cargar profesionales", e);
-    }
-  }
-
-  function crearSelectProfesional(valorActual){
-    const sel = document.createElement("select");
-    sel.style.width = "100%";
-    const optEmpty = document.createElement("option");
-    optEmpty.value = "";
-    optEmpty.textContent = "— Seleccione —";
-    sel.appendChild(optEmpty);
-
-    PROFESIONALES_CACHE.forEach(p => {
-      const o = document.createElement("option");
-      o.value = p.nombre;
-      o.textContent = p.nombre;
-      if (p.nombre === valorActual) o.selected = true;
-      sel.appendChild(o);
-    });
-    return sel;
-  }
-</script>
-
 </body>
 </html>
-
-
 
 
 
