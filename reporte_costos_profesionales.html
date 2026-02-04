@@ -52,7 +52,7 @@
 
     .filters{
       display:grid;
-      grid-template-columns:repeat(5,1fr);
+      grid-template-columns:repeat(6,1fr);
       gap:12px;
       padding:16px 20px;
     }
@@ -132,7 +132,7 @@
       padding:4px 0;
     }
 
-    @media(max-width:1100px){
+    @media(max-width:1200px){
       .filters{grid-template-columns:repeat(3,1fr)}
     }
     @media(max-width:700px){
@@ -180,6 +180,18 @@
         <datalist id="lista_pacientes"></datalist>
       </div>
 
+      <!-- Desde -->
+      <div>
+        <label>Desde</label>
+        <input type="date" id="f_desde" />
+      </div>
+
+      <!-- Hasta -->
+      <div>
+        <label>Hasta</label>
+        <input type="date" id="f_hasta" />
+      </div>
+
       <!-- Procedimiento -->
       <div>
         <label>Procedimiento</label>
@@ -191,6 +203,7 @@
       <table>
         <thead>
           <tr>
+            <th>Fecha</th>
             <th>Profesional</th>
             <th>N° Factura</th>
             <th>Cédula</th>
@@ -214,7 +227,7 @@
 
 </div>
 
-<!-- Supabase ESM -->
+<!-- Supabase -->
 <script type="module">
   import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
@@ -232,17 +245,17 @@
       .select("profesional")
       .not("profesional", "is", null);
 
-    const profesionales = [...new Set((profs||[]).map(p=>p.profesional))];
     $("lista_profesionales").innerHTML =
-      profesionales.map(p=>`<option value="${p}"></option>`).join("");
+      [...new Set((profs||[]).map(p=>p.profesional))]
+        .map(p=>`<option value="${p}"></option>`).join("");
 
     const { data: pacs } = await supabase
       .from("factura_detalle_ext")
       .select("paciente_nombre");
 
-    const pacientes = [...new Set((pacs||[]).map(p=>p.paciente_nombre))];
     $("lista_pacientes").innerHTML =
-      pacientes.map(p=>`<option value="${p}"></option>`).join("");
+      [...new Set((pacs||[]).map(p=>p.paciente_nombre))]
+        .map(p=>`<option value="${p}"></option>`).join("");
   }
 
   async function cargarReporte(){
@@ -262,6 +275,12 @@
 
     if ($("f_procedimiento").value)
       q = q.ilike("descripcion", `%${$("f_procedimiento").value}%`);
+
+    if ($("f_desde").value)
+      q = q.gte("fecha_factura", $("f_desde").value);
+
+    if ($("f_hasta").value)
+      q = q.lte("fecha_factura", $("f_hasta").value);
 
     const { data, error } = await q;
 
@@ -286,6 +305,7 @@
 
       tbody.innerHTML += `
         <tr>
+          <td class="mono">${r.fecha_factura||"—"}</td>
           <td>${r.profesional||"—"}</td>
           <td class="mono">${r.numero_factura||"—"}</td>
           <td class="mono">${r.paciente_cedula||"—"}</td>
