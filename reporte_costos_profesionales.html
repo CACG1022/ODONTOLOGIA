@@ -8,6 +8,9 @@
   <!-- Tipografía -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
   <style>
     :root{
       --bg:#f4f6f8;
@@ -30,9 +33,28 @@
       color:var(--text);
       padding:24px;
     }
-    h1{font-size:20px;margin:0 0 6px}
+    h1{font-size:20px;margin:0}
     .muted{color:var(--muted);font-size:13px}
     .container{max-width:1400px;margin:0 auto}
+
+    .topbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+    }
+
+    .userbox{
+      font-size:13px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      box-shadow:var(--shadow);
+      line-height:1.35;
+      min-width:260px;
+      text-align:left;
+    }
 
     .card{
       background:var(--card);
@@ -52,6 +74,8 @@
       flex-wrap:wrap;
     }
 
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+
     .filters{
       display:grid;
       grid-template-columns:repeat(6,1fr);
@@ -59,7 +83,7 @@
       padding:16px 20px;
     }
 
-    .filters label{
+    label{
       font-size:12px;
       color:var(--muted);
       font-weight:600;
@@ -73,8 +97,8 @@
       border-radius:10px;
       border:1px solid var(--line);
       font-size:14px;
-      outline:none;
       background:#fff;
+      outline:none;
     }
 
     .btn{
@@ -86,7 +110,11 @@
       font-weight:700;
       cursor:pointer;
     }
-    .btn:hover{background:var(--brand2)}
+    .btn.secondary{
+      background:#fff;
+      color:var(--brand);
+    }
+    .btn:hover{background:var(--brand2);color:#fff}
 
     table{
       width:100%;
@@ -97,20 +125,22 @@
       background:#f9fafb;
       color:var(--muted);
       font-weight:700;
-      text-align:left;
       padding:12px 14px;
       border-bottom:1px solid var(--line);
       position:sticky;
       top:0;
+      z-index:1;
+      text-align:left;
     }
     tbody td{
       padding:10px 14px;
       border-bottom:1px solid var(--line);
+      vertical-align:top;
     }
     tbody tr:hover{background:#f8fafc}
 
-    .mono{font-family:ui-monospace,monospace}
     .right{text-align:right}
+    .mono{font-family:ui-monospace,monospace}
 
     .summary{
       display:flex;
@@ -120,25 +150,27 @@
       border-top:1px solid var(--line);
       background:#fbfcfd;
     }
-    .summary .box{
+    .box{
       border:1px solid var(--line);
       border-radius:12px;
       padding:12px 14px;
       min-width:220px;
       background:#fff;
-    }
-    .summary .box div{
+      font-size:13px;
       display:flex;
       justify-content:space-between;
-      font-size:13px;
-      padding:4px 0;
+      align-items:center;
+      gap:10px;
     }
 
-    @media(max-width:1200px){
+    .hidden{display:none}
+
+    @media(max-width:1100px){
       .filters{grid-template-columns:repeat(3,1fr)}
     }
     @media(max-width:700px){
       .filters{grid-template-columns:1fr}
+      .userbox{min-width:auto}
     }
   </style>
 </head>
@@ -146,55 +178,66 @@
 <body>
 <div class="container">
 
-  <div class="card">
+  <div class="topbar">
+    <div></div>
+    <div class="userbox" id="userBox">Cargando usuario…</div>
+  </div>
+
+  <div class="card hidden" id="app">
     <div class="card-header">
       <div>
         <h1>Reporte de Facturación por Profesional</h1>
         <div class="muted">Detalle completo desde <b>factura_detalle_ext</b></div>
       </div>
-      <button class="btn" id="btn-buscar">🔎 Buscar</button>
+      <div class="actions">
+        <button class="btn secondary" id="btn-excel">📊 Exportar Excel</button>
+        <button class="btn" id="btn-buscar">🔎 Buscar</button>
+      </div>
     </div>
 
     <div class="filters">
+      <!-- PROFESIONAL -->
       <div>
         <label>Profesional</label>
-        <input id="f_profesional" list="lista_profesionales" placeholder="Buscar profesional..." />
-        <datalist id="lista_profesionales"></datalist>
+        <input id="f_profesional" list="dl_profesionales" placeholder="Buscar profesional…">
+        <datalist id="dl_profesionales"></datalist>
       </div>
 
       <div>
         <label>N° Factura</label>
-        <input id="f_factura" placeholder="FAC-2026..." />
+        <input id="f_factura" placeholder="FAC-2026...">
       </div>
 
       <div>
-        <label>Cédula paciente</label>
-        <input id="f_cedula" placeholder="Solo números" />
+        <label>Cédula</label>
+        <input id="f_cedula" placeholder="Solo números">
       </div>
 
+      <!-- PACIENTE -->
       <div>
         <label>Paciente</label>
-        <input id="f_paciente" list="lista_pacientes" placeholder="Buscar paciente..." />
-        <datalist id="lista_pacientes"></datalist>
+        <input id="f_paciente" list="dl_pacientes" placeholder="Buscar paciente…">
+        <datalist id="dl_pacientes"></datalist>
       </div>
 
       <div>
         <label>Desde</label>
-        <input type="date" id="f_desde" />
+        <input type="date" id="f_desde">
       </div>
 
       <div>
         <label>Hasta</label>
-        <input type="date" id="f_hasta" />
+        <input type="date" id="f_hasta">
       </div>
 
-      <div>
+      <!-- PROCEDIMIENTO (para no perderlo) -->
+      <div style="grid-column:1 / span 3;">
         <label>Procedimiento</label>
-        <input id="f_procedimiento" placeholder="Texto libre" />
+        <input id="f_procedimiento" placeholder="Texto libre">
       </div>
     </div>
 
-    <div style="overflow:auto; max-height:65vh;">
+    <div style="overflow:auto;max-height:60vh">
       <table>
         <thead>
           <tr>
@@ -214,121 +257,322 @@
     </div>
 
     <div class="summary">
-      <div class="box"><div><span>Registros</span><b id="s_count">0</b></div></div>
-      <div class="box"><div><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div></div>
-      <div class="box"><div><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div></div>
-      <div class="box">
-        <div>
-          <span>Margen de ganancia</span>
-          <b id="s_margen">$ 0</b>
-        </div>
-      </div>
+      <div class="box"><span>Registros</span><b id="s_count">0</b></div>
+      <div class="box"><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div>
+      <div class="box"><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div>
+      <div class="box"><span>Margen de ganancia</span><b id="s_margen">$ 0</b></div>
     </div>
+  </div>
+
+  <div id="noAccess" class="card hidden" style="padding:24px;text-align:center">
+    ⛔ Acceso denegado. Este módulo es solo para administradores.
   </div>
 
 </div>
 
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
 
-  const supabase = createClient(
-    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-  );
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
 
-  const $ = id => document.getElementById(id);
-  const money = n => Number(n||0).toLocaleString("es-CO");
+const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
 
-  async function cargarListas(){
-    const { data: profs } = await supabase
-      .from("factura_detalle_ext")
-      .select("profesional")
-      .not("profesional", "is", null);
+const $ = (id) => document.getElementById(id);
+const money = (n) => Number(n||0).toLocaleString("es-CO");
+const fmtFecha = (v) => {
+  if (!v) return "—";
+  // si viene timestamp: 2026-02-04T...
+  const s = String(v);
+  return s.split("T")[0];
+};
 
-    $("lista_profesionales").innerHTML =
-      [...new Set((profs||[]).map(p=>p.profesional))]
-        .map(p=>`<option value="${p}"></option>`).join("");
+function getModuloActual(){
+  const file = (location.pathname.split("/").pop() || "").toLowerCase().trim();
+  return file.replace(".html", "") || "reporte_costos_profesionales";
+}
 
-    const { data: pacs } = await supabase
-      .from("factura_detalle_ext")
-      .select("paciente_nombre");
+function getModuloCandidates(mod){
+  const base = String(mod || "").toLowerCase().trim();
+  const withHtml = base.endsWith(".html") ? base : base + ".html";
+  const undersc = base.replaceAll("-", "_");
+  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+  return Array.from(new Set([base, withHtml, undersc, underscHtml].filter(Boolean)));
+}
 
-    $("lista_pacientes").innerHTML =
-      [...new Set((pacs||[]).map(p=>p.paciente_nombre))]
-        .map(p=>`<option value="${p}"></option>`).join("");
+async function verificarSesion(){
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error) console.error("getSession error:", error);
+  if (!session){
+    window.location.href = LOGIN_URL;
+    return null;
+  }
+  return session;
+}
+
+async function cargarRolDesdeProfiles(userId){
+  try{
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (error){
+      console.warn("No se pudo leer profiles.role:", error.message);
+      return null;
+    }
+    return data?.role || null;
+  }catch(e){
+    console.warn("Error leyendo role:", e);
+    return null;
+  }
+}
+
+async function validarPermisoModuloAdmin(){
+  // 1) sesión
+  const session = await verificarSesion();
+  if (!session) return { ok:false };
+
+  // 2) rol real
+  const roleRaw = await cargarRolDesdeProfiles(session.user.id);
+  const roleNorm = String(roleRaw || "").toLowerCase().trim();
+  const roleFinal = roleNorm || "user";
+
+  // pintar usuario/rol SIEMPRE
+  $("userBox").innerHTML = `👤 ${session.user?.email || "Usuario"}<br>🛡️ Rol: <b>${roleFinal}</b>`;
+
+  // 3) bloqueo por rol: SOLO admin
+  if (roleFinal !== "admin"){
+    return { ok:false, session, rol: roleFinal };
   }
 
-  async function cargarReporte(){
-    let q = supabase.from("factura_detalle_ext").select("*");
+  // 4) (recomendado) validar modulos_permisos (admin=true)
+  // Si no tienes fila para este módulo, igual te dejará entrar si eres admin
+  const MODULO = getModuloActual();
+  const candidates = getModuloCandidates(MODULO);
 
-    if ($("f_profesional").value)
-      q = q.ilike("profesional", `%${$("f_profesional").value}%`);
+  try{
+    const { data, error } = await supabase
+      .from("modulos_permisos")
+      .select("admin, modulo")
+      .in("modulo", candidates)
+      .limit(1);
 
-    if ($("f_factura").value)
-      q = q.ilike("numero_factura", `%${$("f_factura").value}%`);
+    if (error){
+      console.warn("No se pudo leer modulos_permisos:", error.message);
+      return { ok:true, session, rol: roleFinal }; // admin pasa aunque no lea permisos
+    }
 
-    if ($("f_cedula").value)
-      q = q.ilike("paciente_cedula", `%${$("f_cedula").value}%`);
+    const permiso = data?.[0] || null;
+    if (permiso && permiso.admin !== true){
+      // existe fila pero admin no está permitido
+      return { ok:false, session, rol: roleFinal };
+    }
 
-    if ($("f_paciente").value)
-      q = q.ilike("paciente_nombre", `%${$("f_paciente").value}%`);
+    // si no existe fila, no bloqueamos (porque ya es admin)
+    return { ok:true, session, rol: roleFinal };
+  }catch(e){
+    console.warn("Error validando modulos_permisos:", e);
+    return { ok:true, session, rol: roleFinal };
+  }
+}
 
-    if ($("f_procedimiento").value)
-      q = q.ilike("descripcion", `%${$("f_procedimiento").value}%`);
+/* ===== APP ===== */
+let currentRows = [];
 
-    if ($("f_desde").value)
-      q = q.gte("fecha_factura", $("f_desde").value);
+async function cargarListas(){
+  // PROFESIONALES
+  const { data: profs, error: e1 } = await supabase
+    .from("factura_detalle_ext")
+    .select("profesional")
+    .not("profesional","is",null);
 
-    if ($("f_hasta").value)
-      q = q.lte("fecha_factura", $("f_hasta").value);
+  if (e1) console.warn("Error cargando profesionales:", e1.message);
 
-    const { data, error } = await q;
-    if (error) return alert(error.message);
+  const profesionales = Array.from(new Set((profs||[])
+    .map(x => (x?.profesional || "").trim())
+    .filter(Boolean)
+  )).sort((a,b)=>a.localeCompare(b));
 
-    renderTabla(data||[]);
+  $("dl_profesionales").innerHTML = profesionales.map(p => `<option value="${p}"></option>`).join("");
+
+  // PACIENTES
+  const { data: pacs, error: e2 } = await supabase
+    .from("factura_detalle_ext")
+    .select("paciente_nombre")
+    .not("paciente_nombre","is",null);
+
+  if (e2) console.warn("Error cargando pacientes:", e2.message);
+
+  const pacientes = Array.from(new Set((pacs||[])
+    .map(x => (x?.paciente_nombre || "").trim())
+    .filter(Boolean)
+  )).sort((a,b)=>a.localeCompare(b));
+
+  $("dl_pacientes").innerHTML = pacientes.map(p => `<option value="${p}"></option>`).join("");
+}
+
+async function cargarReporte(){
+  let q = supabase.from("factura_detalle_ext").select("*");
+
+  const prof = ($("f_profesional").value || "").trim();
+  const fac  = ($("f_factura").value || "").trim();
+  const ced  = ($("f_cedula").value || "").trim();
+  const pac  = ($("f_paciente").value || "").trim();
+  const des  = ($("f_desde").value || "").trim();
+  const has  = ($("f_hasta").value || "").trim();
+  const proc = ($("f_procedimiento").value || "").trim();
+
+  if (prof) q = q.ilike("profesional", `%${prof}%`);
+  if (fac)  q = q.ilike("numero_factura", `%${fac}%`);
+  if (ced)  q = q.ilike("paciente_cedula", `%${ced}%`);
+  if (pac)  q = q.ilike("paciente_nombre", `%${pac}%`);
+  if (proc) q = q.ilike("descripcion", `%${proc}%`);
+
+  // fecha_factura viene de tu vista (alias)
+  if (des) q = q.gte("fecha_factura", des);
+  if (has) q = q.lte("fecha_factura", has);
+
+  // orden recomendado
+  q = q.order("fecha_factura", { ascending: false });
+
+  const { data, error } = await q;
+
+  if (error){
+    alert("Error cargando reporte: " + error.message);
+    console.error(error);
+    return;
   }
 
-  function renderTabla(rows){
-    const tbody = $("tbody");
-    tbody.innerHTML = "";
+  currentRows = data || [];
+  render();
+}
 
-    let total = 0;
-    let costo = 0;
+function render(){
+  let total = 0;
+  let costo = 0;
 
-    rows.forEach(r=>{
-      total += Number(r.valor_total||0);
-      costo += Number(r.costo||0);
+  const tbody = $("tbody");
+  tbody.innerHTML = "";
 
-      tbody.innerHTML += `
-        <tr>
-          <td class="mono">${r.fecha_factura||"—"}</td>
-          <td>${r.profesional||"—"}</td>
-          <td class="mono">${r.numero_factura||"—"}</td>
-          <td class="mono">${r.paciente_cedula||"—"}</td>
-          <td>${r.paciente_nombre||"—"}</td>
-          <td>${r.descripcion||"—"}</td>
-          <td class="right mono">${r.cantidad||0}</td>
-          <td class="right mono">$ ${money(r.costo)}</td>
-          <td class="right mono">$ ${money(r.valor_total)}</td>
-        </tr>
-      `;
-    });
+  for (const r of currentRows){
+    const vTotal = Number(r.valor_total || 0);
+    const vCosto = Number(r.costo || 0);
+    total += vTotal;
+    costo += vCosto;
 
-    const margen = total - costo;
-    const margenEl = $("s_margen");
-
-    margenEl.textContent = `$ ${money(margen)}`;
-    margenEl.style.color = margen >= 0 ? "var(--green)" : "var(--red)";
-
-    $("s_count").textContent = rows.length;
-    $("s_total").textContent = money(total);
-    $("s_costo").textContent = money(costo);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td class="mono">${fmtFecha(r.fecha_factura)}</td>
+      <td>${r.profesional || "—"}</td>
+      <td class="mono">${r.numero_factura || "—"}</td>
+      <td class="mono">${r.paciente_cedula || "—"}</td>
+      <td>${r.paciente_nombre || "—"}</td>
+      <td>${r.descripcion || "—"}</td>
+      <td class="right mono">${r.cantidad ?? 0}</td>
+      <td class="right mono">$ ${money(vCosto)}</td>
+      <td class="right mono">$ ${money(vTotal)}</td>
+    `;
+    tbody.appendChild(tr);
   }
 
-  $("btn-buscar").addEventListener("click", cargarReporte);
+  $("s_count").textContent = currentRows.length;
+  $("s_total").textContent = money(total);
+  $("s_costo").textContent = money(costo);
 
-  await cargarListas();
-  await cargarReporte();
+  const margen = total - costo;
+  $("s_margen").textContent = "$ " + money(margen);
+  $("s_margen").style.color = margen >= 0 ? "var(--green)" : "var(--red)";
+}
+
+function exportarExcel(){
+  if (!currentRows || currentRows.length === 0){
+    alert("No hay datos para exportar.");
+    return;
+  }
+
+  const data = currentRows.map(r => ({
+    "Fecha": fmtFecha(r.fecha_factura),
+    "Profesional": r.profesional || "",
+    "N° Factura": r.numero_factura || "",
+    "Cédula": r.paciente_cedula || "",
+    "Paciente": r.paciente_nombre || "",
+    "Procedimiento": r.descripcion || "",
+    "Cantidad": Number(r.cantidad || 0),
+    "Costo": Number(r.costo || 0),
+    "Valor Total": Number(r.valor_total || 0),
+  }));
+
+  const totalFacturado = currentRows.reduce((acc, r) => acc + (Number(r.valor_total) || 0), 0);
+  const totalCosto = currentRows.reduce((acc, r) => acc + (Number(r.costo) || 0), 0);
+  const margen = totalFacturado - totalCosto;
+
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  const ws2 = XLSX.utils.aoa_to_sheet([
+    ["Reporte de Facturación por Profesional"],
+    ["Generado:", new Date().toLocaleString("es-CO")],
+    ["Registros:", currentRows.length],
+    ["Total facturado:", totalFacturado],
+    ["Total costo:", totalCosto],
+    ["Margen:", margen],
+    [],
+    ["Filtros"],
+    ["Profesional:", ($("f_profesional").value || "")],
+    ["N° Factura:", ($("f_factura").value || "")],
+    ["Cédula:", ($("f_cedula").value || "")],
+    ["Paciente:", ($("f_paciente").value || "")],
+    ["Procedimiento:", ($("f_procedimiento").value || "")],
+    ["Desde:", ($("f_desde").value || "")],
+    ["Hasta:", ($("f_hasta").value || "")]
+  ]);
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+  XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+
+  const desde = ($("f_desde").value || "NA");
+  const hasta = ($("f_hasta").value || "NA");
+  XLSX.writeFile(wb, `reporte_facturacion_${desde}_a_${hasta}.xlsx`);
+}
+
+async function init(){
+  try{
+    // Guard: solo admin (desde profiles) + (opcional) modulos_permisos
+    const guard = await validarPermisoModuloAdmin();
+
+    if (!guard.ok){
+      $("noAccess").classList.remove("hidden");
+      return;
+    }
+
+    $("app").classList.remove("hidden");
+
+    // eventos
+    $("btn-buscar").addEventListener("click", cargarReporte);
+    $("btn-excel").addEventListener("click", exportarExcel);
+
+    // cargar listas + reporte
+    await cargarListas();
+    await cargarReporte();
+
+  }catch(err){
+    console.error(err);
+    $("userBox").innerHTML = `⚠️ Error cargando usuario/rol.<br><small>Revisa consola (F12) → ${err?.message || err}</small>`;
+    $("noAccess").classList.remove("hidden");
+  }
+}
+
+// si se cierra sesión, sacar al login
+supabase.auth.onAuthStateChange((_event, session) => {
+  if (!session) window.location.href = LOGIN_URL;
+});
+
+window.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
