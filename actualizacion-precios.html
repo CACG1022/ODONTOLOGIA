@@ -877,6 +877,34 @@ td.col-valor input {
       max-width: 100% !important;
     }
 
+    /* ===== FILTROS EN FILA ===== */
+.filters-row{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap; /* importante para pantallas pequeñas */
+}
+
+.filters-row input,
+.filters-row select{
+  min-width: 180px;
+  max-width: 260px;
+}
+
+  /* ===== FILTROS RESPONSIVE (MÓVIL) ===== */
+@media (max-width: 900px){
+  .filters-row{
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-row input,
+  .filters-row select{
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
 </style>
 </head>
 
@@ -906,32 +934,34 @@ td.col-valor input {
         <div class="title">Procedimientos</div>
         <div class="count" id="count">0 procedimientos</div>
       </div>
-      <div class="header-actions">
-        <input id="search" type="text" placeholder="Buscar (ej: resina, endodoncia...)" />
-       <select id="filter-profesional">
-  <option value="">Todos los profesionales</option>
-</select>
+      
+      <div class="filters-row">
+  <input id="search" type="text" placeholder="Buscar (ej: resina, endodoncia...)" />
 
-<select id="filter-especialidad">
-  <option value="">Todas las especialidades</option>
-  <option>Odontología General</option>
-  <option>Rehabilitación Oral</option>
-  <option>Periodoncia</option>
-  <option>Endodoncia</option>
-  <option>Cirugía</option>
-  <option>Ortodoncia</option>
-  <option>Odontopediatría</option>
-  <option>Implantologia</option>
-</select>
+  <select id="filter-profesional">
+    <option value="">Todos los profesionales</option>
+  </select>
 
-<select id="filter-costo">
-  <option value="">Todos</option>
-  <option value="con">Con costo</option>
-  <option value="sin">Sin costo</option>
-</select>
+  <select id="filter-especialidad">
+    <option value="">Todas las especialidades</option>
+    <option>Odontología General</option>
+    <option>Rehabilitación Oral</option>
+    <option>Periodoncia</option>
+    <option>Endodoncia</option>
+    <option>Cirugía</option>
+    <option>Ortodoncia</option>
+    <option>Odontopediatría</option>
+    <option>Implantologia</option>
+  </select>
 
+  <select id="filter-costo">
+    <option value="">Todos</option>
+    <option value="con">Con costo</option>
+    <option value="sin">Sin costo</option>
+  </select>
+</div>
 
-        
+  
         <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
         <button class="btn" type="button" id="btn-back">Volver</button>
       </div>
