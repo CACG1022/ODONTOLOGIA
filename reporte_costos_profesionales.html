@@ -71,10 +71,7 @@
       flex-wrap:wrap;
     }
 
-    .actions{
-      display:flex;
-      gap:10px;
-    }
+    .actions{display:flex;gap:10px}
 
     .filters{
       display:grid;
@@ -163,7 +160,7 @@
 
   <div class="topbar">
     <div></div>
-    <div class="userbox" id="userBox">Cargando usuario...</div>
+    <div class="userbox" id="userBox">Cargando usuario…</div>
   </div>
 
   <div class="card hidden" id="app">
@@ -191,9 +188,15 @@
       <table>
         <thead>
           <tr>
-            <th>Fecha</th><th>Profesional</th><th>Factura</th>
-            <th>Cédula</th><th>Paciente</th><th>Procedimiento</th>
-            <th class="right">Cantidad</th><th class="right">Costo</th><th class="right">Valor</th>
+            <th>Fecha</th>
+            <th>Profesional</th>
+            <th>Factura</th>
+            <th>Cédula</th>
+            <th>Paciente</th>
+            <th>Procedimiento</th>
+            <th class="right">Cantidad</th>
+            <th class="right">Costo</th>
+            <th class="right">Valor</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -204,10 +207,7 @@
       <div class="box"><span>Registros</span><b id="s_count">0</b></div>
       <div class="box"><span>Total facturado</span><b>$ <span id="s_total">0</span></b></div>
       <div class="box"><span>Total costo</span><b>$ <span id="s_costo">0</span></b></div>
-      <div class="box">
-        <span>Margen</span>
-        <b id="s_margen">$ 0</b>
-      </div>
+      <div class="box"><span>Margen</span><b id="s_margen">$ 0</b></div>
     </div>
   </div>
 
@@ -229,23 +229,40 @@ const $ = id => document.getElementById(id);
 const money = n => Number(n||0).toLocaleString("es-CO");
 let currentRows = [];
 
-const { data:{user} } = await supabase.auth.getUser();
+/* ====== AUTH + ROL (MISMO MODELO DEL INDEX) ====== */
+const { data:{ user } } = await supabase.auth.getUser();
 
-if(!user){
+if (!user) {
   $("noAccess").classList.remove("hidden");
-  throw new Error("No auth");
+  throw new Error("No autenticado");
 }
 
-const role = user.user_metadata?.role;
-$("userBox").innerHTML = `👤 ${user.email}<br>🛡️ Rol: <b>${role}</b>`;
+const { data: perfil, error } = await supabase
+  .from("profiles")
+  .select("rol")
+  .eq("id", user.id)
+  .single();
 
-if(role !== "admin"){
+if (error || !perfil) {
   $("noAccess").classList.remove("hidden");
-  throw new Error("No admin");
+  throw new Error("No se pudo obtener el rol");
+}
+
+const role = perfil.rol;
+
+$("userBox").innerHTML = `
+  👤 ${user.email}<br>
+  🛡️ Rol: <b>${role}</b>
+`;
+
+if (role !== "admin") {
+  $("noAccess").classList.remove("hidden");
+  throw new Error("Acceso no autorizado");
 }
 
 $("app").classList.remove("hidden");
 
+/* ====== DATA ====== */
 async function cargarReporte(){
   let q = supabase.from("factura_detalle_ext").select("*");
 
@@ -262,12 +279,14 @@ async function cargarReporte(){
 }
 
 function render(){
-  let total=0,costo=0;
-  $("tbody").innerHTML="";
+  let total=0, costo=0;
+  $("tbody").innerHTML = "";
+
   currentRows.forEach(r=>{
-    total+=r.valor_total||0;
-    costo+=r.costo||0;
-    $("tbody").innerHTML+=`
+    total += r.valor_total || 0;
+    costo += r.costo || 0;
+
+    $("tbody").innerHTML += `
       <tr>
         <td>${r.fecha_factura}</td>
         <td>${r.profesional}</td>
@@ -281,26 +300,27 @@ function render(){
       </tr>`;
   });
 
-  $("s_count").textContent=currentRows.length;
-  $("s_total").textContent=money(total);
-  $("s_costo").textContent=money(costo);
+  $("s_count").textContent = currentRows.length;
+  $("s_total").textContent = money(total);
+  $("s_costo").textContent = money(costo);
 
-  const margen=total-costo;
-  $("s_margen").textContent="$ "+money(margen);
-  $("s_margen").style.color=margen>=0?"var(--green)":"var(--red)";
+  const margen = total - costo;
+  $("s_margen").textContent = "$ " + money(margen);
+  $("s_margen").style.color = margen >= 0 ? "var(--green)" : "var(--red)";
 }
 
-$("btn-buscar").onclick=cargarReporte;
+$("btn-buscar").onclick = cargarReporte;
 
-$("btn-excel").onclick=()=>{
-  const ws=XLSX.utils.json_to_sheet(currentRows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Reporte");
-  XLSX.writeFile(wb,"reporte_facturacion.xlsx");
+$("btn-excel").onclick = ()=>{
+  const ws = XLSX.utils.json_to_sheet(currentRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+  XLSX.writeFile(wb, "reporte_facturacion.xlsx");
 };
 
 await cargarReporte();
 </script>
 </body>
 </html>
+
 
