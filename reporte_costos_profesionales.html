@@ -176,12 +176,39 @@
     </div>
 
     <div class="filters">
-      <div><label>Profesional</label><input id="f_profesional"></div>
-      <div><label>N° Factura</label><input id="f_factura"></div>
-      <div><label>Cédula</label><input id="f_cedula"></div>
-      <div><label>Paciente</label><input id="f_paciente"></div>
-      <div><label>Desde</label><input type="date" id="f_desde"></div>
-      <div><label>Hasta</label><input type="date" id="f_hasta"></div>
+      <!-- PROFESIONAL -->
+      <div>
+        <label>Profesional</label>
+        <input id="f_profesional" list="dl_profesionales" placeholder="Buscar profesional…">
+        <datalist id="dl_profesionales"></datalist>
+      </div>
+
+      <div>
+        <label>N° Factura</label>
+        <input id="f_factura">
+      </div>
+
+      <div>
+        <label>Cédula</label>
+        <input id="f_cedula">
+      </div>
+
+      <!-- PACIENTE -->
+      <div>
+        <label>Paciente</label>
+        <input id="f_paciente" list="dl_pacientes" placeholder="Buscar paciente…">
+        <datalist id="dl_pacientes"></datalist>
+      </div>
+
+      <div>
+        <label>Desde</label>
+        <input type="date" id="f_desde">
+      </div>
+
+      <div>
+        <label>Hasta</label>
+        <input type="date" id="f_hasta">
+      </div>
     </div>
 
     <div style="overflow:auto;max-height:60vh">
@@ -222,59 +249,49 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  "PUBLIC_ANON_KEY"
 );
 
 const $ = id => document.getElementById(id);
 const money = n => Number(n||0).toLocaleString("es-CO");
 let currentRows = [];
 
-/* ===== AUTH + ROL ROBUSTO ===== */
+/* ===== AUTH ===== */
 const { data:{ user } } = await supabase.auth.getUser();
 
-if (!user) {
-  $("noAccess").classList.remove("hidden");
-  $("userBox").textContent = "No autenticado";
-  throw new Error("No autenticado");
-}
+if (!user) throw new Error("No autenticado");
 
-let role = null;
+const ADMIN_EMAILS = ["fernav07@hotmail.com"];
+const role = ADMIN_EMAILS.includes(user.email) ? "admin" : "user";
 
-/* Intentar desde profiles */
-try {
-  const { data: perfil, error } = await supabase
-    .from("profiles")
-    .select("rol")
-    .eq("id", user.id)
-    .single();
-
-  if (!error && perfil?.rol) {
-    role = perfil.rol;
-  }
-} catch (e) {
-  console.warn("No se pudo leer profiles");
-}
-
-/* Fallback admins */
-const ADMIN_EMAILS = [
-  "fernav07@hotmail.com"
-];
-
-if (!role && ADMIN_EMAILS.includes(user.email)) {
-  role = "admin";
-}
-
-$("userBox").innerHTML = `
-  👤 ${user.email}<br>
-  🛡️ Rol: <b>${role || "usuario"}</b>
-`;
+$("userBox").innerHTML = `👤 ${user.email}<br>🛡️ Rol: <b>${role}</b>`;
 
 if (role !== "admin") {
   $("noAccess").classList.remove("hidden");
-  throw new Error("Acceso denegado");
+  throw new Error("No admin");
 }
 
 $("app").classList.remove("hidden");
+
+/* ===== LISTAS ===== */
+async function cargarListas(){
+  const { data: profs } = await supabase
+    .from("factura_detalle_ext")
+    .select("profesional")
+    .not("profesional","is",null);
+
+  [...new Set(profs.map(p=>p.profesional))].forEach(p=>{
+    $("dl_profesionales").innerHTML += `<option value="${p}">`;
+  });
+
+  const { data: pacs } = await supabase
+    .from("factura_detalle_ext")
+    .select("paciente_nombre");
+
+  [...new Set(pacs.map(p=>p.paciente_nombre))].forEach(p=>{
+    $("dl_pacientes").innerHTML += `<option value="${p}">`;
+  });
+}
 
 /* ===== DATA ===== */
 async function cargarReporte(){
@@ -297,8 +314,8 @@ function render(){
   $("tbody").innerHTML = "";
 
   currentRows.forEach(r=>{
-    total += r.valor_total || 0;
-    costo += r.costo || 0;
+    total += r.valor_total||0;
+    costo += r.costo||0;
 
     $("tbody").innerHTML += `
       <tr>
@@ -324,7 +341,6 @@ function render(){
 }
 
 $("btn-buscar").onclick = cargarReporte;
-
 $("btn-excel").onclick = ()=>{
   const ws = XLSX.utils.json_to_sheet(currentRows);
   const wb = XLSX.utils.book_new();
@@ -332,9 +348,11 @@ $("btn-excel").onclick = ()=>{
   XLSX.writeFile(wb, "reporte_facturacion.xlsx");
 };
 
+await cargarListas();
 await cargarReporte();
 </script>
 </body>
 </html>
+
 
 
