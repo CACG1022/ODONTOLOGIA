@@ -485,6 +485,7 @@ table td.mono {
         <table>
           <thead>
             <tr>
+              <th style="width:180px;">Profesional</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
@@ -724,7 +725,7 @@ table td.mono {
               </tr>
             </thead>
             <tbody id="tbody-abonos">
-              <tr><td colspan="6" class="empty">Selecciona una factura...</td></tr>
+              <tr><td colspan="7" class="empty">Selecciona una factura...</td></tr>
             </tbody>
           </table>
         </div>
@@ -918,7 +919,7 @@ async function validarPermisoDesdeTabla(){
     async function cargarProcedimientos(){
       const { data, error } = await supabase
         .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, activo, profesional")
+        .select("id, procedimiento, valor, codigo_cups, activo")
         .order("procedimiento", { ascending: true });
       if (error){
         console.error(error);
@@ -1073,8 +1074,7 @@ if ((isFocused || filtro) && count > 0) {
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
-  valor_total: valorU * cantidad,
-  profesional: p.profesional || null   // ✅ NUEVO
+  valor_total: valorU * cantidad
 };
 
       state.items.push(item);
@@ -1093,12 +1093,13 @@ if ((isFocused || filtro) && count > 0) {
       const tbody = $("tbody-items");
       tbody.innerHTML = "";
       if (state.items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
         return;
       }
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
+          <td>${escapeHtml(resolveProfesionalLabel(it.profesional))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1337,6 +1338,7 @@ if ((isFocused || filtro) && count > 0) {
         <table>
           <thead>
             <tr>
+              <th style="width:180px;">Profesional</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:80px;text-align:right;">Cant</th>
@@ -1546,8 +1548,7 @@ if ((isFocused || filtro) && count > 0) {
   descripcion: it.descripcion || "",
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
-  valor_total: it.valor_total || 0,
-  profesional: it.profesional || null    // ✅ NUEVO
+  valor_total: it.valor_total || 0
 }));
 
 
@@ -1855,7 +1856,7 @@ if ((isFocused || filtro) && count > 0) {
       const tbody = $("tbody-abonos");
       tbody.innerHTML = "";
       if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
         return;
       }
       for (const a of rows){
@@ -1910,7 +1911,7 @@ if ((isFocused || filtro) && count > 0) {
           setStatus("");
           if (missingTable){
             toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
-            $("tbody-abonos").innerHTML = `<tr><td colspan="6" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
+            $("tbody-abonos").innerHTML = `<tr><td colspan="7" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
             updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
             return;
           }
@@ -2585,8 +2586,7 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0),
-  profesional: it.profesional || null   // ✅ NUEVO
+  valor_total: Number(it.valor_total || 0)
 });
 
   });
@@ -2907,4 +2907,5 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
 
