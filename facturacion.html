@@ -919,7 +919,7 @@ async function validarPermisoDesdeTabla(){
     async function cargarProcedimientos(){
       const { data, error } = await supabase
         .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, activo")
+        .select("id, procedimiento, valor, codigo_cups, profesional, activo")
         .order("procedimiento", { ascending: true });
       if (error){
         console.error(error);
@@ -1099,7 +1099,7 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${escapeHtml(resolveProfesionalLabel(it.profesional))}</td>
+          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1187,6 +1187,25 @@ if ((isFocused || filtro) && count > 0) {
       }
       return raw;
     }
+
+    function obtenerProfesionalDeItem(it){
+  // 1. Si el item ya trae profesional, usarlo
+  if (it.profesional) {
+    return resolveProfesionalLabel(it.profesional);
+  }
+
+  // 2. Buscar el procedimiento original cargado desde Supabase
+  const p = state.procedimientos.find(
+    x => String(x.id) === String(it.procedimiento_id)
+  );
+
+  if (p && p.profesional) {
+    return resolveProfesionalLabel(p.profesional);
+  }
+
+  return "—";
+}
+
     function pagoLabel(pagada){
       if (pagada === true) return "Pagada";
       if (pagada === false) return "Pendiente";
