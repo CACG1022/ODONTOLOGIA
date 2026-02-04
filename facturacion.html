@@ -1574,7 +1574,7 @@ if ((isFocused || filtro) && count > 0) {
         setStatus("Preparando impresión...");
         const { data: det, error } = await supabase
           .from("factura_detalle")
-          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", state.facturaGuardada.id)
           .order("id", { ascending: true });
         if (error) throw error;
@@ -1697,7 +1697,7 @@ if ((isFocused || filtro) && count > 0) {
         // 2) Detalle
         const { data: det, error: ed } = await supabase
           .from("factura_detalle")
-          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId);
         if (ed) throw ed;
         // 3) Abonos
@@ -2221,7 +2221,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
@@ -2253,6 +2253,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         }
         state.items = (det || []).map(it => ({
           id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          procedimiento_id: it.procedimiento_id,
           codigo_cups: it.codigo_cups || "",
           descripcion: it.descripcion || "",
           cantidad: Number(it.cantidad || 1),
@@ -2284,7 +2285,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
