@@ -704,7 +704,7 @@ if (newValor) {
       padding: 10px 10px;
     }
     td.actions{
-      width: 220px;
+      min-width: 200px;
       white-space: nowrap;
     }
     td.actions .btn{
@@ -789,7 +789,7 @@ if (newValor) {
 
     /* Tabla se adapta mejor al ancho */
     table{
-      table-layout: fixed;
+      table-layout: auto;
       width: 100%;
     }
     th, td{
@@ -800,7 +800,7 @@ if (newValor) {
 
     /* Scroll horizontal solo si hace falta en pantallas pequeñas */
     @media (max-width: 900px){
-      table{ min-width: 900px; }
+      table{ min-width: 100%; }
     }
     /* Color columna VALOR */
   th.col-valor {
@@ -872,13 +872,13 @@ td.col-valor input {
       <table>
         <thead>
           <tr>
-            <th style="width: 150px;">Profesional</th>
-            <th style="width: 160px;">Especialidad</th>
+            <th style="width: 130px;">Profesional</th>
+            <th style="width: 140px;">Especialidad</th>
             <th class="col-costo" style="width: 140px;">Costo</th>
-            <th>Procedimiento</th>
+            <th style="min-width: 320px;">Procedimiento</th>
             <th style="width: 180px;">CUPS</th>
             <th style="width: 160px;">Precio</th>
-            <th style="width: 180px;">Acciones</th>
+            <th style="min-width: 200px;">Acciones</th>
           </tr>
         </thead>
         <tbody id="tbody"></tbody>
@@ -894,8 +894,6 @@ td.col-valor input {
   <div id="toast"></div>
 </body>
 </html>
-
-
 
 
 
