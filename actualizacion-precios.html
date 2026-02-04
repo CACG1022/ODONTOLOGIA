@@ -772,6 +772,47 @@ td.col-valor input {
   </div>
 
   <div id="toast"></div>
+
+<!-- ========================= -->
+<!-- 🔽 EXTENSION PROFESIONAL + ESPECIALIDAD (NO MODIFICA LO EXISTENTE) -->
+<!-- ========================= -->
+<script type="module">
+  // 🔽 Cache profesionales
+  let PROFESIONALES_CACHE = [];
+
+  async function cargarProfesionalesDropdown() {
+    try {
+      const { data, error } = await supabase
+        .from("profesionales")
+        .select("nombre")
+        .eq("activo", true)
+        .order("nombre", { ascending: true });
+
+      if (!error) PROFESIONALES_CACHE = data || [];
+    } catch(e){
+      console.warn("No se pudieron cargar profesionales", e);
+    }
+  }
+
+  function crearSelectProfesional(valorActual){
+    const sel = document.createElement("select");
+    sel.style.width = "100%";
+    const optEmpty = document.createElement("option");
+    optEmpty.value = "";
+    optEmpty.textContent = "— Seleccione —";
+    sel.appendChild(optEmpty);
+
+    PROFESIONALES_CACHE.forEach(p => {
+      const o = document.createElement("option");
+      o.value = p.nombre;
+      o.textContent = p.nombre;
+      if (p.nombre === valorActual) o.selected = true;
+      sel.appendChild(o);
+    });
+    return sel;
+  }
+</script>
+
 </body>
 </html>
 
