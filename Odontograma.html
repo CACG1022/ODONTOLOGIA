@@ -901,6 +901,130 @@ function _evolucionesToHTML(evos){
   
   </script>
 
+
+<button onclick="toggleDictadoOdontograma()"
+style="
+position:fixed;
+bottom:20px;
+right:20px;
+width:56px;
+height:56px;
+border-radius:50%;
+border:none;
+background:#0D47A1;
+color:white;
+font-size:22px;
+font-weight:700;
+cursor:pointer;
+box-shadow:0 8px 18px rgba(0,0,0,.25);
+z-index:999999;">
+🎤
+</button>
+
+<script>
+/* ==============================
+   DICTADO POR VOZ – ODONTOGRAMA
+   ============================== */
+
+let _srOdon = null;
+let _srOdonOn = false;
+
+function _soportaDictadoOdon(){
+  return !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+}
+
+function iniciarDictadoOdontograma(){
+  if(!_soportaDictadoOdon()){
+    alert("⚠️ Tu navegador no soporta dictado por voz. Usa Chrome o Edge.");
+    return;
+  }
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  _srOdon = new SR();
+  _srOdon.lang = "es-CO";
+  _srOdon.continuous = true;
+  _srOdon.interimResults = false;
+
+  _srOdon.onstart = () => {
+    _srOdonOn = true;
+    console.log("🎤 Dictado odontograma iniciado");
+  };
+
+  _srOdon.onresult = (event) => {
+    for(let i=event.resultIndex;i<event.results.length;i++){
+      if(!event.results[i].isFinal) continue;
+      const texto = event.results[i][0].transcript.toLowerCase().trim();
+      procesarComandoOdontograma(texto);
+    }
+  };
+
+  _srOdon.onerror = (e)=>{
+    console.warn("Error dictado:", e);
+  };
+
+  _srOdon.onend = ()=>{
+    if(_srOdonOn){
+      try{ _srOdon.start(); }catch(e){}
+    }
+  };
+
+  try{ _srOdon.start(); }catch(e){}
+}
+
+function detenerDictadoOdontograma(){
+  _srOdonOn = false;
+  if(_srOdon){
+    try{ _srOdon.stop(); }catch(e){}
+    _srOdon = null;
+  }
+  console.log("🛑 Dictado odontograma detenido");
+}
+
+function toggleDictadoOdontograma(){
+  if(_srOdonOn) detenerDictadoOdontograma();
+  else iniciarDictadoOdontograma();
+}
+
+/* ==============================
+   INTERPRETACIÓN DE COMANDOS
+   ============================== */
+
+function procesarComandoOdontograma(texto){
+  const m = texto.match(/diente\s+(\d{2})/);
+  if(!m) return;
+
+  const diente = m[1];
+  const estado = Object.keys(preexistencias).find(p => texto.includes(p.toLowerCase()));
+  if(!estado) return;
+
+  let region = "centro";
+  if(texto.includes("mesial")) region = "izquierda";
+  if(texto.includes("distal")) region = "derecha";
+  if(texto.includes("oclusal")) region = "centro";
+  if(texto.includes("vestibular")) region = "superior";
+  if(texto.includes("palatino") || texto.includes("lingual")) region = "inferior";
+
+  aplicarEstadoPorVoz(diente, region, estado);
+}
+
+function aplicarEstadoPorVoz(diente, region, estado){
+  const el = document.querySelector(
+    `.diente[data-numero="${diente}"] [data-region="${region}"]`
+  );
+  if(!el) return;
+
+  const color = preexistencias[estado];
+  el.style.background = color;
+
+  if(!reporte[diente]) reporte[diente] = {};
+  reporte[diente][region] = estado;
+
+  console.log(`🦷 Aplicado por voz: ${diente} ${estado} ${region}`);
+}
+
+window.toggleDictadoOdontograma = toggleDictadoOdontograma;
+</script>
+
 </body>
 </html>
 
