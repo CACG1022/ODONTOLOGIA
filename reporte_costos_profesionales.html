@@ -249,6 +249,7 @@
             <th>Procedimiento</th>
             <th class="right">Cantidad</th>
             <th class="right">Costo</th>
+            <th class="right">Costo Total</th>
             <th class="right">Valor Total</th>
           </tr>
         </thead>
@@ -455,6 +456,7 @@ async function cargarReporte(){
 function render(){
   let total = 0;
   let costo = 0;
+  let costoTotal = 0;
 
   const tbody = $("tbody");
   tbody.innerHTML = "";
@@ -462,8 +464,10 @@ function render(){
   for (const r of currentRows){
     const vTotal = Number(r.valor_total || 0);
     const vCosto = Number(r.costo || 0);
+    const vCostoTotal = Number(r.costo_total || 0);
     total += vTotal;
     costo += vCosto;
+    costoTotal += vCostoTotal;
 
     const tr = document.createElement("tr");
     tr.innerHTML = `
@@ -475,6 +479,7 @@ function render(){
       <td>${r.descripcion || "—"}</td>
       <td class="right mono">${r.cantidad ?? 0}</td>
       <td class="right mono">$ ${money(vCosto)}</td>
+      <td class="right mono">$ ${money(vCostoTotal)}</td>
       <td class="right mono">$ ${money(vTotal)}</td>
     `;
     tbody.appendChild(tr);
@@ -482,9 +487,9 @@ function render(){
 
   $("s_count").textContent = currentRows.length;
   $("s_total").textContent = money(total);
-  $("s_costo").textContent = money(costo);
+  $("s_costo").textContent = money(costoTotal);
 
-  const margen = total - costo;
+  const margen = total - costoTotal;
   $("s_margen").textContent = "$ " + money(margen);
   $("s_margen").style.color = margen >= 0 ? "var(--green)" : "var(--red)";
 }
@@ -576,7 +581,6 @@ window.addEventListener("DOMContentLoaded", init);
 </script>
 </body>
 </html>
-
 
 
 
