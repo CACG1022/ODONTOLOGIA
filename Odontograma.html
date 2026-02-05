@@ -1,236 +1,907 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Odontograma FDI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Odontograma · DENTOVA</title>
 
-<!-- =========================
-     SUPABASE / SESIÓN
-========================= -->
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <!-- Mantener exactamente la misma validación de sesión/rol/permisos que en historia-clinica.html -->
+  <script type="module">
+  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
+  // ==============================
+  // 🔐 CONFIG SUPABASE
+  // ==============================
+  const supabase = createClient(
+    "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  );
 
-window.supabase = supabase;
+  window.supabase = supabase;
 
-const APP_URLS = {
-  LOGIN: "login.html",
-  HOME: "index.html"
-};
+  window.APP_URLS = {
+    LOGIN: "https://cacg1022.github.io/ODONTOLOGIA/login.html",
+    HOME:  "https://cacg1022.github.io/ODONTOLOGIA/index.html",
+  };
 
-async function verificarSesion() {
-  const { data:{session} } = await supabase.auth.getSession();
-  if (!session) {
-    window.location.href = APP_URLS.LOGIN;
+  const MODULO = "historia_clinica";
+
+  // ==============================
+  // 🔒 RESTRICCIÓN AUXILIAR
+  // - Si el rol es "auxiliar" (y tiene acceso al módulo),
+  //   se deshabilita el botón "GUARDAR Y ENVIAR" y se bloquea el envío.
+  // ==============================
+  function aplicarRestriccionAuxiliarUI() {
+    const btn = document.getElementById("btnGuardarEnviarHistoria");
+    if (btn) {
+      btn.disabled = true;
+      btn.title = "⛔ Rol auxiliar: no autorizado para Guardar y Enviar.";
+      btn.style.opacity = "0.6";
+      btn.style.cursor = "not-allowed";
+    }
   }
-}
-verificarSesion();
-</script>
+  window.aplicarRestriccionAuxiliarUI = aplicarRestriccionAuxiliarUI;
 
-<style>
-/* ====== ESTILOS ODONTOGRAMA (IGUAL AL ORIGINAL) ====== */
-body{
-  margin:0;
-  font-family:system-ui,Segoe UI,Arial;
-  background:#f6f8fb;
-}
-#odontograma-wrapper *{ box-sizing:border-box }
-#odontograma-wrapper{
-  background:#f9f9f9;
-  padding:20px 10px 40px;
-  border-radius:14px;
-}
-h1{
-  text-align:center;
-  color:#0D47A1;
+
+  async function verificarSesion() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.location.href = window.APP_URLS.LOGIN;
+      return null;
+    }
+    return session;
+  }
+
+  async function validarPermisoModulo() {
+    const session = await verificarSesion();
+    if (!session) return;
+
+    const { data: perfil, error: ePerfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", session.user.id)
+      .single();
+
+    if (ePerfil || !perfil?.role) {
+      alert("No se pudo obtener tu rol.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    const rol = perfil.role;
+
+    // ✅ Guardar rol global para validaciones de UI/acciones
+    window.__ROL_ACTUAL = rol;
+
+    const { data: permiso, error: ePerm } = await supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente")
+      .eq("modulo", MODULO)
+      .single();
+
+    if (ePerm || !permiso) {
+      alert("Módulo no configurado en permisos.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    if (!permiso[rol]) {
+      alert("⛔ No tienes permiso para acceder a Historia Clínica.");
+      window.location.href = window.APP_URLS.HOME;
+      return;
+    }
+
+    console.log("✅ Acceso permitido a Historia Clínica para:", rol);
+
+    // 🔒 Si es auxiliar, deshabilitar "Guardar y Enviar" (solo UI) una vez cargue el DOM
+    if (rol === "auxiliar") {
+      const run = () => { try { window.aplicarRestriccionAuxiliarUI?.(); } catch(e){} };
+      if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run, { once: true });
+      else run();
+    }
+
+  }
+
+  // ✅ EJECUCIÓN SEGURA (sin await directo)
+  validarPermisoModulo();
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (!session) {
+      window.location.href = window.APP_URLS.LOGIN;
+    }
+  });
+
+ 
+
+function _fmt(val){
+  if (val === null || val === undefined) return "";
+  if (Array.isArray(val)) return val.join(", ");
+  return String(val);
 }
 
-.odontograma{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  gap:40px;
-  width:max-content;
-  margin:0 auto;
+function _siNo(arr){
+  const v = Array.isArray(arr) ? arr.join(", ") : String(arr || "");
+  return v || "";
 }
 
-.fila{ display:flex; gap:10px }
-.contenedor-diente{ text-align:center }
-.diente{
-  width:56px;height:56px;border-radius:50%;
-  border:2px solid #ccc;
-  position:relative;background:white;
-}
-.cara{
-  position:absolute;width:100%;height:100%;
-  cursor:pointer;
-}
-.superior{clip-path:polygon(50% 50%,0 0,100% 0)}
-.inferior{clip-path:polygon(50% 50%,0 100%,100% 100%)}
-.izquierda{clip-path:polygon(50% 50%,0 0,0 100%)}
-.derecha{clip-path:polygon(50% 50%,100% 0,100% 100%)}
-.centro{
-  position:absolute;
-  width:20px;height:20px;
-  border-radius:50%;
-  border:1px solid gray;
-  top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  cursor:pointer;
+function _tableRow(k, v){
+  return `<tr><td class="k">${escapeHtml(k)}</td><td>${escapeHtml(_fmt(v))}</td></tr>`;
 }
 
-.numero{font-size:11px;margin-top:4px;color:#555}
+// Odontograma a tabla (ya lo tienes como odontogramaCompleto en enviarAN8N)
+function _odontogramaToHTML(odontogramaCompleto){
+  let html = `
+    <h3>Odontograma (FDI)</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th>
+          <th>Vestibular</th><th>Lingual</th><th>Palatino</th>
+        </tr>
+      </thead><tbody>
+  `;
 
-.popup{
-  position:absolute;
-  background:white;
-  border:1px solid #ccc;
-  padding:10px;
-  z-index:9999;
-  box-shadow:0 4px 8px rgba(0,0,0,.2);
-}
-.popup div{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  cursor:pointer;
-  font-size:13px;
-}
-.color-box{
-  width:12px;height:12px;border:1px solid #444
+  Object.entries(odontogramaCompleto || {}).forEach(([diente, r]) => {
+    html += `
+      <tr>
+        <td>${escapeHtml(diente)}</td>
+        <td>${escapeHtml((r.Mesial||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Distal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Oclusal||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Vestibular||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Lingual||"").toUpperCase())}</td>
+        <td>${escapeHtml((r.Palatino||"").toUpperCase())}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
 }
 
-.leyenda{
-  max-width:900px;
-  margin:40px auto 0;
-  background:white;
-  padding:20px;
-  border-radius:10px;
+function _evolucionesToHTML(evos){
+  
+  const lista = Array.isArray(evos) ? evos : [];
+  if (!lista.length) return `<h3>Evoluciones</h3><div class="muted">Sin evoluciones registradas.</div>`;
+
+  let html = `
+    <h3>Evoluciones</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Fecha</th><th>Hora</th><th>Profesional</th><th>Procedimiento</th><th>Detalle</th>
+        </tr>
+      </thead><tbody>
+  `;
+
+  lista.forEach(e => {
+    const fecha = _soloFechaYYYYMMDD(e.fecha || e.evo_fecha || "");
+    const hora  = _soloHoraHHMM(e.hora || e.evo_hora || "");
+    html += `
+      <tr>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(e.profesional || "").toUpperCase())}</td>
+        <td>${escapeHtml(String(e.procedimiento || e.evo_tipo || "").toUpperCase())}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(e.detalle || "")}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+} 
+
+  </script>
+
+  <style>
+
+    .btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
 }
-.leyenda-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(160px,1fr));
-  gap:8px 14px;
+
+    :root{
+      --ink:#19324d;
+      --muted:#6b7a90;
+      --bg:#f6f8fb;
+      --card:#ffffff;
+      --brand:#2a5d84;
+      --gap:18px;
+      --radius:14px;
+      --shadow:0 6px 18px rgba(0,0,0,.06);
+      --line:#e7edf5;
+      --input:#cbd5e1;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0; padding:24px; font-family:system-ui,Segoe UI,Arial; color:var(--ink); background:var(--bg);
+    }
+    .container{ max-width:1100px; margin:0 auto; }
+    h1{ margin:0 0 14px; font-size:28px; color:var(--brand); }
+    h2{ font-size:18px; margin:0 0 14px; color:var(--brand); }
+
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:22px;
+      box-shadow:var(--shadow);
+      margin-bottom:22px;
+    }
+    .legend{ font-weight:700; margin-bottom:8px; color:var(--brand); }
+
+    .grid{ display:grid; gap:var(--gap); }
+    .g-2{ grid-template-columns:1fr 1fr; }
+    .g-3{ grid-template-columns:repeat(3,1fr); }
+    .g-4{ grid-template-columns:repeat(4,1fr); }
+    .full{ grid-column:1 / -1; }
+
+    .ctrl{ display:flex; flex-direction:column; gap:8px; }
+    .ctrl label{ font-size:13px; color:var(--muted); }
+
+    input[type="text"],input[type="email"],input[type="tel"],
+    input[type="number"],input[type="date"],input[type="time"], textarea{
+      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
+      font-size:15px; background:#fff;
+    }
+    select {
+      width:100%;
+      border:1px solid var(--input);
+      border-radius:10px;
+      padding:12px;
+      font-size:15px;
+      background:#fff;
+      cursor:pointer;
+    }
+
+    textarea{ min-height:120px; resize:vertical; }
+    .inline{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+    .chip{
+      display:inline-flex; align-items:center; gap:6px; padding:4px 10px;
+      border:1px solid var(--line); border-radius:999px; background:#fff;
+    }
+
+    .checks{
+      display:grid; gap:10px 18px;
+      grid-template-columns:repeat(2,minmax(220px,1fr));
+      padding-top:10px;
+    }
+    .check{
+      display:flex; align-items:center; gap:8px;
+      padding:6px 10px; border:1px dashed var(--line); border-radius:10px; background:#fafcff;
+    }
+
+    .rowline{ height:1px; background:var(--line); margin:12px 0; }
+
+    @media (max-width:980px){
+      .g-4{ grid-template-columns:1fr 1fr; }
+      .g-3{ grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:680px){
+      .g-2,.g-3,.g-4{ grid-template-columns:1fr; }
+      .checks{ grid-template-columns:1fr; }
+    }
+
+    .search-grid{ grid-template-columns: 1.2fr 1fr; align-items:end; }
+    .btn{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      color:white;
+      font-size:14px;
+    }
+    .btn-buscar{ background:#0D47A1; }
+    .btn-agenda{ background:#009688; }
+    .btn-salir{ background:#009688; }
+    .btn-agendar{ background:#009688; }
+    .btn-guardar{ background:#009688; }
+    .btn-inicio{
+      background:#E3E3E3;
+      color:#009688;
+      font-weight:700;
+    }
+
+    .tabla-evo{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .tabla-evo th,.tabla-evo td{
+      padding:10px;
+      border:1px solid var(--line);
+      vertical-align:top;
+    }
+    .tabla-evo thead tr{
+      background:#eef6ff;
+    }
+
+    .tabla-docs{
+      width:100%;
+      border-collapse:collapse;
+    }
+    .tabla-docs th,.tabla-docs td{
+      padding:10px;
+      border:1px solid var(--line);
+      vertical-align:top;
+    }
+    .tabla-docs thead tr{ background:#eef6ff; }
+
+    /* ODONTOGRAMA (igual) */
+    #odontograma-wrapper * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+    #odontograma-wrapper { background: #f9f9f9; padding: 20px 0 40px; margin-top: 30px; border-radius: 14px; }
+    #odontograma-wrapper h1 { text-align: center; color: #0D47A1; margin-bottom: 10px; }
+    .odontograma { display: flex; flex-direction: column; align-items: center; gap: 40px; position: relative; z-index: 10; overflow-x: visible !important; width: max-content; margin: 0 auto; }
+    .seccion { text-align: center; }
+    .etiqueta { font-weight: bold; color: #D0D0D0; margin-bottom: 10px; }
+    .fila { display: flex; flex-wrap: nowrap; justify-content: center; gap: var(--tooth-gap); min-width: max-content; }
+    .contenedor-diente { display: flex; flex-direction: column; align-items: center; }
+    .diente { position: relative; width: var(--tooth-size); height: var(--tooth-size); border-radius: 50%; border: 2px solid #ccc; background: white; overflow: hidden; }
+    .cara { position: absolute; width: 100%; height: 100%; cursor: pointer; transition: background 0.2s; z-index: 1; }
+    .cara::before,.cara::after { content: ""; position: absolute; width: 1px; height: 100%; background: gray; left: 50%; top: 0; z-index: 0; }
+    .cara::before { transform: rotate(45deg); }
+    .cara::after  { transform: rotate(-45deg); }
+    .superior { clip-path: polygon(50% 50%, 0% 0%, 100% 0%); }
+    .inferior { clip-path: polygon(50% 50%, 0% 100%, 100% 100%); }
+    .izquierda { clip-path: polygon(50% 50%, 0% 0%, 0% 100%); }
+    .derecha   { clip-path: polygon(50% 50%, 100% 0%, 100% 100%); }
+    .centro { width: var(--center-size); height: var(--center-size); border-radius: 50%; border: 1.5px solid gray; background: white; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 5; cursor: pointer; }
+    .numero { font-size: var(--num-size); color: #555; margin-top: 5px; }
+    .popup { position: absolute; display: none; background: #fff; border: 1px solid #ccc; padding: 10px; z-index: 1000002; box-shadow: 0 4px 8px rgba(0,0,0,0.2); max-height: 250px; overflow-y: auto; }
+    .popup div { margin: 4px 0; font-size: 13px; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .color-box { width: 12px; height: 12px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+    .leyenda { max-width: 1000px; margin: 60px auto 20px; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .leyenda h2 { text-align: center; color: #0D47A1; margin-bottom: 16px; }
+    .leyenda-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px 16px; font-size: 14px; }
+
+    .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
+    .vwrap .vfield{ flex: 1; }
+    .vbtn{ width: 44px; min-width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--line); background: #F5F5F5; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; color: transparent; }
+    .vbtn.on{ background: #0D47A1; color: #fff; border-color: #0D47A1; }
+
+    #odontograma-wrapper.fullscreen{
+      position: fixed; inset: 0; z-index: 99999; background: #f9f9f9;
+      margin: 0 !important; border-radius: 0 !important; padding: 10px 10px 25px; overflow: auto;
+    }
+    #odontograma-wrapper.fullscreen .odontograma{ margin-left: auto !important; margin-right: auto !important; width: max-content; min-width: max-content; padding: 10px; }
+    #btnExitOdonFS{
+      position: fixed; top: 12px; right: 12px; z-index: 100000;
+      border: none; border-radius: 12px; padding: 10px 14px; cursor: pointer;
+      background: #0D47A1; color: #fff; font-weight: 700; box-shadow:0 8px 18px rgba(0,0,0,.18);
+    }
+    #odontograma-wrapper.fullscreen #odontograma-guias{ max-width: none !important; width: 1300px !important; margin: 5px auto 0 !important; }
+
+    #odontograma-wrapper{ --tooth-size: 56px; --tooth-gap: 10px; --num-size: 11px; --center-size: 20px; }
+
+    .extra-etiquetas{ margin-top: 25px; font-size: 15px; color: #D0D0D0; line-height: 1.1; font-weight: 600; text-align: center; }
+    .extra-etiquetas .lingual{ margin-top: 5px; }
+
+    .etiqueta-eje{ position: relative; display: inline-block; padding: 0 10px; }
+    .linea-media{ position: absolute; left: 50%; transform: translateX(-50%); width: 3px; background: #E3E3E3; z-index: 999999; pointer-events: none; }
+    .etiqueta-eje .linea-media{ top: 100%; height: 0px; }
+    .eje-inferior .linea-media{ top: auto; bottom: 100%; height: 0px; }
+    .linea-media.linea-cruce::after{
+      content:""; position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+      width:1000px; height:2px; background:#E3E3E3; border-radius:2px;
+    }
+    .print-wrap{
+  margin-top: 16px; /* ajusta: 8px, 16px, etc */
+     }
+/* ✅ FULLSCREEN MODAL EVOLUCIONES */
+#modalEvoluciones.fullscreen{
+  padding: 0 !important;
 }
-</style>
+
+#modalEvoluciones.fullscreen > div{
+  max-width: none !important;
+  margin: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  border-radius: 0 !important;
+  max-height: none !important;
+}
+
+#modalEvoluciones.fullscreen #iframeEvoluciones{
+  height: calc(100vh - 70px) !important; /* resta el header */
+}
+
+  </style>
 </head>
-
 <body>
 
-<div id="odontograma-wrapper">
-  <h1>Odontograma Internacional FDI</h1>
+  <!--
+    ⚠️ Estos campos existen en historia-clinica.html y son requeridos por validarCamposObligatorios()
+    y por el payload de enviarAN8N(). Aquí se mantienen (en oculto) para no cambiar nada de la lógica.
+  -->
+  <div style="display:none">
+    <input id="paciente_nombre" type="text" />
+    <input id="paciente_edad" type="number" />
+    <input id="paciente_numdoc" type="text" />
+    <input id="paciente_nacimiento" type="date" />
+    <input id="usuarioN8N" type="text" />
 
-  <div class="odontograma">
-    <div class="fila" id="fila-superior"></div>
-    <div class="fila" id="fila-inferior"></div>
+    <label><input type="radio" name="idtipo" value="CC"></label>
+    <label><input type="radio" name="idtipo" value="TI"></label>
+    <label><input type="radio" name="idtipo" value="CE"></label>
+    <label><input type="radio" name="idtipo" value="PA"></label>
+    <label><input type="radio" name="idtipo" value="RC"></label>
   </div>
 
-  <div class="leyenda">
-    <h3>Leyenda de Preexistencias</h3>
-    <div class="leyenda-grid" id="grid-leyenda"></div>
+  <!-- ODONTOGRAMA -->
+  <div id="odontograma-wrapper">
+    <h1>Odontograma Internacional FDI</h1>
+    <div id="odontograma-guias" style="position:relative; width:100%; max-width:900px; margin:5px auto 0; height:20px;">
+     <!-- <div style="position:absolute; top:70px; left:-130px; color:#D0D0D0; font-weight:bold;">Distal1</div>
+      <div style="position:absolute; top:70px; right:-130px; color:#D0D0D0; font-weight:bold;">Distal2</div>
+      <div style="position:absolute; top:230px; left:-130px; color:#D0D0D0; font-weight:bold;">Distal4</div>
+      <div style="position:absolute; top:230px; right:-130px; color:#D0D0D0; font-weight:bold;">Distal3</div>-->
+    </div>
+
+    <div class="odontograma">
+      <div class="seccion">
+        <div class="etiqueta etiqueta-eje">
+          Vestibular---------------------Maxilar superior--------------------Vestibular
+          <span class="linea-media linea-cruce"></span>
+        </div>
+        <div class="fila" id="fila-superior"></div>
+      </div>
+
+      <div class="seccion">
+        <div class="fila" id="fila-inferior"></div>
+        <div class="etiqueta etiqueta-eje eje-inferior">
+          Vestibular--------------------Maxilar inferior--------------------Vestibular
+          <span class="linea-media"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="leyenda">
+      <h2>Leyenda de Preexistencias</h2>
+      <div class="leyenda-grid" id="grid-leyenda"></div>
+    </div>
+
+    <div style="text-align:center; margin-top:40px;">
+      <button onclick="mostrarReporte()" style="padding:10px 20px; background:#0D47A1; color:white; border:none; border-radius:6px; cursor:pointer;">
+        Generar reporte de preexistencias
+      </button>
+
+      <div style="text-align:center; margin-top:20px;">
+        <button onclick="enviarAN8N()" style="padding:10px 20px; background:#009688; color:white; border:none; border-radius:6px; cursor:pointer;">
+          Guardar y enviar
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div style="text-align:center;margin-top:20px">
-    <button onclick="exportarOdontograma()" style="
-      padding:12px 20px;
-      border:none;
-      background:#009688;
-      color:white;
-      font-weight:700;
-      border-radius:8px;
-      cursor:pointer">
-      Guardar odontograma
-    </button>
-  </div>
-</div>
+  <script>
+  // ==============================
+  // Bootstrap mínimo para que el odontograma funcione igual que dentro de historia-clinica.html
+  // (sin tocar el código del odontograma)
+  // ==============================
 
-<script>
-/* ====== ODONTOGRAMA (MISMA LÓGICA ORIGINAL) ====== */
+  // Evoluciones (en historia-clinica existe). Aquí se mantiene para no romper el payload.
+  window.evoluciones = window.evoluciones || [];
 
-const preexistencias = {
-  Caries:'red', Sano:'#8BC34A', Resina:'#a06c3f',
-  Amalgama:'#2B2B2B', Endodoncia:'#005E94',
-  Fractura:'orange', Ausente:'#c3c5c7'
-};
+  // Si no existe la función (en historia-clinica existe), la definimos de forma mínima
+  // sin interferir con el módulo, para conservar el envío a N8N.
+  if (typeof window.obtenerDatosHistoriaClinica !== "function") {
+    window.obtenerDatosHistoriaClinica = function obtenerDatosHistoriaClinica() {
+      const tipoID = document.querySelector("input[name='idtipo']:checked")?.value || "";
+      return {
+        paciente_nombre: document.getElementById("paciente_nombre")?.value || "",
+        paciente_edad: document.getElementById("paciente_edad")?.value || "",
+        paciente_numdoc: document.getElementById("paciente_numdoc")?.value || "",
+        paciente_nacimiento: document.getElementById("paciente_nacimiento")?.value || "",
+        paciente_idtipo: tipoID
+      };
+    };
+  }
 
-const dientesSuperior=[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
-const dientesInferior=[48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
+  // Carga de paciente por URL/localStorage (misma idea que en historia-clinica)
+  (function() {
+    const params = new URLSearchParams(location.search);
+  const cedulaURL = (params.get("cedula") || "").trim();
 
-let reporte={};
+  // 2) leer paciente completo por localStorage
+  let pacienteLS = null;
+  try {
+    pacienteLS = JSON.parse(localStorage.getItem("paciente_plan_tratamiento") || "null");
+  } catch(e) {}
 
-const leyenda=document.getElementById("grid-leyenda");
-Object.entries(preexistencias).forEach(([n,c])=>{
-  const d=document.createElement("div");
-  d.innerHTML=`<span class="color-box" style="background:${c}"></span>${n}`;
-  leyenda.appendChild(d);
+  const cedula = cedulaURL || (pacienteLS?.cedula || "");
+
+  // ✅ Aquí ya tienes el paciente actual:
+  // pacienteLS.nombre, pacienteLS.edad, etc.
+
+  console.log("Paciente recibido:", { cedula, pacienteLS });
+
+    if (pacienteLS) {
+  console.log("✅ Paciente recibido desde Historia Clínica:", pacienteLS);
+
+  if (pacienteLS.nombre) {
+    const el = document.getElementById("paciente_nombre");
+    if (el) el.value = pacienteLS.nombre;
+  }
+
+  if (pacienteLS.celular) {
+    const el = document.getElementById("paciente_cel");
+    if (el) el.value = pacienteLS.celular;
+  }
+
+  if (pacienteLS.email) {
+    const el = document.getElementById("paciente_email");
+    if (el) el.value = pacienteLS.email;
+  }
+}
+
+    
 });
 
-function crearDiente(num, cont){
-  const c=document.createElement("div");
-  c.className="contenedor-diente";
 
-  const d=document.createElement("div");
-  d.className="diente";
-  d.dataset.numero=num;
+  // ==============================
+  // ODONTOGRAMA
+  // ==============================
+  
+    // Rellenar campos ocultos si llegan desde localStorage
+    try {
+      if (pacienteLS) {
+        if (pacienteLS.nombre) document.getElementById("paciente_nombre").value = pacienteLS.nombre;
+        if (pacienteLS.edad) document.getElementById("paciente_edad").value = pacienteLS.edad;
+        if (pacienteLS.cedula) document.getElementById("paciente_numdoc").value = pacienteLS.cedula;
+        if (pacienteLS.nacimiento) document.getElementById("paciente_nacimiento").value = pacienteLS.nacimiento;
 
-  ["superior","inferior","izquierda","derecha"].forEach(r=>{
-    const x=document.createElement("div");
-    x.className="cara "+r;
-    x.dataset.region=r;
-    x.onclick=e=>popup(e,x);
-    d.appendChild(x);
+        // intentar marcar tipo de id si viene
+        const tipo = (pacienteLS.idtipo || pacienteLS.tipo_id || pacienteLS.tipoID || "").toString().toUpperCase();
+        if (tipo) {
+          const r = document.querySelector(`input[name='idtipo'][value="${tipo}"]`);
+          if (r) r.checked = true;
+        }
+      }
+      // Si viene cédula por URL, al menos setear numdoc
+      if (cedula) {
+        const el = document.getElementById("paciente_numdoc");
+        if (el && !el.value) el.value = cedula;
+      }
+    } catch(e) {
+      console.warn("No se pudo precargar paciente para odontograma:", e);
+    }
+  })();
+
+  </script>
+
+  <script>
+  // ==============================
+  // ODONTOGRAMA (COPIADO 1:1 DESDE historia-clinica.html)
+  // ==============================
+  const preexistencias = {
+    Caries: 'red',
+    Sano: '#8BC34A',
+    Resina: '#a06c3f',
+    Amalgama: '#2B2B2B',
+    Corona_adaptada: 'blue',
+    Corona_desadaptada: '#C299F7',
+    Endodoncia: '#005E94',
+    Obturación: 'green',
+    Fractura: 'orange',
+    Ausente: '#c3c5c7',
+    Implante: '#7eff42',
+    "Extracción indicada": '#42b7ff',
+    Exodoncia: '#ff38ef',
+    Póntico: 'cyan',
+    "Movilidad dental": 'pink',
+    Retenido: 'purple',
+    "Prótesis fija": '#880E4F',
+    "Prótesis removible": '#42ffc6',
+    "Prótesis total": '#fff642',
+    "En erupción": '#CF1111',
+    "Resto radiculares": '#EDC766',
+  };
+
+  let reporte = {};
+  const contenedorLeyenda = document.getElementById('grid-leyenda');
+  Object.entries(preexistencias).forEach(([nombre, color]) => {
+    const item = document.createElement('div');
+    item.innerHTML = `<span class="color-box" style="background:${color}; border:1px solid #444;"></span>${nombre}`;
+    contenedorLeyenda.appendChild(item);
   });
 
-  const centro=document.createElement("div");
-  centro.className="centro";
-  centro.dataset.region="centro";
-  centro.onclick=e=>popup(e,centro);
-  d.appendChild(centro);
+  const dientesSuperior = [18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28];
+  const dientesInferior = [48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38];
 
-  c.appendChild(d);
-  c.appendChild(Object.assign(document.createElement("div"),{className:"numero",textContent:num}));
-  cont.appendChild(c);
-}
+  function crearDiente(numero, contenedor) {
+    const contenedorDiente = document.createElement('div');
+    contenedorDiente.className = 'contenedor-diente';
 
-function popup(e,el){
-  e.stopPropagation();
-  document.querySelectorAll(".popup").forEach(p=>p.remove());
-  const m=document.createElement("div");
-  m.className="popup";
+    const diente = document.createElement('div');
+    diente.className = 'diente';
+    diente.dataset.numero = numero;
 
-  Object.entries(preexistencias).forEach(([n,c])=>{
-    const i=document.createElement("div");
-    i.innerHTML=`<span class="color-box" style="background:${c}"></span>${n}`;
-    i.onclick=()=>{
-      el.style.background=c;
-      const d=el.parentElement.dataset.numero;
-      const cara=el.dataset.region;
-      if(!reporte[d])reporte[d]={};
-      reporte[d][cara]=n;
-      m.remove();
+    ['superior','inferior','izquierda','derecha'].forEach(region => {
+      const div = document.createElement('div');
+      div.className = `cara ${region}`;
+      div.dataset.region = region;
+      div.onclick = (event) => mostrarPopup(event, div);
+      diente.appendChild(div);
+    });
+
+    const centro = document.createElement('div');
+    centro.className = 'centro';
+    centro.dataset.region = 'centro';
+    centro.onclick = (event) => mostrarPopup(event, centro);
+    diente.appendChild(centro);
+
+    const label = document.createElement('div');
+    label.className = 'numero';
+    label.textContent = numero;
+
+    contenedorDiente.appendChild(diente);
+    contenedorDiente.appendChild(label);
+
+    if (numero === 14 || numero === 24) {
+      const extra = document.createElement("div");
+      extra.className = "extra-etiquetas";
+      extra.innerHTML = `<div>Palatino</div><div class="lingual">Lingual</div>`;
+      contenedorDiente.appendChild(extra);
+    }
+
+    contenedor.appendChild(contenedorDiente);
+  }
+
+  function mostrarPopup(event, elemento) {
+    event.stopPropagation();
+    document.querySelectorAll('.popup').forEach(p => p.remove());
+
+    const menu = document.createElement('div');
+    menu.className = 'popup';
+
+    const limpiar = document.createElement('div');
+    limpiar.innerHTML = `<span class='color-box' style="background:white; border:1px solid #444;"></span> Limpiar`;
+
+    limpiar.onclick = () => {
+      elemento.style.background = "white";
+
+      const dienteNumero = elemento.parentElement.dataset.numero;
+      const cara = elemento.dataset.region;
+
+      if (reporte[dienteNumero] && reporte[dienteNumero][cara]) {
+        delete reporte[dienteNumero][cara];
+      }
+      if (reporte[dienteNumero] && Object.keys(reporte[dienteNumero]).length === 0) {
+        delete reporte[dienteNumero];
+      }
+
+      menu.remove();
     };
-    m.appendChild(i);
-  });
 
-  document.body.appendChild(m);
-  m.style.left=e.pageX+"px";
-  m.style.top=e.pageY+"px";
-}
+    menu.appendChild(limpiar);
 
-dientesSuperior.forEach(n=>crearDiente(n,document.getElementById("fila-superior")));
-dientesInferior.forEach(n=>crearDiente(n,document.getElementById("fila-inferior")));
+    Object.entries(preexistencias).forEach(([nombre, color]) => {
+      const item = document.createElement('div');
+      item.innerHTML = `<span class='color-box' style="background:${color}; border:1px solid #444;"></span>${nombre}`;
 
-function exportarOdontograma(){
-  console.log("ODONTOGRAMA:",reporte);
-  alert("Odontograma listo (ver consola).");
-}
-</script>
+      item.onclick = () => {
+        const dienteNumero = elemento.parentElement.dataset.numero;
+        const cara = elemento.dataset.region;
+
+        if (!reporte[dienteNumero]) reporte[dienteNumero] = {};
+
+        if (nombre === "Sano" || nombre === "Ausente"|| nombre === "Corona_adaptada"|| nombre === "Corona_desadaptada"|| nombre === "En erupción"||nombre === "Resto radiculares"||nombre === "Prótesis fija"||nombre === "Prótesis removible"||nombre === "Prótesis fija") {
+          elemento.parentElement.querySelectorAll(".cara, .centro")
+            .forEach(c => c.style.background = preexistencias[nombre]);
+
+          ["superior","inferior","izquierda","derecha","centro"].forEach(c => {
+            reporte[dienteNumero][c] = nombre;
+          });
+        } else {
+          elemento.style.background = color;
+          reporte[dienteNumero][cara] = nombre;
+        }
+
+        menu.remove();
+      };
+
+      menu.appendChild(item);
+    });
+
+    document.body.appendChild(menu);
+    menu.style.left = `${event.pageX + 5}px`;
+    menu.style.top  = `${event.pageY + 5}px`;
+    menu.style.display = 'block';
+  }
+
+  const filaSuperior = document.getElementById('fila-superior');
+  dientesSuperior.forEach(num => crearDiente(num, filaSuperior));
+
+  const filaInferior = document.getElementById('fila-inferior');
+  dientesInferior.forEach(num => crearDiente(num, filaInferior));
+
+  function ajustarLineaMedia() {
+    const topEtiqueta = document.querySelector(".seccion .etiqueta-eje:not(.eje-inferior)");
+    const topLinea = topEtiqueta?.querySelector(".linea-media");
+    const bottomEtiqueta = document.querySelector(".etiqueta-eje.eje-inferior");
+    const bottomLinea = bottomEtiqueta?.querySelector(".linea-media");
+
+    if (!topEtiqueta || !topLinea || !bottomEtiqueta || !bottomLinea) return;
+
+    const rTop = topEtiqueta.getBoundingClientRect();
+    const rBottom = bottomEtiqueta.getBoundingClientRect();
+
+    const dist = rBottom.top - rTop.bottom;
+    const h = Math.max(0, Math.round(dist / 2));
+
+    topLinea.style.height = h + "px";
+    bottomLinea.style.height = h + "px";
+  }
+
+  window.addEventListener("load", ajustarLineaMedia);
+  window.addEventListener("resize", ajustarLineaMedia);
+  document.body.addEventListener('click', () => document.querySelectorAll('.popup').forEach(p => p.remove()));
+
+  function obtenerRegion(diente, cara) {
+    diente = parseInt(diente);
+    if (cara === "centro") return "Oclusal";
+
+    if (diente >= 11 && diente <= 28) {
+      if (cara === "superior") return "Vestibular";
+      if (cara === "inferior") return "Palatino";
+    }
+    if (diente >= 31 && diente <= 48) {
+      if (cara === "superior") return "Lingual";
+      if (cara === "inferior") return "Vestibular";
+    }
+
+    const derechaEsMesial = (
+      (diente >= 11 && diente <= 18) ||
+      (diente >= 41 && diente <= 48)
+    );
+
+    if (cara === "derecha") return derechaEsMesial ? "Mesial" : "Distal";
+    if (cara === "izquierda") return derechaEsMesial ? "Distal" : "Mesial";
+    return null;
+  }
+
+  function mostrarReporte() {
+    let html = `
+      <h2>Reporte de Preexistencias</h2>
+      <table border="1" cellpadding="6" style="border-collapse:collapse; margin:20px auto; width:95%; text-align:center;">
+        <tr style="background:#eee; font-weight:bold;">
+          <th>Diente</th><th>Mesial</th><th>Distal</th><th>Oclusal</th><th>Vestibular</th><th>Lingual</th><th>Palatino</th>
+        </tr>
+    `;
+
+    Object.entries(reporte).forEach(([diente, caras]) => {
+      let fila = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
+      Object.entries(caras).forEach(([cara, preexistencia]) => {
+        let region = obtenerRegion(diente, cara);
+        if (region) fila[region] = String(preexistencia || "").toUpperCase();
+      });
+
+      html += `
+        <tr>
+          <td>${diente}</td>
+          <td>${fila.Mesial}</td>
+          <td>${fila.Distal}</td>
+          <td>${fila.Oclusal}</td>
+          <td>${fila.Vestibular}</td>
+          <td>${fila.Lingual}</td>
+          <td>${fila.Palatino}</td>
+        </tr>
+      `;
+    });
+
+    html += "</table>";
+    const win = window.open("", "_blank");
+    win.document.write(html);
+    win.document.close();
+  }
+
+  function obtenerDatosHistoriaClinica() {
+    const data = {};
+    document.querySelectorAll(".container input, .container textarea, .container select")
+      .forEach(campo => {
+        const nombre = campo.id || campo.name;
+        if (!nombre) return;
+
+        if (campo.type === "checkbox") {
+          if (!data[nombre]) data[nombre] = [];
+          if (campo.checked) data[nombre].push(campo.value || true);
+        } else {
+          data[nombre] = campo.value;
+        }
+      });
+    return data;
+  }
+
+  function validarCamposObligatorios() {
+    const errores = [];
+    const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
+    if (!nombre) errores.push("Nombres y apellidos");
+    const edad = document.getElementById("paciente_edad")?.value || "";
+    if (!edad) errores.push("Edad");
+    const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
+    if (tipoID.length === 0) errores.push("Tipo de identificación");
+    const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
+    if (!numDoc) errores.push("Número de identificación");
+    const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
+    if (!fechaNac) errores.push("Fecha de nacimiento");
+    if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
+
+    if (errores.length > 0) {
+      alert(
+        "⚠️ No se puede enviar la historia clínica.\n\n" +
+        "Faltan los siguientes campos obligatorios:\n\n" +
+        errores.map(e => "• " + e).join("\n")
+      );
+      return false;
+    }
+    return true;
+  }
+
+  function enviarAN8N() {
+    // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
+    if (String(window.__ROL_ACTUAL || "").toLowerCase() === "auxiliar") {
+      alert("⛔ Rol auxiliar: no autorizado para Guardar y Enviar.");
+      return;
+    }
+
+    if (!validarCamposObligatorios()) return;
+
+    const todosLosDientes = [
+      18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
+      48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
+    ];
+
+    const odontogramaCompleto = {};
+    todosLosDientes.forEach(num => {
+      odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
+    });
+
+    Object.entries(reporte).forEach(([diente, caras]) => {
+      Object.entries(caras).forEach(([cara, preexistencia]) => {
+        const region = obtenerRegion(diente, cara);
+        if (region) odontogramaCompleto[diente][region] = String(preexistencia || "").toUpperCase();
+      });
+    });
+
+    const datosHistoria = obtenerDatosHistoriaClinica();
+    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+    document.getElementById("usuarioN8N").value = usuario;
+
+    const payload = {
+      historia_clinica: datosHistoria,
+      odontograma: odontogramaCompleto,
+      evoluciones: evoluciones,
+      fecha_envio: new Date().toISOString(),
+      usuario_logueado: usuario
+    };
+
+    fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(data => {
+  if (data.ok) {
+    alert("✅ " + data.message);
+  } else {
+    alert("❌ Error al enviar la información");
+  }
+})
+.catch(err => {
+  console.error(err);
+  alert("❌ Error de conexión con N8N");
+});
+  }
+
+  
+  </script>
 
 </body>
 </html>
+
 
