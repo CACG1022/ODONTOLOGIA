@@ -248,7 +248,7 @@
             <th>Paciente</th>
             <th>Procedimiento</th>
             <th class="right">Cantidad</th>
-            <th class="right">Costo</th>
+            <th class="right">Costo Unitario</th>
             <th class="right">Costo Total</th>
             <th class="right">Valor Total</th>
           </tr>
@@ -508,7 +508,8 @@ function exportarExcel(){
     "Paciente": r.paciente_nombre || "",
     "Procedimiento": r.descripcion || "",
     "Cantidad": Number(r.cantidad || 0),
-    "Costo": Number(r.costo || 0),
+    "Costo Unitario": Number(r.costo || 0),
+    "Costo Total": Number(r.costo_total || 0),
     "Valor Total": Number(r.valor_total || 0),
   }));
 
