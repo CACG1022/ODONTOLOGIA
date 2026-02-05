@@ -1025,6 +1025,38 @@ function aplicarEstadoPorVoz(diente, region, estado){
 window.toggleDictadoOdontograma = toggleDictadoOdontograma;
 </script>
 
+
+<script>
+/* ==============================
+   CONFIRMACIÓN POR VOZ (TTS)
+   ============================== */
+
+function hablarConfirmacion(texto){
+  if(!window.speechSynthesis) return;
+  const msg = new SpeechSynthesisUtterance(texto);
+  msg.lang = "es-CO";
+  msg.rate = 0.95;
+  msg.pitch = 1;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(msg);
+}
+
+// Hook: sobreescribir aplicarEstadoPorVoz para confirmar
+const _aplicarEstadoPorVozOriginal = window.aplicarEstadoPorVoz;
+window.aplicarEstadoPorVoz = function(diente, region, estado){
+  _aplicarEstadoPorVozOriginal(diente, region, estado);
+  const regionTexto = {
+    centro: "oclusal",
+    izquierda: "mesial",
+    derecha: "distal",
+    superior: "vestibular",
+    inferior: "palatino"
+  }[region] || region;
+
+  hablarConfirmacion(`Aplicado ${estado} en diente ${diente}, cara ${regionTexto}`);
+};
+</script>
+
 </body>
 </html>
 
