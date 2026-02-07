@@ -1002,20 +1002,6 @@ if ((isFocused || filtro) && count > 0) {
         sel.appendChild(opt);
       }
     }
-   function buildProfesionalesOptionsHTML(selectedRaw = ""){
-  const selected = String(selectedRaw ?? "").trim();
-  let html = `<option value="">—</option>`;
-  for (const pr of (state.profesionales || [])){
-    const ced = String(pr.cedula ?? "").trim();
-    const nom = String(pr.nombre ?? "").trim();
-    const value = ced ? ced : nom; // igual que tu select principal
-    const isSel = String(value) === selected ? "selected" : "";
-    html += `<option value="${escapeHtml(value)}" ${isSel}>${escapeHtml(nom)}</option>`;
-  }
-  return html;
-}
-
-    
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
         .trim()
@@ -1068,47 +1054,36 @@ if ((isFocused || filtro) && count > 0) {
         .replaceAll('"',"&quot;")
         .replaceAll("'","&#039;");
     }
-  function agregarProcedimiento(){
-  const procId = ($("sel-proc").value || "").trim();
-  if (!procId){
-    toast("Selecciona un procedimiento", "warn");
-    return;
-  }
+    function agregarProcedimiento(){
+      const procId = ($("sel-proc").value || "").trim();
+      if (!procId){
+        toast("Selecciona un procedimiento", "warn");
+        return;
+      }
+      const p = state.procedimientos.find(x => String(x.id) === String(procId));
+      if (!p){
+        toast("Procedimiento no encontrado", "err");
+        return;
+      }
+      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
+      const valorU = Math.max(0, num(p.valor || 0));
+      const item = {
+  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+  procedimiento_id: p.id,              // ✅ CLAVE
+  codigo_cups: p.codigo_cups || "",
+  descripcion: p.procedimiento || "",
+  cantidad,
+  valor_unitario: valorU,
+  valor_total: valorU * cantidad
+};
 
-  const p = state.procedimientos.find(x => String(x.id) === String(procId));
-  if (!p){
-    toast("Procedimiento no encontrado", "err");
-    return;
-  }
-
-  const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
-  const valorU = Math.max(0, num(p.valor || 0));
-
-  const profesionalGlobal = ($("profesional")?.value || "").trim();
-  const profesionalDeProc = (p.profesional || "").toString().trim();
-
-  const item = {
-    id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-    procedimiento_id: p.id,
-    codigo_cups: p.codigo_cups || "",
-    descripcion: p.procedimiento || "",
-    cantidad,
-    valor_unitario: valorU,
-    valor_total: valorU * cantidad,
-    profesional: profesionalGlobal || profesionalDeProc || ""
-  };
-
-  state.items.push(item);
-  renderItems();
-  recalcularTotales();
-
-  $("sel-proc").value = "";
-  $("sel-proc-input").value = "";
-  $("cantidad").value = "1";
-
-  toast("Agregado ✅", "ok");
-}
-
+      state.items.push(item);
+      renderItems();
+      recalcularTotales();
+      $("sel-proc").value = "";
+      $("cantidad").value = "1";
+      toast("Agregado ✅", "ok");
+    }
     function eliminarItem(id_local){
       state.items = state.items.filter(x => x.id_local !== id_local);
       renderItems();
@@ -1124,7 +1099,7 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><select data-k="profesional">${buildProfesionalesOptionsHTML(it.profesional || obtenerProfesionalRawDeItem(it) || "")}</select></td>
+          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1143,17 +1118,6 @@ if ((isFocused || filtro) && count > 0) {
             recalcularTotales();
           });
         });
-        // ✅ Cambio de profesional por fila
-const selProf = tr.querySelector('select[data-k="profesional"]');
-if (selProf){
-  selProf.addEventListener("change", () => {
-    it.profesional = (selProf.value || "").trim();
-    // no necesitas recalcular totales, pero sí re-render si quieres reflejar etiqueta/estado
-    // renderItems();
-  });
-}
-
-        
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
@@ -1619,7 +1583,7 @@ if (selProf){
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
-  profesional: (it.profesional || obtenerProfesionalRawDeItem(it) || null)
+  profesional: obtenerProfesionalRawDeItem(it)
 }));
 
 
@@ -1648,7 +1612,7 @@ if (selProf){
         setStatus("Preparando impresión...");
         const { data: det, error } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", state.facturaGuardada.id)
           .order("id", { ascending: true });
         if (error) throw error;
@@ -2326,18 +2290,14 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           }
         }
         state.items = (det || []).map(it => ({
-  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-  procedimiento_id: it.procedimiento_id,
-  codigo_cups: it.codigo_cups || "",
-  descripcion: it.descripcion || "",
-  cantidad: Number(it.cantidad || 1),
-  valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0),
-
-  // ✅ nuevo: profesional por fila (lo que esté guardado en factura_detalle)
-  profesional: (it.profesional || "").toString().trim()
-}));
-
+          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          procedimiento_id: it.procedimiento_id,
+          codigo_cups: it.codigo_cups || "",
+          descripcion: it.descripcion || "",
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(it.valor_unitario || 0),
+          valor_total: Number(it.valor_total || 0)
+        }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
         state.facturaGuardada = fac;
@@ -2982,5 +2942,8 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
+
 
 
