@@ -1470,1478 +1470,182 @@ if ((isFocused || filtro) && count > 0) {
   });
 })();
 <\/script>
-</body>
-</html>`;
-    }
-    async function guardarFactura(){
-      const fecha = ($("fecha").value || "").trim() || hoyISO();
-      const paciente_cedula = ($("paciente_cedula").value || "").trim();
-      const paciente_nombre = ($("paciente_nombre").value || "").trim();
-      const paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
-      const profesional = ($("profesional").value || "").trim();
-      if (!paciente_cedula || !paciente_nombre){
-        toast("Paciente: cédula y nombre son obligatorios", "err");
-        return;
-      }
-      if (!profesional){
-        toast("Selecciona el profesional", "err");
-        return;
-      }
-      if (state.items.length === 0){
-        toast("Agrega al menos 1 procedimiento", "err");
-        return;
-      }
-      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
-      $("numero_factura").value = numero_factura;
-      const eps = ($("eps").value || "").trim() || null;
-      const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
-      const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
-      const observacion = ($("observacion")?.value || "").trim() || null;
-      const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
-      const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
-      const fecha_pago = pagada ? new Date().toISOString() : null;
-      const totals = calcularTotalesObj();
-      setStatus("Guardando factura...");
+
+  <!-- =========================================================
+       FACTURACIÓN ELECTRÓNICA (CORS SAFE - POST A IFRAME OCULTO)
+       - Envía la factura visible en el modal "Ver factura" (vf_iframe)
+       - No abre pestañas / no rompe la lógica existente
+       ========================================================= -->
+  <script>
+  (function(){
+    function showToast(msg, type){
       try{
-        const payloadConExtras = {
-          fecha,
-          paciente_cedula,
-          paciente_nombre,
-          paciente_correo,
-          tipo_usuario,
-          eps,
-          numero_factura,
-          valor_total: totals.total,
-          copago: totals.copago,
-          cuota_moderadora: totals.cuota_moderadora,
-          profesional,
-          descuento_pct: totals.descuento_pct,
-          descuento_valor: totals.descuento_valor,
-          subtotal: totals.subtotal,
-          iva_aplica: totals.iva_aplica,
-          iva_porcentaje: totals.iva_pct,
-          iva_valor: totals.iva_valor,
-          metodo_pago,
-          observacion,
-          pagada,
-          fecha_pago,
-          referencia_pago,
-          saldo_pendiente: pagada ? 0 : Number(totals.total || 0)
-        };
-        let fac = null;
-        const { data: fac1, error: e1 } = await supabase
-          .from("facturas")
-          .insert([payloadConExtras])
-          .select("*")
-          .single();
-        if (e1){
-          const msg = String(e1.message || "").toLowerCase();
-          const isColumnMissing =
-            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-          if (!isColumnMissing) throw e1;
-          const payloadBase = {
-            fecha,
-            paciente_cedula,
-            paciente_nombre,
-            tipo_usuario,
-            eps,
-            numero_factura,
-            subtotal: totals.subtotal,
-            descuento_pct: totals.descuento_pct,
-            descuento_valor: totals.descuento_valor,
-            copago: totals.copago,
-            cuota_moderadora: totals.cuota_moderadora,
-            valor_total: totals.total,
-            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
-            profesional
-          };
-          const { data: fac2, error: e1b } = await supabase
-            .from("facturas")
-            .insert([payloadBase])
-            .select("*")
-            .single();
-          if (e1b) throw e1b;
-          fac = fac2;
-          fac.metodo_pago = metodo_pago;
-          fac.observacion = observacion;
-          fac.paciente_correo = paciente_correo;
-          fac.iva_aplica = totals.iva_aplica;
-          fac.iva_porcentaje = totals.iva_pct;
-          fac.iva_valor = totals.iva_valor;
-          fac.subtotal = totals.subtotal;
-          fac.pagada = pagada;
-          fac.fecha_pago = fecha_pago;
-          fac.referencia_pago = referencia_pago;
-        } else {
-          fac = fac1;
-        }
-        const detalle = state.items.map(it => ({
-  factura_id: fac.id,
-  procedimiento_id: it.procedimiento_id, // ✅ CLAVE
-  codigo_cups: it.codigo_cups || null,
-  descripcion: it.descripcion || "",
-  cantidad: it.cantidad || 1,
-  valor_unitario: it.valor_unitario || 0,
-  valor_total: it.valor_total || 0,
-  profesional: obtenerProfesionalRawDeItem(it)
-}));
-
-
-        const { error: e2 } = await supabase
-          .from("factura_detalle")
-          .insert(detalle);
-        if (e2) throw e2;
-        state.facturaGuardada = fac;
-        $("btn-imprimir").disabled = false;
-        if ($("btn-abonos")) $("btn-abonos").disabled = false;
-        if ($("btn-abonos")) $("btn-abonos").disabled = false;
-        setStatus("");
-        toast("Factura guardada ✅", "ok");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo guardar:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    async function imprimirFacturaGuardada(){
-      if (!state.facturaGuardada){
-        toast("Primero guarda la factura", "warn");
-        return;
-      }
-      try{
-        setStatus("Preparando impresión...");
-        const { data: det, error } = await supabase
-          .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-          .eq("factura_id", state.facturaGuardada.id)
-          .order("id", { ascending: true });
-        if (error) throw error;
-        // 2) Abonos (si existe tabla)
-        let abonos = [];
-        try{
-          const { data: ab, error: ea } = await supabase
-            .from("abonos")
-            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
-            .eq("factura_id", state.facturaGuardada.id)
-            .order("fecha", { ascending: true });
-          if (!ea) abonos = ab || [];
-          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
-        }catch(e){
-          console.warn("No se pudieron cargar abonos:", e?.message || e);
-        }
-        const totals = calcularTotalesObj();
-        state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
-        state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
-        state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
-        state.facturaGuardada.pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
-        state.facturaGuardada.referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
-        const html = buildInvoiceHTML({
-          fac: state.facturaGuardada,
-          detalle: det || [],
-          totals,
-          abonos
-        });
-        const w = window.open("", "_blank", "width=900,height=700");
-        if (!w){
-          setStatus("");
-          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
-          return;
-        }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        w.onload = () => {
-          try { w.focus(); w.print(); } catch(e) {}
-        };
-        setStatus("");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    function openModal(){
-      $("modal-facturas").classList.add("show");
-      $("modal-facturas").setAttribute("aria-hidden", "false");
-    }
-    function closeModal(){
-      $("modal-facturas").classList.remove("show");
-      $("modal-facturas").setAttribute("aria-hidden", "true");
-    }
-    function openModalVerFactura(){
-      $("modal-verfactura").classList.add("show");
-      $("modal-verfactura").setAttribute("aria-hidden", "false");
-    }
-    function closeModalVerFactura(){
-      $("modal-verfactura").classList.remove("show");
-      $("modal-verfactura").setAttribute("aria-hidden", "true");
-    }
-    function renderVerFacturaDetalle(rows){
-      const tbody = $("tbody-vf-detalle");
-      tbody.innerHTML = "";
-      if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="5" class="empty">No hay detalle para esta factura.</td></tr>`;
-        return;
-      }
-      for (const r of rows){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(r.codigo_cups || "—")}</td>
-          <td>${escapeHtml(r.descripcion || "—")}</td>
-          <td class="mono">${escapeHtml(String(r.cantidad ?? 0))}</td>
-          <td class="mono">$ ${escapeHtml(moneyNumber(r.valor_unitario ?? 0))}</td>
-          <td class="mono">$ ${escapeHtml(moneyNumber(r.valor_total ?? 0))}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-    }
-    function renderVerFacturaAbonos(rows){
-      const tbody = $("tbody-vf-abonos");
-      tbody.innerHTML = "";
-      if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="5" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
-        return;
-      }
-      for (const a of rows){
-        const tr = document.createElement("tr");
-        const fecha = formatFechaHuman(a.fecha || a.created_at);
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(fecha)}</td>
-          <td class="mono">$ ${escapeHtml(moneyNumber(a.monto || 0))}</td>
-          <td>${escapeHtml(a.metodo_pago || "—")}</td>
-          <td class="mono">${escapeHtml(a.referencia || "—")}</td>
-          <td>${escapeHtml(a.observacion || "—")}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-    }
-    // Helper para imprimir montos sin el "$ " duplicado en tablas
-    function moneyNumber(n){
-      // money() ya existe y devuelve formato con separador; aquí lo reutilizamos y quitamos el "$ " si aplica
-      const s = money(n);
-      return String(s).replace(/^\$\s*/,"");
-    }
-    async function abrirVerFactura(facturaId){
-      try{
-        state.facturaVer = facturaId;
-        setStatus("Cargando factura...");
-        // 1) Cabecera factura
-        const { data: f, error: ef } = await supabase
-          .from("facturas")
-          .select("*")
-          .eq("id", facturaId)
-          .single();
-        if (ef) throw ef;
-        // 2) Detalle
-        const { data: det, error: ed } = await supabase
-          .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-          .eq("factura_id", facturaId);
-        if (ed) throw ed;
-        // 3) Abonos
-        const { data: ab, error: ea } = await supabase
-          .from("abonos")
-          .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
-          .eq("factura_id", facturaId)
-          .order("fecha", { ascending: true });
-        // Si la tabla no existe, mostramos igual la factura y dejamos abonos vacíos
-        if (ea){
-          console.warn("Tabla abonos no disponible:", ea?.message || ea);
-        }
-        // Renderizar factura con el mismo formato de impresión (incluye abonos y saldo)
-        const subtotal = Number(f.subtotal ?? 0);
-        const iva_valor = Number(f.iva_valor ?? f.iva ?? 0);
-        const aplicaRaw = (f.iva_aplica ?? f.aplica_iva ?? f.aplicaIVA ?? "Sí");
-        const iva_aplica = (typeof aplicaRaw === "boolean")
-          ? aplicaRaw
-          : String(aplicaRaw).toLowerCase().startsWith("s");
-        const iva_pct = Number(f.iva_pct ?? f.iva_porcentaje ?? 0) || (iva_aplica ? 19 : 0);
-        const copago = Number(f.copago ?? 0);
-        const cuota = Number(f.cuota_moderadora ?? 0);
-        const total = (f.valor_total !== undefined && f.valor_total !== null)
-          ? Number(f.valor_total || 0)
-          : (f.total !== undefined && f.total !== null)
-            ? Number(f.total || 0)
-            : Math.max(0, (subtotal + iva_valor) - copago - cuota);
-        const htmlDoc = buildInvoiceHTML({
-          fac: f,
-          detalle: det || [],
-          totals: {
-            subtotal,
-            descuento_pct: Number(f.descuento_pct||0),
-            descuento_valor: Number(f.descuento_valor||0),
-            iva_aplica,
-            iva_pct,
-            iva_valor,
-            copago,
-            cuota_moderadora: cuota,
-            total
-          },
-          abonos: (ab || [])
-        });
-        const frame = $("vf_iframe");
-        if (frame) frame.srcdoc = htmlDoc;
-        openModalVerFactura();
-        setStatus("");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo abrir la factura:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    // ✅ Estado de factura (solo PENDIENTE / PAGADA)
-    async function setEstadoFactura({ facturaId, estado, saldoPendiente = null, silent = false }){
-      if (!facturaId) return;
-      const est = String(estado || "PENDIENTE").toUpperCase();
-      const pagadaBool = (est === "PAGADA");
-      // Validación: no permitir PAGADA si saldo > 0
-      if (pagadaBool && saldoPendiente !== null && Number(saldoPendiente) > 0){
-        if (!silent) toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
-        return;
-      }
-      try{
-        // Intentamos guardar en columna opcional estado_pago si existe, y también el boolean pagada.
-        let { error } = await supabase
-          .from("facturas")
-          .update((() => { const u = { pagada: pagadaBool, estado_pago: est }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
-          .eq("id", facturaId);
-        // Si la columna estado_pago no existe, reintentamos solo con pagada.
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const missingCol = msg.includes("column") && msg.includes("estado_pago");
-          if (missingCol){
-            const r2 = await supabase
-              .from("facturas")
-              .update((() => { const u = { pagada: pagadaBool }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
-              .eq("id", facturaId);
-            error = r2.error;
-          }
-        }
-        if (error) throw error;
-        // Si está abierta la vista de factura, sincronizamos el select dentro del iframe
-        if (state.facturaVer && String(state.facturaVer) === String(facturaId)){
-          const frame = $("vf_iframe");
-          if (frame && frame.contentWindow){
-            frame.contentWindow.postMessage({ type: "estado_factura_set", factura_id: facturaId, estado: est, saldo: saldoPendiente }, "*");
-          }
-        }
-        // Refrescar listado si está abierto (para ver cambios de "Pagada"/"Pendiente" en la tabla)
-        // Nota: en la tabla principal solo existe pagada (bool) en el dataset actual.
-        if (typeof renderFacturasModal === "function"){
-          // no-op: renderFacturasModal se llama desde cargarFacturas()
-        }
-      } catch(err){
-        console.error(err);
-        if (!silent) toast("No se pudo actualizar el estado:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    // Escuchar cambios de estado desde el iframe de "Ver factura"
-    window.addEventListener("message", async (e) => {
-      const d = e.data || {};
-      if (d.type !== "estado_factura_change") return;
-      const facturaId = d.factura_id;
-      const estado = d.estado;
-      // Para validar saldo, tomamos el que venga del iframe si está disponible en el DOM del iframe
-      let saldo = null;
-      try{
-        const frame = $("vf_iframe");
-        if (frame && frame.contentDocument){
-          const ds = frame.contentDocument.documentElement?.dataset?.saldo;
-          if (ds !== undefined) saldo = Number(ds);
-        }
-      } catch(_){}
-      await setEstadoFactura({ facturaId, estado, saldoPendiente: saldo });
-    });
-    /* ✅ SUPABASE (Recomendado): crear tabla 'abonos'
-      - id (bigint, identity) PK
-      - factura_id (bigint) FK -> facturas.id (ON DELETE CASCADE)
-      - fecha (date) NOT NULL
-      - monto (numeric) NOT NULL
-      - metodo_pago (text) NULL
-      - referencia (text) NULL
-      - observacion (text) NULL
-      - created_at (timestamptz) default now()
-    */
-    function openModalAbonos(){
-      $("modal-abonos").classList.add("show");
-      $("modal-abonos").setAttribute("aria-hidden", "false");
-    }
-    function closeModalAbonos(){
-      $("modal-abonos").classList.remove("show");
-      $("modal-abonos").setAttribute("aria-hidden", "true");
-    }
-    function updateResumenAbonos({ totalFactura = 0, totalAbonado = 0 }){
-      $("abonos_total_factura").textContent = money(totalFactura);
-      $("abonos_total_abonado").textContent = money(totalAbonado);
-      const saldo = Math.max(0, Number(totalFactura || 0) - Number(totalAbonado || 0));
-      $("abonos_saldo").textContent = money(saldo);
-    }
-    async function abrirAbonosFactura(facturaId){
-      state.facturaAbonos = facturaId;
-      // Defaults en UI
-      if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
-      if ($("abono_monto")) $("abono_monto").value = "";
-      if ($("abono_metodo")) $("abono_metodo").value = "Efectivo";
-      if ($("abono_referencia")) $("abono_referencia").value = "";
-      if ($("abono_observacion")) $("abono_observacion").value = "";
-      openModalAbonos();
-      await listarAbonos();
-    }
-    function renderAbonosTabla(rows){
-      const tbody = $("tbody-abonos");
-      tbody.innerHTML = "";
-      if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
-        return;
-      }
-      for (const a of rows){
-        const tr = document.createElement("tr");
-        const fecha = formatFechaHuman(a.fecha || a.created_at);
-        const monto = money(a.monto || 0);
-        const metodo = a.metodo_pago || "—";
-        const ref = a.referencia || "—";
-        const obs = a.observacion || "—";
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(fecha)}</td>
-          <td class="mono">$ ${escapeHtml(monto)}</td>
-          <td class="mono">${escapeHtml(metodo)}</td>
-          <td class="mono">${escapeHtml(ref)}</td>
-          <td>${escapeHtml(obs)}</td>
-          <td style="white-space:nowrap;">
-            <button class="btn danger small" data-act="del">Eliminar</button>
-          </td>
-        `;
-        tr.querySelector('[data-act="del"]').addEventListener("click", async () => {
-          const ok = window.confirm("¿Eliminar este abono?");
-          if (!ok) return;
-          await eliminarAbono(a.id);
-        });
-        tbody.appendChild(tr);
-      }
-    }
-    async function listarAbonos(){
-      const facturaId = state.facturaAbonos;
-      if (!facturaId){
-        renderAbonosTabla([]);
-        updateResumenAbonos({ totalFactura: 0, totalAbonado: 0 });
-        return;
-      }
-      try{
-        setStatus("Cargando abonos...");
-        const { data: fac, error: ef } = await supabase
-          .from("facturas")
-          .select("id, valor_total")
-          .eq("id", facturaId)
-          .single();
-        if (ef) throw ef;
-        const { data, error } = await supabase
-          .from("abonos")
-          .select("id, factura_id, fecha, monto, metodo_pago, referencia, observacion, created_at")
-          .eq("factura_id", facturaId)
-          .order("fecha", { ascending: true });
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const missingTable =
-            msg.includes("relation") && msg.includes("does not exist");
-          setStatus("");
-          if (missingTable){
-            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
-            $("tbody-abonos").innerHTML = `<tr><td colspan="7" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
-            updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
-            return;
-          }
-          throw error;
-        }
-        state.abonos = data || [];
-        renderAbonosTabla(state.abonos);
-        const totalAbonado = (state.abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
-        updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado });
-        // ✅ Auto-actualizar estado: si saldo llega a 0 -> PAGADA. Si no, PENDIENTE.
-        const totalFacturaNum = Number(fac?.valor_total || 0);
-        const saldoPendiente = Math.max(0, totalFacturaNum - Number(totalAbonado || 0));
-        const estadoAuto = (saldoPendiente === 0) ? "PAGADA" : "PENDIENTE";
-        await setEstadoFactura({ facturaId, estado: estadoAuto, saldoPendiente, silent: true });
-        setStatus("");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudieron cargar abonos:\n" + (err?.message || "Error"), "err");
-        renderAbonosTabla([]);
-      }
-    }
-    async function agregarAbono(){
-      const facturaId = state.facturaAbonos;
-      if (!facturaId){
-        toast("Primero selecciona una factura.", "warn");
-        return;
-      }
-      const fecha = ($("abono_fecha")?.value || "").trim() || hoyISO();
-      const monto = Math.max(0, num($("abono_monto")?.value));
-      const metodo_pago = ($("abono_metodo")?.value || "Efectivo").trim();
-      const referencia = ($("abono_referencia")?.value || "").trim() || null;
-      const observacion = ($("abono_observacion")?.value || "").trim() || null;
-      if (!monto || monto <= 0){
-        toast("El monto del abono debe ser mayor a 0.", "warn");
-        return;
-      }
-      setStatus("Guardando abono...");
-      try{
-        const payload = {
-          factura_id: facturaId,
-          fecha,
-          monto,
-          metodo_pago,
-          referencia,
-          observacion
-        };
-        const { error } = await supabase
-          .from("abonos")
-          .insert([payload]);
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const missingTable =
-            msg.includes("relation") && msg.includes("does not exist");
-          setStatus("");
-          if (missingTable){
-            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
-            return;
-          }
-          throw error;
-        }
-        setStatus("");
-        toast("Abono guardado ✅", "ok");
-        if ($("abono_monto")) $("abono_monto").value = "";
-        if ($("abono_referencia")) $("abono_referencia").value = "";
-        if ($("abono_observacion")) $("abono_observacion").value = "";
-        await listarAbonos();
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo guardar abono:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    async function eliminarAbono(abonoId){
-      if (!abonoId) return;
-      try{
-        setStatus("Eliminando abono...");
-        const { error } = await supabase
-          .from("abonos")
-          .delete()
-          .eq("id", abonoId);
-        if (error) throw error;
-        setStatus("");
-        toast("Abono eliminado ✅", "ok");
-        await listarAbonos();
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo eliminar abono:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    function updateResumenFacturas(rows){
-      const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
-      $("total_facturado").textContent = money(total);
-      $("count_facturas").textContent = String((rows || []).length);
-    }
-    // ✅ CORREGIDO COMPLETO:
-    // - Columna "Pago" = ESTADO
-    // - Botón = ACCIÓN
-    // - Si método != Efectivo, pide referencia + fecha pago al marcar Pagada
-    async function togglePagadaFactura(f){
-      try{
-        const actual = (f.pagada === true);
-        const nuevo = !actual;
-        let metodo = (f.metodo_pago || "").toString().trim();
-        // Si no vino en listado, intentamos leerlo
-        if (!metodo){
-          const { data: facDB, error: e0 } = await supabase
-            .from("facturas")
-            .select("id, metodo_pago, referencia_pago")
-            .eq("id", f.id)
-            .single();
-          if (!e0){
-            metodo = (facDB?.metodo_pago || "").toString().trim();
-            if (!f.referencia_pago && facDB?.referencia_pago) f.referencia_pago = facDB.referencia_pago;
-          }
-        }
-
-        // ✅ Calcular saldo pendiente (si existe la tabla de abonos). Si no existe, lo dejamos como null.
-        const totalFacturaNum = Number(f.valor_total || 0);
-        let saldoPendienteCalc = null;
-        try{
-          const { data: abs, error: eab } = await supabase
-            .from("abonos")
-            .select("monto")
-            .eq("factura_id", f.id);
-          if (eab){
-            const msg = String(eab.message || "").toLowerCase();
-            const missingTable = msg.includes("relation") && msg.includes("does not exist");
-            if (!missingTable) throw eab;
-          } else {
-            const totalAb = (abs || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
-            saldoPendienteCalc = Math.max(0, totalFacturaNum - totalAb);
-          }
-        } catch(errAb){
-          // Si falla por otra razón, no bloqueamos el flujo; solo no calculamos saldo.
-          console.warn("No se pudo calcular saldo pendiente desde abonos:", errAb);
-        }
-        // Si intentan marcar PAGADA pero hay saldo pendiente calculado, no permitirlo.
-        if (nuevo === true && saldoPendienteCalc !== null && Number(saldoPendienteCalc) > 0){
-          toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
-          setStatus("");
-          return;
-        }
-        const saldoPendienteToSave = (nuevo === true) ? 0 : (saldoPendienteCalc !== null ? Number(saldoPendienteCalc) : totalFacturaNum);
-        let referencia = null;
-        let fechaPagoYYYYMMDD = null;
-        if (nuevo === true){
-          const isEfectivo = metodo.toLowerCase() === "efectivo";
-          if (!isEfectivo){
-            referencia = window.prompt("Ingresa la referencia / comprobante de pago:", f.referencia_pago || "");
-            if (referencia === null) return;
-            referencia = referencia.trim();
-            if (!referencia){
-              toast("La referencia de pago es obligatoria para este método.", "warn");
-              return;
-            }
-            const fp = window.prompt("Ingresa la fecha de pago (YYYY-MM-DD):", hoyISO());
-            if (fp === null) return;
-            fechaPagoYYYYMMDD = parseDateYYYYMMDD(fp);
-            if (!fechaPagoYYYYMMDD){
-              toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
-              return;
-            }
-          } else {
-            fechaPagoYYYYMMDD = hoyISO();
-            referencia = null; // efectivo: opcional
-          }
-        }
-        setStatus("Actualizando pago...");
-        const payload = {
-          pagada: nuevo,
-          saldo_pendiente: saldoPendienteToSave,
-          fecha_pago: nuevo ? toISODateTimeFromYYYYMMDD(fechaPagoYYYYMMDD || hoyISO()) : null,
-          referencia_pago: nuevo ? (referencia || null) : null
-        };
-        const { error } = await supabase
-          .from("facturas")
-          .update(payload)
-          .eq("id", f.id);
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const isColumnMissing =
-            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-          setStatus("");
-          if (isColumnMissing){
-            toast("En Supabase faltan columnas: pagada / saldo_pendiente / fecha_pago / referencia_pago en 'facturas'.", "warn");
-            return;
-          }
-          throw error;
-        }
-        setStatus("");
-        toast(nuevo ? "Marcada como Pagada ✅" : "Marcada como Pendiente ⚠️", "ok");
-        await listarFacturas();
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo actualizar pago:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    function renderFacturasTabla(rows){
-      const tbody = $("tbody-facturas");
-      tbody.innerHTML = "";
-      if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>`;
-        updateResumenFacturas([]);
-        return;
-      }
-      for (const f of rows){
-        const tr = document.createElement("tr");
-        const fecha = formatFechaHuman(f.fecha);
-        const numf = f.numero_factura || "—";
-        const nom = f.paciente_nombre || "—";
-        const ced = f.paciente_cedula || "—";
-        const total = money(f.valor_total || 0);
-        const saldoPendRaw = (f.saldo_pendiente != null) ? Number(f.saldo_pendiente) : null;
-        const saldoPendCalc = (saldoPendRaw == null) ? ((f.pagada === true) ? 0 : Number(f.valor_total || 0)) : saldoPendRaw;
-        const saldoPend = money(saldoPendCalc || 0);
-        const estadoPago = pagoLabel(f.pagada);
-        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
-        tr.innerHTML = `
-          <td class="mono">${escapeHtml(fecha)}</td>
-          <td class="mono">${escapeHtml(numf)}</td>
-          <td>${escapeHtml(nom)}</td>
-          <td class="mono">${escapeHtml(ced)}</td>
-          <td class="mono">${escapeHtml(estadoPago)}</td>
-          <td class="mono">$ ${escapeHtml(total)}</td>
-          <td class="mono">$ ${escapeHtml(saldoPend)}</td>
-          <td style="white-space:nowrap;">
-            <button class="btn small" data-act="cargar">↩ Cargar</button>
-            <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
-            <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
-            <button class="btn small" data-act="verfactura">👁 Ver factura</button>
-            <button class="btn small" data-act="abonos">💰 Abonos</button>
-          </td>
-        `;
-        tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
-          await cargarFacturaEnFormulario(f.id);
-          closeModal();
-        });
-        tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
-          await imprimirFacturaPorId(f.id);
-        });
-        tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
-          await togglePagadaFactura(f);
-        });
-                tr.querySelector('[data-act="verfactura"]').addEventListener("click", async () => {
-          await abrirVerFactura(f.id);
-        });
-tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
-          await abrirAbonosFactura(f.id);
-        });
-        tbody.appendChild(tr);
-      }
-      updateResumenFacturas(rows);
-    }
-    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
-    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
-    async function listarFacturas(){
-      const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
-      const q = ($("buscar_facturas").value || "").trim();
-      const desde = ($("fecha_desde")?.value || "").trim();
-      const hasta = ($("fecha_hasta")?.value || "").trim();
-      const estado = ($("estado_facturas")?.value || "todos").trim();
-      try{
-        $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
-        let query = supabase
-          .from("facturas")
-          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
-          .order("fecha", { ascending: false })
-          .limit(limit);
-        if (desde){
-          query = query.gte("fecha", dateStartISO(desde));
-        }
-        if (hasta){
-          query = query.lte("fecha", dateEndISO(hasta));
-        }
-        if (estado === "pagada"){
-          query = query.eq("pagada", true);
-        } else if (estado === "pendiente"){
-          // Incluye false y null (por compatibilidad con registros antiguos)
-          query = query.or("pagada.eq.false,pagada.is.null");
-        }
-        if (q){
-          const isNum = /^[0-9]+$/.test(q);
-          if (isNum){
-            query = query.ilike("paciente_cedula", `%${q}%`);
-          } else {
-            query = query.ilike("numero_factura", `%${q}%`);
-          }
-        }
-        const { data, error } = await query;
-        if (error) throw error;
-        state.facturas = data || [];
-        renderFacturasTabla(state.facturas);
-      } catch(err){
-        console.error(err);
-        renderFacturasTabla([]);
-        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    async function cargarFacturaEnFormulario(facturaId){
-      try{
-        setStatus("Cargando factura...");
-        const { data: fac, error: e1 } = await supabase
-          .from("facturas")
-          .select("*")
-          .eq("id", facturaId)
-          .single();
-        if (e1) throw e1;
-        const { data: det, error: e2 } = await supabase
-          .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-          .eq("factura_id", facturaId)
-          .order("id", { ascending: true });
-        if (e2) throw e2;
-        $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
-        $("numero_factura").value = fac.numero_factura || "";
-        $("tipo_usuario").value = fac.tipo_usuario || "Particular";
-        $("eps").value = fac.eps || "";
-        $("paciente_cedula").value = fac.paciente_cedula || "";
-        $("paciente_nombre").value = fac.paciente_nombre || "";
-        $("profesional").value = fac.profesional || "";
-        if ($("paciente_correo")) $("paciente_correo").value = fac.paciente_correo || "";
-        if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
-        if ($("observacion")) $("observacion").value = fac.observacion || "";
-        if ($("pagada")){
-          $("pagada").value = (fac.pagada === false) ? "no" : "si";
-        }
-        if ($("referencia_pago")){
-          $("referencia_pago").value = fac.referencia_pago || "";
-        }
-        if ($("iva_aplica")){
-          if (fac.iva_aplica === true) $("iva_aplica").value = "si";
-          if (fac.iva_aplica === false) $("iva_aplica").value = "no";
-        }
-        if ($("iva_porcentaje")){
-          const ivaPctDB = fac.iva_porcentaje ?? fac.iva_pct ?? null;
-          if (ivaPctDB !== null && ivaPctDB !== undefined && String(ivaPctDB).trim() !== ""){
-            $("iva_porcentaje").value = Number(ivaPctDB) || 0;
-          }
-        }
-        state.items = (det || []).map(it => ({
-          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-          procedimiento_id: it.procedimiento_id,
-          codigo_cups: it.codigo_cups || "",
-          descripcion: it.descripcion || "",
-          cantidad: Number(it.cantidad || 1),
-          valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0)
-        }));
-        $("copago").value = Number(fac.copago || 0);
-        $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
-        state.facturaGuardada = fac;
-        $("btn-imprimir").disabled = false;
-        renderItems();
-        syncIVAUI();
-        setStatus("");
-        toast("Factura cargada ✅", "ok");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo cargar:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    async function imprimirFacturaPorId(facturaId){
-      try{
-        setStatus("Preparando impresión...");
-        const { data: fac, error: e1 } = await supabase
-          .from("facturas")
-          .select("*")
-          .eq("id", facturaId)
-          .single();
-        if (e1) throw e1;
-        const { data: det, error: e2 } = await supabase
-          .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-          .eq("factura_id", facturaId)
-          .order("id", { ascending: true });
-        if (e2) throw e2;
-        // Abonos (si existe tabla)
-        let abonos = [];
-        try{
-          const { data: ab, error: ea } = await supabase
-            .from("abonos")
-            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
-            .eq("factura_id", facturaId)
-            .order("fecha", { ascending: true });
-          if (!ea) abonos = ab || [];
-          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
-        }catch(e){
-          console.warn("No se pudieron cargar abonos:", e?.message || e);
-        }
-        const subtotal = (fac.subtotal !== undefined && fac.subtotal !== null)
-          ? Number(fac.subtotal || 0)
-          : (det || []).reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
-        const aplica = (fac.iva_aplica === true);
-        const iva_pct = (fac.iva_porcentaje !== undefined && fac.iva_porcentaje !== null)
-          ? Number(fac.iva_porcentaje || 0)
-          : ((fac.iva_pct !== undefined && fac.iva_pct !== null) ? Number(fac.iva_pct || 0) : 0);
-        const iva_valor = (fac.iva_valor !== undefined && fac.iva_valor !== null)
-          ? Number(fac.iva_valor || 0)
-          : (aplica ? Math.max(0, subtotal * (Math.max(0, iva_pct) / 100)) : 0);
-        const copago = Number(fac.copago || 0);
-        const cuota = Number(fac.cuota_moderadora || 0);
-        const total = (fac.valor_total !== undefined && fac.valor_total !== null)
-          ? Number(fac.valor_total || 0)
-          : Math.max(0, (subtotal + iva_valor) - copago - cuota);
-        const html = buildInvoiceHTML({
-          fac,
-          detalle: det || [],
-          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
-          abonos
-        });
-        const w = window.open("", "_blank", "width=900,height=700");
-        if (!w){
-          setStatus("");
-          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
-          return;
-        }
-        w.document.open();
-        w.document.write(html);
-        w.document.close();
-        w.onload = () => {
-          try { w.focus(); w.print(); } catch(e) {}
-        };
-        setStatus("");
-      } catch(err){
-        console.error(err);
-        setStatus("");
-        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    function exportarExcel(){
-      try{
-        const rows = state.facturas || [];
-        if (!rows.length){
-          toast("No hay facturas para exportar con ese filtro.", "warn");
-          return;
-        }
-        const desde = ($("fecha_desde")?.value || "").trim();
-        const hasta = ($("fecha_hasta")?.value || "").trim();
-      const estado = ($("estado_facturas")?.value || "todos").trim();
-        const q = ($("buscar_facturas")?.value || "").trim();
-        const data = rows.map(f => ({
-          "Fecha": formatFechaHuman(f.fecha),
-          "N° Factura": f.numero_factura || "",
-          "Paciente": f.paciente_nombre || "",
-          "Cédula": f.paciente_cedula || "",
-          "Correo": f.paciente_correo || "",
-          "Tipo usuario": f.tipo_usuario || "",
-          "EPS": f.eps || "",
-          "Profesional (valor guardado)": f.profesional || "",
-          "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
-          "Referencia pago": f.referencia_pago || "",
-          "Total": Number(f.valor_total || 0),
-          "Copago": Number(f.copago || 0),
-          "Cuota moderadora": Number(f.cuota_moderadora || 0),
-        }));
-        const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
-        const ws = XLSX.utils.json_to_sheet(data);
-        const lastRow = data.length + 2;
-        XLSX.utils.sheet_add_aoa(ws, [
-          [],
-          ["TOTAL FACTURADO", totalFacturado]
-        ], { origin: `A${lastRow}` });
-        const ws2 = XLSX.utils.aoa_to_sheet([
-          ["Reporte de Facturas"],
-          ["Generado:", new Date().toLocaleString("es-CO")],
-          ["Filtro búsqueda (N° factura o cédula):", q || "(vacío)"],
-          ["Fecha desde:", desde || "(vacío)"],
-          ["Fecha hasta:", hasta || "(vacío)"],
-          ["Cantidad:", rows.length],
-          ["Total facturado:", totalFacturado]
-        ]);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Facturas");
-        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
-        const slugDesde = desde || "NA";
-        const slugHasta = hasta || "NA";
-        const filename = `reporte_facturas_${slugDesde}_a_${slugHasta}.xlsx`;
-        XLSX.writeFile(wb, filename);
-        toast("Excel descargado ✅", "ok");
-      } catch(err){
-        console.error(err);
-        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
-      }
-    }
-    async function init(){
-      try{
-        $("year").textContent = new Date().getFullYear();
-        $("fecha").value = hoyISO();
-        if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
-        $("numero_factura").value = generarNumeroFactura();
-        if ($("pagada")) $("pagada").value = "si";
-        if ($("referencia_pago")) $("referencia_pago").value = "";
-        $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
-        $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
-        $("btn-add").addEventListener("click", agregarProcedimiento);
-        if ($("sel-proc-input")){
-          $("sel-proc-input").addEventListener("input", (e) => {
-            renderProcedimientosSelect(e.target.value || "");
-          });
-          $("sel-proc-input").addEventListener("focus", (e) => {
-            renderProcedimientosSelect(e.target.value || "");
-          });
-          document.addEventListener("click", (ev) => {
-            if (!ev.target.closest("#proc-dropdown") && !ev.target.closest("#sel-proc-input")){
-              const d = $("proc-dropdown");
-              if (d) d.style.display = "none";
-            }
-          });
-        }
-        $("copago").addEventListener("input", recalcularTotales);
-        $("cuota_moderadora").addEventListener("input", recalcularTotales);
-        if ($("descuento_pct")) $("descuento_pct").addEventListener("input", recalcularTotales);
-        $("iva_porcentaje").addEventListener("input", recalcularTotales);
-        $("iva_aplica").addEventListener("change", syncIVAUI);
-        $("btn-guardar").addEventListener("click", guardarFactura);
-        $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
-        if ($("btn-abonos")) {
-          $("btn-abonos").addEventListener("click", async () => {
-            if (!state.facturaGuardada?.id){
-              toast("Primero guarda la factura", "warn");
-              return;
-            }
-            await abrirAbonosFactura(state.facturaGuardada.id);
-          });
-        }
-        $("btn-logout").addEventListener("click", cerrarSesion);
-        $("paciente_cedula").addEventListener("input", onCedulaInput);
-        $("btn-ver-facturas").addEventListener("click", async () => {
-          const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
-          $("buscar_facturas").value = ced || "";
-          openModal();
-          await listarFacturas();
-        });
-        $("btn-cerrar-modal").addEventListener("click", closeModal);
-        $("modal-facturas").addEventListener("click", (e) => {
-          if (e.target === $("modal-facturas")) closeModal();
-        });
-        // ✅ Ver factura
-        $("btn-cerrar-modal-verfactura").addEventListener("click", closeModalVerFactura);
-        $("modal-verfactura").addEventListener("click", (e) => {
-          if (e.target === $("modal-verfactura")) closeModalVerFactura();
-        });
-        $("btn-imprimir-verfactura").addEventListener("click", async () => {
-          if (!state.facturaVer){
-            toast("No hay una factura seleccionada", "warn");
-            return;
-          }
-          await imprimirFacturaPorId(state.facturaVer);
-        });
-        // ✅ Abonos
-        $("btn-cerrar-modal-abonos").addEventListener("click", closeModalAbonos);
-        $("modal-abonos").addEventListener("click", (e) => {
-          if (e.target === $("modal-abonos")) closeModalAbonos();
-        });
-        $("btn-refresh-abonos").addEventListener("click", listarAbonos);
-        $("btn-agregar-abono").addEventListener("click", agregarAbono);
-        $("btn-refresh-facturas").addEventListener("click", listarFacturas);
-        // ✅ Maximizar / restaurar modal "Facturas generadas"
-        if ($("btn-max-modal-facturas")){
-          $("btn-max-modal-facturas").addEventListener("click", () => {
-            const card = document.querySelector("#modal-facturas .modal-card");
-            if (!card) return;
-            const isMax = card.classList.toggle("maximized");
-            $("btn-max-modal-facturas").textContent = isMax ? "🗗" : "⛶";
-            $("btn-max-modal-facturas").title = isMax ? "Restaurar" : "Maximizar";
-          });
-        }
-        $("btn-buscar-facturas").addEventListener("click", listarFacturas);
-        $("limite_facturas").addEventListener("change", listarFacturas);
-        $("fecha_desde").addEventListener("change", listarFacturas);
-        $("fecha_hasta").addEventListener("change", listarFacturas);
-        if ($("estado_facturas")) $("estado_facturas").addEventListener("change", listarFacturas);
-        $("buscar_facturas").addEventListener("keydown", (e) => {
-          if (e.key === "Enter") listarFacturas();
-        });
-        $("btn-export-excel").addEventListener("click", exportarExcel);
-        const ok = await proteger();
-        if (!ok) return;
-        await cargarProfesionales();
-        await cargarProcedimientos();
-        renderItems();
-        syncIVAUI();
-        recalcularTotales();
-      } catch (err){
-        console.error("INIT ERROR:", err);
-        toast("Error inicializando:\n" + (err?.message || err), "err");
-      }
-      // ✅ Asegurar dropdown cerrado al cargar la página
-const procDrop = document.getElementById("proc-dropdown");
-if (procDrop) procDrop.style.display = "none";
-
-    }
-    // ✅ ARRANQUE ROBUSTO (esto evita el “ningún botón funciona”)
-    if (document.readyState === "loading"){
-      window.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
-    }
- /* =====================================================
-   ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
-   (?paciente_cedula=)
-   ===================================================== */
-(function () {
-  const params = new URLSearchParams(window.location.search);
-  const cedula = params.get("paciente_cedula");
-
-  if (!cedula) return;
-
-  // Esperar a que TODO esté inicializado
-  window.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("paciente_cedula");
-    if (!input) {
-      console.warn("❌ Input paciente_cedula no encontrado");
-      return;
-    }
-
-    // Setear la cédula
-    input.value = cedula;
-
-    // ⏳ Esperar a que Supabase + listeners estén listos
-    setTimeout(() => {
-      if (typeof buscarPacienteEnHistoria === "function") {
-        buscarPacienteEnHistoria(true); // ← ESTA ES LA CLAVE
-      } else {
-        console.error("❌ buscarPacienteEnHistoria no existe");
-      }
-    }, 600);
-  });
-})();
-
-   async function cargarPlanDesdeSupabase() {
-  // 1️⃣ Obtener cédula desde la URL o input
-  const params = new URLSearchParams(window.location.search);
-  const cedula =
-    params.get("cedula") ||
-    document.getElementById("paciente_cedula")?.value;
-
-  if (!cedula) {
-    alert("No se encontró la cédula del paciente");
-    return;
-  }
-
-  // 2️⃣ Consultar tabla temporal
-  const { data, error } = await supabase
-    .from("facturacion_temporal")
-    .select("*")
-    .eq("cedula", cedula);
-
-  if (error) {
-    console.error(error);
-    alert("Error consultando plan de tratamiento");
-    return;
-  }
-
-  if (!data || !data.length) {
-    alert("No hay procedimientos pendientes por cargar");
-    return;
-  }
-
-  console.log("📦 Plan recibido desde Supabase:", data);
-
-  // 3️⃣ Insertar en state.items
-  data.forEach(it => {
-  state.items.push({
-  id_local: crypto.randomUUID(),
-  procedimiento_id: it.procedimiento_id,
-  codigo_cups: it.codigo_cups,
-  descripcion: it.procedimiento,
-  cantidad: Number(it.cantidad || 1),
-  valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0)
-});
-
-  });
-
-  // 4️⃣ Renderizar
-  renderItems();
-  recalcularTotales();
-
-  // 5️⃣ (OPCIONAL PERO RECOMENDADO) limpiar tabla temporal
-  await supabase
-    .from("facturacion_temporal")
-    .delete()
-    .eq("cedula", cedula);
-
-  console.log("✅ Plan cargado y tabla temporal limpiada");
-}
- // ===============================
-// 📥 BOTÓN CARGAR PLAN DE TRATAMIENTO
-// ===============================
-document
-  .getElementById("btn-cargar-plan")
-  ?.addEventListener("click", cargarPlanDesdeSupabase);
-
-  </script>
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
-<!-- =========================================================
-     FACTURACIÓN ELECTRÓNICA (CORS SAFE - FORM POST)
-     NO modifica ni interfiere con lógica existente
-     ========================================================= -->
-<script>
-
-function enviarFacturacionElectronica(){
-  try{
-    // ⚠️ NO se requiere seleccionar factura:
-    // se envía la factura que está visible en el modal
-
-    const facturaNumeroEl = document.querySelector('[data-factura-numero], #factura-numero, .factura-numero');
-    const facturaNumero = facturaNumeroEl ? facturaNumeroEl.textContent.trim() : null;
-
-    const paciente = {
-      nombre: document.querySelector('[data-paciente-nombre]')?.textContent || null,
-      cedula: document.querySelector('[data-paciente-cedula]')?.textContent || null,
-      correo: document.querySelector('[data-paciente-correo]')?.textContent || null
-    };
-
-    const payload = {
-      factura_visible: true,
-      factura_numero: facturaNumero,
-      paciente,
-      fecha_envio: new Date().toISOString(),
-      origen: "facturacion.html"
-    };
-
-    const form = document.createElement("form");
-    form.method = "POST";
-    form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook-test/a98d155f-561d-470f-b353-e9baab31249b";
-    form.target = "_blank";
-
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.name = "payload";
-    input.value = JSON.stringify(payload);
-
-    form.appendChild(input);
-    document.body.appendChild(form);
-    form.submit();
-    document.body.removeChild(form);
-  }catch(e){
-    console.error("FE error:", e);
-    alert("Error enviando a facturación electrónica");
-  }
-}
-</script>
-
-
-
-<!-- =========================================================
-     FIX: AUTOCARGA DESDE ?paciente_cedula=XXXX (NO rompe nada)
-     + OVERRIDE: FACTURACIÓN ELECTRÓNICA SIN PESTAÑAS Y CON PAYLOAD COMPLETO
-     ========================================================= -->
-<script>
-(function(){
-  // --------- Helper: DOM ready ----------
-  function onReady(fn){
-    if(document.readyState === "loading"){
-      document.addEventListener("DOMContentLoaded", fn, { once:true });
-    }else{
-      try{ fn(); }catch(e){ console.warn("onReady error:", e); }
-    }
-  }
-
-  // --------- 1) Autocarga paciente por querystring ----------
-  function autoCargarPacienteDesdeQuery(){
-    try{
-      var ced = new URLSearchParams(window.location.search).get("paciente_cedula");
-      if(!ced) return;
-
-      var input = document.getElementById("paciente_cedula");
-      if(!input) return;
-
-      // No interferir si el usuario ya escribió algo distinto
-      var cedTrim = String(ced).trim();
-      if(String(input.value || "").trim() !== cedTrim){
-        input.value = cedTrim;
-        input.dispatchEvent(new Event("input", { bubbles:true }));
-      }
-
-      // Fuerza el flujo existente (botón Autocompletar si existe)
-      setTimeout(function(){
-        var btn = document.getElementById("btn-buscar");
-        if(btn && typeof btn.click === "function"){
-          btn.click();
-        }
-      }, 250);
-    }catch(e){
-      console.warn("Autocarga paciente (query) error:", e);
-    }
-  }
-
-  // --------- 2) Toast/Notificación (usa #toast existente si está) ----------
-  function showToastFE(msg, ok){
-    try{
-      var toast = document.getElementById("toast");
-      if(!toast){
-        // Fallback mínimo sin tocar estilos globales
+        var el = document.getElementById("toast");
+        if(!el){ alert(msg); return; }
+        el.textContent = msg;
+        el.dataset.type = type || "ok";
+        el.classList.add("show");
+        clearTimeout(window.__fe_t);
+        window.__fe_t = setTimeout(function(){ el.classList.remove("show"); }, 3000);
+      }catch(e){
         alert(msg);
-        return;
       }
-      // No asumir estructura exacta: solo texto
-      toast.textContent = msg;
-
-      // Respetar clases existentes: añadimos y removemos de forma segura
-      toast.classList.remove("show");
-      toast.classList.remove("success");
-      toast.classList.remove("error");
-      toast.classList.add("show");
-      toast.classList.add(ok ? "success" : "error");
-
-      setTimeout(function(){
-        toast.classList.remove("show");
-      }, 3200);
-    }catch(e){
-      console.warn("Toast FE error:", e);
-      alert(msg);
     }
-  }
 
-  // --------- 3) Extraer datos desde la factura visible (iframe vf_iframe) ----------
-  function getFacturaVisibleData(){
-    var iframe = document.getElementById("vf_iframe");
-    if(!iframe || !iframe.contentDocument) return null;
+    function ensureHiddenIframe(){
+      var existing = document.getElementById("n8n_fe_iframe");
+      if(existing) return existing;
+      var ifr = document.createElement("iframe");
+      ifr.id = "n8n_fe_iframe";
+      ifr.name = "n8n_fe_iframe";
+      ifr.style.width = "0";
+      ifr.style.height = "0";
+      ifr.style.border = "0";
+      ifr.style.position = "absolute";
+      ifr.style.left = "-9999px";
+      ifr.style.top = "-9999px";
+      ifr.setAttribute("aria-hidden", "true");
+      document.body.appendChild(ifr);
+      return ifr;
+    }
 
-    var doc = iframe.contentDocument;
+    function getFacturaVisibleData(){
+      var iframe = document.getElementById("vf_iframe");
+      if(!iframe || !iframe.contentDocument) return null;
 
-    // 3.1 Número factura: preferir title "Factura <N°>"
-    var facturaNumero = null;
-    try{
-      var t = (doc.title || "").trim();
-      if(t.toLowerCase().startsWith("factura")){
-        facturaNumero = t.replace(/^factura\s*/i, "").trim() || null;
-      }
-    }catch(_e){}
+      var doc = iframe.contentDocument;
 
-    // 3.2 ID factura (si está en dataset)
-    var facturaId = null;
-    try{
-      facturaId = doc.documentElement?.dataset?.facturaId || null;
-    }catch(_e){}
-
-    // 3.3 Key/Value blocks
-    var kv = {};
-    try{
-      var kvEls = doc.querySelectorAll(".kv");
-      kvEls.forEach(function(el){
-        var k = (el.querySelector(".k")?.textContent || "").trim().toLowerCase();
-        var v = (el.querySelector(".v")?.textContent || "").trim();
-        if(k){
-          kv[k] = v || null;
+      // Número factura desde title: "Factura <N°>"
+      var facturaNumero = null;
+      try{
+        var t = (doc.title || "").trim();
+        if(/^factura/i.test(t)){
+          facturaNumero = t.replace(/^factura\s*/i, "").trim() || null;
         }
-      });
-    }catch(_e){}
+      }catch(_e){}
 
-    // 3.4 Procedimientos (tabla)
-    var procedimientos = [];
-    try{
-      var rows = doc.querySelectorAll("table tbody tr");
-      rows.forEach(function(tr){
-        var tds = tr.querySelectorAll("td");
-        if(!tds || tds.length < 5) return;
-        procedimientos.push({
-          cups: (tds[0].textContent || "").trim() || null,
-          procedimiento: (tds[1].textContent || "").trim() || null,
-          cantidad: (tds[2].textContent || "").trim() || null,
-          valor_unitario: (tds[3].textContent || "").trim() || null,
-          total: (tds[4].textContent || "").trim() || null
+      var facturaId = null;
+      try{
+        facturaId = (doc.documentElement && doc.documentElement.dataset) ? (doc.documentElement.dataset.facturaId || null) : null;
+      }catch(_e){}
+
+      // KV blocks
+      var kv = {};
+      try{
+        var kvEls = doc.querySelectorAll(".kv");
+        kvEls.forEach(function(el){
+          var k = (el.querySelector(".k") && el.querySelector(".k").textContent || "").trim().toLowerCase();
+          var v = (el.querySelector(".v") && el.querySelector(".v").textContent || "").trim();
+          if(k) kv[k] = v || null;
         });
-      });
-    }catch(_e){}
+      }catch(_e){}
 
-    // 3.5 Totales (si está .totbox)
-    var totales = {};
-    try{
-      var lines = doc.querySelectorAll(".totbox .line");
-      lines.forEach(function(line){
-        var label = (line.childNodes[0]?.textContent || "").trim().replace(/:$/, "").toLowerCase();
-        var value = (line.querySelector("b")?.textContent || "").trim();
-        if(label){
-          totales[label] = value || null;
+      // Detalle (primera tabla del documento: procedimientos)
+      var procedimientos = [];
+      try{
+        var tables = doc.querySelectorAll("table");
+        if(tables && tables.length){
+          var tbody = tables[0].querySelector("tbody");
+          if(tbody){
+            tbody.querySelectorAll("tr").forEach(function(tr){
+              var tds = tr.querySelectorAll("td");
+              if(!tds || tds.length < 5) return;
+              procedimientos.push({
+                cups: (tds[0].textContent || "").trim() || null,
+                procedimiento: (tds[1].textContent || "").trim() || null,
+                cantidad: (tds[2].textContent || "").trim() || null,
+                valor_unitario: (tds[3].textContent || "").trim() || null,
+                total: (tds[4].textContent || "").trim() || null
+              });
+            });
+          }
         }
-      });
-      // TOTAL grande (si existe)
-      var totalBig = doc.querySelector(".totbox .big b")?.textContent?.trim();
-      if(totalBig) totales["total"] = totalBig;
-    }catch(_e){}
+      }catch(_e){}
 
-    // 3.6 Datos del paciente / factura
-    var paciente = {
-      nombre: kv["paciente"] || null,
-      cedula: kv["cédula"] || kv["cedula"] || null,
-      correo: kv["correo"] || null,
-      tipo_usuario: kv["tipo usuario"] || null,
-      eps: kv["eps"] || null
-    };
+      // Totales (si existe .totbox)
+      var totales = {};
+      try{
+        var lines = doc.querySelectorAll(".totbox .line");
+        lines.forEach(function(line){
+          var label = (line.childNodes[0] && line.childNodes[0].textContent || "").trim().replace(/:$/,"").toLowerCase();
+          var value = (line.querySelector("b") && line.querySelector("b").textContent || "").trim();
+          if(label) totales[label] = value || null;
+        });
+      }catch(_e){}
 
-    var factura = {
-      id: facturaId,
-      numero: facturaNumero,
-      profesional: kv["profesional"] || null,
-      metodo_pago: kv["método de pago"] || kv["metodo de pago"] || null,
-      estado_pago: kv["estado de pago"] || null,
-      referencia: kv["referencia"] || null,
-      aplica_iva: kv["¿aplica iva?"] || kv["aplica iva?"] || null,
-      iva_porcentaje: kv["iva %"] || null,
-      observacion: kv["observación"] || kv["observacion"] || null,
-      procedimientos: procedimientos,
-      totales: totales
-    };
-
-    return { paciente: paciente, factura: factura };
-  }
-
-  // --------- 4) Envío CORS-safe SIN pestañas (POST a iframe oculto) ----------
-  function ensureHiddenIframe(){
-    var existing = document.getElementById("n8n_fe_iframe");
-    if(existing) return existing;
-
-    var ifr = document.createElement("iframe");
-    ifr.id = "n8n_fe_iframe";
-    ifr.name = "n8n_fe_iframe";
-    ifr.style.width = "0";
-    ifr.style.height = "0";
-    ifr.style.border = "0";
-    ifr.style.position = "absolute";
-    ifr.style.left = "-9999px";
-    ifr.style.top = "-9999px";
-    ifr.setAttribute("aria-hidden", "true");
-    document.body.appendChild(ifr);
-    return ifr;
-  }
-
-  // OVERRIDE: última definición gana (sin tocar la existente)
-  window.enviarFacturacionElectronica = function(){
-    try{
-      var data = getFacturaVisibleData();
-      if(!data || !data.factura || (!data.factura.numero && !data.factura.id)){
-        showToastFE("No se encontró una factura visible para enviar.", false);
-        return;
-      }
-
-      var payload = {
-        factura_visible: true,
-        factura_id: data.factura.id || null,
-        factura_numero: data.factura.numero || null,
-        paciente: data.paciente || null,
-        factura: data.factura || null,
-        fecha_envio: new Date().toISOString(),
-        origen: "facturacion.html"
+      var paciente = {
+        nombre: kv["paciente"] || null,
+        cedula: kv["cédula"] || kv["cedula"] || null,
+        correo: kv["correo"] || null,
+        tipo_usuario: kv["tipo usuario"] || null,
+        eps: kv["eps"] || null
       };
 
-      // Crear POST FORM URLENCODED a iframe oculto (evita CORS y sin cambiar pestaña)
-      ensureHiddenIframe();
+      var factura = {
+        id: facturaId,
+        numero: facturaNumero,
+        profesional: kv["profesional"] || null,
+        metodo_pago: kv["método de pago"] || kv["metodo de pago"] || null,
+        estado_pago: kv["estado de pago"] || null,
+        referencia: kv["referencia"] || null,
+        aplica_iva: kv["¿aplica iva?"] || kv["aplica iva?"] || null,
+        iva_porcentaje: kv["iva %"] || null,
+        observacion: kv["observación"] || kv["observacion"] || null,
+        procedimientos: procedimientos,
+        totales: totales
+      };
 
-      var form = document.createElement("form");
-      form.method = "POST";
-      form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/a98d155f-561d-470f-b353-e9baab31249b";
-      form.target = "n8n_fe_iframe";
-
-      var input = document.createElement("input");
-      input.type = "hidden";
-      input.name = "payload";
-      input.value = JSON.stringify(payload);
-
-      form.appendChild(input);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-
-      showToastFE("✅ Enviado a n8n (Facturación electrónica).", true);
-    }catch(e){
-      console.error("FE error:", e);
-      showToastFE("Error enviando a facturación electrónica.", false);
+      return { paciente: paciente, factura: factura };
     }
-  };
 
-  onReady(function(){
-    autoCargarPacienteDesdeQuery();
-  });
-})();
-</script>
+    // ✅ Función global usada por el botón del modal (onclick)
+    window.enviarFacturacionElectronica = function(){
+      try{
+        var data = getFacturaVisibleData();
+        if(!data || !data.factura || (!data.factura.numero && !data.factura.id)){
+          showToast("No se encontró una factura visible para enviar.", "warn");
+          return;
+        }
+
+        var payload = {
+          factura_visible: true,
+          factura_id: data.factura.id || null,
+          factura_numero: data.factura.numero || null,
+          paciente: data.paciente || null,
+          factura: data.factura || null,
+          fecha_envio: new Date().toISOString(),
+          origen: "facturacion.html"
+        };
+
+        ensureHiddenIframe();
+
+        var form = document.createElement("form");
+        form.method = "POST";
+        // ✅ Endpoint PRODUCCIÓN (no test)
+        form.action = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/a98d155f-561d-470f-b353-e9baab31249b";
+        form.target = "n8n_fe_iframe";
+
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "payload";
+        input.value = JSON.stringify(payload);
+
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+
+        showToast("✅ Enviado a n8n (Facturación electrónica).", "ok");
+      }catch(e){
+        console.error("FE error:", e);
+        showToast("Error enviando a facturación electrónica.", "err");
+      }
+    };
+  })();
+  </script>
+
+</body>
+</html>
 
 
 
