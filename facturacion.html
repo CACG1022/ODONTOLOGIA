@@ -1075,6 +1075,7 @@ if ((isFocused || filtro) && count > 0) {
   cantidad,
   valor_unitario: valorU,
   valor_total: valorU * cantidad
+  profesional: p.profesional ?? null
 };
 
       state.items.push(item);
@@ -1099,7 +1100,8 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td><select data-k="profesional"></select></td>
+
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1107,6 +1109,42 @@ if ((isFocused || filtro) && count > 0) {
           <td class="mono">$ ${money(it.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
+
+        // 🔽 ESTE CÓDIGO VA JUSTO DESPUÉS DEL tr.innerHTML
+const selProf = tr.querySelector('select[data-k="profesional"]');
+
+// Opción vacía
+const optEmpty = document.createElement("option");
+optEmpty.value = "";
+optEmpty.textContent = "— Selecciona —";
+selProf.appendChild(optEmpty);
+
+// Opciones desde profesionales
+for (const pr of state.profesionales) {
+  const ced = (pr.cedula ?? "").toString().trim();
+  const nom = (pr.nombre ?? "").toString().trim();
+
+  const opt = document.createElement("option");
+  opt.value = ced || nom;     // 🔑 MISMO VALOR QUE SUPABASE
+  opt.textContent = nom;
+
+  selProf.appendChild(opt);
+}
+
+// 🔑 Seleccionar automáticamente el profesional del procedimiento
+const raw = obtenerProfesionalRawDeItem(it);
+selProf.value = raw ?? "";
+
+// Si no hace match exacto, dejar vacío
+if (raw && selProf.value !== raw) {
+  selProf.value = "";
+}
+
+// Guardar cambios manuales
+selProf.addEventListener("change", () => {
+  it.profesional = selProf.value || null;
+});
+
         tr.querySelectorAll("input").forEach(inp => {
           inp.addEventListener("input", () => {
             const k = inp.dataset.k;
