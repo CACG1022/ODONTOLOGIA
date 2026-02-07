@@ -1133,12 +1133,27 @@ for (const pr of state.profesionales) {
 
 // 🔑 Seleccionar automáticamente el profesional del procedimiento
 const raw = obtenerProfesionalRawDeItem(it);
-selProf.value = raw ?? "";
 
-// Si no hace match exacto, dejar vacío
-if (raw && selProf.value !== raw) {
+// normalizar para comparar
+const norm = v => String(v || "")
+  .trim()
+  .toLowerCase();
+
+// buscar opción compatible
+let matched = false;
+for (const opt of selProf.options) {
+  if (!opt.value) continue;
+  if (norm(opt.value) === norm(raw)) {
+    selProf.value = opt.value;
+    matched = true;
+    break;
+  }
+}
+
+if (!matched) {
   selProf.value = "";
 }
+
 
 // Guardar cambios manuales
 selProf.addEventListener("change", () => {
