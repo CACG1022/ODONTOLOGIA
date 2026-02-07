@@ -2297,7 +2297,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
@@ -2334,7 +2334,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           descripcion: it.descripcion || "",
           cantidad: Number(it.cantidad || 1),
           valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0)
+          valor_total: Number(it.valor_total || 0),
+          profesional: it.profesional ?? null
         }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
@@ -2659,7 +2660,8 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0)
+  valor_total: Number(it.valor_total || 0),
+  profesional: it.profesional ?? null
 });
 
   });
