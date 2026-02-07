@@ -767,30 +767,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <div class="panel" role="dialog" aria-modal="true" aria-labelledby="panel-title">
       <header>
         <h3 id="panel-title">Procedimientos diente <span id="panel-tooth"></span></h3>
-        <div id="panel-profesional-wrap" style="margin-top:6px;">
-  <div style="font-size:12px;font-weight:800;color:#475569;">Profesional:</div>
-  <input
-    id="panel-profesional"
-    type="text"
-    value="—"
-    readonly
-    tabindex="-1"
-    style="
-      width:100%;
-      margin-top:4px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1.6px solid var(--field-border);
-      background:#f8fafc;
-      font-weight:800;
-      color:#0f172a;
-      outline:none;
-      pointer-events:none; /* 🔒 no editable */
-      user-select:text;
-    "
-  />
-</div>
-
         <button type="button" class="btn-secondary" id="btn-close">Cerrar</button>
       </header>
 
@@ -988,7 +964,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     const procsContainer = document.getElementById('procs-container');
     const lblTooth = document.getElementById('panel-tooth');
     const panelTitle = document.getElementById('panel-title');
-    const panelProfesional = document.getElementById('panel-profesional');
     const btnSave = document.getElementById('btn-save');
     const btnClear = document.getElementById('btn-clear');
     const btnClose = document.getElementById('btn-close');
@@ -1035,6 +1010,17 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
         const name = document.createElement('label');
         name.textContent = proc.label;
+
+        const profesional = document.createElement("div");
+profesional.textContent = proc.profesional
+  ? `Profesional: ${proc.profesional}`
+  : "Profesional: —";
+
+profesional.style.fontSize = "11px";
+profesional.style.fontWeight = "600";
+profesional.style.color = "#64748b";
+profesional.style.marginTop = "2px";
+
 
         const check = document.createElement('input');
         check.className='proc-check';
@@ -1106,7 +1092,12 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
           });
         }
 
-        row.appendChild(name);
+        const nameWrap = document.createElement("div");
+nameWrap.appendChild(name);
+nameWrap.appendChild(profesional);
+
+row.appendChild(nameWrap);
+
         row.appendChild(check);
         row.appendChild(price);
         procsContainer.appendChild(row);
@@ -1119,10 +1110,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       currentTooth = String(toothNumber);
       panelTitle.childNodes[0].nodeValue = "Procedimientos diente ";
       lblTooth.textContent = currentTooth;
-      if(panelProfesional){
-  panelProfesional.value = (window.NOMBRE_PROFESIONAL || "—");
-}
-
 
       if(!PROC_READY){
         await cargarCatalogoDesdeSupabase();
@@ -1139,10 +1126,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       currentTooth = null;
       panelTitle.childNodes[0].nodeValue = "Procedimiento principal";
       lblTooth.textContent = "";
-      if(panelProfesional){
-  panelProfesional.value = (window.NOMBRE_PROFESIONAL || "—");
-}
-
 
       if(!PROC_READY){
         await cargarCatalogoDesdeSupabase();
@@ -2743,6 +2726,7 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
+
 
 
 
