@@ -994,13 +994,13 @@ if ((isFocused || filtro) && count > 0) {
       const sel = $("profesional");
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
       for (const pr of state.profesionales){
-        const ced = (pr.cedula ?? "").toString().trim();
-        const nom = (pr.nombre ?? "").toString().trim();
-        const opt = document.createElement("option");
-        opt.value = ced ? `${ced}` : nom;
-        opt.textContent = nom;
-        sel.appendChild(opt);
-      }
+  const nom = String(pr.nombre || "").trim();
+  const opt = document.createElement("option");
+  opt.value = nom;               // ✅ value = NOMBRE
+  opt.textContent = nom;         // ✅ texto = NOMBRE
+  selectProfesional.appendChild(opt);
+}
+
     }
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
@@ -1124,7 +1124,7 @@ it.profesional = valorInicial; // deja consistente el state
     selectProfesional.value = valorInicial;
 
     selectProfesional.addEventListener("change", () => {
-  it.profesional = normalizeProfesionalValue(selectProfesional.value);
+  it.profesional = (selectProfesional.value || "").trim(); // ✅ nombre
 });
 
 
