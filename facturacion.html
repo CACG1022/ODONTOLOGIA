@@ -994,13 +994,13 @@ if ((isFocused || filtro) && count > 0) {
       const sel = $("profesional");
       sel.innerHTML = `<option value="">— Selecciona —</option>`;
       for (const pr of state.profesionales){
-  const nom = String(pr.nombre || "").trim();
-  const opt = document.createElement("option");
-  opt.value = nom;               // ✅ value = NOMBRE
-  opt.textContent = nom;         // ✅ texto = NOMBRE
-  selectProfesional.appendChild(opt);
-}
-
+        const ced = (pr.cedula ?? "").toString().trim();
+        const nom = (pr.nombre ?? "").toString().trim();
+        const opt = document.createElement("option");
+        opt.value = ced ? `${ced}` : nom;
+        opt.textContent = nom;
+        sel.appendChild(opt);
+      }
     }
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
@@ -1090,73 +1090,38 @@ if ((isFocused || filtro) && count > 0) {
       recalcularTotales();
     }
     function renderItems(){
-  const tbody = $("tbody-items");
-  tbody.innerHTML = "";
-
-  if (state.items.length === 0){
-    tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
-    return;
-  }
-
-  for (const it of state.items){
-    const tr = document.createElement("tr");
-
-    const selectProfesional = document.createElement("select");
-    selectProfesional.innerHTML = `<option value="">— Selecciona —</option>`;
-
-    for (const pr of state.profesionales){
-      const ced = String(pr.cedula || "").trim();
-      const opt = document.createElement("option");
-      opt.value = ced;
-      opt.textContent = pr.nombre;
-      selectProfesional.appendChild(opt);
+      const tbody = $("tbody-items");
+      tbody.innerHTML = "";
+      if (state.items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        return;
+      }
+      for (const it of state.items){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
+          <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
+          <td class="mono">$ ${money(it.valor_total)}</td>
+          <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
+        `;
+        tr.querySelectorAll("input").forEach(inp => {
+          inp.addEventListener("input", () => {
+            const k = inp.dataset.k;
+            const v = num(inp.value);
+            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
+            it.valor_total = it.cantidad * it.valor_unitario;
+            renderItems();
+            recalcularTotales();
+          });
+        });
+        tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
+        tbody.appendChild(tr);
+      }
     }
-
-    // valor inicial
-    const valorInicial = normalizeProfesionalValue(
-  it.profesional || obtenerProfesionalRawDeItem(it) || ""
-);
-
-selectProfesional.value = valorInicial;
-it.profesional = valorInicial; // deja consistente el state
-
-
-    selectProfesional.value = valorInicial;
-
-    selectProfesional.addEventListener("change", () => {
-  it.profesional = (selectProfesional.value || "").trim(); // ✅ nombre
-});
-
-
-    tr.innerHTML = `
-      <td></td>
-      <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
-      <td>${escapeHtml(it.descripcion || "")}</td>
-      <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
-      <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
-      <td class="mono">$ ${money(it.valor_total)}</td>
-      <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
-    `;
-
-    tr.children[0].appendChild(selectProfesional);
-
-    tr.querySelectorAll("input").forEach(inp => {
-      inp.addEventListener("input", () => {
-        const k = inp.dataset.k;
-        const v = num(inp.value);
-        if (k === "cantidad") it.cantidad = Math.max(1, parseInt(v) || 1);
-        if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
-        it.valor_total = it.cantidad * it.valor_unitario;
-        renderItems();
-        recalcularTotales();
-      });
-    });
-
-    tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
-    tbody.appendChild(tr);
-  }
-}
-
     function ivaAplica(){
       return (String($("iva_aplica")?.value || "si").toLowerCase() === "si");
     }
@@ -1222,23 +1187,6 @@ it.profesional = valorInicial; // deja consistente el state
       }
       return raw;
     }
-
-    function normalizeProfesionalValue(v){
-  const raw = String(v ?? "").trim();
-  if (!raw) return "";
-  // Si ya es cédula (solo números), perfecto
-  if (/^\d+$/.test(raw)) return raw;
-
-  // Si viene como nombre, buscar su cédula en state.profesionales
-  const pr = (state.profesionales || []).find(x =>
-    String(x.nombre || "").trim().toLowerCase() === raw.toLowerCase()
-  );
-  if (pr && pr.cedula) return String(pr.cedula).trim();
-
-  // fallback (si no encontró match)
-  return raw;
-}
-
 
     function obtenerProfesionalDeItem(it){
   // 1. Si el item ya trae profesional, usarlo
@@ -1635,8 +1583,7 @@ it.profesional = valorInicial; // deja consistente el state
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
-  profesional: normalizeProfesionalValue(it.profesional || obtenerProfesionalRawDeItem(it) || null)
-
+  profesional: obtenerProfesionalRawDeItem(it)
 }));
 
 
@@ -2312,7 +2259,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
@@ -2343,18 +2290,14 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           }
         }
         state.items = (det || []).map(it => ({
-  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-  procedimiento_id: it.procedimiento_id,
-  codigo_cups: it.codigo_cups || "",
-  descripcion: it.descripcion || "",
-  cantidad: Number(it.cantidad || 1),
-  valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0),
-
-  // ✅ CLAVE: rehidratar profesional por procedimiento
-  profesional: (it.profesional || "").toString().trim()
-}));
-
+          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          procedimiento_id: it.procedimiento_id,
+          codigo_cups: it.codigo_cups || "",
+          descripcion: it.descripcion || "",
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(it.valor_unitario || 0),
+          valor_total: Number(it.valor_total || 0)
+        }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
         state.facturaGuardada = fac;
@@ -2999,6 +2942,7 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
 
 
 
