@@ -1084,7 +1084,7 @@ if ((isFocused || filtro) && count > 0) {
   const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
   const valorU = Math.max(0, num(p.valor || 0));
 
-  // ✅ profesional
+  // ✅ PROFESIONAL (AQUÍ es donde va, NO dentro del objeto)
   const profesionalGlobal = ($("profesional")?.value || "").trim();
   const profesionalDeProc = (p.profesional || "").toString().trim();
 
@@ -1111,6 +1111,7 @@ if ((isFocused || filtro) && count > 0) {
 
   toast("Agregado ✅", "ok");
 }
+
 
 
       state.items.push(item);
