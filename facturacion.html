@@ -2321,14 +2321,18 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           }
         }
         state.items = (det || []).map(it => ({
-          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-          procedimiento_id: it.procedimiento_id,
-          codigo_cups: it.codigo_cups || "",
-          descripcion: it.descripcion || "",
-          cantidad: Number(it.cantidad || 1),
-          valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0)
-        }));
+  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+  procedimiento_id: it.procedimiento_id,
+  codigo_cups: it.codigo_cups || "",
+  descripcion: it.descripcion || "",
+  cantidad: Number(it.cantidad || 1),
+  valor_unitario: Number(it.valor_unitario || 0),
+  valor_total: Number(it.valor_total || 0),
+
+  // ✅ CLAVE: rehidratar profesional por procedimiento
+  profesional: (it.profesional || "").toString().trim()
+}));
+
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
         state.facturaGuardada = fac;
