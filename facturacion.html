@@ -1074,8 +1074,7 @@ if ((isFocused || filtro) && count > 0) {
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
-  valor_total: valorU * cantidad,
-  profesional: p.profesional ?? null
+  valor_total: valorU * cantidad
 };
 
       state.items.push(item);
@@ -1100,8 +1099,7 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td><select data-k="profesional"></select></td>
-
+          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1109,57 +1107,6 @@ if ((isFocused || filtro) && count > 0) {
           <td class="mono">$ ${money(it.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
-
-        // 🔽 ESTE CÓDIGO VA JUSTO DESPUÉS DEL tr.innerHTML
-const selProf = tr.querySelector('select[data-k="profesional"]');
-
-// Opción vacía
-const optEmpty = document.createElement("option");
-optEmpty.value = "";
-optEmpty.textContent = "— Selecciona —";
-selProf.appendChild(optEmpty);
-
-// Opciones desde profesionales
-for (const pr of state.profesionales) {
-  const ced = (pr.cedula ?? "").toString().trim();
-  const nom = (pr.nombre ?? "").toString().trim();
-
-  const opt = document.createElement("option");
-  opt.value = ced || nom;     // 🔑 MISMO VALOR QUE SUPABASE
-  opt.textContent = nom;
-
-  selProf.appendChild(opt);
-}
-
-// 🔑 Seleccionar automáticamente el profesional del procedimiento
-const raw = obtenerProfesionalRawDeItem(it);
-
-// normalizar para comparar
-const norm = v => String(v || "")
-  .trim()
-  .toLowerCase();
-
-// buscar opción compatible
-let matched = false;
-for (const opt of selProf.options) {
-  if (!opt.value) continue;
-  if (norm(opt.value) === norm(raw)) {
-    selProf.value = opt.value;
-    matched = true;
-    break;
-  }
-}
-
-if (!matched) {
-  selProf.value = "";
-}
-
-
-// Guardar cambios manuales
-selProf.addEventListener("change", () => {
-  it.profesional = selProf.value || null;
-});
-
         tr.querySelectorAll("input").forEach(inp => {
           inp.addEventListener("input", () => {
             const k = inp.dataset.k;
@@ -2312,7 +2259,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
@@ -2349,8 +2296,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           descripcion: it.descripcion || "",
           cantidad: Number(it.cantidad || 1),
           valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0),
-          profesional: it.profesional ?? null
+          valor_total: Number(it.valor_total || 0)
         }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
@@ -2675,8 +2621,7 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0),
-  profesional: it.profesional ?? null
+  valor_total: Number(it.valor_total || 0)
 });
 
   });
@@ -2997,6 +2942,8 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
 
 
 
