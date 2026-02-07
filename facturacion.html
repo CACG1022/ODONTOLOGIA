@@ -1113,16 +1113,20 @@ if ((isFocused || filtro) && count > 0) {
     }
 
     // valor inicial
-    const valorInicial =
-      it.profesional ||
-      obtenerProfesionalRawDeItem(it) ||
-      "";
+    const valorInicial = normalizeProfesionalValue(
+  it.profesional || obtenerProfesionalRawDeItem(it) || ""
+);
+
+selectProfesional.value = valorInicial;
+it.profesional = valorInicial; // deja consistente el state
+
 
     selectProfesional.value = valorInicial;
 
     selectProfesional.addEventListener("change", () => {
-      it.profesional = selectProfesional.value;
-    });
+  it.profesional = normalizeProfesionalValue(selectProfesional.value);
+});
+
 
     tr.innerHTML = `
       <td></td>
@@ -1218,6 +1222,23 @@ if ((isFocused || filtro) && count > 0) {
       }
       return raw;
     }
+
+    function normalizeProfesionalValue(v){
+  const raw = String(v ?? "").trim();
+  if (!raw) return "";
+  // Si ya es cédula (solo números), perfecto
+  if (/^\d+$/.test(raw)) return raw;
+
+  // Si viene como nombre, buscar su cédula en state.profesionales
+  const pr = (state.profesionales || []).find(x =>
+    String(x.nombre || "").trim().toLowerCase() === raw.toLowerCase()
+  );
+  if (pr && pr.cedula) return String(pr.cedula).trim();
+
+  // fallback (si no encontró match)
+  return raw;
+}
+
 
     function obtenerProfesionalDeItem(it){
   // 1. Si el item ya trae profesional, usarlo
@@ -1614,7 +1635,8 @@ if ((isFocused || filtro) && count > 0) {
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
-  profesional: obtenerProfesionalRawDeItem(it)
+  profesional: normalizeProfesionalValue(it.profesional || obtenerProfesionalRawDeItem(it) || null)
+
 }));
 
 
@@ -2290,7 +2312,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
           .eq("factura_id", facturaId)
           .order("id", { ascending: true });
         if (e2) throw e2;
