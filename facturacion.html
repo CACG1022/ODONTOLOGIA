@@ -1069,36 +1069,49 @@ if ((isFocused || filtro) && count > 0) {
         .replaceAll("'","&#039;");
     }
     function agregarProcedimiento(){
-      const procId = ($("sel-proc").value || "").trim();
-      if (!procId){
-        toast("Selecciona un procedimiento", "warn");
-        return;
-      }
-      const p = state.procedimientos.find(x => String(x.id) === String(procId));
-      if (!p){
-        toast("Procedimiento no encontrado", "err");
-        return;
-      }
-      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
-      const valorU = Math.max(0, num(p.valor || 0));
-      const item = {
-  const profesionalGlobal = ($("profesional")?.value || "").trim(); // el del formulario
-const profesionalDeProc = (p.profesional || "").toString().trim(); // si tu procedimiento trae un profesional
+  const procId = ($("sel-proc").value || "").trim();
+  if (!procId){
+    toast("Selecciona un procedimiento", "warn");
+    return;
+  }
 
-const item = {
-  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-  procedimiento_id: p.id,
-  codigo_cups: p.codigo_cups || "",
-  descripcion: p.procedimiento || "",
-  cantidad,
-  valor_unitario: valorU,
-  valor_total: valorU * cantidad,
+  const p = state.procedimientos.find(x => String(x.id) === String(procId));
+  if (!p){
+    toast("Procedimiento no encontrado", "err");
+    return;
+  }
 
-  // ✅ nuevo: profesional por fila (prioriza el seleccionado arriba, si no, el del procedimiento)
-  profesional: profesionalGlobal || profesionalDeProc || ""
-};
+  const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
+  const valorU = Math.max(0, num(p.valor || 0));
 
-};
+  // ✅ profesional
+  const profesionalGlobal = ($("profesional")?.value || "").trim();
+  const profesionalDeProc = (p.profesional || "").toString().trim();
+
+  const item = {
+    id_local: crypto?.randomUUID
+      ? crypto.randomUUID()
+      : String(Date.now()) + Math.random(),
+    procedimiento_id: p.id,
+    codigo_cups: p.codigo_cups || "",
+    descripcion: p.procedimiento || "",
+    cantidad,
+    valor_unitario: valorU,
+    valor_total: valorU * cantidad,
+    profesional: profesionalGlobal || profesionalDeProc || ""
+  };
+
+  state.items.push(item);
+  renderItems();
+  recalcularTotales();
+
+  $("sel-proc").value = "";
+  $("sel-proc-input").value = "";
+  $("cantidad").value = "1";
+
+  toast("Agregado ✅", "ok");
+}
+
 
       state.items.push(item);
       renderItems();
