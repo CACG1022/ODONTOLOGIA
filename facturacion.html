@@ -1002,6 +1002,20 @@ if ((isFocused || filtro) && count > 0) {
         sel.appendChild(opt);
       }
     }
+   function buildProfesionalesOptionsHTML(selectedRaw = ""){
+  const selected = String(selectedRaw ?? "").trim();
+  let html = `<option value="">—</option>`;
+  for (const pr of (state.profesionales || [])){
+    const ced = String(pr.cedula ?? "").trim();
+    const nom = String(pr.nombre ?? "").trim();
+    const value = ced ? ced : nom; // igual que tu select principal
+    const isSel = String(value) === selected ? "selected" : "";
+    html += `<option value="${escapeHtml(value)}" ${isSel}>${escapeHtml(nom)}</option>`;
+  }
+  return html;
+}
+
+    
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
         .trim()
@@ -1068,13 +1082,22 @@ if ((isFocused || filtro) && count > 0) {
       const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
       const valorU = Math.max(0, num(p.valor || 0));
       const item = {
+  const profesionalGlobal = ($("profesional")?.value || "").trim(); // el del formulario
+const profesionalDeProc = (p.profesional || "").toString().trim(); // si tu procedimiento trae un profesional
+
+const item = {
   id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-  procedimiento_id: p.id,              // ✅ CLAVE
+  procedimiento_id: p.id,
   codigo_cups: p.codigo_cups || "",
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
-  valor_total: valorU * cantidad
+  valor_total: valorU * cantidad,
+
+  // ✅ nuevo: profesional por fila (prioriza el seleccionado arriba, si no, el del procedimiento)
+  profesional: profesionalGlobal || profesionalDeProc || ""
+};
+
 };
 
       state.items.push(item);
@@ -1099,7 +1122,7 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td><select data-k="profesional">${buildProfesionalesOptionsHTML(it.profesional || obtenerProfesionalRawDeItem(it) || "")}</select></td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1118,6 +1141,17 @@ if ((isFocused || filtro) && count > 0) {
             recalcularTotales();
           });
         });
+        // ✅ Cambio de profesional por fila
+const selProf = tr.querySelector('select[data-k="profesional"]');
+if (selProf){
+  selProf.addEventListener("change", () => {
+    it.profesional = (selProf.value || "").trim();
+    // no necesitas recalcular totales, pero sí re-render si quieres reflejar etiqueta/estado
+    // renderItems();
+  });
+}
+
+        
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
@@ -1583,7 +1617,7 @@ if ((isFocused || filtro) && count > 0) {
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
-  profesional: obtenerProfesionalRawDeItem(it)
+  profesional: (it.profesional || obtenerProfesionalRawDeItem(it) || null)
 }));
 
 
@@ -1612,7 +1646,7 @@ if ((isFocused || filtro) && count > 0) {
         setStatus("Preparando impresión...");
         const { data: det, error } = await supabase
           .from("factura_detalle")
-          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, profesional")
           .eq("factura_id", state.facturaGuardada.id)
           .order("id", { ascending: true });
         if (error) throw error;
@@ -2290,14 +2324,18 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           }
         }
         state.items = (det || []).map(it => ({
-          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-          procedimiento_id: it.procedimiento_id,
-          codigo_cups: it.codigo_cups || "",
-          descripcion: it.descripcion || "",
-          cantidad: Number(it.cantidad || 1),
-          valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0)
-        }));
+  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+  procedimiento_id: it.procedimiento_id,
+  codigo_cups: it.codigo_cups || "",
+  descripcion: it.descripcion || "",
+  cantidad: Number(it.cantidad || 1),
+  valor_unitario: Number(it.valor_unitario || 0),
+  valor_total: Number(it.valor_total || 0),
+
+  // ✅ nuevo: profesional por fila (lo que esté guardado en factura_detalle)
+  profesional: (it.profesional || "").toString().trim()
+}));
+
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
         state.facturaGuardada = fac;
