@@ -26,17 +26,28 @@
     return;
   }
 
-  const { data: perfil } = await supabase
+  const email = (session.user.email || "").toLowerCase();
+
+  const ADMIN_EMAIL = "camilo-1000@hotmail.com"; // 👈 el mismo que usas en index
+
+  const { data: perfil, error } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", session.user.id)
     .single();
 
-  if(!perfil || perfil.role !== "admin"){
+  const rol = String(perfil?.role || "").toLowerCase();
+
+  const esAdmin =
+    rol === "admin" ||
+    email === ADMIN_EMAIL;
+
+  if(!esAdmin){
     alert("⛔ Solo el administrador puede acceder a este módulo.");
     window.location.href = INDEX_URL;
   }
 }
+
 
     verificarSesionYPermisos();
 
