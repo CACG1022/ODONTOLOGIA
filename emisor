@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Emisor DIAN - Configuración Empresa</title>
+
+  <!-- Tipografía -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+    // ==============================
+    // 🔐 CONFIG SUPABASE
+    // ==============================
+    const supabase = createClient(
+      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+    );
+
+    const LOGIN_URL = "login.html";
+    const INDEX_URL = "index.html";
+    const MODULO = "emisor";
+
+    async function verificarSesionYPermisos(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return;
+      }
+
+      const { data: perfil } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
+
+      if(!perfil || perfil.role !== "admin"){
+        alert("⛔ Solo el administrador puede acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return;
+      }
+    }
+
+    verificarSesionYPermisos();
+
+    // ==============================
+    // 📦 LÓGICA EMISOR (ÚNICO REGISTRO)
+    // ==============================
+    let EMISOR_ID = null;
+
+    async function cargarEmisor(){
+      const { data, error } = await supabase
+        .from("emisor_dian")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
+
+      if(error){
+        console.error(error);
+        return;
+      }
+
+      if(data){
+        EMISOR_ID = data.id;
+        Object.keys(data).forEach(k=>{
+          const el = document.getElementById(k);
+          if(el) el.value = data[k] ?? "";
+        });
+        document.getElementById("activo").checked = !!data.activo;
+      }
+    }
+
+    async function guardarEmisor(){
+      const payload = {
+        nit: nit.value,
+        dv: dv.value,
+        razon_social: razon_social.value,
+        nombre_comercial: nombre_comercial.value,
+        direccion: direccion.value,
+        municipio: municipio.value,
+        departamento: departamento.value,
+        codigo_municipio: codigo_municipio.value,
+        pais: pais.value,
+        correo: correo.value,
+        telefono: telefono.value,
+        resolucion_numero: resolucion_numero.value,
+        resolucion_fecha: resolucion_fecha.value || null,
+        prefijo: prefijo.value,
+        rango_desde: rango_desde.value ? parseInt(rango_desde.value) : null,
+        rango_hasta: rango_hasta.value ? parseInt(rango_hasta.value) : null,
+        ambiente: ambiente.value,
+        activo: activo.checked
+      };
+
+      let res;
+      if(EMISOR_ID){
+        res = await supabase
+          .from("emisor_dian")
+          .update(payload)
+          .eq("id", EMISOR_ID);
+      }else{
+        res = await supabase
+          .from("emisor_dian")
+          .insert([payload]);
+      }
+
+      if(res.error){
+        alert("❌ Error guardando emisor");
+        console.error(res.error);
+        return;
+      }
+
+      alert("✅ Información del emisor guardada correctamente");
+      cargarEmisor();
+    }
+
+    window.onload = cargarEmisor;
+    window.guardarEmisor = guardarEmisor;
+  </script>
+
+  <style>
+    body{
+      margin:0;
+      font-family: Inter, system-ui, Arial;
+      background:#f4f6f8;
+      padding:24px;
+    }
+    h1{
+      text-align:center;
+      margin-bottom:20px;
+    }
+    .card{
+      max-width:900px;
+      margin:auto;
+      background:#fff;
+      border-radius:14px;
+      box-shadow:0 10px 30px rgba(0,0,0,.08);
+      padding:22px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:14px;
+    }
+    label{
+      font-size:13px;
+      font-weight:700;
+      color:#475569;
+      display:block;
+      margin-bottom:6px;
+    }
+    input, select{
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:1px solid #cbd5e1;
+      font-size:14px;
+    }
+    .full{ grid-column:1/-1; }
+    .actions{
+      margin-top:20px;
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+    }
+    button{
+      padding:12px 18px;
+      border:none;
+      border-radius:10px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .btn-primary{
+      background:#2563eb;
+      color:#fff;
+    }
+    .chk{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-top:10px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Emisor DIAN</h1>
+  <div class="card">
+    <div class="grid">
+      <div><label>NIT</label><input id="nit"></div>
+      <div><label>DV</label><input id="dv"></div>
+      <div class="full"><label>Razón social</label><input id="razon_social"></div>
+      <div class="full"><label>Nombre comercial</label><input id="nombre_comercial"></div>
+      <div class="full"><label>Dirección</label><input id="direccion"></div>
+      <div><label>Municipio</label><input id="municipio"></div>
+      <div><label>Departamento</label><input id="departamento"></div>
+      <div><label>Código municipio</label><input id="codigo_municipio"></div>
+      <div><label>País</label><input id="pais" value="CO"></div>
+      <div><label>Correo</label><input id="correo" type="email"></div>
+      <div><label>Teléfono</label><input id="telefono"></div>
+      <div><label>No. Resolución</label><input id="resolucion_numero"></div>
+      <div><label>Fecha resolución</label><input id="resolucion_fecha" type="date"></div>
+      <div><label>Prefijo</label><input id="prefijo"></div>
+      <div><label>Rango desde</label><input id="rango_desde" type="number"></div>
+      <div><label>Rango hasta</label><input id="rango_hasta" type="number"></div>
+      <div><label>Ambiente</label>
+        <select id="ambiente">
+          <option value="PRUEBAS">PRUEBAS</option>
+          <option value="PRODUCCION">PRODUCCIÓN</option>
+        </select>
+      </div>
+      <div class="chk full">
+        <input type="checkbox" id="activo">
+        <label for="activo">Emisor activo</label>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-primary" onclick="guardarEmisor()">Guardar</button>
+    </div>
+  </div>
+</body>
+</html>
