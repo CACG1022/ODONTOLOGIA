@@ -19,24 +19,25 @@
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
-    async function verificarSesionYPermisos(){
-      const { data: { session } } = await supabase.auth.getSession();
-      if(!session){
-        window.location.href = LOGIN_URL;
-        return;
-      }
+   async function verificarSesionYPermisos(){
+  const { data: { session } } = await supabase.auth.getSession();
+  if(!session){
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-      const { data: perfil } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .single();
 
-      if(!perfil || perfil.role !== "admin"){
-        alert("⛔ Solo el administrador puede acceder a este módulo.");
-        window.location.href = INDEX_URL;
-      }
-    }
+  if(!perfil || perfil.role !== "admin"){
+    alert("⛔ Solo el administrador puede acceder a este módulo.");
+    window.location.href = INDEX_URL;
+  }
+}
+
     verificarSesionYPermisos();
 
     let EMISOR_ID = null;
