@@ -8,7 +8,7 @@
   <!-- Tipografía profesional -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <!-- ✅ SUPABASE UMD (MISMO SDK QUE LOS OTROS MÓDULOS) -->
+  <!-- ✅ SUPABASE UMD -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
   <script>
@@ -18,126 +18,166 @@
     const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
 
-    const supabase = supabasejs.createClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY
-    );
-
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
+
+    // ✅ IMPORTANTE: en UMD la variable global es "supabase"
+    if (!window.supabase) {
+      console.error("❌ No cargó Supabase UMD. Revisa el <script src=...> o bloqueadores.");
+      alert("❌ No se cargó Supabase. Revisa conexión/bloqueador.");
+    }
+
+    const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let EMISOR_ID = null;
 
     // =========================
     // 🔐 VALIDAR SESIÓN Y ROL
     // =========================
     async function verificarSesionYPermisos(){
-  const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
 
-  if (!session) {
-    window.location.href = LOGIN_URL;
-    return;
-  }
+      if (sessionError) {
+        console.error("❌ Error getSession:", sessionError);
+        alert("❌ Error verificando sesión");
+        window.location.href = INDEX_URL;
+        return false;
+      }
 
-  const { data: perfil, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return false;
+      }
 
-  if (error) {
-    console.error("Error leyendo perfil:", error);
-    alert("❌ No se pudo verificar el rol del usuario");
-    window.location.href = INDEX_URL;
-    return;
-  }
+      const { data: perfil, error } = await supabaseClient
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .maybeSingle();
 
-  const rol = String(perfil?.role || "").toLowerCase();
+      if (error) {
+        console.error("❌ Error leyendo perfil:", error);
+        alert("❌ No se pudo verificar el rol del usuario");
+        window.location.href = INDEX_URL;
+        return false;
+      }
 
-  if (rol !== "admin") {
-    alert("⛔ Solo el administrador puede acceder a este módulo.");
-    window.location.href = INDEX_URL;
-    return;
-  }
+      const rol = String(perfil?.role || "").toLowerCase();
 
-  console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
+      if (rol !== "admin") {
+        alert("⛔ Solo el administrador puede acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return false;
+      }
 
-  // ✅ AQUÍ ES DONDE DEBE CARGARSE
-  await cargarEmisor();
-}
-
-
-    document.addEventListener("DOMContentLoaded", async () => {
-  await verificarSesionYPermisos();
-});
+      console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
+      return true;
+    }
 
     // =========================
     // 📦 CARGAR / GUARDAR EMISOR
     // =========================
-    let EMISOR_ID = null;
-
     async function cargarEmisor(){
-  const { data, error } = await supabase
-    .from("emisor_dian")
-    .select("*")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+      const { data, error } = await supabaseClient
+        .from("emisor_dian")
+        .select("*")
+        .limit(1)
+        .maybeSingle();
 
-  console.log("📦 Emisor:", data, error);
+      console.log("📦 Resultado emisor_dian:", { data, error });
 
-  if (error || !data) {
-    console.warn("⚠️ No hay emisor cargado");
-    return;
-  }
+      if (error) {
+        console.error("❌ Error cargando emisor:", error);
+        alert("❌ Error cargando emisor (revisa consola)");
+        return;
+      }
 
-  EMISOR_ID = data.id;
+      if (!data) {
+        console.warn("⚠️ No hay registros en emisor_dian.");
+        return;
+      }
 
-  Object.keys(inputs).forEach(k => {
-    if (k === "activo") {
-      inputs[k].checked = !!data[k];
-    } else {
-      inputs[k].value = data[k] ?? "";
+      EMISOR_ID = data.id;
+
+      Object.keys(data).forEach(k => {
+        const el = document.getElementById(k);
+        if (!el) return;
+
+        if (el.type === "checkbox") el.checked = !!data[k];
+        else el.value = data[k] ?? "";
+      });
+
+      // por si "activo" no se detecta por type
+      const activoEl = document.getElementById("activo");
+      if (activoEl) activoEl.checked = !!data.activo;
     }
-  });
-}
-
 
     async function guardarEmisor(){
+      // Referencias seguras
+      const nit = document.getElementById("nit");
+      const dv = document.getElementById("dv");
+      const razon_social = document.getElementById("razon_social");
+      const nombre_comercial = document.getElementById("nombre_comercial");
+      const direccion = document.getElementById("direccion");
+      const municipio = document.getElementById("municipio");
+      const departamento = document.getElementById("departamento");
+      const codigo_municipio = document.getElementById("codigo_municipio");
+      const pais = document.getElementById("pais");
+      const correo = document.getElementById("correo");
+      const telefono = document.getElementById("telefono");
+      const resolucion_numero = document.getElementById("resolucion_numero");
+      const resolucion_fecha = document.getElementById("resolucion_fecha");
+      const prefijo = document.getElementById("prefijo");
+      const rango_desde = document.getElementById("rango_desde");
+      const rango_hasta = document.getElementById("rango_hasta");
+      const ambiente = document.getElementById("ambiente");
+      const activo = document.getElementById("activo");
+
       const payload = {
-        nit: nit.value,
-        dv: dv.value,
-        razon_social: razon_social.value,
-        nombre_comercial: nombre_comercial.value,
-        direccion: direccion.value,
-        municipio: municipio.value,
-        departamento: departamento.value,
-        codigo_municipio: codigo_municipio.value,
-        pais: pais.value,
-        correo: correo.value,
-        telefono: telefono.value,
-        resolucion_numero: resolucion_numero.value,
-        resolucion_fecha: resolucion_fecha.value || null,
-        prefijo: prefijo.value,
-        rango_desde: rango_desde.value ? parseInt(rango_desde.value) : null,
-        rango_hasta: rango_hasta.value ? parseInt(rango_hasta.value) : null,
-        ambiente: ambiente.value,
-        activo: activo.checked
+        nit: nit?.value || "",
+        dv: dv?.value || "",
+        razon_social: razon_social?.value || "",
+        nombre_comercial: nombre_comercial?.value || "",
+        direccion: direccion?.value || "",
+        municipio: municipio?.value || "",
+        departamento: departamento?.value || "",
+        codigo_municipio: codigo_municipio?.value || "",
+        pais: pais?.value || "CO",
+        correo: correo?.value || "",
+        telefono: telefono?.value || "",
+        resolucion_numero: resolucion_numero?.value || "",
+        resolucion_fecha: resolucion_fecha?.value || null,
+        prefijo: prefijo?.value || "",
+        rango_desde: rango_desde?.value ? parseInt(rango_desde.value, 10) : null,
+        rango_hasta: rango_hasta?.value ? parseInt(rango_hasta.value, 10) : null,
+        ambiente: ambiente?.value || "PRUEBAS",
+        activo: !!activo?.checked
       };
 
       const res = EMISOR_ID
-        ? await supabase.from("emisor_dian").update(payload).eq("id", EMISOR_ID)
-        : await supabase.from("emisor_dian").insert([payload]);
+        ? await supabaseClient.from("emisor_dian").update(payload).eq("id", EMISOR_ID)
+        : await supabaseClient.from("emisor_dian").insert([payload]);
 
       if (res.error) {
-        alert("❌ Error guardando información");
-        console.error(res.error);
+        console.error("❌ Error guardando:", res.error);
+        alert("❌ Error guardando información (revisa consola)");
         return;
       }
 
       alert("✅ Emisor guardado correctamente");
-      cargarEmisor();
+      await cargarEmisor();
     }
 
-    
+    // ✅ Para que funcione onclick="guardarEmisor()"
+    window.guardarEmisor = guardarEmisor;
+
+    // =========================
+    // ✅ INICIO
+    // =========================
+    document.addEventListener("DOMContentLoaded", async () => {
+      const ok = await verificarSesionYPermisos();
+      if (ok) await cargarEmisor();
+    });
   </script>
 
   <style>
@@ -152,9 +192,7 @@
       --shadow:0 18px 40px rgba(15,23,42,.08);
       --font:"Inter",system-ui,Arial;
     }
-
     *{ box-sizing:border-box; }
-
     body{
       margin:0;
       font-family:var(--font);
@@ -162,26 +200,9 @@
       color:var(--text);
       padding:32px 16px;
     }
-
-    .wrap{
-      max-width:980px;
-      margin:auto;
-    }
-
-    h1{
-      text-align:center;
-      font-size:26px;
-      font-weight:900;
-      margin-bottom:6px;
-    }
-
-    .subtitle{
-      text-align:center;
-      color:var(--muted);
-      font-size:14px;
-      margin-bottom:24px;
-    }
-
+    .wrap{ max-width:980px; margin:auto; }
+    h1{ text-align:center; font-size:26px; font-weight:900; margin-bottom:6px; }
+    .subtitle{ text-align:center; color:var(--muted); font-size:14px; margin-bottom:24px; }
     .card{
       background:var(--card);
       border-radius:var(--radius);
@@ -189,11 +210,7 @@
       padding:26px;
       border:1px solid var(--line);
     }
-
-    .section{
-      margin-bottom:28px;
-    }
-
+    .section{ margin-bottom:28px; }
     .section h3{
       margin:0 0 14px;
       font-size:14px;
@@ -201,15 +218,12 @@
       letter-spacing:.08em;
       color:var(--muted);
     }
-
     .grid{
       display:grid;
       grid-template-columns:repeat(2,1fr);
       gap:18px 22px;
     }
-
     .full{ grid-column:1/-1; }
-
     label{
       font-size:12px;
       font-weight:700;
@@ -217,7 +231,6 @@
       margin-bottom:6px;
       display:block;
     }
-
     input, select{
       width:100%;
       padding:14px 14px;
@@ -228,12 +241,10 @@
       outline:none;
       background:#fff;
     }
-
     input:focus, select:focus{
       border-color:var(--brand);
       box-shadow:0 0 0 4px rgba(37,99,235,.12);
     }
-
     .checkline{
       display:flex;
       align-items:center;
@@ -242,13 +253,7 @@
       font-size:14px;
       font-weight:700;
     }
-
-    .actions{
-      display:flex;
-      justify-content:flex-end;
-      margin-top:10px;
-    }
-
+    .actions{ display:flex; justify-content:flex-end; margin-top:10px; }
     button{
       padding:14px 26px;
       border:none;
@@ -260,18 +265,16 @@
       cursor:pointer;
       box-shadow:0 10px 22px rgba(37,99,235,.35);
     }
+    @media(max-width:700px){ .grid{ grid-template-columns:1fr; } }
   </style>
 </head>
 
 <body>
   <div class="wrap">
     <h1>Emisor DIAN</h1>
-    <div class="subtitle">
-      Información fiscal y de facturación electrónica de la empresa
-    </div>
+    <div class="subtitle">Información fiscal y de facturación electrónica de la empresa</div>
 
     <div class="card">
-
       <div class="section">
         <h3>Identificación</h3>
         <div class="grid">
@@ -327,7 +330,6 @@
       <div class="actions">
         <button onclick="guardarEmisor()">Guardar información</button>
       </div>
-
     </div>
   </div>
 </body>
