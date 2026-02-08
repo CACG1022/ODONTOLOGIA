@@ -8,69 +8,83 @@
   <!-- Tipografía profesional -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <!-- ✅ SUPABASE UMD (MISMO SDK QUE LOS OTROS MÓDULOS) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
-    const supabase = createClient(
-      "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-       
+  <script>
+    // =========================
+    // ✅ SUPABASE CLIENT (UMD)
+    // =========================
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+
+    const supabase = supabasejs.createClient(
+      SUPABASE_URL,
+      SUPABASE_ANON_KEY
     );
 
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
-  async function verificarSesionYPermisos(){
-  const { data: { session } } = await supabase.auth.getSession();
+    // =========================
+    // 🔐 VALIDAR SESIÓN Y ROL
+    // =========================
+    async function verificarSesionYPermisos(){
+      const { data: { session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    window.location.href = LOGIN_URL;
-    return;
-  }
+      if (!session) {
+        window.location.href = LOGIN_URL;
+        return;
+      }
 
-const { data: perfil, error } = await supabase
-  .from("profiles")
-  .select("role")
-  .eq("id", session.user.id)
-  .single();
+      const { data: perfil, error } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", session.user.id)
+        .single();
 
-if (error) {
-  console.error("Error leyendo perfil:", error);
-  alert("❌ No se pudo verificar el rol del usuario");
-  window.location.href = INDEX_URL;
-  return;
-}
+      if (error) {
+        console.error("Error leyendo perfil:", error);
+        alert("❌ No se pudo verificar el rol del usuario");
+        window.location.href = INDEX_URL;
+        return;
+      }
 
-const rol = String(perfil?.role || "").toLowerCase();
+      const rol = String(perfil?.role || "").toLowerCase();
 
-if (rol !== "admin") {
-  alert("⛔ Solo el administrador puede acceder a este módulo.");
-  window.location.href = INDEX_URL;
-  return;
-}
+      if (rol !== "admin") {
+        alert("⛔ Solo el administrador puede acceder a este módulo.");
+        window.location.href = INDEX_URL;
+        return;
+      }
 
-console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
-
-}
-
-
+      console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
+    }
 
     verificarSesionYPermisos();
 
+    // =========================
+    // 📦 CARGAR / GUARDAR EMISOR
+    // =========================
     let EMISOR_ID = null;
 
     async function cargarEmisor(){
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("emisor_dian")
         .select("*")
         .limit(1)
         .maybeSingle();
 
-      if(data){
+      if (error) {
+        console.error("Error cargando emisor:", error);
+        return;
+      }
+
+      if (data) {
         EMISOR_ID = data.id;
-        Object.keys(data).forEach(k=>{
+        Object.keys(data).forEach(k => {
           const el = document.getElementById(k);
-          if(el) el.value = data[k] ?? "";
+          if (el) el.value = data[k] ?? "";
         });
         activo.checked = !!data.activo;
       }
@@ -102,7 +116,7 @@ console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
         ? await supabase.from("emisor_dian").update(payload).eq("id", EMISOR_ID)
         : await supabase.from("emisor_dian").insert([payload]);
 
-      if(res.error){
+      if (res.error) {
         alert("❌ Error guardando información");
         console.error(res.error);
         return;
@@ -113,7 +127,6 @@ console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
     }
 
     window.onload = cargarEmisor;
-    window.guardarEmisor = guardarEmisor;
   </script>
 
   <style>
@@ -236,15 +249,6 @@ console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
       cursor:pointer;
       box-shadow:0 10px 22px rgba(37,99,235,.35);
     }
-
-    button:hover{
-      filter:brightness(.96);
-      transform:translateY(-1px);
-    }
-
-    @media(max-width:700px){
-      .grid{ grid-template-columns:1fr; }
-    }
   </style>
 </head>
 
@@ -317,4 +321,5 @@ console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
   </div>
 </body>
 </html>
+
 
