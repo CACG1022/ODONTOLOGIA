@@ -75,26 +75,31 @@
     let EMISOR_ID = null;
 
     async function cargarEmisor(){
-      const { data, error } = await supabase
-        .from("emisor_dian")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+  const { data, error } = await supabase
+    .from("emisor_dian")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-      if (error) {
-        console.error("Error cargando emisor:", error);
-        return;
-      }
+  console.log("📦 Emisor:", data, error);
 
-      if (data) {
-        EMISOR_ID = data.id;
-        Object.keys(data).forEach(k => {
-          const el = document.getElementById(k);
-          if (el) el.value = data[k] ?? "";
-        });
-        activo.checked = !!data.activo;
-      }
+  if (error || !data) {
+    console.warn("⚠️ No hay emisor cargado");
+    return;
+  }
+
+  EMISOR_ID = data.id;
+
+  Object.keys(inputs).forEach(k => {
+    if (k === "activo") {
+      inputs[k].checked = !!data[k];
+    } else {
+      inputs[k].value = data[k] ?? "";
     }
+  });
+}
+
 
     async function guardarEmisor(){
       const payload = {
