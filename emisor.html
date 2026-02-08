@@ -30,36 +30,40 @@
     // 🔐 VALIDAR SESIÓN Y ROL
     // =========================
     async function verificarSesionYPermisos(){
-      const { data: { session } } = await supabase.auth.getSession();
+  const { data: { session } } = await supabase.auth.getSession();
 
-      if (!session) {
-        window.location.href = LOGIN_URL;
-        return;
-      }
+  if (!session) {
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-      const { data: perfil, error } = await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .single();
+  const { data: perfil, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .single();
 
-      if (error) {
-        console.error("Error leyendo perfil:", error);
-        alert("❌ No se pudo verificar el rol del usuario");
-        window.location.href = INDEX_URL;
-        return;
-      }
+  if (error) {
+    console.error("Error leyendo perfil:", error);
+    alert("❌ No se pudo verificar el rol del usuario");
+    window.location.href = INDEX_URL;
+    return;
+  }
 
-      const rol = String(perfil?.role || "").toLowerCase();
+  const rol = String(perfil?.role || "").toLowerCase();
 
-      if (rol !== "admin") {
-        alert("⛔ Solo el administrador puede acceder a este módulo.");
-        window.location.href = INDEX_URL;
-        return;
-      }
+  if (rol !== "admin") {
+    alert("⛔ Solo el administrador puede acceder a este módulo.");
+    window.location.href = INDEX_URL;
+    return;
+  }
 
-      console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
-    }
+  console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
+
+  // ✅ AQUÍ ES DONDE DEBE CARGARSE
+  await cargarEmisor();
+}
+
 
     verificarSesionYPermisos();
 
@@ -126,7 +130,7 @@
       cargarEmisor();
     }
 
-    window.onload = cargarEmisor;
+    
   </script>
 
   <style>
