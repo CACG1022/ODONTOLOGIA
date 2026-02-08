@@ -27,16 +27,29 @@
     return;
   }
 
-  const email = (session.user.email || "").toLowerCase();
+const { data: perfil, error } = await supabase
+  .from("profiles")
+  .select("role")
+  .eq("id", session.user.id)
+  .single();
 
-  // ⬇️ MISMO EMAIL ADMIN QUE YA USAS EN index.html
-  const ADMIN_EMAIL = "camilo-1000@hotmail.com";
+if (error) {
+  console.error("Error leyendo perfil:", error);
+  alert("❌ No se pudo verificar el rol del usuario");
+  window.location.href = INDEX_URL;
+  return;
+}
 
-  if (email !== ADMIN_EMAIL) {
-    alert("⛔ Solo el administrador puede acceder a este módulo.");
-    window.location.href = INDEX_URL;
-    return;
-  }
+const rol = String(perfil?.role || "").toLowerCase();
+
+if (rol !== "admin") {
+  alert("⛔ Solo el administrador puede acceder a este módulo.");
+  window.location.href = INDEX_URL;
+  return;
+}
+
+console.log("✅ Acceso Emisor DIAN autorizado (rol admin)");
+
 
   // ✅ Admin validado correctamente
   console.log("✅ Acceso Emisor DIAN autorizado para:", email);
