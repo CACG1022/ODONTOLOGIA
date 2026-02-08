@@ -65,7 +65,9 @@
 }
 
 
-    verificarSesionYPermisos();
+    document.addEventListener("DOMContentLoaded", async () => {
+  await verificarSesionYPermisos();
+});
 
     // =========================
     // 📦 CARGAR / GUARDAR EMISOR
