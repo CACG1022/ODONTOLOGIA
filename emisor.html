@@ -19,34 +19,29 @@
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
 
-   async function verificarSesionYPermisos(){
+  async function verificarSesionYPermisos(){
   const { data: { session } } = await supabase.auth.getSession();
-  if(!session){
+
+  if (!session) {
     window.location.href = LOGIN_URL;
     return;
   }
 
   const email = (session.user.email || "").toLowerCase();
 
-  const ADMIN_EMAIL = "camilo-1000@hotmail.com"; // 👈 el mismo que usas en index
+  // ⬇️ MISMO EMAIL ADMIN QUE YA USAS EN index.html
+  const ADMIN_EMAIL = "camilo-1000@hotmail.com";
 
-  const { data: perfil, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
-
-  const rol = String(perfil?.role || "").toLowerCase();
-
-  const esAdmin =
-    rol === "admin" ||
-    email === ADMIN_EMAIL;
-
-  if(!esAdmin){
+  if (email !== ADMIN_EMAIL) {
     alert("⛔ Solo el administrador puede acceder a este módulo.");
     window.location.href = INDEX_URL;
+    return;
   }
+
+  // ✅ Admin validado correctamente
+  console.log("✅ Acceso Emisor DIAN autorizado para:", email);
 }
+
 
 
     verificarSesionYPermisos();
