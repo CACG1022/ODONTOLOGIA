@@ -1179,7 +1179,7 @@ if ((isFocused || filtro) && count > 0) {
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
           <td><input type="number" min="0" step="100" value="${(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))}" data-k="costo"></td>
-          <td class="mono" data-k="costo_total">$ ${money(((it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))) * (Number(it.cantidad||0) || 0))}</td>
+          <td class="mono" data-k="costo_total" class="mono costo-total">$ ${money(((it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))) * (Number(it.cantidad||0) || 0))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1209,8 +1209,18 @@ if ((isFocused || filtro) && count > 0) {
              }
 
              if (k === "costo") {
-               // 🔒 No re-render para no perder foco
                it.costo = Math.max(0, v);
+
+               // 🔄 Recalcular costo total en vivo
+               const row = inp.closest("tr");
+               if (row) {
+                 const ct = row.querySelector(".costo-total");
+                 if (ct) {
+                   const costoU = Number(it.costo || 0);
+                   const cant = Number(it.cantidad || 0);
+                   ct.textContent = "$ " + money(costoU * cant);
+                 }
+               }
                return;
              }
            });
@@ -3375,8 +3385,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
-
 
 
 
