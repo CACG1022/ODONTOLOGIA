@@ -487,6 +487,7 @@ table td.mono {
             <tr>
               <th style="width:110px;">ID procedimiento</th>
               <th style="width:180px;">Profesional</th>
+              <th style="width:160px;">Costo</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
@@ -1103,11 +1104,11 @@ if ((isFocused || filtro) && count > 0) {
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td><input type="number" min="0" step="100" value="${obtenerCostoDeItem(it)}" data-k="costo"></td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
           <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
-          <td class="mono">$ ${money(obtenerCostoDeItem(it))}</td>
           <td class="mono">$ ${money(it.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
@@ -1117,6 +1118,7 @@ if ((isFocused || filtro) && count > 0) {
             const v = num(inp.value);
             if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
             if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
+             if (k === "costo") it.costo = Math.max(0, v);
             it.valor_total = it.cantidad * it.valor_unitario;
             renderItems();
             recalcularTotales();
@@ -2954,7 +2956,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
