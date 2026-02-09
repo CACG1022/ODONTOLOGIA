@@ -491,7 +491,7 @@ table td.mono {
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
-              <th style="width:180px;">V/Unit</th>
+              <th style="width:160px;">V/Unit</th>
               <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
@@ -1113,17 +1113,33 @@ if ((isFocused || filtro) && count > 0) {
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
         tr.querySelectorAll("input").forEach(inp => {
-          inp.addEventListener("input", () => {
-            const k = inp.dataset.k;
-            const v = num(inp.value);
-            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
-            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
-             if (k === "costo") it.costo = Math.max(0, v);
-            it.valor_total = it.cantidad * it.valor_unitario;
-            renderItems();
-            recalcularTotales();
-          });
-        });
+           inp.addEventListener("input", () => {
+             const k = inp.dataset.k;
+             const v = num(inp.value);
+
+             if (k === "cantidad") {
+               it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+               it.valor_total = it.cantidad * it.valor_unitario;
+               renderItems();
+               recalcularTotales();
+               return;
+             }
+
+             if (k === "valor_unitario") {
+               it.valor_unitario = Math.max(0, v);
+               it.valor_total = it.cantidad * it.valor_unitario;
+               renderItems();
+               recalcularTotales();
+               return;
+             }
+
+             if (k === "costo") {
+               // 🔒 No re-render para no perder foco
+               it.costo = Math.max(0, v);
+               return;
+             }
+           });
+         });
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
@@ -2956,6 +2972,7 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
 
 
 
