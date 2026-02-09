@@ -485,11 +485,13 @@ table td.mono {
         <table>
           <thead>
             <tr>
+              <th style="width:110px;">ID procedimiento</th>
               <th style="width:180px;">Profesional</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
               <th style="width:160px;">V/Unit</th>
+              <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -1093,7 +1095,7 @@ if ((isFocused || filtro) && count > 0) {
       const tbody = $("tbody-items");
       tbody.innerHTML = "";
       if (state.items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" class="empty">Aún no has agregado procedimientos.</td></tr>`;
         return;
       }
       for (const it of state.items){
@@ -2952,6 +2954,8 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
 
 
 
