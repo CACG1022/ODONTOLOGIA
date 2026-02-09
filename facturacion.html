@@ -276,872 +276,2412 @@
     .modal-head .title{ font-weight: 900; }
     .modal-body{
       padding: 12px 14px;
-      max-height: 540px;
-      overflow-y: auto;
-    }
-    /* ✅ Tabla con scroll en modal Facturas generadas */
-    .modal-table{
-      overflow-y: auto;
-      max-height: 420px;
-    }
-    .modal-table table{ width:100%; border-collapse: collapse; }
-    .modal-table th, .modal-table td{
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--line);
-      text-align:left;
-      font-size: 12px;
-    }
-    .modal-table th{
-      background: #fafafa;
-      color: var(--muted);
-      position: sticky;
-      top: 0;
-      z-index: 1;
-    }
-    .modal-table td button{
-      padding: 6px 10px;
-      font-size: 11px;
-      border:1px solid var(--line);
       background:#fff;
-      border-radius: 6px;
-      cursor:pointer;
     }
-    .modal-table td button:hover{ background:#f9fafb; }
-    .modal-foot{
-      padding: 10px 14px;
-      border-top: 1px solid var(--line);
+    .modal-tools{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      align-items:flex-end;
+      margin-bottom: 10px;
+    }
+    .modal-tools .ctrl{ min-width: 220px; }
+    .modal-table{
+      max-height: 60vh;
+      overflow:auto;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    /* ✅ resumen total facturado */
+    .modal-summary{
+      margin-top: 10px;
       display:flex;
       justify-content:flex-end;
-      gap:8px;
+      gap: 10px;
+      flex-wrap:wrap;
+      align-items:center;
     }
-    .modal-foot .btn{
-      padding: 9px 12px;
-      font-size: 13px;
+    .summary-chip{
       border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
       background:#fff;
-      border-radius: 8px;
-      cursor:pointer;
-      font-weight:800;
+      box-shadow: 0 3px 10px rgba(0,0,0,.03);
+      font-size: 12px;
+      color: var(--muted);
+      white-space:nowrap;
     }
-    .modal-foot .btn.primary{
-      background: var(--brand);
-      color:#fff;
-      border-color: var(--brand);
+    .summary-chip b{ color: var(--text); }
+    @media (max-width: 900px){
+      .grid{ grid-template-columns: repeat(2, 1fr); }
     }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+      .actions-bottom{ justify-content:flex-start; }
+      .actions-bottom .btns{ width:100%; justify-content:flex-start; }
+    }
+  
+  .oculto{display:none!important;}
 
-    /* ✅ Hack para scroll en ventana modal maximizada */
-    .modal-card.maximized .modal-table{
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      min-height: 0;
-    }
-    .modal-card.maximized .modal-table>div{
-      flex: 1;
-      overflow-y: auto;
-    }
+  /* ================================
+   COMPACTAR FILAS DE PROCEDIMIENTOS
+   ================================ */
 
-  </style>
+/* Reducir padding de filas */
+table td {
+  padding: 8px 12px;   /* antes ~12px 16px */
+  vertical-align: middle;
+}
+
+/* Encabezados un poco más compactos */
+table th {
+  padding: 8px 12px;
+}
+
+/* Inputs dentro de la tabla */
+table td input {
+  padding: 6px 8px;
+  height: 34px;
+  font-size: 13px;
+}
+
+/* Botón quitar más compacto */
+table td .btn.small,
+table td button {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+/* Texto del procedimiento */
+table td:nth-child(2) {
+  line-height: 1.2;
+}
+
+/* Columna de totales */
+table td.mono {
+  font-size: 13px;
+}
+
+</style>
 </head>
 <body>
-
-<!-- BARRA SUPERIOR: Logo + Usuario/Rol -->
-<div class="topbar">
-  <div class="brand">
-    <h1>💊 Facturación - Clínica Odontológica</h1>
-  </div>
-  <div class="meta">
-    <!-- ✅ Chip multi-línea: Usuario + Rol -->
-    <div class="chip">
-      <div class="line">
-        <small>Usuario:</small>
-        <b id="user_email">Cargando...</b>
-      </div>
-      <div class="line">
-        <small>Rol:</small>
-        <span id="user_role">...</span>
-      </div>
+  <div class="topbar">
+    <div class="brand">
+      <h1>CLÍNICA ODONTOLÓGICA — Facturación6</h1>
     </div>
-    <button class="btn danger" onclick="logout()">Cerrar sesión</button>
-  </div>
-</div>
-
-<div class="container">
-
-  <!-- ENCABEZADO -->
-  <div class="header">
-    <div class="title">📋 Crear nueva factura</div>
-    <button class="btn" onclick="abrirModalFacturas()">📁 Ver facturas guardadas</button>
-  </div>
-
-  <!-- SECCIÓN 1: Datos Factura -->
-  <div class="section">
-    <div class="grid">
-      <div class="ctrl">
-        <label>N° Factura</label>
-        <input type="text" id="factura_numero" placeholder="F-001" />
+    <div class="meta">
+      <div class="chip">
+        <div class="line"><span>Usuario:</span> <b id="user-email">—</b></div>
+        <div class="line"><small>Rol:</small> <b id="user-role">—</b></div>
       </div>
-      <div class="ctrl">
-        <label>Profesional</label>
-        <select id="profesional">
-          <option value="">Seleccione...</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <label>Método de pago</label>
-        <select id="metodo_pago">
-          <option value="">Seleccione...</option>
-          <option value="Efectivo">Efectivo</option>
-          <option value="Tarjeta">Tarjeta</option>
-          <option value="Transferencia">Transferencia</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <label>Estado pago</label>
-        <select id="estado_pago">
-          <option value="pendiente">Pendiente</option>
-          <option value="pagado">Pagado</option>
-          <option value="parcial">Parcial</option>
-        </select>
-      </div>
-      <div class="ctrl">
-        <label>Referencia</label>
-        <input type="text" id="referencia" placeholder="Num. transacción" />
-      </div>
-      <div class="ctrl">
-        <label>¿Aplica IVA?</label>
-        <select id="aplica_iva" onchange="toggleIva()">
-          <option value="no">No</option>
-          <option value="si">Sí</option>
-        </select>
-      </div>
-      <div class="ctrl" id="wrap_iva_porc" style="display:none;">
-        <label>IVA %</label>
-        <input type="number" id="iva_porcentaje" placeholder="19" value="19" />
-      </div>
+      <button class="btn danger" id="btn-logout" type="button">Cerrar sesión</button>
     </div>
   </div>
-
-  <!-- SECCIÓN 2: Datos Paciente -->
-  <div class="section">
-    <div class="grid">
-      <div class="ctrl">
-        <label>Cédula Paciente</label>
-        <input type="text" id="paciente_cedula" placeholder="1234567890" />
-      </div>
-      <div class="ctrl">
-        <label>Nombre Paciente</label>
-        <input type="text" id="paciente_nombre" placeholder="" readonly />
-      </div>
-      <div class="ctrl">
-        <label>Correo Paciente</label>
-        <input type="text" id="paciente_correo" placeholder="" readonly />
-      </div>
-      <div class="ctrl">
-        <label>Tipo Usuario</label>
-        <input type="text" id="paciente_tipo_usuario" placeholder="" readonly />
-      </div>
-      <div class="ctrl">
-        <label>EPS</label>
-        <input type="text" id="paciente_eps" placeholder="" readonly />
+  <div class="container">
+    <div class="header">
+      <div class="title">Nueva factura</div>
+      <div class="row-actions" style="margin-top:0;">
+        <button class="btn" id="btn-back" type="button">⬅ Volver</button>
+        <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
       </div>
     </div>
-    <div class="row-actions">
-      <button class="btn primary" id="btn-buscar" onclick="buscarPaciente()">🔍 Autocompletar datos</button>
-    </div>
-  </div>
-
-  <!-- SECCIÓN 3: Procedimientos -->
-  <div class="section" style="padding:0; border:0;">
-    <div style="max-height:420px; overflow-y:auto;">
-      <table id="tabla-procedimientos">
-        <thead>
-          <tr>
-            <th style="width:80px;">ID Proc</th>
-            <th>Profesional</th>
-            <th style="width:100px;">CUPS</th>
-            <th>Procedimiento</th>
-            <th style="width:100px;">Cant</th>
-            <th style="width:130px;">Costo</th>
-            <th style="width:130px;">Vr.Unit</th>
-            <th style="width:130px;">Total</th>
-            <th class="actions">Acciones</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-procedimientos">
-          <!-- Filas dinámicas -->
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="section">
-    <button class="btn primary" onclick="agregarFila()">➕ Agregar procedimiento</button>
-  </div>
-
-  <!-- TOTALES -->
-  <div class="totales">
-    <div class="box">
-      <div><span>Subtotal:</span> <b id="span_subtotal" class="mono">$ 0</b></div>
-      <div id="row_iva" style="display:none;"><span>IVA:</span> <b id="span_iva" class="mono">$ 0</b></div>
-      <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:6px;">
-        <span style="font-weight:800;">TOTAL:</span>
-        <b id="span_total" style="font-size:16px;" class="mono">$ 0</b>
-      </div>
-    </div>
-  </div>
-
-  <!-- OBSERVACIONES -->
-  <div class="section">
-    <label style="font-size:12px; color:var(--muted); margin-bottom:6px; display:block; font-weight:700;">Observaciones</label>
-    <textarea id="observacion" rows="3" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:10px; font-size:14px;"></textarea>
-  </div>
-
-  <!-- ACCIONES FINALES -->
-  <div class="actions-bottom">
-    <div class="left-note">
-      💡 <b>Tip:</b> Al guardar la factura se registra en Supabase y se genera un PDF visualizable.
-    </div>
-    <div class="btns">
-      <button class="btn" onclick="limpiarFormulario()">🔄 Limpiar</button>
-      <button class="btn primary" onclick="guardarFactura()">💾 Guardar factura</button>
-    </div>
-  </div>
-
-  <!-- FOOTER -->
-  <div class="footer">
-    <div>v2.8.1 - Facturación avanzada con IVA, Facturas guardadas y Facturación electrónica.</div>
-    <div class="mono">Supabase + SheetJS</div>
-  </div>
-
-</div>
-
-<!-- TOAST -->
-<div id="toast" data-type="ok"></div>
-
-<!-- ✅ MODAL: FACTURAS GENERADAS -->
-<div class="modal" id="modal_facturas">
-  <div class="modal-card" id="modal_facturas_card">
-    <div class="modal-head">
-      <div class="title">📁 Facturas guardadas</div>
-      <div style="display:flex; gap:8px; align-items:center;">
-        <button class="btn small" onclick="toggleMaximizarModal()">🔲 Maximizar</button>
-        <button class="btn small danger" onclick="cerrarModalFacturas()">✖</button>
-      </div>
-    </div>
-    <div class="modal-body" id="modal_facturas_body">
-      <div class="modal-table" id="modal_facturas_table">
-        <div>
-          <table>
-            <thead>
-              <tr>
-                <th>N° Factura</th>
-                <th>Paciente</th>
-                <th>Profesional</th>
-                <th>Total</th>
-                <th>Método Pago</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="tbody_facturas">
-              <!-- Filas dinámicas -->
-            </tbody>
-          </table>
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Fecha</label>
+          <input id="fecha" type="date">
+        </div>
+        <div class="ctrl">
+          <label>No. factura</label>
+          <input id="numero_factura" type="text">
+        </div>
+        <div class="ctrl">
+          <label>Tipo usuario</label>
+          <select id="tipo_usuario">
+            <option>Particular</option>
+            <option>Contributivo</option>
+            <option>Subsidiado</option>
+          </select>
+        </div>
+        <div class="ctrl">
+          <label>EPS (si aplica)</label>
+          <input id="eps" type="text" placeholder="Opcional">
         </div>
       </div>
     </div>
-    <div class="modal-foot">
-      <button class="btn" onclick="cerrarModalFacturas()">Cerrar</button>
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Cédula paciente</label>
+          <input id="paciente_cedula" inputmode="numeric" placeholder="Solo números">
+          <div style="margin-top:6px; font-size:12px; color:var(--muted);" id="paciente-hint"></div>
+        </div>
+        <div class="ctrl">
+          <label>Nombre paciente</label>
+          <input id="paciente_nombre" type="text" placeholder="Nombres y apellidos">
+        </div>
+        <div class="ctrl">
+          <label>Profesional</label>
+          <select id="profesional"></select>
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
+        </div>
+        <div class="ctrl" style="grid-column: span 2;">
+          <label>Correo paciente</label>
+          <input id="paciente_correo" type="email" placeholder="correo@ejemplo.com">
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl">
+          <label>Método de pago</label>
+          <select id="metodo_pago">
+            <option value="Efectivo" selected>Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Nequi">Nequi</option>
+            <option value="Daviplata">Daviplata</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+        <div class="ctrl oculto">
+          <label>Estado de pago</label>
+          <select id="pagada">
+            <option value="si" selected>Pagada</option>
+            <option value="no">Pendiente</option>
+          </select>
+        </div>
+        <div class="ctrl oculto" style="grid-column: span 2;">
+          <label>Referencia / Comprobante (opcional)</label>
+          <input id="referencia_pago" type="text" placeholder="Ej: #transferencia, voucher, último 4 dígitos, etc.">
+        </div>
+        <div class="ctrl" style="grid-column: span 4;">
+          <label>Observación (opcional)</label>
+          <input id="observacion" type="text" placeholder="Ej: referencia/nota/observación...">
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="grid">
+        <div class="ctrl" style="grid-column: span 2; position:relative;">
+          <label>Agregar procedimiento</label>
+          <input id="sel-proc-input" type="text" placeholder="Escribe para buscar procedimiento..." autocomplete="off"/>
+          <select id="sel-proc" class="oculto"></select>
+          <div id="proc-dropdown" style="position:absolute; top:72px; left:0; right:0; z-index:20; background:#fff; border:1px solid var(--line); border-radius:10px; max-height:260px; overflow:auto; display:none;"></div>
+        </div>
+        <div class="ctrl">
+          <label>Cantidad</label>
+          <input id="cantidad" type="number" min="1" step="1" value="1">
+        </div>
+        <div class="ctrl">
+          <label>&nbsp;</label>
+          <button class="btn primary" id="btn-add" type="button">➕ Agregar</button>
+        </div>
+      </div>
+      <div style="margin-top:12px; overflow:auto;">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:180px;">Profesional</th>
+              <th style="width:140px;">CUPS</th>
+              <th>Procedimiento</th>
+              <th style="width:110px;">Cant</th>
+              <th style="width:160px;">V/Unit</th>
+              <th style="width:160px;">Total</th>
+              <th style="width:120px;"></th>
+            </tr>
+          </thead>
+          <tbody id="tbody-items"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="totales">
+      <div class="box">
+        <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
+        <div style="align-items:flex-start;">
+          <span>Descuento</span>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="color:var(--muted); font-weight:700;">%</span>
+              <input id="descuento_pct" type="number" min="0" max="100" step="0.01" value="0" style="width:140px; text-align:right;">
+            </div>
+            <div class="mono" style="color:var(--muted);">Desc: $ <span id="descuento_valor">0</span></div>
+          </div>
+        </div>
+        <div>
+          <span>¿Aplica IVA?</span>
+          <b>
+            <select id="iva_aplica" style="width:140px;">
+              <option value="no">No</option>
+              <option value="si" selected>Sí</option>
+            </select>
+          </b>
+        </div>
+        <div style="align-items:flex-start;">
+          <span>IVA</span>
+          <div style="display:flex; flex-direction:column; gap:6px; align-items:flex-end;">
+            <div style="display:flex; gap:8px; align-items:center;">
+              <span style="color:var(--muted); font-weight:700;">%</span>
+              <input id="iva_porcentaje" type="number" min="0" step="0.01" value="19" style="width:140px; text-align:right;">
+            </div>
+            <div class="mono" style="color:var(--muted);">IVA: $ <span id="iva_valor">0</span></div>
+          </div>
+        </div>
+        <div>
+          <span>Copago</span>
+          <b>$ <input id="copago" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+        </div>
+        <div>
+          <span>Cuota moderadora</span>
+          <b>$ <input id="cuota_moderadora" type="number" min="0" step="100" value="0" style="width:140px; text-align:right;"></b>
+        </div>
+        <div style="border-top:1px solid var(--line); margin-top:6px; padding-top:8px;">
+          <span>Total</span><b>$ <span id="total">0</span></b>
+        </div>
+      </div>
+  
+    </div>
+    <div class="actions-bottom">
+      <div class="btns">
+        <button class="btn primary" id="btn-guardar" type="button">💾 Guardar factura</button>
+        <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
+        <button type="button" id="btn-cargar-plan" style=" background:#0ea5e9; color:#fff; font-weight:800;
+        padding:10px 14px;
+        border-radius:10px;
+        border:none;
+        cursor:pointer;
+        box-shadow:0 6px 14px rgba(0,0,0,.18);
+        margin-bottom:10px;
+  "
+>
+  📥 Cargar plan de tratamiento
+</button>
+      </div>
+    </div>
+
+
+    
+
+    
+    <div class="footer">
+      <div class="status" id="status"></div>
+      <div>© <span id="year"></span></div>
     </div>
   </div>
-</div>
-
-<!-- ✅ IFRAME VISTA PREVIA FACTURA -->
-<div class="modal" id="modal_vista_factura">
-  <div class="modal-card" style="width:min(900px,100%);">
-    <div class="modal-head">
-      <div class="title">📄 Vista previa factura</div>
-      <button class="btn small danger" onclick="cerrarVistaFactura()">✖</button>
-    </div>
-    <div class="modal-body" style="padding:0; max-height:none; height:70vh;">
-      <iframe id="vf_iframe" style="width:100%; height:100%; border:0;"></iframe>
-    </div>
-    <div class="modal-foot">
-      <button class="btn" onclick="descargarPDFFactura()">⬇ Descargar PDF</button>
-      <button class="btn primary" onclick="enviarFacturacionElectronica()">📤 Enviar a Facturación Electrónica</button>
-      <button class="btn" onclick="cerrarVistaFactura()">Cerrar</button>
+  <div id="toast" data-type="ok"></div>
+  <div class="modal" id="modal-facturas" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="title">Facturas generadas</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" id="btn-export-excel" type="button">⬇ Excel</button>
+          <button class="btn" id="btn-refresh-facturas" type="button">🔄 Actualizar</button>
+          <button class="btn" id="btn-max-modal-facturas" type="button" title="Maximizar">⛶</button>
+          <button class="btn danger" id="btn-cerrar-modal" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tools">
+          <div class="ctrl">
+            <label>Buscar (N° factura o cédula)</label>
+            <input id="buscar_facturas" type="text" placeholder="Ej: FAC-2026... o 123456789">
+          </div>
+          <div class="ctrl">
+            <label>Fecha desde</label>
+            <input id="fecha_desde" type="date">
+          </div>
+          <div class="ctrl">
+            <label>Fecha hasta</label>
+            <input id="fecha_hasta" type="date">
+          </div>
+          <div class="ctrl">
+            <label>Estado</label>
+            <select id="estado_facturas">
+              <option value="todos" selected>Todos</option>
+              <option value="pagada">Pagada</option>
+              <option value="pendiente">Pendiente</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>Mostrar</label>
+            <select id="limite_facturas">
+              <option value="25">25</option>
+              <option value="50" selected>50</option>
+              <option value="100">100</option>
+            </select>
+          </div>
+          <div class="ctrl">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btn-buscar-facturas" type="button">🔎 Buscar</button>
+          </div>
+        </div>
+        <div class="modal-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Fecha</th>
+                <th style="width:220px;">N° Factura</th>
+                <th>Paciente</th>
+                <th style="width:160px;">Cédula</th>
+                <th style="width:140px;">Pago</th>
+                <th style="width:160px;">Total</th>
+                <th style="width:170px;">Saldo pendiente</th>
+                <th style="width:260px;">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-facturas">
+              <tr><td colspan="8" class="empty">Cargando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-summary">
+          <div class="summary-chip">
+            Total facturado (filtro): <b>$ <span id="total_facturado">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Cantidad: <b><span id="count_facturas">0</span></b>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Tip: Puedes imprimir una factura desde “🖨 Imprimir” en acciones.
+        </div>
+      </div>
     </div>
   </div>
-</div>
-
-<!-- ================== SCRIPTS ================== -->
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const SUPABASE_URL = "https://rysitmepnybtzywxugwa.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5c2l0bWVwbnlidHp5d3h1Z3dhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1NDY1NjIsImV4cCI6MjA1MDEyMjU2Mn0.bFXqXgR2gZv1nj4R5y3JEqxKndjnb5w8xOi5J0zt588";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-let USER = null;
-let ROLE = null;
-
-// ========== AUTH & ROLES ==========
-async function checkAuth() {
-  const { data, error } = await sb.auth.getSession();
-  if (error || !data?.session) {
-    window.location.href = "login.html";
-    return;
-  }
-  USER = data.session.user;
-  document.getElementById("user_email").textContent = USER.email || "Sin email";
-  await loadUserRole();
-  await cargarProfesionales();
-}
-
-async function loadUserRole() {
-  if (!USER) return;
-  const { data, error } = await sb
-    .from("users")
-    .select("role")
-    .eq("email", USER.email)
-    .single();
-  if (data) {
-    ROLE = data.role || "user";
-    document.getElementById("user_role").textContent = ROLE;
-  } else {
-    ROLE = "user";
-    document.getElementById("user_role").textContent = "user";
-  }
-}
-
-async function logout() {
-  await sb.auth.signOut();
-  window.location.href = "login.html";
-}
-
-// ========== CARGAR PROFESIONALES ==========
-async function cargarProfesionales() {
-  const sel = document.getElementById("profesional");
-  const { data, error } = await sb.from("profesionales").select("*");
-  if (error) {
-    console.error("Error cargando profesionales:", error);
-    return;
-  }
-  sel.innerHTML = '<option value="">Seleccione...</option>';
-  (data || []).forEach(p => {
-    const opt = document.createElement("option");
-    opt.value = p.nombre;
-    opt.textContent = p.nombre;
-    sel.appendChild(opt);
-  });
-}
-
-// ========== BUSCAR PACIENTE ==========
-async function buscarPaciente() {
-  const cedula = document.getElementById("paciente_cedula").value.trim();
-  if (!cedula) {
-    showToast("Ingrese una cédula", "warn");
-    return;
-  }
-  const { data, error } = await sb
-    .from("pacientes")
-    .select("*")
-    .eq("cedula", cedula)
-    .maybeSingle();
-  if (error) {
-    showToast("Error al buscar paciente: " + error.message, "err");
-    return;
-  }
-  if (!data) {
-    showToast("Paciente no encontrado", "warn");
-    return;
-  }
-  document.getElementById("paciente_nombre").value = data.nombre || "";
-  document.getElementById("paciente_correo").value = data.correo || "";
-  document.getElementById("paciente_tipo_usuario").value = data.tipo_usuario || "";
-  document.getElementById("paciente_eps").value = data.eps || "";
-  showToast("✅ Datos cargados", "ok");
-}
-
-// ========== TOGGLE IVA ==========
-function toggleIva() {
-  const aplicaIva = document.getElementById("aplica_iva").value;
-  const wrap = document.getElementById("wrap_iva_porc");
-  const rowIva = document.getElementById("row_iva");
-  if (aplicaIva === "si") {
-    wrap.style.display = "block";
-    rowIva.style.display = "flex";
-  } else {
-    wrap.style.display = "none";
-    rowIva.style.display = "none";
-  }
-  calcularTotales();
-}
-
-// ========== AGREGAR FILA PROCEDIMIENTO ==========
-let filaId = 0;
-function agregarFila() {
-  filaId++;
-  const tbody = document.getElementById("tbody-procedimientos");
-  const tr = document.createElement("tr");
-  tr.dataset.fila = filaId;
-  tr.innerHTML = `
-    <td><input type="number" class="id-proc" placeholder="ID" onchange="buscarCostoProcedimiento(this)" /></td>
-    <td><input type="text" class="prof" placeholder="Ej: Dr. Pérez" /></td>
-    <td><input type="text" class="cups" placeholder="CUPS" /></td>
-    <td><input type="text" class="proc" placeholder="Procedimiento" /></td>
-    <td><input type="number" class="cant" value="1" min="1" onchange="calcularTotales()" /></td>
-    <td><input type="number" class="costo" placeholder="Costo" readonly style="background:#f9fafb;" /></td>
-    <td><input type="number" class="vr_unit" placeholder="Vr. unitario" onchange="calcularTotales()" /></td>
-    <td><input type="number" class="total" placeholder="Total" readonly style="background:#f9fafb;" /></td>
-    <td class="actions">
-      <button class="btn danger small" onclick="eliminarFila(${filaId})">Quitar</button>
-    </td>
-  `;
-  tbody.appendChild(tr);
-}
-
-// ========== NUEVA FUNCIÓN: BUSCAR COSTO DEL PROCEDIMIENTO EN SUPABASE ==========
-async function buscarCostoProcedimiento(inputElement) {
-  const idProc = inputElement.value.trim();
-  if (!idProc) return;
   
-  const tr = inputElement.closest("tr");
-  const inputCosto = tr.querySelector(".costo");
-  
-  try {
-    const { data, error } = await sb
-      .from("procedimientos_precios")
-      .select("costo, procedimiento, codigo_cups, especialidad, profesional")
-      .eq("id", idProc)
-      .maybeSingle();
-    
-    if (error) {
-      console.error("Error buscando procedimiento:", error);
-      showToast("Error al buscar procedimiento", "err");
-      return;
+  <div class="modal" id="modal-verfactura" aria-hidden="true">
+    <div class="modal-card" style="max-width:1100px;">
+      <div class="modal-head">
+        <div class="title">Factura</div>
+        <div class="modal-tools">
+          <button class="btn" id="btn-imprimir-verfactura" type="button">🖨 Imprimir</button>
+          <button class="btn primary" id="btn-fe-electronica" type="button" onclick="enviarFacturacionElectronica()">⚡ Facturación electrónica</button>
+          <button class="btn danger" id="btn-cerrar-modal-verfactura" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="vf-frame" style="border:1px solid var(--line); border-radius:12px; overflow:hidden;">
+          <iframe id="vf_iframe" title="Factura" style="width:100%; height:80vh; border:0; background:#fff;" sandbox="allow-same-origin allow-scripts"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="modal" id="modal-abonos" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-head">
+        <div class="title">Abonos de la factura</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+          <button class="btn" id="btn-refresh-abonos" type="button">🔄 Actualizar</button>
+          <button class="btn danger" id="btn-cerrar-modal-abonos" type="button">✖ Cerrar</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="modal-tools">
+          <div class="ctrl" style="min-width:220px;">
+            <label>Fecha</label>
+            <input id="abono_fecha" type="date">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>Monto</label>
+            <input id="abono_monto" type="number" min="0" step="100" placeholder="0">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>Método</label>
+            <select id="abono_metodo">
+              <option value="Efectivo" selected>Efectivo</option>
+              <option value="Transferencia">Transferencia</option>
+              <option value="Tarjeta">Tarjeta</option>
+              <option value="Nequi">Nequi</option>
+              <option value="Daviplata">Daviplata</option>
+              <option value="Otro">Otro</option>
+            </select>
+          </div>
+          <div class="ctrl" style="min-width:260px;">
+            <label>Referencia (opcional)</label>
+            <input id="abono_referencia" type="text" placeholder="Ej: #transferencia, voucher, etc.">
+          </div>
+          <div class="ctrl" style="flex:1 1 320px; min-width:260px;">
+            <label>Observación (opcional)</label>
+            <input id="abono_observacion" type="text" placeholder="Nota del abono">
+          </div>
+          <div class="ctrl" style="min-width:220px;">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btn-agregar-abono" type="button">➕ Agregar abono</button>
+          </div>
+        </div>
+        <div class="modal-table">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:160px;">Fecha</th>
+                <th style="width:160px;">Monto</th>
+                <th style="width:180px;">Método</th>
+                <th>Referencia</th>
+                <th>Observación</th>
+                <th style="width:120px;">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody-abonos">
+              <tr><td colspan="7" class="empty">Selecciona una factura...</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="modal-summary">
+          <div class="summary-chip">
+            Total factura: <b>$ <span id="abonos_total_factura">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Total abonado: <b>$ <span id="abonos_total_abonado">0</span></b>
+          </div>
+          <div class="summary-chip">
+            Saldo: <b>$ <span id="abonos_saldo">0</span></b>
+          </div>
+        </div>
+        <div class="mono" style="margin-top:10px; color:var(--muted);">
+          Nota: Para guardar abonos en Supabase crea la tabla <b>abonos</b>. Si no existe, el sistema te mostrará un aviso.
+        </div>
+      </div>
+    </div>
+  </div>
+  <script type="module">
+    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co".trim();
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE".trim();
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
+    const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+    const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_3973b230e8aa49869f3127b467fb3e6e~mv2.png/v1/fill/w_426,h_426,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%20LEIDI%20SILVA%202%20(1).png";
+    const N8N_BUSCAR_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8";
+    const ALLOWED_ROLES = ["admin", "auxiliar"];
+    const state = {
+      session: null,
+      role: null,
+      procedimientos: [],
+      profesionales: [],
+      items: [],
+      facturaGuardada: null,
+      _debounce: null,
+      _lastCedula: "",
+      facturas: [],
+      abonos: [],
+      facturaAbonos: null
+    };
+    const $ = (id) => document.getElementById(id);
+    function toast(msg, type="ok"){
+      const el = $("toast");
+      el.textContent = msg;
+      el.dataset.type = type;
+      el.classList.add("show");
+      clearTimeout(window.__t);
+      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
     }
-    
-    if (!data) {
-      showToast("Procedimiento no encontrado con ID: " + idProc, "warn");
-      inputCosto.value = "";
-      return;
+    function setStatus(msg){
+      const el = $("status");
+      if (el) el.textContent = msg || "";
     }
-    
-    // Llenar el campo de costo
-    inputCosto.value = data.costo || "";
-    
-    // Opcional: llenar otros campos si están vacíos
-    const inputProc = tr.querySelector(".proc");
-    const inputCups = tr.querySelector(".cups");
-    const inputProf = tr.querySelector(".prof");
-    const inputVrUnit = tr.querySelector(".vr_unit");
-    
-    if (!inputProc.value && data.procedimiento) {
-      inputProc.value = data.procedimiento;
+    function setHint(msg){
+      const el = $("paciente-hint");
+      if (el) el.textContent = msg || "";
     }
-    if (!inputCups.value && data.codigo_cups) {
-      inputCups.value = data.codigo_cups;
+    function money(n){
+      const x = Number(n || 0);
+      return x.toLocaleString("es-CO");
     }
-    if (!inputProf.value && data.profesional) {
-      inputProf.value = data.profesional;
+    function num(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return 0;
+      const n = Number(raw);
+      return Number.isFinite(n) ? n : 0;
     }
-    if (!inputVrUnit.value && data.costo) {
-      inputVrUnit.value = data.costo;
+    function hoyISO(){
+      const d = new Date();
+      const yyyy = d.getFullYear();
+      const mm = String(d.getMonth()+1).padStart(2,"0");
+      const dd = String(d.getDate()).padStart(2,"0");
+      return `${yyyy}-${mm}-${dd}`;
     }
-    
-    showToast("✅ Costo cargado: $" + (data.costo || 0), "ok");
-    calcularTotales();
-  } catch (err) {
-    console.error("Error en buscarCostoProcedimiento:", err);
-    showToast("Error al buscar procedimiento", "err");
+    // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
+    function parseDateYYYYMMDD(s){
+      const v = String(s || "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+      const d = new Date(v + "T00:00:00.000Z");
+      if (Number.isNaN(d.getTime())) return null;
+      return v;
+    }
+    function toISODateTimeFromYYYYMMDD(v){
+      return v ? (v + "T00:00:00.000Z") : null;
+    }
+    function generarNumeroFactura(){
+      const d = new Date();
+      const y = d.getFullYear();
+      const m = String(d.getMonth()+1).padStart(2,"0");
+      const da = String(d.getDate()).padStart(2,"0");
+      const hh = String(d.getHours()).padStart(2,"0");
+      const mi = String(d.getMinutes()).padStart(2,"0");
+      const ss = String(d.getSeconds()).padStart(2,"0");
+      return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
+    }
+    async function cargarRolActual(){
+      const email = (state.session?.user?.email || "").trim().toLowerCase();
+      const elRole = $("user-role");
+      if (!email){
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+      try{
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("role, created_at, email")
+          .eq("email", email)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (error) throw error;
+        const role = (data?.role || "").toString().trim().toLowerCase();
+        const finalRole = role || "user";
+        state.role = finalRole;
+        if (elRole) elRole.textContent = finalRole;
+        return finalRole;
+      } catch(err){
+        console.error("No se pudo leer rol en profiles:", err);
+        state.role = "user";
+        if (elRole) elRole.textContent = "user";
+        return "user";
+      }
+    }
+    function getModuloCandidates(mod){
+  const base = String(mod || "").toLowerCase().trim();
+  const withHtml = base.endsWith(".html") ? base : base + ".html";
+  const undersc = base.replaceAll("-", "_");
+  const underscHtml = undersc.endsWith(".html") ? undersc : undersc + ".html";
+  return Array.from(new Set([base, withHtml, undersc, underscHtml]));
+}
+async function validarPermisoDesdeTabla(){
+  const modulo = "facturacion";
+  const role = (state.role || "user").toLowerCase().trim();
+  const candidates = getModuloCandidates(modulo);
+  try{
+    const { data, error } = await supabase
+      .from("modulos_permisos")
+      .select("admin, doctor, auxiliar, paciente, modulo")
+      .in("modulo", candidates);
+    if (error) throw error;
+    const permiso = data?.[0];
+    if (!permiso || permiso[role] !== true){
+      window.alert("⛔ No tienes permiso para acceder a este módulo.");
+      window.location.href = INDEX_URL;
+      return false;
+    }
+    return true;
+  }catch(err){
+    console.error("Error validando permisos:", err);
+    window.alert("⛔ No se pudo validar permisos de acceso.");
+    window.location.href = INDEX_URL;
+    return false;
   }
 }
-
-// ========== ELIMINAR FILA ==========
-function eliminarFila(id) {
-  const tr = document.querySelector(`tr[data-fila="${id}"]`);
-  if (tr) {
-    tr.remove();
-    calcularTotales();
-  }
+    async function validarAccesoPorRol(){
+  return await validarPermisoDesdeTabla();
 }
-
-// ========== CALCULAR TOTALES ==========
-function calcularTotales() {
-  const filas = document.querySelectorAll("#tbody-procedimientos tr");
-  let subtotal = 0;
-  filas.forEach(tr => {
-    const cant = parseFloat(tr.querySelector(".cant").value) || 0;
-    const vr = parseFloat(tr.querySelector(".vr_unit").value) || 0;
-    const tot = cant * vr;
-    tr.querySelector(".total").value = tot;
-    subtotal += tot;
-  });
-
-  const aplicaIva = document.getElementById("aplica_iva").value;
-  let ivaVal = 0;
-  if (aplicaIva === "si") {
-    const ivaPorcentaje = parseFloat(document.getElementById("iva_porcentaje").value) || 0;
-    ivaVal = (subtotal * ivaPorcentaje) / 100;
-  }
-  const total = subtotal + ivaVal;
-
-  document.getElementById("span_subtotal").textContent = "$ " + subtotal.toLocaleString("es-CO");
-  document.getElementById("span_iva").textContent = "$ " + ivaVal.toLocaleString("es-CO");
-  document.getElementById("span_total").textContent = "$ " + total.toLocaleString("es-CO");
-}
-
-// ========== LIMPIAR FORMULARIO ==========
-function limpiarFormulario() {
-  document.getElementById("factura_numero").value = "";
-  document.getElementById("profesional").value = "";
-  document.getElementById("metodo_pago").value = "";
-  document.getElementById("estado_pago").value = "pendiente";
-  document.getElementById("referencia").value = "";
-  document.getElementById("aplica_iva").value = "no";
-  document.getElementById("iva_porcentaje").value = "19";
-  document.getElementById("paciente_cedula").value = "";
-  document.getElementById("paciente_nombre").value = "";
-  document.getElementById("paciente_correo").value = "";
-  document.getElementById("paciente_tipo_usuario").value = "";
-  document.getElementById("paciente_eps").value = "";
-  document.getElementById("observacion").value = "";
-  document.getElementById("tbody-procedimientos").innerHTML = "";
-  toggleIva();
-  calcularTotales();
-}
-
-// ========== GUARDAR FACTURA ==========
-async function guardarFactura() {
-  const facturaNumero = document.getElementById("factura_numero").value.trim();
-  const profesional = document.getElementById("profesional").value;
-  const metodoPago = document.getElementById("metodo_pago").value;
-  const estadoPago = document.getElementById("estado_pago").value;
-  const referencia = document.getElementById("referencia").value.trim();
-  const aplicaIva = document.getElementById("aplica_iva").value;
-  const ivaPorcentaje = aplicaIva === "si" ? parseFloat(document.getElementById("iva_porcentaje").value) : 0;
-  const observacion = document.getElementById("observacion").value.trim();
-
-  const pacienteCedula = document.getElementById("paciente_cedula").value.trim();
-  const pacienteNombre = document.getElementById("paciente_nombre").value.trim();
-  const pacienteCorreo = document.getElementById("paciente_correo").value.trim();
-  const pacienteTipoUsuario = document.getElementById("paciente_tipo_usuario").value.trim();
-  const pacienteEps = document.getElementById("paciente_eps").value.trim();
-
-  if (!facturaNumero) {
-    showToast("Falta el número de factura", "warn");
-    return;
-  }
-  if (!profesional) {
-    showToast("Falta seleccionar profesional", "warn");
-    return;
-  }
-  if (!pacienteCedula || !pacienteNombre) {
-    showToast("Falta información del paciente", "warn");
-    return;
-  }
-
-  const filas = document.querySelectorAll("#tbody-procedimientos tr");
-  if (filas.length === 0) {
-    showToast("Agregue al menos un procedimiento", "warn");
-    return;
-  }
-
-  const procedimientos = [];
-  filas.forEach(tr => {
-    const idProc = tr.querySelector(".id-proc").value.trim();
-    const prof = tr.querySelector(".prof").value.trim();
-    const cups = tr.querySelector(".cups").value.trim();
-    const proc = tr.querySelector(".proc").value.trim();
-    const cant = parseFloat(tr.querySelector(".cant").value) || 0;
-    const costo = parseFloat(tr.querySelector(".costo").value) || 0;
-    const vr = parseFloat(tr.querySelector(".vr_unit").value) || 0;
-    const tot = parseFloat(tr.querySelector(".total").value) || 0;
-    procedimientos.push({
-      id_procedimiento: idProc || null,
-      profesional: prof || null,
-      cups: cups || null,
-      procedimiento: proc || null,
-      cantidad: cant,
-      costo: costo,
-      valor_unitario: vr,
-      total: tot
+    async function proteger(){
+      const { data: { session } } = await supabase.auth.getSession();
+      if(!session){
+        window.location.href = LOGIN_URL;
+        return false;
+      }
+      state.session = session;
+      const email = (session.user?.email || "Usuario").toString();
+      $("user-email").textContent = email;
+      await cargarRolActual();
+      const okRole = await validarAccesoPorRol();
+      if (!okRole) return false;
+      return true;
+    }
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log("AUTH EVENT:", event, "SESSION:", !!session);
+      if ((event === "SIGNED_OUT" || event === "USER_DELETED") && !session) {
+        window.location.href = LOGIN_URL;
+      }
+      if ((event === "SIGNED_IN" || event === "TOKEN_REFRESHED") && session) {
+        state.session = session;
+        $("user-email").textContent = session.user?.email || "Usuario";
+        cargarRolActual().then(()=> validarAccesoPorRol());
+      }
     });
-  });
+    async function cerrarSesion(){
+      try { await supabase.auth.signOut(); } catch(e) {}
+      window.location.href = LOGIN_URL;
+    }
+    async function cargarProcedimientos(){
+      const { data, error } = await supabase
+        .from("procedimientos_precios")
+        .select("id, procedimiento, valor, codigo_cups, profesional, activo, costo")
+        .order("procedimiento", { ascending: true });
+      if (error){
+        console.error(error);
+        toast("Error procedimientos:\n" + error.message, "err");
+        state.procedimientos = [];
+        renderProcedimientosSelect();
+        return;
+      }
+      const rows = data || [];
+      state.procedimientos = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
+      renderProcedimientosSelect();
+    }
+    async function cargarProfesionales(){
+      const { data, error } = await supabase
+        .from("profesionales")
+        .select("id, cedula, nombre, activo")
+        .order("nombre", { ascending: true });
+      if (error){
+        console.error(error);
+        toast("Error profesionales:\n" + error.message, "err");
+        state.profesionales = [];
+        renderProfesionales();
+        return;
+      }
+      const rows = data || [];
+      state.profesionales = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
+      renderProfesionales();
+    }
+    function renderProcedimientosSelect(filtro = ""){
+      const sel = $("sel-proc");
+      const drop = $("proc-dropdown");
+      const f = filtro.toLowerCase();
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+      drop.innerHTML = "";
+      let count = 0;
+      for (const p of state.procedimientos){
+        const label = `${p.procedimiento} — $${money(p.valor || 0)}${p.codigo_cups ? ` (CUPS ${p.codigo_cups})` : ""}`;
+        if (f && !label.toLowerCase().includes(f)) continue;
+        const opt = document.createElement("option");
+        opt.value = String(p.id);
+        opt.textContent = label;
+        sel.appendChild(opt);
 
-  let subtotal = 0;
-  procedimientos.forEach(p => { subtotal += p.total; });
-  const ivaVal = aplicaIva === "si" ? (subtotal * ivaPorcentaje) / 100 : 0;
-  const total = subtotal + ivaVal;
+        const div = document.createElement("div");
+        div.textContent = label;
+        div.style.padding = "10px 12px";
+        div.style.cursor = "pointer";
+        div.addEventListener("mouseenter", () => div.style.background = "#f3f5f7");
+        div.addEventListener("mouseleave", () => div.style.background = "#fff");
+        div.addEventListener("click", () => {
+          $("sel-proc-input").value = label;
+          sel.value = opt.value;
+          drop.style.display = "none";
+        });
+        drop.appendChild(div);
+        count++;
+      }
+    
+const input = document.getElementById("sel-proc-input");
+const isFocused = document.activeElement === input;
 
-  const payload = {
-    factura_numero: facturaNumero,
-    profesional: profesional,
-    metodo_pago: metodoPago,
-    estado_pago: estadoPago,
-    referencia: referencia,
-    aplica_iva: aplicaIva,
-    iva_porcentaje: ivaPorcentaje,
-    observacion: observacion,
-    paciente_cedula: pacienteCedula,
-    paciente_nombre: pacienteNombre,
-    paciente_correo: pacienteCorreo,
-    paciente_tipo_usuario: pacienteTipoUsuario,
-    paciente_eps: pacienteEps,
-    procedimientos: procedimientos,
-    subtotal: subtotal,
-    iva: ivaVal,
-    total: total,
-    created_at: new Date().toISOString()
-  };
+// ✅ Mostrar si hay foco (click) o si hay texto escrito
+if ((isFocused || filtro) && count > 0) {
+  drop.style.display = "block";
+} else {
+  drop.style.display = "none";
+}
 
-  const { data, error } = await sb.from("facturas").insert([payload]).select();
-  if (error) {
-    showToast("Error al guardar factura: " + error.message, "err");
-    return;
+
+    }
+    function renderProfesionales(){
+      const sel = $("profesional");
+      sel.innerHTML = `<option value="">— Selecciona —</option>`;
+      for (const pr of state.profesionales){
+        const ced = (pr.cedula ?? "").toString().trim();
+        const nom = (pr.nombre ?? "").toString().trim();
+        const opt = document.createElement("option");
+        opt.value = ced ? `${ced}` : nom;
+        opt.textContent = nom;
+        sel.appendChild(opt);
+      }
+    }
+    async function buscarPacienteEnHistoria(force = false){
+      const cedula = ($("paciente_cedula").value || "")
+        .trim()
+        .replace(/[^\d]/g, "");
+      $("paciente_cedula").value = cedula;
+      if (cedula.length < 6){
+        setHint("");
+        return;
+      }
+      if (!force && state._lastCedula === cedula) return;
+      state._lastCedula = cedula;
+      setHint("Buscando paciente...");
+      try{
+        const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}`;
+        const resp = await fetch(url, { method: "GET" });
+        if (!resp.ok) throw new Error("HTTP " + resp.status);
+        const data = await resp.json();
+        if (!data?.existe){
+          setHint("No encontrado (puedes digitar el nombre).");
+          return;
+        }
+        const h = data.historia || {};
+        const nombre = (h["Nombre y apellido"] || "").trim();
+        const epsHC  = (h["EPS_Paciente"] || "").trim();
+        const correo =
+          (h["paciente_email"] || h["CORREO"] || h["Email"] || h["E-mail"] || h["Correo electrónico"] || h["Correo electronico"] || "").toString().trim();
+        if (nombre){
+          $("paciente_nombre").value = nombre;
+          if ($("eps") && epsHC) $("eps").value = epsHC;
+          if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
+          setHint("✅ Encontrado");
+        } else {
+          if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
+          setHint("Encontrado, pero sin nombre en historia.");
+        }
+      } catch(err){
+        console.error("Error buscando en N8N:", err);
+        setHint("Error consultando (mira Console F12).");
+      }
+    }
+    function onCedulaInput(){
+      clearTimeout(state._debounce);
+      state._debounce = setTimeout(()=> buscarPacienteEnHistoria(false), 350);
+    }
+    function escapeHtml(str){
+      return String(str ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function agregarProcedimiento(){
+      const procId = ($("sel-proc").value || "").trim();
+      if (!procId){
+        toast("Selecciona un procedimiento", "warn");
+        return;
+      }
+      const p = state.procedimientos.find(x => String(x.id) === String(procId));
+      if (!p){
+        toast("Procedimiento no encontrado", "err");
+        return;
+      }
+      const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
+      const valorU = Math.max(0, num(p.valor || 0));
+      const item = {
+  id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+  procedimiento_id: p.id,              // ✅ CLAVE
+  codigo_cups: p.codigo_cups || "",
+  descripcion: p.procedimiento || "",
+  cantidad,
+  valor_unitario: valorU,
+  valor_total: valorU * cantidad
+};
+
+      state.items.push(item);
+      renderItems();
+      recalcularTotales();
+      $("sel-proc").value = "";
+      $("cantidad").value = "1";
+      toast("Agregado ✅", "ok");
+    }
+    function eliminarItem(id_local){
+      state.items = state.items.filter(x => x.id_local !== id_local);
+      renderItems();
+      recalcularTotales();
+    }
+    function renderItems(){
+      const tbody = $("tbody-items");
+      tbody.innerHTML = "";
+      if (state.items.length === 0){
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        return;
+      }
+      for (const it of state.items){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
+          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
+          <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
+          <td class="mono">$ ${money(obtenerCostoDeItem(it))}</td>
+          <td class="mono">$ ${money(it.valor_total)}</td>
+          <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
+        `;
+        tr.querySelectorAll("input").forEach(inp => {
+          inp.addEventListener("input", () => {
+            const k = inp.dataset.k;
+            const v = num(inp.value);
+            if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+            if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
+            it.valor_total = it.cantidad * it.valor_unitario;
+            renderItems();
+            recalcularTotales();
+          });
+        });
+        tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
+        tbody.appendChild(tr);
+      }
+    }
+    function ivaAplica(){
+      return (String($("iva_aplica")?.value || "si").toLowerCase() === "si");
+    }
+    function syncIVAUI(){
+      const aplica = ivaAplica();
+      const inp = $("iva_porcentaje");
+      if (inp){
+        inp.disabled = !aplica;
+        inp.style.opacity = aplica ? "1" : ".6";
+      }
+      recalcularTotales();
+    }
+    function calcularTotalesObj(){
+      const subtotal = state.items.reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+      const aplica = ivaAplica();
+      const iva_pct = aplica ? Math.max(0, num($("iva_porcentaje")?.value)) : 0;
+      const iva_valor = aplica ? Math.max(0, subtotal * (iva_pct / 100)) : 0;
+      const descuento_pct = Math.min(100, Math.max(0, num($("descuento_pct")?.value)));
+      const descuento_valor = Math.max(0, subtotal * (descuento_pct / 100));
+      const copago = Math.max(0, num($("copago").value));
+      const cuota = Math.max(0, num($("cuota_moderadora").value));
+      const total = Math.max(0, (subtotal - descuento_valor + iva_valor) - copago - cuota);
+      return { subtotal, descuento_pct, descuento_valor, iva_aplica: aplica, iva_pct, iva_valor, copago, cuota_moderadora: cuota, total };
+    }
+    function recalcularTotales(){
+      const t = calcularTotalesObj();
+      $("subtotal").textContent = money(t.subtotal);
+      $("iva_valor").textContent = money(t.iva_valor);
+      if ($("descuento_valor")) $("descuento_valor").textContent = money(t.descuento_valor);
+      $("total").textContent = money(t.total);
+    }
+    function formatFechaHuman(iso){
+  if (!iso) return "—";
+
+  // ✅ Caso 1: viene como DATE (YYYY-MM-DD) desde Supabase
+  if (/^\d{4}-\d{2}-\d{2}$/.test(iso)){
+    const [y, m, d] = iso.split("-");
+    return `${d}/${m}/${y}`;
   }
-  showToast("✅ Factura guardada exitosamente", "ok");
-  limpiarFormulario();
+
+  // ✅ Caso 2: viene como timestamp (created_at, fecha_pago, etc.)
+  try{
+    const d = new Date(iso);
+    if (!Number.isNaN(d.getTime())){
+      return d.toLocaleDateString("es-CO", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      });
+    }
+  } catch (e){}
+
+  return String(iso);
 }
 
-// ========== MODAL FACTURAS GUARDADAS ==========
-async function abrirModalFacturas() {
-  const modal = document.getElementById("modal_facturas");
-  modal.classList.add("show");
-  await cargarListaFacturas();
-}
+    function resolveProfesionalLabel(v){
+      const raw = String(v ?? "").trim();
+      if (!raw) return "—";
+      const onlyDigits = /^[0-9]+$/.test(raw);
+      if (onlyDigits){
+        const pr = (state.profesionales || []).find(x => String(x.cedula ?? "").trim() === raw);
+        if (pr && pr.nombre) return String(pr.nombre).trim();
+      }
+      return raw;
+    }
 
-function cerrarModalFacturas() {
-  const modal = document.getElementById("modal_facturas");
-  modal.classList.remove("show");
-  const card = document.getElementById("modal_facturas_card");
-  card.classList.remove("maximized");
-}
-
-function toggleMaximizarModal() {
-  const card = document.getElementById("modal_facturas_card");
-  card.classList.toggle("maximized");
-}
-
-async function cargarListaFacturas() {
-  const tbody = document.getElementById("tbody_facturas");
-  tbody.innerHTML = "<tr><td colspan='7' class='empty'>Cargando...</td></tr>";
-  const { data, error } = await sb.from("facturas").select("*").order("created_at", { ascending: false });
-  if (error) {
-    tbody.innerHTML = `<tr><td colspan='7' class='empty'>Error: ${error.message}</td></tr>`;
-    return;
+    function obtenerProfesionalDeItem(it){
+  // 1. Si el item ya trae profesional, usarlo
+  if (it.profesional) {
+    return resolveProfesionalLabel(it.profesional);
   }
-  if (!data || data.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='7' class='empty'>No hay facturas guardadas</td></tr>";
-    return;
+
+  // 2. Buscar el procedimiento original cargado desde Supabase
+  const p = state.procedimientos.find(
+    x => String(x.id) === String(it.procedimiento_id)
+  );
+
+  if (p && p.profesional) {
+    return resolveProfesionalLabel(p.profesional);
   }
-  tbody.innerHTML = "";
-  data.forEach(f => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${f.factura_numero || "-"}</td>
-      <td>${f.paciente_nombre || "-"}</td>
-      <td>${f.profesional || "-"}</td>
-      <td class="mono">$ ${(f.total || 0).toLocaleString("es-CO")}</td>
-      <td>${f.metodo_pago || "-"}</td>
-      <td>${f.estado_pago || "-"}</td>
-      <td>
-        <button onclick="verFactura('${f.id}')">👁 Ver</button>
-        <button onclick="eliminarFactura('${f.id}')">🗑</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
+
+  return "—";
 }
 
-async function verFactura(id) {
-  const { data, error } = await sb.from("facturas").select("*").eq("id", id).single();
-  if (error || !data) {
-    showToast("Error al cargar factura", "err");
-    return;
-  }
-  generarVistaFactura(data);
-  cerrarModalFacturas();
+function obtenerCostoDeItem(it){
+  const p = state.procedimientos.find(
+    x => String(x.id) === String(it.procedimiento_id)
+  );
+  return p && p.costo ? Number(p.costo) : 0;
 }
 
-async function eliminarFactura(id) {
-  if (!confirm("¿Eliminar esta factura?")) return;
-  const { error } = await sb.from("facturas").delete().eq("id", id);
-  if (error) {
-    showToast("Error al eliminar factura", "err");
-    return;
-  }
-  showToast("✅ Factura eliminada", "ok");
-  await cargarListaFacturas();
+
+    function obtenerProfesionalRawDeItem(it){
+  // 1. Si el item ya trae profesional crudo
+  if (it.profesional) return it.profesional;
+
+  // 2. Buscarlo desde procedimientos_precios
+  const p = state.procedimientos.find(
+    x => String(x.id) === String(it.procedimiento_id)
+  );
+
+  if (p && p.profesional) return p.profesional;
+
+  return null;
 }
 
-// ========== VISTA PREVIA FACTURA ==========
-function generarVistaFactura(factura) {
-  const html = `
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Factura ${factura.factura_numero || ""}</title>
-  <style>
-    body{
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      max-width: 800px;
-      margin: 0 auto;
-      background: #fff;
-      color: #333;
-    }
-    h1{ text-align:center; margin-bottom:10px; }
-    .kv{ display:flex; gap:10px; margin:6px 0; }
-    .k{ font-weight:700; min-width:140px; }
-    .v{ flex:1; }
-    table{
-      width:100%;
-      border-collapse:collapse;
-      margin:20px 0;
-    }
-    th, td{
-      border:1px solid #ccc;
-      padding:8px;
-      text-align:left;
-    }
-    th{ background:#f3f5f7; }
-    .totbox{
-      margin-top:20px;
-      border:1px solid #ccc;
-      padding:12px;
-      background:#fafafa;
-    }
-    .line{
-      display:flex;
-      justify-content:space-between;
-      margin:6px 0;
-    }
-    .big{
-      border-top:2px solid #333;
-      margin-top:8px;
-      padding-top:8px;
-      font-size:18px;
-      font-weight:900;
-    }
-  </style>
-</head>
-<body data-factura-id="${factura.id || ""}">
-  <h1>💊 Factura ${factura.factura_numero || ""}</h1>
-  <div class="kv"><div class="k">Paciente:</div><div class="v" data-paciente-nombre>${factura.paciente_nombre || "-"}</div></div>
-  <div class="kv"><div class="k">Cédula:</div><div class="v" data-paciente-cedula>${factura.paciente_cedula || "-"}</div></div>
-  <div class="kv"><div class="k">Correo:</div><div class="v" data-paciente-correo>${factura.paciente_correo || "-"}</div></div>
-  <div class="kv"><div class="k">Tipo Usuario:</div><div class="v">${factura.paciente_tipo_usuario || "-"}</div></div>
-  <div class="kv"><div class="k">EPS:</div><div class="v">${factura.paciente_eps || "-"}</div></div>
-  <div class="kv"><div class="k">Profesional:</div><div class="v">${factura.profesional || "-"}</div></div>
-  <div class="kv"><div class="k">Método de pago:</div><div class="v">${factura.metodo_pago || "-"}</div></div>
-  <div class="kv"><div class="k">Estado de pago:</div><div class="v">${factura.estado_pago || "-"}</div></div>
-  <div class="kv"><div class="k">Referencia:</div><div class="v">${factura.referencia || "-"}</div></div>
-  <div class="kv"><div class="k">¿Aplica IVA?:</div><div class="v">${factura.aplica_iva || "no"}</div></div>
-  ${factura.aplica_iva === "si" ? `<div class="kv"><div class="k">IVA %:</div><div class="v">${factura.iva_porcentaje || 0}</div></div>` : ""}
-  ${factura.observacion ? `<div class="kv"><div class="k">Observación:</div><div class="v">${factura.observacion}</div></div>` : ""}
 
-  <h3>Procedimientos</h3>
-  <table>
-    <thead>
-      <tr>
-        <th>CUPS</th>
-        <th>Procedimiento</th>
-        <th>Cant</th>
-        <th>Vr. Unit</th>
-        <th>Total</th>
-      </tr>
-    </thead>
-    <tbody>
-      ${(factura.procedimientos || []).map(p => `
+    function pagoLabel(pagada){
+      if (pagada === true) return "Pagada";
+      if (pagada === false) return "Pendiente";
+      return "—";
+    }
+    function buildInvoiceHTML({ fac, detalle, totals, abonos }){
+      const rows = (detalle || []).map(it => `
         <tr>
-          <td>${p.cups || "-"}</td>
-          <td>${p.procedimiento || "-"}</td>
-          <td>${p.cantidad || 0}</td>
-          <td>$ ${(p.valor_unitario || 0).toLocaleString("es-CO")}</td>
-          <td>$ ${(p.total || 0).toLocaleString("es-CO")}</td>
+          <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
+          <td>${escapeHtml(it.descripcion || "")}</td>
+          <td class="tr">${Number(it.cantidad||0)}</td>
+          <td class="tr">$ ${money(it.valor_unitario || 0)}</td>
+          <td class="tr mono">$ ${money(it.valor_total || 0)}</td>
         </tr>
-      `).join("")}
-    </tbody>
-  </table>
-
-  <div class="totbox">
-    <div class="line">Subtotal: <b>$ ${(factura.subtotal || 0).toLocaleString("es-CO")}</b></div>
-    ${factura.aplica_iva === "si" ? `<div class="line">IVA: <b>$ ${(factura.iva || 0).toLocaleString("es-CO")}</b></div>` : ""}
-    <div class="line big">TOTAL: <b>$ ${(factura.total || 0).toLocaleString("es-CO")}</b></div>
+      `).join("");
+      const abRows = (abonos || []).map(a => `
+        <tr>
+          <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
+          <td class="tr mono">$ ${money(a.monto || 0)}</td>
+          <td>${escapeHtml(a.metodo_pago || "—")}</td>
+          <td class="mono">${escapeHtml(a.referencia || "—")}</td>
+        </tr>
+      `).join("");
+      const totalAbonado = (abonos || []).reduce((acc, a) => acc + Number(a.monto || 0), 0);
+      const saldoPendiente = Math.max(0, Number(totals?.total || 0) - totalAbonado);
+            // ✅ Estado de pago (editable): solo PENDIENTE / PAGADA (se guarda en la misma columna booleana 'pagada')
+      // La fuente de verdad es fac.pagada (bool). Si no existe, se infiere: saldoPendiente === 0 -> PAGADA, si no -> PENDIENTE.
+      const pagadaBoolDB = (typeof fac?.pagada === "boolean") ? fac.pagada : null;
+      const estadoFinal = (pagadaBoolDB === null)
+        ? (saldoPendiente === 0 ? "PAGADA" : "PENDIENTE")
+        : (pagadaBoolDB ? "PAGADA" : "PENDIENTE");
+      const eps = fac?.eps ? escapeHtml(fac.eps) : "—";
+      const tipo = fac?.tipo_usuario ? escapeHtml(fac.tipo_usuario) : "—";
+      const profesional = escapeHtml(resolveProfesionalLabel(fac?.profesional));
+      const mp = fac?.metodo_pago ? escapeHtml(fac.metodo_pago) : "—";
+      const obs = fac?.observacion ? escapeHtml(fac.observacion) : "—";
+      const correoPac = fac?.paciente_correo ? escapeHtml(fac.paciente_correo) : "—";
+      const pagadaTxt = pagoLabel(fac?.pagada);
+      const refPago = fac?.referencia_pago ? escapeHtml(fac.referencia_pago) : "—";
+      return `
+<!DOCTYPE html>
+<html lang="es" data-factura-id="${escapeHtml(fac?.id || "")}" data-estado="${escapeHtml(estadoFinal)}" data-saldo="${String(saldoPendiente)}">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Factura ${escapeHtml(fac?.numero_factura || "")}</title>
+<style>
+  :root{ --line:#e5e7eb; --muted:#6b7280; --text:#111827; --brand:#1f6aa5; }
+  *{ box-sizing:border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body{ height:100%; }
+  body{ margin:0; font-family: Arial, sans-serif; color: var(--text); background:#fff; }
+  @page { size: A4; margin: 10mm; }
+  .page{ max-width: 210mm; margin: 0 auto; padding: 0; }
+  .sheet{ background:#fff; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .pad{ padding: 14px 14px; }
+  .head{
+    display:flex; justify-content:space-between; gap:12px; align-items:flex-start;
+    border-bottom: 2px solid var(--line); padding: 14px 14px;
+  }
+  .brandbox{ display:flex; gap:12px; align-items:flex-start; }
+  .logo{
+    width: 58px; height: 58px; border-radius: 12px; border: 1px solid var(--line);
+    object-fit: contain; background:#fff; padding: 6px;
+  }
+  .h1{ font-weight:900; font-size:16px; margin:0; letter-spacing:.2px; }
+  .muted{ color: var(--muted); font-size:12px; line-height:1.35; }
+  .right{ text-align:right; }
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(4, minmax(0,1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .kv{ border:1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 54px; }
+  .kv .k{ font-size: 11.5px; color: var(--muted); font-weight: 700; }
+  .kv .v{ margin-top: 4px; font-size: 12.5px; font-weight: 800; word-break: break-word; }
+  table{ width:100%; border-collapse: collapse; margin-top: 12px; }
+  thead th{
+    background: #f9fafb; color: var(--muted); font-size: 12px; text-align:left;
+    padding: 10px; border-bottom: 1px solid var(--line);
+  }
+  tbody td{ padding: 10px; border-bottom: 1px solid var(--line); font-size: 12.5px; }
+  .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace; font-size: 12px; }
+  .tr{ text-align:right; }
+  .bottom{ display:flex; gap: 12px; justify-content:space-between; align-items:flex-start; margin-top: 12px; flex-wrap: wrap; }
+  .note{ flex: 1 1 320px; border: 1px solid var(--line); border-radius: 12px; padding: 10px; min-height: 72px; }
+  .note .k{ font-size: 11.5px; color: var(--muted); font-weight: 700; }
+  .note .v{ margin-top: 4px; font-size: 12.5px; font-weight: 800; }
+  .totbox{ flex: 0 0 320px; border:1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .line{ display:flex; justify-content:space-between; padding: 6px 0; font-size: 13px; border-bottom: 1px dashed rgba(17,24,39,.10); }
+  .line:last-child{ border-bottom:none; }
+  .grand{ margin-top: 8px; padding-top: 10px; border-top: 1px solid var(--line); font-weight: 900; }
+  .foot{
+    padding: 10px 14px; border-top: 1px solid var(--line);
+    display:flex; justify-content:space-between; gap: 10px; align-items:center;
+    color: var(--muted); font-size: 11.5px;
+  }
+  .no-print{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btnp{ border:1px solid var(--line); background:#fff; padding:10px 12px; border-radius:10px; font-weight:800; cursor:pointer; }
+  .btnp.primary{ background: var(--brand); border-color: var(--brand); color:#fff; }
+  @media print{
+    body{ background:#fff; }
+    .page{ max-width: none; margin:0; }
+    .sheet{ border-radius: 0; border: 1px solid var(--line); }
+    .no-print{ display:none !important; }
+  }
+  .section-title{ font-weight:800; font-size:13px; margin: 2px 0 8px; }
+  .mini-totals{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+</style>
+</head>
+<body>
+  <div class="page">
+    <div class="sheet">
+      <div class="head">
+        <div class="brandbox">
+          <img class="logo" src="${escapeHtml(LOGO_URL)}" alt="Logo"/>
+          <div>
+            <p class="h1">CLÍNICA ODONTOLÓGICA — FACTURA</p>
+            <div class="muted">
+              N° Factura: <b style="color:var(--text)">${escapeHtml(fac?.numero_factura || "—")}</b><br/>
+              Fecha: <b style="color:var(--text)">${escapeHtml(formatFechaHuman(fac?.fecha))}</b>
+            </div>
+          </div>
+        </div>
+        <div class="muted right">
+          Impreso: <b style="color:var(--text)">${new Date().toLocaleString("es-CO")}</b><br/>
+          Usuario: <b style="color:var(--text)">${escapeHtml(state.session?.user?.email || "—")}</b>
+        </div>
+      </div>
+      <div class="pad">
+        <div class="grid">
+          <div class="kv"><div class="k">Paciente</div><div class="v">${escapeHtml(fac?.paciente_nombre || "—")}</div></div>
+          <div class="kv"><div class="k">Cédula</div><div class="v">${escapeHtml(fac?.paciente_cedula || "—")}</div></div>
+          <div class="kv"><div class="k">Correo</div><div class="v">${correoPac}</div></div>
+          <div class="kv"><div class="k">Profesional</div><div class="v">${profesional}</div></div>
+          <div class="kv"><div class="k">Tipo usuario</div><div class="v">${tipo}</div></div>
+          <div class="kv"><div class="k">EPS</div><div class="v">${eps}</div></div>
+          <div class="kv"><div class="k">Método de pago</div><div class="v">${mp}</div></div>
+          <div class="kv"><div class="k">Estado de pago</div><div class="v">
+              <select id="estado_factura_sel" style="width:100%; border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-weight:700;">
+                <option value="PENDIENTE">PENDIENTE</option>
+                <option value="PAGADA">PAGADA</option>
+              </select>
+            </div></div>
+          <div class="kv" style="grid-column: span 2;"><div class="k">Referencia</div><div class="v">${refPago}</div></div>
+          <div class="kv"><div class="k">¿Aplica IVA?</div><div class="v">${totals.iva_aplica ? "Sí" : "No"}</div></div>
+          <div class="kv"><div class="k">IVA %</div><div class="v">${totals.iva_aplica ? String(Number(totals.iva_pct||0)) : "0"}</div></div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+             
+              <th style="width:140px;">CUPS</th>
+              <th>Procedimiento</th>
+              <th style="width:80px;text-align:right;">Cant</th>
+              <th style="width:140px;text-align:right;">V/Unit</th>
+              <th style="width:160px;text-align:right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows || `<tr><td colspan="5" class="muted" style="padding:14px;text-align:center;">Sin detalle</td></tr>`}
+          </tbody>
+        </table>
+        <div class="bottom">
+          <div class="note">
+            <div class="k">Observación</div>
+            <div class="v">${obs}</div>
+          </div>
+          <div class="totbox">
+            <div class="line"><span>Subtotal</span><b class="mono">$ ${money(totals.subtotal)}</b></div>
+            <div class="line"><span>Descuento (${Number(totals.descuento_pct||0)}%)</span><b class="mono">- $ ${money(totals.descuento_valor||0)}</b></div>
+            <div class="line"><span>IVA (${Number(totals.iva_pct||0)}%)</span><b class="mono">$ ${money(totals.iva_valor)}</b></div>
+            <div class="line"><span>Copago</span><b class="mono">$ ${money(totals.copago)}</b></div>
+            <div class="line"><span>Cuota moderadora</span><b class="mono">$ ${money(totals.cuota_moderadora)}</b></div>
+            <div class="line grand"><span>TOTAL</span><b class="mono">$ ${money(totals.total)}</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="pad">
+        <div class="section-title">Abonos</div>
+        <div class="box">
+          <table class="table">
+            <thead>
+              <tr>
+                <th style="width:110px;">Fecha</th>
+                <th style="width:140px;" class="tr">Monto</th>
+                <th style="width:170px;">Método</th>
+                <th>Referencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${abRows || `<tr><td colspan="4" class="muted">— Sin abonos registrados —</td></tr>`}
+            </tbody>
+          </table>
+          <div class="mini-totals">
+            <div class="line"><span>Total abonado</span><b class="mono">$ ${money(totalAbonado)}</b></div>
+            <div class="line grand"><span>Saldo pendiente</span><b class="mono">$ ${money(saldoPendiente)}</b></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot">
+        <div>Este documento es una representación de factura generada por el sistema.</div>
+        <div class="no-print">
+          <button class="btnp primary" onclick="window.print()">🖨 Imprimir</button>
+          <button class="btnp" onclick="window.close()">Cerrar</button>
+        </div>
+      </div>
+    </div>
   </div>
+<script>
+(function(){
+  const root = document.documentElement;
+  const facturaId = root.dataset.facturaId || "";
+  const estadoInicial = (root.dataset.estado || "PENDIENTE").toUpperCase();
+  let saldo = Number(root.dataset.saldo || 0);
+  const sel = document.getElementById("estado_factura_sel");
+  if (!sel) return;
+  // Inicializar
+  sel.value = estadoInicial;
+  const optPagada = Array.from(sel.options).find(o => o.value === "PAGADA");
+  if (optPagada) optPagada.disabled = saldo > 0;
+  sel.addEventListener("change", () => {
+    const estado = (sel.value || "PENDIENTE").toUpperCase();
+    if (estado === "PAGADA" && saldo > 0){
+      alert("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.");
+      sel.value = root.dataset.estado || estadoInicial;
+      return;
+    }
+    root.dataset.estado = estado;
+    window.parent.postMessage({ type: "estado_factura_change", factura_id: facturaId, estado }, "*");
+  });
+  // Permite que el padre actualice estado/saldo dinámicamente (por ejemplo tras agregar abonos)
+  window.addEventListener("message", (e) => {
+    const d = e.data || {};
+    if (d.type !== "estado_factura_set") return;
+    if (d.factura_id && String(d.factura_id) !== String(facturaId)) return;
+    if (typeof d.saldo !== "undefined"){
+      saldo = Number(d.saldo || 0);
+      root.dataset.saldo = String(saldo);
+      if (optPagada) optPagada.disabled = saldo > 0;
+    }
+    if (d.estado){
+      const est = String(d.estado).toUpperCase();
+      root.dataset.estado = est;
+      sel.value = est;
+    }
+  });
+})();
+<\/script>
+</body>
+</html>`;
+    }
+    async function guardarFactura(){
+      const fecha = ($("fecha").value || "").trim() || hoyISO();
+      const paciente_cedula = ($("paciente_cedula").value || "").trim();
+      const paciente_nombre = ($("paciente_nombre").value || "").trim();
+      const paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
+      const profesional = ($("profesional").value || "").trim();
+      if (!paciente_cedula || !paciente_nombre){
+        toast("Paciente: cédula y nombre son obligatorios", "err");
+        return;
+      }
+      if (!profesional){
+        toast("Selecciona el profesional", "err");
+        return;
+      }
+      if (state.items.length === 0){
+        toast("Agrega al menos 1 procedimiento", "err");
+        return;
+      }
+      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
+      $("numero_factura").value = numero_factura;
+      const eps = ($("eps").value || "").trim() || null;
+      const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
+      const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
+      const observacion = ($("observacion")?.value || "").trim() || null;
+      const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
+      const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
+      const fecha_pago = pagada ? new Date().toISOString() : null;
+      const totals = calcularTotalesObj();
+      setStatus("Guardando factura...");
+      try{
+        const payloadConExtras = {
+          fecha,
+          paciente_cedula,
+          paciente_nombre,
+          paciente_correo,
+          tipo_usuario,
+          eps,
+          numero_factura,
+          valor_total: totals.total,
+          copago: totals.copago,
+          cuota_moderadora: totals.cuota_moderadora,
+          profesional,
+          descuento_pct: totals.descuento_pct,
+          descuento_valor: totals.descuento_valor,
+          subtotal: totals.subtotal,
+          iva_aplica: totals.iva_aplica,
+          iva_porcentaje: totals.iva_pct,
+          iva_valor: totals.iva_valor,
+          metodo_pago,
+          observacion,
+          pagada,
+          fecha_pago,
+          referencia_pago,
+          saldo_pendiente: pagada ? 0 : Number(totals.total || 0)
+        };
+        let fac = null;
+        const { data: fac1, error: e1 } = await supabase
+          .from("facturas")
+          .insert([payloadConExtras])
+          .select("*")
+          .single();
+        if (e1){
+          const msg = String(e1.message || "").toLowerCase();
+          const isColumnMissing =
+            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+          if (!isColumnMissing) throw e1;
+          const payloadBase = {
+            fecha,
+            paciente_cedula,
+            paciente_nombre,
+            tipo_usuario,
+            eps,
+            numero_factura,
+            subtotal: totals.subtotal,
+            descuento_pct: totals.descuento_pct,
+            descuento_valor: totals.descuento_valor,
+            copago: totals.copago,
+            cuota_moderadora: totals.cuota_moderadora,
+            valor_total: totals.total,
+            saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
+            profesional
+          };
+          const { data: fac2, error: e1b } = await supabase
+            .from("facturas")
+            .insert([payloadBase])
+            .select("*")
+            .single();
+          if (e1b) throw e1b;
+          fac = fac2;
+          fac.metodo_pago = metodo_pago;
+          fac.observacion = observacion;
+          fac.paciente_correo = paciente_correo;
+          fac.iva_aplica = totals.iva_aplica;
+          fac.iva_porcentaje = totals.iva_pct;
+          fac.iva_valor = totals.iva_valor;
+          fac.subtotal = totals.subtotal;
+          fac.pagada = pagada;
+          fac.fecha_pago = fecha_pago;
+          fac.referencia_pago = referencia_pago;
+        } else {
+          fac = fac1;
+        }
+        const detalle = state.items.map(it => ({
+  factura_id: fac.id,
+  procedimiento_id: it.procedimiento_id, // ✅ CLAVE
+  codigo_cups: it.codigo_cups || null,
+  descripcion: it.descripcion || "",
+  cantidad: it.cantidad || 1,
+  valor_unitario: it.valor_unitario || 0,
+  valor_total: it.valor_total || 0,
+  profesional: obtenerProfesionalRawDeItem(it)
+}));
+
+
+        const { error: e2 } = await supabase
+          .from("factura_detalle")
+          .insert(detalle);
+        if (e2) throw e2;
+        state.facturaGuardada = fac;
+        $("btn-imprimir").disabled = false;
+        if ($("btn-abonos")) $("btn-abonos").disabled = false;
+        if ($("btn-abonos")) $("btn-abonos").disabled = false;
+        setStatus("");
+        toast("Factura guardada ✅", "ok");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo guardar:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    async function imprimirFacturaGuardada(){
+      if (!state.facturaGuardada){
+        toast("Primero guarda la factura", "warn");
+        return;
+      }
+      try{
+        setStatus("Preparando impresión...");
+        const { data: det, error } = await supabase
+          .from("factura_detalle")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", state.facturaGuardada.id)
+          .order("id", { ascending: true });
+        if (error) throw error;
+        // 2) Abonos (si existe tabla)
+        let abonos = [];
+        try{
+          const { data: ab, error: ea } = await supabase
+            .from("abonos")
+            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+            .eq("factura_id", state.facturaGuardada.id)
+            .order("fecha", { ascending: true });
+          if (!ea) abonos = ab || [];
+          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
+        }catch(e){
+          console.warn("No se pudieron cargar abonos:", e?.message || e);
+        }
+        const totals = calcularTotalesObj();
+        state.facturaGuardada.metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
+        state.facturaGuardada.observacion = ($("observacion")?.value || "").trim() || null;
+        state.facturaGuardada.paciente_correo = ($("paciente_correo")?.value || "").trim() || null;
+        state.facturaGuardada.pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
+        state.facturaGuardada.referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
+        const html = buildInvoiceHTML({
+          fac: state.facturaGuardada,
+          detalle: det || [],
+          totals,
+          abonos
+        });
+        const w = window.open("", "_blank", "width=900,height=700");
+        if (!w){
+          setStatus("");
+          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
+          return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        w.onload = () => {
+          try { w.focus(); w.print(); } catch(e) {}
+        };
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    function openModal(){
+      $("modal-facturas").classList.add("show");
+      $("modal-facturas").setAttribute("aria-hidden", "false");
+    }
+    function closeModal(){
+      $("modal-facturas").classList.remove("show");
+      $("modal-facturas").setAttribute("aria-hidden", "true");
+    }
+    function openModalVerFactura(){
+      $("modal-verfactura").classList.add("show");
+      $("modal-verfactura").setAttribute("aria-hidden", "false");
+    }
+    function closeModalVerFactura(){
+      $("modal-verfactura").classList.remove("show");
+      $("modal-verfactura").setAttribute("aria-hidden", "true");
+    }
+    function renderVerFacturaDetalle(rows){
+      const tbody = $("tbody-vf-detalle");
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">No hay detalle para esta factura.</td></tr>`;
+        return;
+      }
+      for (const r of rows){
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(r.codigo_cups || "—")}</td>
+          <td>${escapeHtml(r.descripcion || "—")}</td>
+          <td class="mono">${escapeHtml(String(r.cantidad ?? 0))}</td>
+          <td class="mono">$ ${escapeHtml(moneyNumber(r.valor_unitario ?? 0))}</td>
+          <td class="mono">$ ${escapeHtml(moneyNumber(r.valor_total ?? 0))}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    function renderVerFacturaAbonos(rows){
+      const tbody = $("tbody-vf-abonos");
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="5" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
+        return;
+      }
+      for (const a of rows){
+        const tr = document.createElement("tr");
+        const fecha = formatFechaHuman(a.fecha || a.created_at);
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">$ ${escapeHtml(moneyNumber(a.monto || 0))}</td>
+          <td>${escapeHtml(a.metodo_pago || "—")}</td>
+          <td class="mono">${escapeHtml(a.referencia || "—")}</td>
+          <td>${escapeHtml(a.observacion || "—")}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+    // Helper para imprimir montos sin el "$ " duplicado en tablas
+    function moneyNumber(n){
+      // money() ya existe y devuelve formato con separador; aquí lo reutilizamos y quitamos el "$ " si aplica
+      const s = money(n);
+      return String(s).replace(/^\$\s*/,"");
+    }
+    async function abrirVerFactura(facturaId){
+      try{
+        state.facturaVer = facturaId;
+        setStatus("Cargando factura...");
+        // 1) Cabecera factura
+        const { data: f, error: ef } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", facturaId)
+          .single();
+        if (ef) throw ef;
+        // 2) Detalle
+        const { data: det, error: ed } = await supabase
+          .from("factura_detalle")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId);
+        if (ed) throw ed;
+        // 3) Abonos
+        const { data: ab, error: ea } = await supabase
+          .from("abonos")
+          .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+          .eq("factura_id", facturaId)
+          .order("fecha", { ascending: true });
+        // Si la tabla no existe, mostramos igual la factura y dejamos abonos vacíos
+        if (ea){
+          console.warn("Tabla abonos no disponible:", ea?.message || ea);
+        }
+        // Renderizar factura con el mismo formato de impresión (incluye abonos y saldo)
+        const subtotal = Number(f.subtotal ?? 0);
+        const iva_valor = Number(f.iva_valor ?? f.iva ?? 0);
+        const aplicaRaw = (f.iva_aplica ?? f.aplica_iva ?? f.aplicaIVA ?? "Sí");
+        const iva_aplica = (typeof aplicaRaw === "boolean")
+          ? aplicaRaw
+          : String(aplicaRaw).toLowerCase().startsWith("s");
+        const iva_pct = Number(f.iva_pct ?? f.iva_porcentaje ?? 0) || (iva_aplica ? 19 : 0);
+        const copago = Number(f.copago ?? 0);
+        const cuota = Number(f.cuota_moderadora ?? 0);
+        const total = (f.valor_total !== undefined && f.valor_total !== null)
+          ? Number(f.valor_total || 0)
+          : (f.total !== undefined && f.total !== null)
+            ? Number(f.total || 0)
+            : Math.max(0, (subtotal + iva_valor) - copago - cuota);
+        const htmlDoc = buildInvoiceHTML({
+          fac: f,
+          detalle: det || [],
+          totals: {
+            subtotal,
+            descuento_pct: Number(f.descuento_pct||0),
+            descuento_valor: Number(f.descuento_valor||0),
+            iva_aplica,
+            iva_pct,
+            iva_valor,
+            copago,
+            cuota_moderadora: cuota,
+            total
+          },
+          abonos: (ab || [])
+        });
+        const frame = $("vf_iframe");
+        if (frame) frame.srcdoc = htmlDoc;
+        openModalVerFactura();
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo abrir la factura:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    // ✅ Estado de factura (solo PENDIENTE / PAGADA)
+    async function setEstadoFactura({ facturaId, estado, saldoPendiente = null, silent = false }){
+      if (!facturaId) return;
+      const est = String(estado || "PENDIENTE").toUpperCase();
+      const pagadaBool = (est === "PAGADA");
+      // Validación: no permitir PAGADA si saldo > 0
+      if (pagadaBool && saldoPendiente !== null && Number(saldoPendiente) > 0){
+        if (!silent) toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
+        return;
+      }
+      try{
+        // Intentamos guardar en columna opcional estado_pago si existe, y también el boolean pagada.
+        let { error } = await supabase
+          .from("facturas")
+          .update((() => { const u = { pagada: pagadaBool, estado_pago: est }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
+          .eq("id", facturaId);
+        // Si la columna estado_pago no existe, reintentamos solo con pagada.
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const missingCol = msg.includes("column") && msg.includes("estado_pago");
+          if (missingCol){
+            const r2 = await supabase
+              .from("facturas")
+              .update((() => { const u = { pagada: pagadaBool }; if (pagadaBool) u.saldo_pendiente = 0; else if (saldoPendiente !== null) u.saldo_pendiente = Number(saldoPendiente); return u; })())
+              .eq("id", facturaId);
+            error = r2.error;
+          }
+        }
+        if (error) throw error;
+        // Si está abierta la vista de factura, sincronizamos el select dentro del iframe
+        if (state.facturaVer && String(state.facturaVer) === String(facturaId)){
+          const frame = $("vf_iframe");
+          if (frame && frame.contentWindow){
+            frame.contentWindow.postMessage({ type: "estado_factura_set", factura_id: facturaId, estado: est, saldo: saldoPendiente }, "*");
+          }
+        }
+        // Refrescar listado si está abierto (para ver cambios de "Pagada"/"Pendiente" en la tabla)
+        // Nota: en la tabla principal solo existe pagada (bool) en el dataset actual.
+        if (typeof renderFacturasModal === "function"){
+          // no-op: renderFacturasModal se llama desde cargarFacturas()
+        }
+      } catch(err){
+        console.error(err);
+        if (!silent) toast("No se pudo actualizar el estado:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    // Escuchar cambios de estado desde el iframe de "Ver factura"
+    window.addEventListener("message", async (e) => {
+      const d = e.data || {};
+      if (d.type !== "estado_factura_change") return;
+      const facturaId = d.factura_id;
+      const estado = d.estado;
+      // Para validar saldo, tomamos el que venga del iframe si está disponible en el DOM del iframe
+      let saldo = null;
+      try{
+        const frame = $("vf_iframe");
+        if (frame && frame.contentDocument){
+          const ds = frame.contentDocument.documentElement?.dataset?.saldo;
+          if (ds !== undefined) saldo = Number(ds);
+        }
+      } catch(_){}
+      await setEstadoFactura({ facturaId, estado, saldoPendiente: saldo });
+    });
+    /* ✅ SUPABASE (Recomendado): crear tabla 'abonos'
+      - id (bigint, identity) PK
+      - factura_id (bigint) FK -> facturas.id (ON DELETE CASCADE)
+      - fecha (date) NOT NULL
+      - monto (numeric) NOT NULL
+      - metodo_pago (text) NULL
+      - referencia (text) NULL
+      - observacion (text) NULL
+      - created_at (timestamptz) default now()
+    */
+    function openModalAbonos(){
+      $("modal-abonos").classList.add("show");
+      $("modal-abonos").setAttribute("aria-hidden", "false");
+    }
+    function closeModalAbonos(){
+      $("modal-abonos").classList.remove("show");
+      $("modal-abonos").setAttribute("aria-hidden", "true");
+    }
+    function updateResumenAbonos({ totalFactura = 0, totalAbonado = 0 }){
+      $("abonos_total_factura").textContent = money(totalFactura);
+      $("abonos_total_abonado").textContent = money(totalAbonado);
+      const saldo = Math.max(0, Number(totalFactura || 0) - Number(totalAbonado || 0));
+      $("abonos_saldo").textContent = money(saldo);
+    }
+    async function abrirAbonosFactura(facturaId){
+      state.facturaAbonos = facturaId;
+      // Defaults en UI
+      if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
+      if ($("abono_monto")) $("abono_monto").value = "";
+      if ($("abono_metodo")) $("abono_metodo").value = "Efectivo";
+      if ($("abono_referencia")) $("abono_referencia").value = "";
+      if ($("abono_observacion")) $("abono_observacion").value = "";
+      openModalAbonos();
+      await listarAbonos();
+    }
+    function renderAbonosTabla(rows){
+      const tbody = $("tbody-abonos");
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
+        return;
+      }
+      for (const a of rows){
+        const tr = document.createElement("tr");
+        const fecha = formatFechaHuman(a.fecha || a.created_at);
+        const monto = money(a.monto || 0);
+        const metodo = a.metodo_pago || "—";
+        const ref = a.referencia || "—";
+        const obs = a.observacion || "—";
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">$ ${escapeHtml(monto)}</td>
+          <td class="mono">${escapeHtml(metodo)}</td>
+          <td class="mono">${escapeHtml(ref)}</td>
+          <td>${escapeHtml(obs)}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn danger small" data-act="del">Eliminar</button>
+          </td>
+        `;
+        tr.querySelector('[data-act="del"]').addEventListener("click", async () => {
+          const ok = window.confirm("¿Eliminar este abono?");
+          if (!ok) return;
+          await eliminarAbono(a.id);
+        });
+        tbody.appendChild(tr);
+      }
+    }
+    async function listarAbonos(){
+      const facturaId = state.facturaAbonos;
+      if (!facturaId){
+        renderAbonosTabla([]);
+        updateResumenAbonos({ totalFactura: 0, totalAbonado: 0 });
+        return;
+      }
+      try{
+        setStatus("Cargando abonos...");
+        const { data: fac, error: ef } = await supabase
+          .from("facturas")
+          .select("id, valor_total")
+          .eq("id", facturaId)
+          .single();
+        if (ef) throw ef;
+        const { data, error } = await supabase
+          .from("abonos")
+          .select("id, factura_id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+          .eq("factura_id", facturaId)
+          .order("fecha", { ascending: true });
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const missingTable =
+            msg.includes("relation") && msg.includes("does not exist");
+          setStatus("");
+          if (missingTable){
+            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
+            $("tbody-abonos").innerHTML = `<tr><td colspan="7" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
+            updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
+            return;
+          }
+          throw error;
+        }
+        state.abonos = data || [];
+        renderAbonosTabla(state.abonos);
+        const totalAbonado = (state.abonos || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
+        updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado });
+        // ✅ Auto-actualizar estado: si saldo llega a 0 -> PAGADA. Si no, PENDIENTE.
+        const totalFacturaNum = Number(fac?.valor_total || 0);
+        const saldoPendiente = Math.max(0, totalFacturaNum - Number(totalAbonado || 0));
+        const estadoAuto = (saldoPendiente === 0) ? "PAGADA" : "PENDIENTE";
+        await setEstadoFactura({ facturaId, estado: estadoAuto, saldoPendiente, silent: true });
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudieron cargar abonos:\n" + (err?.message || "Error"), "err");
+        renderAbonosTabla([]);
+      }
+    }
+    async function agregarAbono(){
+      const facturaId = state.facturaAbonos;
+      if (!facturaId){
+        toast("Primero selecciona una factura.", "warn");
+        return;
+      }
+      const fecha = ($("abono_fecha")?.value || "").trim() || hoyISO();
+      const monto = Math.max(0, num($("abono_monto")?.value));
+      const metodo_pago = ($("abono_metodo")?.value || "Efectivo").trim();
+      const referencia = ($("abono_referencia")?.value || "").trim() || null;
+      const observacion = ($("abono_observacion")?.value || "").trim() || null;
+      if (!monto || monto <= 0){
+        toast("El monto del abono debe ser mayor a 0.", "warn");
+        return;
+      }
+      setStatus("Guardando abono...");
+      try{
+        const payload = {
+          factura_id: facturaId,
+          fecha,
+          monto,
+          metodo_pago,
+          referencia,
+          observacion
+        };
+        const { error } = await supabase
+          .from("abonos")
+          .insert([payload]);
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const missingTable =
+            msg.includes("relation") && msg.includes("does not exist");
+          setStatus("");
+          if (missingTable){
+            toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
+            return;
+          }
+          throw error;
+        }
+        setStatus("");
+        toast("Abono guardado ✅", "ok");
+        if ($("abono_monto")) $("abono_monto").value = "";
+        if ($("abono_referencia")) $("abono_referencia").value = "";
+        if ($("abono_observacion")) $("abono_observacion").value = "";
+        await listarAbonos();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo guardar abono:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    async function eliminarAbono(abonoId){
+      if (!abonoId) return;
+      try{
+        setStatus("Eliminando abono...");
+        const { error } = await supabase
+          .from("abonos")
+          .delete()
+          .eq("id", abonoId);
+        if (error) throw error;
+        setStatus("");
+        toast("Abono eliminado ✅", "ok");
+        await listarAbonos();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo eliminar abono:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    function updateResumenFacturas(rows){
+      const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+      $("total_facturado").textContent = money(total);
+      $("count_facturas").textContent = String((rows || []).length);
+    }
+    // ✅ CORREGIDO COMPLETO:
+    // - Columna "Pago" = ESTADO
+    // - Botón = ACCIÓN
+    // - Si método != Efectivo, pide referencia + fecha pago al marcar Pagada
+    async function togglePagadaFactura(f){
+      try{
+        const actual = (f.pagada === true);
+        const nuevo = !actual;
+        let metodo = (f.metodo_pago || "").toString().trim();
+        // Si no vino en listado, intentamos leerlo
+        if (!metodo){
+          const { data: facDB, error: e0 } = await supabase
+            .from("facturas")
+            .select("id, metodo_pago, referencia_pago")
+            .eq("id", f.id)
+            .single();
+          if (!e0){
+            metodo = (facDB?.metodo_pago || "").toString().trim();
+            if (!f.referencia_pago && facDB?.referencia_pago) f.referencia_pago = facDB.referencia_pago;
+          }
+        }
+
+        // ✅ Calcular saldo pendiente (si existe la tabla de abonos). Si no existe, lo dejamos como null.
+        const totalFacturaNum = Number(f.valor_total || 0);
+        let saldoPendienteCalc = null;
+        try{
+          const { data: abs, error: eab } = await supabase
+            .from("abonos")
+            .select("monto")
+            .eq("factura_id", f.id);
+          if (eab){
+            const msg = String(eab.message || "").toLowerCase();
+            const missingTable = msg.includes("relation") && msg.includes("does not exist");
+            if (!missingTable) throw eab;
+          } else {
+            const totalAb = (abs || []).reduce((acc, x) => acc + (Number(x.monto) || 0), 0);
+            saldoPendienteCalc = Math.max(0, totalFacturaNum - totalAb);
+          }
+        } catch(errAb){
+          // Si falla por otra razón, no bloqueamos el flujo; solo no calculamos saldo.
+          console.warn("No se pudo calcular saldo pendiente desde abonos:", errAb);
+        }
+        // Si intentan marcar PAGADA pero hay saldo pendiente calculado, no permitirlo.
+        if (nuevo === true && saldoPendienteCalc !== null && Number(saldoPendienteCalc) > 0){
+          toast("No puedes marcar como PAGADA si el saldo pendiente es mayor a 0.", "warn");
+          setStatus("");
+          return;
+        }
+        const saldoPendienteToSave = (nuevo === true) ? 0 : (saldoPendienteCalc !== null ? Number(saldoPendienteCalc) : totalFacturaNum);
+        let referencia = null;
+        let fechaPagoYYYYMMDD = null;
+        if (nuevo === true){
+          const isEfectivo = metodo.toLowerCase() === "efectivo";
+          if (!isEfectivo){
+            referencia = window.prompt("Ingresa la referencia / comprobante de pago:", f.referencia_pago || "");
+            if (referencia === null) return;
+            referencia = referencia.trim();
+            if (!referencia){
+              toast("La referencia de pago es obligatoria para este método.", "warn");
+              return;
+            }
+            const fp = window.prompt("Ingresa la fecha de pago (YYYY-MM-DD):", hoyISO());
+            if (fp === null) return;
+            fechaPagoYYYYMMDD = parseDateYYYYMMDD(fp);
+            if (!fechaPagoYYYYMMDD){
+              toast("Fecha inválida. Usa formato YYYY-MM-DD.", "warn");
+              return;
+            }
+          } else {
+            fechaPagoYYYYMMDD = hoyISO();
+            referencia = null; // efectivo: opcional
+          }
+        }
+        setStatus("Actualizando pago...");
+        const payload = {
+          pagada: nuevo,
+          saldo_pendiente: saldoPendienteToSave,
+          fecha_pago: nuevo ? toISODateTimeFromYYYYMMDD(fechaPagoYYYYMMDD || hoyISO()) : null,
+          referencia_pago: nuevo ? (referencia || null) : null
+        };
+        const { error } = await supabase
+          .from("facturas")
+          .update(payload)
+          .eq("id", f.id);
+        if (error){
+          const msg = String(error.message || "").toLowerCase();
+          const isColumnMissing =
+            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+          setStatus("");
+          if (isColumnMissing){
+            toast("En Supabase faltan columnas: pagada / saldo_pendiente / fecha_pago / referencia_pago en 'facturas'.", "warn");
+            return;
+          }
+          throw error;
+        }
+        setStatus("");
+        toast(nuevo ? "Marcada como Pagada ✅" : "Marcada como Pendiente ⚠️", "ok");
+        await listarFacturas();
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo actualizar pago:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    function renderFacturasTabla(rows){
+      const tbody = $("tbody-facturas");
+      tbody.innerHTML = "";
+      if (!rows || rows.length === 0){
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>`;
+        updateResumenFacturas([]);
+        return;
+      }
+      for (const f of rows){
+        const tr = document.createElement("tr");
+        const fecha = formatFechaHuman(f.fecha);
+        const numf = f.numero_factura || "—";
+        const nom = f.paciente_nombre || "—";
+        const ced = f.paciente_cedula || "—";
+        const total = money(f.valor_total || 0);
+        const saldoPendRaw = (f.saldo_pendiente != null) ? Number(f.saldo_pendiente) : null;
+        const saldoPendCalc = (saldoPendRaw == null) ? ((f.pagada === true) ? 0 : Number(f.valor_total || 0)) : saldoPendRaw;
+        const saldoPend = money(saldoPendCalc || 0);
+        const estadoPago = pagoLabel(f.pagada);
+        const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">${escapeHtml(numf)}</td>
+          <td>${escapeHtml(nom)}</td>
+          <td class="mono">${escapeHtml(ced)}</td>
+          <td class="mono">${escapeHtml(estadoPago)}</td>
+          <td class="mono">$ ${escapeHtml(total)}</td>
+          <td class="mono">$ ${escapeHtml(saldoPend)}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn small" data-act="cargar">↩ Cargar</button>
+            <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
+            <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
+            <button class="btn small" data-act="verfactura">👁 Ver factura</button>
+            <button class="btn small" data-act="abonos">💰 Abonos</button>
+          </td>
+        `;
+        tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
+          await cargarFacturaEnFormulario(f.id);
+          closeModal();
+        });
+        tr.querySelector('[data-act="imprimir"]').addEventListener("click", async () => {
+          await imprimirFacturaPorId(f.id);
+        });
+        tr.querySelector('[data-act="toggle"]').addEventListener("click", async () => {
+          await togglePagadaFactura(f);
+        });
+                tr.querySelector('[data-act="verfactura"]').addEventListener("click", async () => {
+          await abrirVerFactura(f.id);
+        });
+tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
+          await abrirAbonosFactura(f.id);
+        });
+        tbody.appendChild(tr);
+      }
+      updateResumenFacturas(rows);
+    }
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
+    async function listarFacturas(){
+      const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
+      const q = ($("buscar_facturas").value || "").trim();
+      const desde = ($("fecha_desde")?.value || "").trim();
+      const hasta = ($("fecha_hasta")?.value || "").trim();
+      const estado = ($("estado_facturas")?.value || "todos").trim();
+      try{
+        $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
+        let query = supabase
+          .from("facturas")
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
+          .order("fecha", { ascending: false })
+          .limit(limit);
+        if (desde){
+          query = query.gte("fecha", dateStartISO(desde));
+        }
+        if (hasta){
+          query = query.lte("fecha", dateEndISO(hasta));
+        }
+        if (estado === "pagada"){
+          query = query.eq("pagada", true);
+        } else if (estado === "pendiente"){
+          // Incluye false y null (por compatibilidad con registros antiguos)
+          query = query.or("pagada.eq.false,pagada.is.null");
+        }
+        if (q){
+          const isNum = /^[0-9]+$/.test(q);
+          if (isNum){
+            query = query.ilike("paciente_cedula", `%${q}%`);
+          } else {
+            query = query.ilike("numero_factura", `%${q}%`);
+          }
+        }
+        const { data, error } = await query;
+        if (error) throw error;
+        state.facturas = data || [];
+        renderFacturasTabla(state.facturas);
+      } catch(err){
+        console.error(err);
+        renderFacturasTabla([]);
+        toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    async function cargarFacturaEnFormulario(facturaId){
+      try{
+        setStatus("Cargando factura...");
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", facturaId)
+          .single();
+        if (e1) throw e1;
+        const { data: det, error: e2 } = await supabase
+          .from("factura_detalle")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId)
+          .order("id", { ascending: true });
+        if (e2) throw e2;
+        $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
+        $("numero_factura").value = fac.numero_factura || "";
+        $("tipo_usuario").value = fac.tipo_usuario || "Particular";
+        $("eps").value = fac.eps || "";
+        $("paciente_cedula").value = fac.paciente_cedula || "";
+        $("paciente_nombre").value = fac.paciente_nombre || "";
+        $("profesional").value = fac.profesional || "";
+        if ($("paciente_correo")) $("paciente_correo").value = fac.paciente_correo || "";
+        if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
+        if ($("observacion")) $("observacion").value = fac.observacion || "";
+        if ($("pagada")){
+          $("pagada").value = (fac.pagada === false) ? "no" : "si";
+        }
+        if ($("referencia_pago")){
+          $("referencia_pago").value = fac.referencia_pago || "";
+        }
+        if ($("iva_aplica")){
+          if (fac.iva_aplica === true) $("iva_aplica").value = "si";
+          if (fac.iva_aplica === false) $("iva_aplica").value = "no";
+        }
+        if ($("iva_porcentaje")){
+          const ivaPctDB = fac.iva_porcentaje ?? fac.iva_pct ?? null;
+          if (ivaPctDB !== null && ivaPctDB !== undefined && String(ivaPctDB).trim() !== ""){
+            $("iva_porcentaje").value = Number(ivaPctDB) || 0;
+          }
+        }
+        state.items = (det || []).map(it => ({
+          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          procedimiento_id: it.procedimiento_id,
+          codigo_cups: it.codigo_cups || "",
+          descripcion: it.descripcion || "",
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(it.valor_unitario || 0),
+          valor_total: Number(it.valor_total || 0)
+        }));
+        $("copago").value = Number(fac.copago || 0);
+        $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
+        state.facturaGuardada = fac;
+        $("btn-imprimir").disabled = false;
+        renderItems();
+        syncIVAUI();
+        setStatus("");
+        toast("Factura cargada ✅", "ok");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo cargar:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    async function imprimirFacturaPorId(facturaId){
+      try{
+        setStatus("Preparando impresión...");
+        const { data: fac, error: e1 } = await supabase
+          .from("facturas")
+          .select("*")
+          .eq("id", facturaId)
+          .single();
+        if (e1) throw e1;
+        const { data: det, error: e2 } = await supabase
+          .from("factura_detalle")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId)
+          .order("id", { ascending: true });
+        if (e2) throw e2;
+        // Abonos (si existe tabla)
+        let abonos = [];
+        try{
+          const { data: ab, error: ea } = await supabase
+            .from("abonos")
+            .select("id, fecha, monto, metodo_pago, referencia, observacion, created_at")
+            .eq("factura_id", facturaId)
+            .order("fecha", { ascending: true });
+          if (!ea) abonos = ab || [];
+          else console.warn("Tabla abonos no disponible:", ea?.message || ea);
+        }catch(e){
+          console.warn("No se pudieron cargar abonos:", e?.message || e);
+        }
+        const subtotal = (fac.subtotal !== undefined && fac.subtotal !== null)
+          ? Number(fac.subtotal || 0)
+          : (det || []).reduce((a,b)=> a + (Number(b.valor_total)||0), 0);
+        const aplica = (fac.iva_aplica === true);
+        const iva_pct = (fac.iva_porcentaje !== undefined && fac.iva_porcentaje !== null)
+          ? Number(fac.iva_porcentaje || 0)
+          : ((fac.iva_pct !== undefined && fac.iva_pct !== null) ? Number(fac.iva_pct || 0) : 0);
+        const iva_valor = (fac.iva_valor !== undefined && fac.iva_valor !== null)
+          ? Number(fac.iva_valor || 0)
+          : (aplica ? Math.max(0, subtotal * (Math.max(0, iva_pct) / 100)) : 0);
+        const copago = Number(fac.copago || 0);
+        const cuota = Number(fac.cuota_moderadora || 0);
+        const total = (fac.valor_total !== undefined && fac.valor_total !== null)
+          ? Number(fac.valor_total || 0)
+          : Math.max(0, (subtotal + iva_valor) - copago - cuota);
+        const html = buildInvoiceHTML({
+          fac,
+          detalle: det || [],
+          totals: { subtotal, iva_aplica: aplica, iva_pct: (aplica ? iva_pct : 0), iva_valor, copago, cuota_moderadora: cuota, total },
+          abonos
+        });
+        const w = window.open("", "_blank", "width=900,height=700");
+        if (!w){
+          setStatus("");
+          toast("Bloqueo de popups: habilita ventanas emergentes para imprimir.", "warn");
+          return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+        w.onload = () => {
+          try { w.focus(); w.print(); } catch(e) {}
+        };
+        setStatus("");
+      } catch(err){
+        console.error(err);
+        setStatus("");
+        toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    function exportarExcel(){
+      try{
+        const rows = state.facturas || [];
+        if (!rows.length){
+          toast("No hay facturas para exportar con ese filtro.", "warn");
+          return;
+        }
+        const desde = ($("fecha_desde")?.value || "").trim();
+        const hasta = ($("fecha_hasta")?.value || "").trim();
+      const estado = ($("estado_facturas")?.value || "todos").trim();
+        const q = ($("buscar_facturas")?.value || "").trim();
+        const data = rows.map(f => ({
+          "Fecha": formatFechaHuman(f.fecha),
+          "N° Factura": f.numero_factura || "",
+          "Paciente": f.paciente_nombre || "",
+          "Cédula": f.paciente_cedula || "",
+          "Correo": f.paciente_correo || "",
+          "Tipo usuario": f.tipo_usuario || "",
+          "EPS": f.eps || "",
+          "Profesional (valor guardado)": f.profesional || "",
+          "Pagada": (f.pagada === true) ? "Sí" : (f.pagada === false ? "No" : ""),
+          "Referencia pago": f.referencia_pago || "",
+          "Total": Number(f.valor_total || 0),
+          "Copago": Number(f.copago || 0),
+          "Cuota moderadora": Number(f.cuota_moderadora || 0),
+        }));
+        const totalFacturado = rows.reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
+        const ws = XLSX.utils.json_to_sheet(data);
+        const lastRow = data.length + 2;
+        XLSX.utils.sheet_add_aoa(ws, [
+          [],
+          ["TOTAL FACTURADO", totalFacturado]
+        ], { origin: `A${lastRow}` });
+        const ws2 = XLSX.utils.aoa_to_sheet([
+          ["Reporte de Facturas"],
+          ["Generado:", new Date().toLocaleString("es-CO")],
+          ["Filtro búsqueda (N° factura o cédula):", q || "(vacío)"],
+          ["Fecha desde:", desde || "(vacío)"],
+          ["Fecha hasta:", hasta || "(vacío)"],
+          ["Cantidad:", rows.length],
+          ["Total facturado:", totalFacturado]
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Facturas");
+        XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
+        const slugDesde = desde || "NA";
+        const slugHasta = hasta || "NA";
+        const filename = `reporte_facturas_${slugDesde}_a_${slugHasta}.xlsx`;
+        XLSX.writeFile(wb, filename);
+        toast("Excel descargado ✅", "ok");
+      } catch(err){
+        console.error(err);
+        toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
+      }
+    }
+    async function init(){
+      try{
+        $("year").textContent = new Date().getFullYear();
+        $("fecha").value = hoyISO();
+        if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
+        $("numero_factura").value = generarNumeroFactura();
+        if ($("pagada")) $("pagada").value = "si";
+        if ($("referencia_pago")) $("referencia_pago").value = "";
+        $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
+        $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
+        $("btn-add").addEventListener("click", agregarProcedimiento);
+        if ($("sel-proc-input")){
+          $("sel-proc-input").addEventListener("input", (e) => {
+            renderProcedimientosSelect(e.target.value || "");
+          });
+          $("sel-proc-input").addEventListener("focus", (e) => {
+            renderProcedimientosSelect(e.target.value || "");
+          });
+          document.addEventListener("click", (ev) => {
+            if (!ev.target.closest("#proc-dropdown") && !ev.target.closest("#sel-proc-input")){
+              const d = $("proc-dropdown");
+              if (d) d.style.display = "none";
+            }
+          });
+        }
+        $("copago").addEventListener("input", recalcularTotales);
+        $("cuota_moderadora").addEventListener("input", recalcularTotales);
+        if ($("descuento_pct")) $("descuento_pct").addEventListener("input", recalcularTotales);
+        $("iva_porcentaje").addEventListener("input", recalcularTotales);
+        $("iva_aplica").addEventListener("change", syncIVAUI);
+        $("btn-guardar").addEventListener("click", guardarFactura);
+        $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
+        if ($("btn-abonos")) {
+          $("btn-abonos").addEventListener("click", async () => {
+            if (!state.facturaGuardada?.id){
+              toast("Primero guarda la factura", "warn");
+              return;
+            }
+            await abrirAbonosFactura(state.facturaGuardada.id);
+          });
+        }
+        $("btn-logout").addEventListener("click", cerrarSesion);
+        $("paciente_cedula").addEventListener("input", onCedulaInput);
+        $("btn-ver-facturas").addEventListener("click", async () => {
+          const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
+          $("buscar_facturas").value = ced || "";
+          openModal();
+          await listarFacturas();
+        });
+        $("btn-cerrar-modal").addEventListener("click", closeModal);
+        $("modal-facturas").addEventListener("click", (e) => {
+          if (e.target === $("modal-facturas")) closeModal();
+        });
+        // ✅ Ver factura
+        $("btn-cerrar-modal-verfactura").addEventListener("click", closeModalVerFactura);
+        $("modal-verfactura").addEventListener("click", (e) => {
+          if (e.target === $("modal-verfactura")) closeModalVerFactura();
+        });
+        $("btn-imprimir-verfactura").addEventListener("click", async () => {
+          if (!state.facturaVer){
+            toast("No hay una factura seleccionada", "warn");
+            return;
+          }
+          await imprimirFacturaPorId(state.facturaVer);
+        });
+        // ✅ Abonos
+        $("btn-cerrar-modal-abonos").addEventListener("click", closeModalAbonos);
+        $("modal-abonos").addEventListener("click", (e) => {
+          if (e.target === $("modal-abonos")) closeModalAbonos();
+        });
+        $("btn-refresh-abonos").addEventListener("click", listarAbonos);
+        $("btn-agregar-abono").addEventListener("click", agregarAbono);
+        $("btn-refresh-facturas").addEventListener("click", listarFacturas);
+        // ✅ Maximizar / restaurar modal "Facturas generadas"
+        if ($("btn-max-modal-facturas")){
+          $("btn-max-modal-facturas").addEventListener("click", () => {
+            const card = document.querySelector("#modal-facturas .modal-card");
+            if (!card) return;
+            const isMax = card.classList.toggle("maximized");
+            $("btn-max-modal-facturas").textContent = isMax ? "🗗" : "⛶";
+            $("btn-max-modal-facturas").title = isMax ? "Restaurar" : "Maximizar";
+          });
+        }
+        $("btn-buscar-facturas").addEventListener("click", listarFacturas);
+        $("limite_facturas").addEventListener("change", listarFacturas);
+        $("fecha_desde").addEventListener("change", listarFacturas);
+        $("fecha_hasta").addEventListener("change", listarFacturas);
+        if ($("estado_facturas")) $("estado_facturas").addEventListener("change", listarFacturas);
+        $("buscar_facturas").addEventListener("keydown", (e) => {
+          if (e.key === "Enter") listarFacturas();
+        });
+        $("btn-export-excel").addEventListener("click", exportarExcel);
+        const ok = await proteger();
+        if (!ok) return;
+        await cargarProfesionales();
+        await cargarProcedimientos();
+        renderItems();
+        syncIVAUI();
+        recalcularTotales();
+      } catch (err){
+        console.error("INIT ERROR:", err);
+        toast("Error inicializando:\n" + (err?.message || err), "err");
+      }
+      // ✅ Asegurar dropdown cerrado al cargar la página
+const procDrop = document.getElementById("proc-dropdown");
+if (procDrop) procDrop.style.display = "none";
+
+    }
+    // ✅ ARRANQUE ROBUSTO (esto evita el “ningún botón funciona”)
+    if (document.readyState === "loading"){
+      window.addEventListener("DOMContentLoaded", init);
+    } else {
+      init();
+    }
+ /* =====================================================
+   ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
+   (?paciente_cedula=)
+   ===================================================== */
+(function () {
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("paciente_cedula");
+
+  if (!cedula) return;
+
+  // Esperar a que TODO esté inicializado
+  window.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("paciente_cedula");
+    if (!input) {
+      console.warn("❌ Input paciente_cedula no encontrado");
+      return;
+    }
+
+    // Setear la cédula
+    input.value = cedula;
+
+    // ⏳ Esperar a que Supabase + listeners estén listos
+    setTimeout(() => {
+      if (typeof buscarPacienteEnHistoria === "function") {
+        buscarPacienteEnHistoria(true); // ← ESTA ES LA CLAVE
+      } else {
+        console.error("❌ buscarPacienteEnHistoria no existe");
+      }
+    }, 600);
+  });
+})();
+
+   async function cargarPlanDesdeSupabase() {
+  // 1️⃣ Obtener cédula desde la URL o input
+  const params = new URLSearchParams(window.location.search);
+  const cedula =
+    params.get("cedula") ||
+    document.getElementById("paciente_cedula")?.value;
+
+  if (!cedula) {
+    alert("No se encontró la cédula del paciente");
+    return;
+  }
+
+  // 2️⃣ Consultar tabla temporal
+  const { data, error } = await supabase
+    .from("facturacion_temporal")
+    .select("*")
+    .eq("cedula", cedula);
+
+  if (error) {
+    console.error(error);
+    alert("Error consultando plan de tratamiento");
+    return;
+  }
+
+  if (!data || !data.length) {
+    alert("No hay procedimientos pendientes por cargar");
+    return;
+  }
+
+  console.log("📦 Plan recibido desde Supabase:", data);
+
+  // 3️⃣ Insertar en state.items
+  data.forEach(it => {
+  state.items.push({
+  id_local: crypto.randomUUID(),
+  procedimiento_id: it.procedimiento_id,
+  codigo_cups: it.codigo_cups,
+  descripcion: it.procedimiento,
+  cantidad: Number(it.cantidad || 1),
+  valor_unitario: Number(it.valor_unitario || 0),
+  valor_total: Number(it.valor_total || 0)
+});
+
+  });
+
+  // 4️⃣ Renderizar
+  renderItems();
+  recalcularTotales();
+
+  // 5️⃣ (OPCIONAL PERO RECOMENDADO) limpiar tabla temporal
+  await supabase
+    .from("facturacion_temporal")
+    .delete()
+    .eq("cedula", cedula);
+
+  console.log("✅ Plan cargado y tabla temporal limpiada");
+}
+ // ===============================
+// 📥 BOTÓN CARGAR PLAN DE TRATAMIENTO
+// ===============================
+document
+  .getElementById("btn-cargar-plan")
+  ?.addEventListener("click", cargarPlanDesdeSupabase);
+
+  </script>
 </body>
 </html>
-  `;
 
-  const iframe = document.getElementById("vf_iframe");
-  iframe.srcdoc = html;
-  const modal = document.getElementById("modal_vista_factura");
-  modal.classList.add("show");
-}
 
-function cerrarVistaFactura() {
-  const modal = document.getElementById("modal_vista_factura");
-  modal.classList.remove("show");
-}
 
-function descargarPDFFactura() {
-  const iframe = document.getElementById("vf_iframe");
-  if (!iframe || !iframe.contentWindow) {
-    showToast("No se puede descargar PDF", "err");
-    return;
-  }
-  iframe.contentWindow.print();
-}
 
-// ========== TOAST ==========
-function showToast(msg, type = "ok") {
-  const toast = document.getElementById("toast");
-  toast.textContent = msg;
-  toast.dataset.type = type;
-  toast.classList.add("show");
-  setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
-}
 
-// ========== INIT ==========
-window.addEventListener("DOMContentLoaded", () => {
-  checkAuth();
-});
-</script>
+
 
 
 
 
 <!-- =========================================================
-     NUEVA FUNCIÓN: ENVIAR FACTURA A FACTURACIÓN ELECTRÓNICA
-     Extrae TODOS los datos desde el iframe y los envía a n8n
+     FACTURACIÓN ELECTRÓNICA (CORS SAFE - FORM POST)
+     NO modifica ni interfiere con lógica existente
      ========================================================= -->
 <script>
-async function enviarFacturacionElectronica(){
+
+function enviarFacturacionElectronica(){
   try{
-    const iframe = document.getElementById("vf_iframe");
-    if(!iframe || !iframe.contentDocument){
-      alert("No se encontró factura visible");
-      return;
-    }
-    const doc = iframe.contentDocument;
+    // ⚠️ NO se requiere seleccionar factura:
+    // se envía la factura que está visible en el modal
 
-    // ✅ Número de factura desde el título (ej: "Factura F-001")
-    let facturaNumero = null;
-    try{
-      const t = (doc.title || "").trim();
-      if(t.toLowerCase().startsWith("factura")){
-        facturaNumero = t.replace(/^factura\s*/i, "").trim() || null;
-      }
-    }catch(_e){}
+    const facturaNumeroEl = document.querySelector('[data-factura-numero], #factura-numero, .factura-numero');
+    const facturaNumero = facturaNumeroEl ? facturaNumeroEl.textContent.trim() : null;
 
-    // ✅ Extraer paciente desde los divs .kv
     const paciente = {
       nombre: document.querySelector('[data-paciente-nombre]')?.textContent || null,
       cedula: document.querySelector('[data-paciente-cedula]')?.textContent || null,
@@ -1413,15 +2953,6 @@ async function enviarFacturacionElectronica(){
 })();
 </script>
 
-
-
-
-
-
-
-
-</body>
-</html>
 
 
 
