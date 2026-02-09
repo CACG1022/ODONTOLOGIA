@@ -485,14 +485,15 @@ table td.mono {
         <table>
           <thead>
             <tr>
-              <th style="width:90px;">ID</th>
+              <th style="width:110px;">ID procedimiento</th>
               <th style="width:180px;">Profesional</th>
               <th style="width:160px;">Costo</th>
               <th style="width:160px;">Costo total</th>
-              <th style="width:120px;">CUPS</th>
+              <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
-              <th style="width:180px;">V/Unit</th>
+              <th style="width:160px;">V/Unit</th>
+              <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -1183,7 +1184,7 @@ if ((isFocused || filtro) && count > 0) {
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
           <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
-          <td class="mono">$ ${money(it.valor_total)}</td>
+          <td class="mono">$ ${money(f.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
         tr.querySelectorAll("input").forEach(inp => {
@@ -1193,7 +1194,7 @@ if ((isFocused || filtro) && count > 0) {
 
              if (k === "cantidad") {
                it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
-               it.valor_total = it.cantidad * it.valor_unitario;
+               f.valor_total = it.cantidad * it.valor_unitario;
                renderItems();
                recalcularTotales();
                return;
@@ -1201,7 +1202,7 @@ if ((isFocused || filtro) && count > 0) {
 
              if (k === "valor_unitario") {
                it.valor_unitario = Math.max(0, v);
-               it.valor_total = it.cantidad * it.valor_unitario;
+               f.valor_total = it.cantidad * it.valor_unitario;
                renderItems();
                recalcularTotales();
                return;
@@ -1381,7 +1382,7 @@ function obtenerCostoDeItem(it){
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td class="tr">${Number(it.cantidad||0)}</td>
           <td class="tr">$ ${money(it.valor_unitario || 0)}</td>
-          <td class="tr mono">$ ${money(it.valor_total || 0)}</td>
+          <td class="tr mono">$ ${money(f.valor_total || 0)}</td>
         </tr>
       `).join("");
       const abRows = (abonos || []).map(a => `
@@ -1730,7 +1731,7 @@ function obtenerCostoDeItem(it){
   descripcion: it.descripcion || "",
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
-  valor_total: it.valor_total || 0,
+  valor_total: f.valor_total || 0,
   profesional: obtenerProfesionalRawDeItem(it)
 }));
 
@@ -2664,7 +2665,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           descripcion: it.descripcion || "",
           cantidad: Number(it.cantidad || 1),
           valor_unitario: Number(it.valor_unitario || 0),
-          valor_total: Number(it.valor_total || 0)
+          valor_total: Number(f.valor_total || 0)
         }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
@@ -3061,7 +3062,7 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0)
+  valor_total: Number(f.valor_total || 0)
 });
 
   });
@@ -3400,6 +3401,9 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
+
 
 
 
