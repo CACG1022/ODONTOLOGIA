@@ -357,12 +357,6 @@ table td:nth-child(2) {
   line-height: 1.2;
 }
 
-
-/* ✅ Ajuste: con nueva columna ID, el texto del procedimiento ahora es la columna 4 (solo en tabla de items) */
-#tabla-items td:nth-child(4) {
-  line-height: 1.2;
-}
-
 /* Columna de totales */
 table td.mono {
   font-size: 13px;
@@ -488,16 +482,14 @@ table td.mono {
         </div>
       </div>
       <div style="margin-top:12px; overflow:auto;">
-        <table id="tabla-items">
+        <table>
           <thead>
             <tr>
-              <th style="width:90px;">ID</th>
               <th style="width:180px;">Profesional</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
               <th style="width:160px;">V/Unit</th>
-              <th style="width:140px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -733,7 +725,7 @@ table td.mono {
               </tr>
             </thead>
             <tbody id="tbody-abonos">
-              <tr><td colspan="9" class="empty">Selecciona una factura...</td></tr>
+              <tr><td colspan="7" class="empty">Selecciona una factura...</td></tr>
             </tbody>
           </table>
         </div>
@@ -927,7 +919,7 @@ async function validarPermisoDesdeTabla(){
     async function cargarProcedimientos(){
       const { data, error } = await supabase
         .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, profesional, activo, costo")
+        .select("id, procedimiento, valor, codigo_cups, profesional, activo")
         .order("procedimiento", { ascending: true });
       if (error){
         console.error(error);
@@ -1107,13 +1099,11 @@ if ((isFocused || filtro) && count > 0) {
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
           <td><input type="number" min="0" step="100" value="${it.valor_unitario}" data-k="valor_unitario"></td>
-          <td class="mono">$ ${money(obtenerCostoDeItem(it))}</td>
           <td class="mono">$ ${money(it.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
@@ -1228,18 +1218,6 @@ if ((isFocused || filtro) && count > 0) {
   if (p && p.profesional) return p.profesional;
 
   return null;
-}
-
-
-// ==============================
-// ✅ NUEVO: COSTO por procedimiento (desde procedimientos_precios.costo)
-// ==============================
-function obtenerCostoDeItem(it){
-  const p = state.procedimientos.find(
-    x => String(x.id) === String(it.procedimiento_id)
-  );
-  const c = (p && (p.costo !== null && p.costo !== undefined)) ? Number(p.costo) : 0;
-  return Number.isFinite(c) ? c : 0;
 }
 
 
@@ -2964,7 +2942,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
