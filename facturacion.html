@@ -486,6 +486,8 @@ table td.mono {
           <thead>
             <tr>
               <th style="width:180px;">Profesional</th>
+              <th style="width:140px;">Costo</th>
+              <th style="width:160px;">Costo total</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
@@ -1100,6 +1102,8 @@ if ((isFocused || filtro) && count > 0) {
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td><input type="number" min="0" step="100" value="${it.costo || 0}" data-k="costo"></td>
+          <td class="mono">$ ${money(it.costo_total || 0)}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -2942,9 +2946,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
-
-
 
 
 
