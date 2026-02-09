@@ -491,7 +491,8 @@ table td.mono {
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
-              <th style="width:180px;">V/Unit</th>
+              <th style="width:160px;">V/Unit</th>
+              <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -1103,7 +1104,7 @@ if ((isFocused || filtro) && count > 0) {
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
-          <td><input type="number" min="0" step="100" value="${obtenerCostoDeItem(it)}" data-k="costo"></td>
+          <td><input type="number" min="0" step="100" value="${(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))}" data-k="costo"></td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -2955,6 +2956,8 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
 
 
 
