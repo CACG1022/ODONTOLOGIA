@@ -485,14 +485,11 @@ table td.mono {
         <table>
           <thead>
             <tr>
-              <th style="width:110px;">ID procedimiento</th>
               <th style="width:180px;">Profesional</th>
-              <th style="width:160px;">Costo</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
               <th style="width:160px;">V/Unit</th>
-              <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -922,7 +919,7 @@ async function validarPermisoDesdeTabla(){
     async function cargarProcedimientos(){
       const { data, error } = await supabase
         .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, profesional, activo, costo")
+        .select("id, procedimiento, valor, codigo_cups, profesional, activo")
         .order("procedimiento", { ascending: true });
       if (error){
         console.error(error);
@@ -1096,15 +1093,13 @@ if ((isFocused || filtro) && count > 0) {
       const tbody = $("tbody-items");
       tbody.innerHTML = "";
       if (state.items.length === 0){
-        tbody.innerHTML = `<tr><td colspan="9" class="empty">Aún no has agregado procedimientos.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no has agregado procedimientos.</td></tr>`;
         return;
       }
       for (const it of state.items){
         const tr = document.createElement("tr");
         tr.innerHTML = `
-          <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
-          <td><input type="number" min="0" step="100" value="${obtenerCostoDeItem(it)}" data-k="costo"></td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1118,7 +1113,6 @@ if ((isFocused || filtro) && count > 0) {
             const v = num(inp.value);
             if (k === "cantidad") it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
             if (k === "valor_unitario") it.valor_unitario = Math.max(0, v);
-             if (k === "costo") it.costo = Math.max(0, v);
             it.valor_total = it.cantidad * it.valor_unitario;
             renderItems();
             recalcularTotales();
@@ -1211,14 +1205,6 @@ if ((isFocused || filtro) && count > 0) {
 
   return "—";
 }
-
-function obtenerCostoDeItem(it){
-  const p = state.procedimientos.find(
-    x => String(x.id) === String(it.procedimiento_id)
-  );
-  return p && p.costo ? Number(p.costo) : 0;
-}
-
 
     function obtenerProfesionalRawDeItem(it){
   // 1. Si el item ya trae profesional crudo
@@ -2956,12 +2942,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
-
-
-
-
-
 
 
 
