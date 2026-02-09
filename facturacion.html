@@ -1077,9 +1077,7 @@ if ((isFocused || filtro) && count > 0) {
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
-  valor_total: valorU * cantidad,
-      costo: Number(p.costo || 0),
-      costo_total: Number(p.costo || 0) * cantidad
+  valor_total: valorU * cantidad
 };
 
       state.items.push(item);
@@ -2973,6 +2971,9 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
+
 
 
 
