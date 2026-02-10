@@ -2585,14 +2585,15 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
   const isNum = /^[0-9]+$/.test(q);
 
   if (isNum){
-    // 🔥 FIX: convertir a texto para que funcione con BIGINT / NUMERIC
-    query = query.or(
-      `paciente_cedula.eq.${q},paciente_cedula::text.ilike.%${q}%`
-    );
+    // ✅ Búsqueda por cédula (NUMERIC / BIGINT)
+    query = query.eq("paciente_cedula", q);
   } else {
+    // ✅ Búsqueda por número de factura (TEXTO)
     query = query.ilike("numero_factura", `%${q}%`);
   }
 }
+
+
 
         const { data, error } = await query;
         if (error) throw error;
