@@ -399,6 +399,21 @@ input[type="number"] {
 }
 
 </style>
+
+<style>
+/* ===== Resumen de costo por profesional ===== */
+.resumen-profesionales {
+  text-align: left;
+}
+.resumen-profesionales .resumen-linea {
+  display: block !important;
+  width: 100%;
+  margin-bottom: 4px;
+  color: #16a34a;
+  font-weight: 800;
+}
+</style>
+
 </head>
 <body>
   <div class="topbar">
@@ -545,7 +560,7 @@ input[type="number"] {
            =============================== -->
       <div class="box" id="box-resumen-profesionales">
         <div style="font-weight:900; margin-bottom:8px;">RESUMEN DE COSTO</div>
-        <div id="resumen-profesionales" style="text-align:left;">
+        <div id="resumen-profesionales" class="resumen-profesionales">
           <div class="mono" style="color: var(--muted);">— Sin datos —</div>
         </div>
       </div>
@@ -1595,6 +1610,21 @@ function obtenerCostoDeItem(it){
 }
 
 </style>
+
+<style>
+/* ===== Resumen de costo por profesional ===== */
+.resumen-profesionales {
+  text-align: left;
+}
+.resumen-profesionales .resumen-linea {
+  display: block !important;
+  width: 100%;
+  margin-bottom: 4px;
+  color: #16a34a;
+  font-weight: 800;
+}
+</style>
+
 </head>
 <body>
   <div class="page">
@@ -3217,14 +3247,13 @@ document
   
 
     /* =====================================================
-       ✅ RESUMEN DE COSTO POR PROFESIONAL (LINEA POR FILA)
+       ✅ RESUMEN DE COSTO POR PROFESIONAL (LINEAS FORZADAS)
        ===================================================== */
     function renderResumenPorProfesional(){
       try{
         const cont = document.getElementById("resumen-profesionales");
         if (!cont) return;
 
-        // limpiar completamente
         cont.innerHTML = "";
 
         const acc = Object.create(null);
@@ -3242,7 +3271,7 @@ document
 
         const keys = Object.keys(acc);
         if (!keys.length){
-          cont.innerHTML = '<div class="mono" style="color: var(--muted);">— Sin datos —</div>';
+          cont.innerHTML = '<div class="mono">— Sin datos —</div>';
           return;
         }
 
@@ -3250,11 +3279,7 @@ document
 
         keys.forEach(k => {
           const row = document.createElement("div");
-          row.className = "mono";
-          row.style.color = "#16a34a";
-          row.style.fontWeight = "800";
-          row.style.display = "block";
-          row.style.marginBottom = "4px";
+          row.className = "resumen-linea";
           row.textContent = `${k}: $ ${money(acc[k])}`;
           cont.appendChild(row);
         });
@@ -3263,7 +3288,7 @@ document
       }
     }
 
-    // Hooks suaves (no rompen nada)
+    // Hooks suaves
     (function(){
       const _renderItems = renderItems;
       renderItems = function(){
@@ -3595,7 +3620,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
