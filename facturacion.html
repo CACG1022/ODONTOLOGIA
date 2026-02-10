@@ -606,7 +606,21 @@ input[type="number"] {
     
 
     
-    <div class="footer">
+    
+<!-- ===============================
+     ✅ RESUMEN DE COSTO POR PROFESIONAL
+     (NO modifica lógica existente)
+     =============================== -->
+<div class="totales">
+  <div class="box">
+    <div style="font-weight:900; margin-bottom:8px;">Resumen de costo por profesional</div>
+    <div id="resumen-profesionales">
+      <div class="mono" style="color:var(--muted);">— Sin datos —</div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
       <div class="status" id="status"></div>
       <div>© <span id="year"></span></div>
     </div>
@@ -1724,6 +1738,60 @@ function obtenerCostoDeItem(it){
   });
 })();
 <\/script>
+
+<script>
+/* =====================================================
+   ✅ RESUMEN DE COSTO POR PROFESIONAL (AUTO)
+   No altera flujos existentes
+   ===================================================== */
+function renderResumenPorProfesional(){
+  try{
+    const cont = document.getElementById("resumen-profesionales");
+    if (!cont) return;
+
+    const map = {};
+    (state.items || []).forEach(it => {
+      const prof = obtenerProfesionalDeItem(it) || "—";
+      const costoU = Number(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it)) || 0;
+      const total = costoU * Number(it.cantidad || 0);
+      map[prof] = (map[prof] || 0) + total;
+    });
+
+    cont.innerHTML = "";
+    const keys = Object.keys(map);
+    if (!keys.length){
+      cont.innerHTML = '<div class="mono" style="color:var(--muted);">— Sin datos —</div>';
+      return;
+    }
+
+    keys.forEach(k => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.justifyContent = "space-between";
+      row.style.padding = "4px 0";
+      row.innerHTML = `<span style="color:#16a34a;font-weight:800;">${k}</span>
+                       <b style="color:#16a34a;">$ ${money(map[k])}</b>`;
+      cont.appendChild(row);
+    });
+  }catch(e){
+    console.warn("Resumen profesional error:", e);
+  }
+}
+
+// Hook suave sin tocar funciones existentes
+const __oldRenderItems = renderItems;
+renderItems = function(){
+  __oldRenderItems.apply(this, arguments);
+  renderResumenPorProfesional();
+};
+
+const __oldRecalc = recalcularTotales;
+recalcularTotales = function(){
+  __oldRecalc.apply(this, arguments);
+  renderResumenPorProfesional();
+};
+</script>
+
 </body>
 </html>`;
     }
@@ -3204,6 +3272,60 @@ document
   ?.addEventListener("click", cargarPlanDesdeSupabase);
 
   </script>
+
+<script>
+/* =====================================================
+   ✅ RESUMEN DE COSTO POR PROFESIONAL (AUTO)
+   No altera flujos existentes
+   ===================================================== */
+function renderResumenPorProfesional(){
+  try{
+    const cont = document.getElementById("resumen-profesionales");
+    if (!cont) return;
+
+    const map = {};
+    (state.items || []).forEach(it => {
+      const prof = obtenerProfesionalDeItem(it) || "—";
+      const costoU = Number(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it)) || 0;
+      const total = costoU * Number(it.cantidad || 0);
+      map[prof] = (map[prof] || 0) + total;
+    });
+
+    cont.innerHTML = "";
+    const keys = Object.keys(map);
+    if (!keys.length){
+      cont.innerHTML = '<div class="mono" style="color:var(--muted);">— Sin datos —</div>';
+      return;
+    }
+
+    keys.forEach(k => {
+      const row = document.createElement("div");
+      row.style.display = "flex";
+      row.style.justifyContent = "space-between";
+      row.style.padding = "4px 0";
+      row.innerHTML = `<span style="color:#16a34a;font-weight:800;">${k}</span>
+                       <b style="color:#16a34a;">$ ${money(map[k])}</b>`;
+      cont.appendChild(row);
+    });
+  }catch(e){
+    console.warn("Resumen profesional error:", e);
+  }
+}
+
+// Hook suave sin tocar funciones existentes
+const __oldRenderItems = renderItems;
+renderItems = function(){
+  __oldRenderItems.apply(this, arguments);
+  renderResumenPorProfesional();
+};
+
+const __oldRecalc = recalcularTotales;
+recalcularTotales = function(){
+  __oldRecalc.apply(this, arguments);
+  renderResumenPorProfesional();
+};
+</script>
+
 </body>
 </html>
 
