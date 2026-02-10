@@ -155,6 +155,21 @@
       background:#fbfcfd;
       flex-wrap:wrap;
     }
+
+    #box-resumen-profesionales{
+  flex: 1;
+}
+
+#box-margen-ganancia{
+  flex: 1;
+  text-align: center;
+}
+
+.totales > .box:last-child{
+  flex: 1;
+}
+
+    
     .totales .box{
       min-width: 260px;
       border:1px solid var(--line);
@@ -586,6 +601,14 @@ input[type="number"] {
         </div>
       </div>
 
+      <div class="box" id="box-margen-ganancia">
+        <div style="font-weight:900; margin-bottom:8px;">MARGEN DE GANANCIA</div>
+          <div id="margen-ganancia">
+         <div class="mono">—</div>
+        </div>
+     </div>
+
+
       <div class="box">
         <div><span>Subtotal</span><b>$ <span id="subtotal">0</span></b></div>
         <div style="align-items:flex-start;">
@@ -911,6 +934,27 @@ input[type="number"] {
       const ss = String(d.getSeconds()).padStart(2,"0");
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
+
+   function renderMargenGanancia(){
+  const cont = document.getElementById("margen-ganancia");
+  if (!cont) return;
+
+  const subtotal = Number(state.subtotal || 0);
+  const totalCostos = Number(window.__totalCostos || 0); 
+  // __totalCostos lo puedes guardar cuando calculas el resumen
+
+  const ganancia = subtotal - totalCostos;
+  const margen = subtotal > 0 ? (ganancia / subtotal) * 100 : 0;
+
+  cont.innerHTML = `
+    <div style="font-weight:800;">$ ${money(ganancia)}</div>
+    <div style="color:#6b7280; font-size:13px;">
+      Margen: ${margen.toFixed(1)} %
+    </div>
+  `;
+}
+
+    
     async function cargarRolActual(){
       const email = (state.session?.user?.email || "").trim().toLowerCase();
       const elRole = $("user-role");
@@ -3321,6 +3365,8 @@ document
         totalRow.className = "resumen-total";
         totalRow.textContent = `TOTAL COSTOS: $ ${money(totalGeneral)}`;
         cont.appendChild(totalRow);
+        // ✅ CLAVE PARA EL MARGEN
+        window.__totalCostos = totalGeneral;
 
       }catch(e){
         console.warn("Resumen profesional error:", e);
@@ -3333,6 +3379,7 @@ document
       renderItems = function(){
         const r = _renderItems.apply(this, arguments);
         renderResumenPorProfesional();
+        renderMargenGanancia(); 
         return r;
       };
 
@@ -3340,6 +3387,7 @@ document
       recalcularTotales = function(){
         const r = _recalc.apply(this, arguments);
         renderResumenPorProfesional();
+        renderMargenGanancia(); 
         return r;
       };
     })();
