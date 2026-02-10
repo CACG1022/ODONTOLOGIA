@@ -2020,6 +2020,7 @@ const totalCalc = Number(f.valor_total ?? 0)
   .select(`
     fecha,
     monto,
+    metodo_pago,
     factura_id,
     facturas (
       numero_factura,
