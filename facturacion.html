@@ -545,8 +545,8 @@ input[type="number"] {
            =============================== -->
       <div class="box" id="box-resumen-profesionales">
         <div style="font-weight:900; margin-bottom:8px;">RESUMEN DE COSTO</div>
-        <div id="resumen-profesionales">
-          <div class="mono" style="color: var(--muted); text-align:left;">— Sin datos —</div>
+        <div id="resumen-profesionales" style="text-align:left;">
+          <div class="mono" style="color: var(--muted);">— Sin datos —</div>
         </div>
       </div>
 
@@ -3217,12 +3217,15 @@ document
   
 
     /* =====================================================
-       ✅ RESUMEN DE COSTO POR PROFESIONAL (ORDENADO)
+       ✅ RESUMEN DE COSTO POR PROFESIONAL (LINEA POR FILA)
        ===================================================== */
     function renderResumenPorProfesional(){
       try{
         const cont = document.getElementById("resumen-profesionales");
         if (!cont) return;
+
+        // limpiar completamente
+        cont.innerHTML = "";
 
         const acc = Object.create(null);
 
@@ -3237,11 +3240,9 @@ document
           acc[prof] = (acc[prof] || 0) + totalCosto;
         });
 
-        cont.innerHTML = "";
-
         const keys = Object.keys(acc);
         if (!keys.length){
-          cont.innerHTML = '<div class="mono" style="color: var(--muted); text-align:left;">— Sin datos —</div>';
+          cont.innerHTML = '<div class="mono" style="color: var(--muted);">— Sin datos —</div>';
           return;
         }
 
@@ -3249,10 +3250,12 @@ document
 
         keys.forEach(k => {
           const row = document.createElement("div");
-          row.style.textAlign = "left";
-          row.style.padding = "4px 0";
-          row.innerHTML = `<span style="color:#16a34a; font-weight:800;">${k}:</span>
-                           <span style="color:#16a34a; font-weight:800;"> $ ${money(acc[k])}</span>`;
+          row.className = "mono";
+          row.style.color = "#16a34a";
+          row.style.fontWeight = "800";
+          row.style.display = "block";
+          row.style.marginBottom = "4px";
+          row.textContent = `${k}: $ ${money(acc[k])}`;
           cont.appendChild(row);
         });
       }catch(e){
@@ -3260,7 +3263,7 @@ document
       }
     }
 
-    // Hooks suaves
+    // Hooks suaves (no rompen nada)
     (function(){
       const _renderItems = renderItems;
       renderItems = function(){
@@ -3592,6 +3595,17 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
+
 
 
 
