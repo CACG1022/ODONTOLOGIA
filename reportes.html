@@ -2089,7 +2089,7 @@ const totalCalc = Number(f.valor_total ?? 0)
     const { data, error } = await supabase
       .from("factura_detalle")
       .select(`
-        costo,
+        costo_total,
         facturas!inner (
           fecha
         )
