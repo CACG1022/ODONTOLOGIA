@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -542,12 +542,11 @@ input[type="number"] {
 
       <!-- ===============================
            ✅ RESUMEN DE COSTO POR PROFESIONAL
-           (Solo UI + cálculo, no altera autenticación/permisos)
            =============================== -->
       <div class="box" id="box-resumen-profesionales">
         <div style="font-weight:900; margin-bottom:8px;">RESUMEN DE COSTO</div>
-        <div id="resumen-profesionales" style="min-height: 40px;">
-          <div class="mono" style="color: var(--muted);">— Sin datos —</div>
+        <div id="resumen-profesionales">
+          <div class="mono" style="color: var(--muted); text-align:left;">— Sin datos —</div>
         </div>
       </div>
 
@@ -3218,10 +3217,7 @@ document
   
 
     /* =====================================================
-       ✅ RESUMEN DE COSTO POR PROFESIONAL (AUTO)
-       - Calcula costo_total = costo_unitario * cantidad
-       - Agrupa por profesional mostrado en la tabla
-       - Se actualiza al renderizar items / recalcular totales
+       ✅ RESUMEN DE COSTO POR PROFESIONAL (ORDENADO)
        ===================================================== */
     function renderResumenPorProfesional(){
       try{
@@ -3231,64 +3227,54 @@ document
         const acc = Object.create(null);
 
         (state.items || []).forEach(it => {
-          const prof = (obtenerProfesionalDeItem(it) || "—").toString().trim() || "—";
+          let prof = (obtenerProfesionalDeItem(it) || "").toString().trim();
+          if (!prof || prof === "—") prof = "En blanco";
+
           const costoU = Number((it.costo !== undefined) ? it.costo : obtenerCostoDeItem(it)) || 0;
           const cant = Number(it.cantidad || 0) || 0;
           const totalCosto = Math.max(0, costoU * cant);
+
           acc[prof] = (acc[prof] || 0) + totalCosto;
         });
 
-        const keys = Object.keys(acc);
         cont.innerHTML = "";
 
+        const keys = Object.keys(acc);
         if (!keys.length){
-          cont.innerHTML = '<div class="mono" style="color: var(--muted);">— Sin datos —</div>';
+          cont.innerHTML = '<div class="mono" style="color: var(--muted); text-align:left;">— Sin datos —</div>';
           return;
         }
 
-        // Orden descendente por valor
         keys.sort((a,b) => (acc[b]||0) - (acc[a]||0));
 
-        for (const k of keys){
+        keys.forEach(k => {
           const row = document.createElement("div");
-          row.style.display = "flex";
-          row.style.justifyContent = "space-between";
+          row.style.textAlign = "left";
           row.style.padding = "4px 0";
-          row.innerHTML = `
-            <span style="color:#16a34a; font-weight:800;">${escapeHtml(k)}</span>
-            <b style="color:#16a34a;">$ ${money(acc[k])}</b>
-          `;
+          row.innerHTML = `<span style="color:#16a34a; font-weight:800;">${k}:</span>
+                           <span style="color:#16a34a; font-weight:800;"> $ ${money(acc[k])}</span>`;
           cont.appendChild(row);
-        }
+        });
       }catch(e){
-        console.warn("Resumen por profesional error:", e);
+        console.warn("Resumen profesional error:", e);
       }
     }
 
-    // ✅ Hook SUAVE: envolver funciones existentes sin romper nada
+    // Hooks suaves
     (function(){
-      try{
-        const _renderItems = renderItems;
-        renderItems = function(){
-          const r = _renderItems.apply(this, arguments);
-          // recalcula resumen luego del render
-          renderResumenPorProfesional();
-          return r;
-        };
-      }catch(e){
-        console.warn("Hook renderItems resumen falló:", e);
-      }
+      const _renderItems = renderItems;
+      renderItems = function(){
+        const r = _renderItems.apply(this, arguments);
+        renderResumenPorProfesional();
+        return r;
+      };
 
-      try{
-        const _recalc = recalcularTotales;
-        recalcularTotales = function(){
-          const r = _recalc.apply(this, arguments);
-          renderResumenPorProfesional();
-          return r;
-        };
-      }catch(e){
-        console.warn("Hook recalcularTotales resumen falló:", e);
-      }
+      const _recalc = recalcularTotales;
+      recalcularTotales = function(){
+        const r = _recalc.apply(this, arguments);
+        renderResumenPorProfesional();
+        return r;
+      };
     })();
 
 </script>
@@ -3606,6 +3592,7 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
 
 
 
