@@ -2048,6 +2048,12 @@ const totalCalc = Number(f.valor_total ?? 0)
         return;
       }
 
+      const totalMonto = data.reduce(
+  (acc, a) => acc + (Number(a.monto) || 0),
+  0
+);
+
+
       $("tabla_abonos").innerHTML = data.map(a => `
   <tr>
     <td>${formatFechaHuman(a.fecha)}</td>
@@ -2057,7 +2063,15 @@ const totalCalc = Number(f.valor_total ?? 0)
     <td class="mono">$ ${money(a.monto)}</td>
     <td>${a.observacion || "-"}</td>
   </tr>
-`).join("");
+`).join("")}
+
+  <!-- FILA TOTAL -->
+  <tr style="border-top:2px solid #e5e7eb; font-weight:900;">
+    <td colspan="4" style="text-align:right;">TOTAL</td>
+    <td class="mono">$ ${money(totalMonto)}</td>
+    <td></td>
+  </tr>
+`;
 
     }
 
