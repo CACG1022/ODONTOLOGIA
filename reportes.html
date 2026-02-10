@@ -800,6 +800,7 @@
           <th>Factura</th>
           <th>Método</th>
           <th>Monto</th>
+          <th>Observación</th>
         </tr>
       </thead>
       <tbody id="tabla_abonos">
@@ -2022,6 +2023,7 @@ const totalCalc = Number(f.valor_total ?? 0)
     fecha,
     monto,
     metodo_pago,
+    observacion,
     factura_id,
     facturas (
       numero_factura,
@@ -2052,7 +2054,9 @@ const totalCalc = Number(f.valor_total ?? 0)
     <td>${a.facturas?.paciente_nombre || "-"}</td>
     <td>${a.facturas?.numero_factura || "-"}</td>
     <td>${a.metodo_pago || "-"}</td>
+     <td>${a.observacion || "-"}</td>
     <td class="mono">$ ${money(a.monto)}</td>
+   
   </tr>
 `).join("");
 
