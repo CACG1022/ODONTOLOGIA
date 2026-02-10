@@ -1174,7 +1174,7 @@ if ((isFocused || filtro) && count > 0) {
       }
       for (const it of state.items){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(a.id);
+        tr.dataset.idLocal = String(it.id_local);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
@@ -1908,7 +1908,7 @@ function obtenerCostoDeItem(it){
       }
       for (const a of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
+        tr.dataset.idLocal = String(a.id);
         const fecha = formatFechaHuman(a.fecha || a.created_at);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
