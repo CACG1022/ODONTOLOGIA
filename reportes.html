@@ -2054,16 +2054,17 @@ const totalCalc = Number(f.valor_total ?? 0)
 );
 
 
-      $("tabla_abonos").innerHTML = data.map(a => `
-  <tr>
-    <td>${formatFechaHuman(a.fecha)}</td>
-    <td>${a.facturas?.paciente_nombre || "-"}</td>
-    <td>${a.facturas?.numero_factura || "-"}</td>
-    <td>${a.metodo_pago || "-"}</td>
-    <td class="mono">$ ${money(a.monto)}</td>
-    <td>${a.observacion || "-"}</td>
-  </tr>
-`).join("")}
+     $("tabla_abonos").innerHTML = `
+  ${data.map(a => `
+    <tr>
+      <td>${formatFechaHuman(a.fecha)}</td>
+      <td>${a.facturas?.paciente_nombre || "-"}</td>
+      <td>${a.facturas?.numero_factura || "-"}</td>
+      <td>${a.metodo_pago || "-"}</td>
+      <td class="mono">$ ${money(a.monto)}</td>
+      <td>${a.observacion || "-"}</td>
+    </tr>
+  `).join("")}
 
   <!-- FILA TOTAL -->
   <tr style="border-top:2px solid #e5e7eb; font-weight:900;">
@@ -2072,6 +2073,7 @@ const totalCalc = Number(f.valor_total ?? 0)
     <td></td>
   </tr>
 `;
+
 
     }
 
