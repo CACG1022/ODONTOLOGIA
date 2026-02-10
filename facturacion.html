@@ -487,13 +487,12 @@ table td.mono {
             <tr>
               <th style="width:110px;">ID procedimiento</th>
               <th style="width:180px;">Profesional</th>
-              <th style="width:160px;">Costo</th>
+              <th style="width:140px;">Costo</th>
               <th style="width:160px;">Costo total</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
               <th style="width:160px;">V/Unit</th>
-              <th style="width:160px;">Costo</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -729,7 +728,7 @@ table td.mono {
               </tr>
             </thead>
             <tbody id="tbody-abonos">
-              <tr><td colspan="7" class="empty">Selecciona una factura...</td></tr>
+              <tr><td colspan="10" class="empty">Selecciona una factura...</td></tr>
             </tbody>
           </table>
         </div>
@@ -856,24 +855,6 @@ table td.mono {
         if (elRole) elRole.textContent = "user";
         return "user";
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function getModuloCandidates(mod){
   const base = String(mod || "").toLowerCase().trim();
@@ -933,24 +914,6 @@ async function validarPermisoDesdeTabla(){
         $("user-email").textContent = session.user?.email || "Usuario";
         cargarRolActual().then(()=> validarAccesoPorRol());
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     });
     async function cerrarSesion(){
       try { await supabase.auth.signOut(); } catch(e) {}
@@ -1041,24 +1004,6 @@ if ((isFocused || filtro) && count > 0) {
         opt.textContent = nom;
         sel.appendChild(opt);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function buscarPacienteEnHistoria(force = false){
       const cedula = ($("paciente_cedula").value || "")
@@ -1099,24 +1044,6 @@ if ((isFocused || filtro) && count > 0) {
         console.error("Error buscando en N8N:", err);
         setHint("Error consultando (mira Console F12).");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function onCedulaInput(){
       clearTimeout(state._debounce);
@@ -1150,7 +1077,9 @@ if ((isFocused || filtro) && count > 0) {
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
-  valor_total: valorU * cantidad
+  valor_total: valorU * cantidad,
+      costo: costoProcedimiento,
+      costo_total: costoProcedimiento * cantidad
 };
 
       state.items.push(item);
@@ -1174,12 +1103,11 @@ if ((isFocused || filtro) && count > 0) {
       }
       for (const it of state.items){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
-          <td><input type="number" min="0" step="100" value="${(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))}" data-k="costo"></td>
-          <td class="mono costo-total" data-k="costo_total">$ ${money((Number(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it)) || 0) * (Number(it.cantidad||0) || 0))}</td>
+          <td><input type="number" min="0" step="100" value="${it.costo}" data-k="costo"></td>
+          <td class="mono costo-total">$ ${money(it.costo_total)}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1188,80 +1116,42 @@ if ((isFocused || filtro) && count > 0) {
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
         tr.querySelectorAll("input").forEach(inp => {
-           inp.addEventListener("input", () => {
-             const k = inp.dataset.k;
-             const v = num(inp.value);
+      inp.addEventListener("input", () => {
+        const k = inp.dataset.k;
+        const v = num(inp.value);
 
-             if (k === "cantidad") {
-               it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
-               it.valor_total = it.cantidad * it.valor_unitario;
-               renderItems();
-               recalcularTotales();
-               return;
-             }
+        if (k === "cantidad") {
+          it.cantidad = Math.max(1, parseInt(v) || 1);
+          it.valor_total = it.cantidad * it.valor_unitario;
+          it.costo_total = it.cantidad * it.costo;
+          renderItems();
+          recalcularTotales();
+          return;
+        }
 
-             if (k === "valor_unitario") {
-               it.valor_unitario = Math.max(0, v);
-               it.valor_total = it.cantidad * it.valor_unitario;
-               renderItems();
-               recalcularTotales();
-               return;
-             }
+        if (k === "valor_unitario") {
+          it.valor_unitario = Math.max(0, v);
+          it.valor_total = it.cantidad * it.valor_unitario;
+          renderItems();
+          recalcularTotales();
+          return;
+        }
 
-             if (k === "costo") {
-               it.costo = Math.max(0, v);
-
-               // 🔄 Recalcular costo total en vivo
-               const row = inp.closest("tr");
-               if (row) {
-                 const ct = row.querySelector(".costo-total");
-                 if (ct) {
-                   const costoU = Number(it.costo || 0);
-                   const cant = Number(it.cantidad || 0);
-                   ct.textContent = "$ " + money(costoU * cant);
-                 }
-               }
-               return;
-             }
-           });
-
-         inp.addEventListener("blur", () => {
-           if (inp.dataset.k === "costo") {
-             const v = num(inp.value);
-             it.costo = Math.max(0, v);
-             const row = inp.closest("tr");
-             if (row) {
-               const ct = row.querySelector(".costo-total");
-               if (ct) {
-                 const costoU = Number(it.costo || 0);
-                 const cant = Number(it.cantidad || 0);
-                 ct.textContent = "$ " + money(costoU * cant);
-               }
-             }
-           }
-         });
-         });
+        if (k === "costo") {
+          it.costo = Math.max(0, v);
+          it.costo_total = it.cantidad * it.costo;
+          const row = inp.closest("tr");
+          if (row) {
+            const ct = row.querySelector(".costo-total");
+            if (ct) ct.textContent = "$ " + money(it.costo_total);
+          }
+          return;
+        }
+      });
+    });
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function ivaAplica(){
       return (String($("iva_aplica")?.value || "si").toLowerCase() === "si");
@@ -1346,14 +1236,6 @@ if ((isFocused || filtro) && count > 0) {
 
   return "—";
 }
-
-function obtenerCostoDeItem(it){
-  const p = state.procedimientos.find(
-    x => String(x.id) === String(it.procedimiento_id)
-  );
-  return p && p.costo ? Number(p.costo) : 0;
-}
-
 
     function obtenerProfesionalRawDeItem(it){
   // 1. Si el item ya trae profesional crudo
@@ -1751,24 +1633,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo guardar:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function imprimirFacturaGuardada(){
       if (!state.facturaGuardada){
@@ -1826,24 +1690,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function openModal(){
       $("modal-facturas").classList.add("show");
@@ -1870,7 +1716,6 @@ function obtenerCostoDeItem(it){
       }
       for (const r of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(r.codigo_cups || "—")}</td>
           <td>${escapeHtml(r.descripcion || "—")}</td>
@@ -1880,24 +1725,6 @@ function obtenerCostoDeItem(it){
         `;
         tbody.appendChild(tr);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function renderVerFacturaAbonos(rows){
       const tbody = $("tbody-vf-abonos");
@@ -1908,7 +1735,6 @@ function obtenerCostoDeItem(it){
       }
       for (const a of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
         const fecha = formatFechaHuman(a.fecha || a.created_at);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(fecha)}</td>
@@ -1919,24 +1745,6 @@ function obtenerCostoDeItem(it){
         `;
         tbody.appendChild(tr);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     // Helper para imprimir montos sin el "$ " duplicado en tablas
     function moneyNumber(n){
@@ -2011,24 +1819,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo abrir la factura:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     // ✅ Estado de factura (solo PENDIENTE / PAGADA)
     async function setEstadoFactura({ facturaId, estado, saldoPendiente = null, silent = false }){
@@ -2075,24 +1865,6 @@ function obtenerCostoDeItem(it){
         console.error(err);
         if (!silent) toast("No se pudo actualizar el estado:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     // Escuchar cambios de estado desde el iframe de "Ver factura"
     window.addEventListener("message", async (e) => {
@@ -2150,12 +1922,11 @@ function obtenerCostoDeItem(it){
       const tbody = $("tbody-abonos");
       tbody.innerHTML = "";
       if (!rows || rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="7" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" class="empty">Aún no hay abonos para esta factura.</td></tr>`;
         return;
       }
       for (const a of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
         const fecha = formatFechaHuman(a.fecha || a.created_at);
         const monto = money(a.monto || 0);
         const metodo = a.metodo_pago || "—";
@@ -2178,24 +1949,6 @@ function obtenerCostoDeItem(it){
         });
         tbody.appendChild(tr);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function listarAbonos(){
       const facturaId = state.facturaAbonos;
@@ -2224,7 +1977,7 @@ function obtenerCostoDeItem(it){
           setStatus("");
           if (missingTable){
             toast("Falta la tabla 'abonos' en Supabase.\nCrea la tabla para usar abonos.", "warn");
-            $("tbody-abonos").innerHTML = `<tr><td colspan="7" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
+            $("tbody-abonos").innerHTML = `<tr><td colspan="10" class="empty">Falta la tabla 'abonos' en Supabase.</td></tr>`;
             updateResumenAbonos({ totalFactura: Number(fac?.valor_total || 0), totalAbonado: 0 });
             return;
           }
@@ -2246,24 +1999,6 @@ function obtenerCostoDeItem(it){
         toast("No se pudieron cargar abonos:\n" + (err?.message || "Error"), "err");
         renderAbonosTabla([]);
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function agregarAbono(){
       const facturaId = state.facturaAbonos;
@@ -2315,24 +2050,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo guardar abono:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function eliminarAbono(abonoId){
       if (!abonoId) return;
@@ -2351,24 +2068,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo eliminar abono:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function updateResumenFacturas(rows){
       const total = (rows || []).reduce((acc, f) => acc + (Number(f.valor_total) || 0), 0);
@@ -2478,24 +2177,6 @@ function obtenerCostoDeItem(it){
         setStatus("");
         toast("No se pudo actualizar pago:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function renderFacturasTabla(rows){
       const tbody = $("tbody-facturas");
@@ -2507,7 +2188,6 @@ function obtenerCostoDeItem(it){
       }
       for (const f of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
         const fecha = formatFechaHuman(f.fecha);
         const numf = f.numero_factura || "—";
         const nom = f.paciente_nombre || "—";
@@ -2598,24 +2278,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         renderFacturasTabla([]);
         toast("No se pudieron cargar facturas:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function cargarFacturaEnFormulario(facturaId){
       try{
@@ -2680,24 +2342,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         setStatus("");
         toast("No se pudo cargar:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function imprimirFacturaPorId(facturaId){
       try{
@@ -2766,24 +2410,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         setStatus("");
         toast("No se pudo imprimir:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     function exportarExcel(){
       try{
@@ -2839,24 +2465,6 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         console.error(err);
         toast("No se pudo exportar Excel:\n" + (err?.message || "Error"), "err");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }
     async function init(){
       try{
@@ -3000,24 +2608,6 @@ if (procDrop) procDrop.style.display = "none";
       } else {
         console.error("❌ buscarPacienteEnHistoria no existe");
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }, 600);
   });
 })();
@@ -3235,24 +2825,6 @@ function enviarFacturacionElectronica(){
       if(t.toLowerCase().startsWith("factura")){
         facturaNumero = t.replace(/^factura\s*/i, "").trim() || null;
       }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
     }catch(_e){}
 
     // 3.2 ID factura (si está en dataset)
@@ -3401,12 +2973,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
-
-
-
-
-
 
 
 
