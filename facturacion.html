@@ -1732,6 +1732,9 @@ function obtenerCostoDeItem(it){
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
+  // 🔴 NUEVO
+  costo: Number(it.costo || 0),
+  costo_total: Number(it.costo || 0) * Number(it.cantidad || 0),
   profesional: obtenerProfesionalRawDeItem(it)
 }));
 
