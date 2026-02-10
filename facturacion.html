@@ -2582,13 +2582,18 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           query = query.or("pagada.eq.false,pagada.is.null");
         }
         if (q){
-          const isNum = /^[0-9]+$/.test(q);
-          if (isNum){
-            query = query.ilike("paciente_cedula", `%${q}%`);
-          } else {
-            query = query.ilike("numero_factura", `%${q}%`);
-          }
-        }
+  const isNum = /^[0-9]+$/.test(q);
+
+  if (isNum){
+    // 🔥 FIX: convertir a texto para que funcione con BIGINT / NUMERIC
+    query = query.or(
+      `paciente_cedula.eq.${q},paciente_cedula::text.ilike.%${q}%`
+    );
+  } else {
+    query = query.ilike("numero_factura", `%${q}%`);
+  }
+}
+
         const { data, error } = await query;
         if (error) throw error;
         state.facturas = data || [];
