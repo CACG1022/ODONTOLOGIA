@@ -401,25 +401,26 @@ input[type="number"] {
 </style>
 
 <style>
-/* ===== Resumen de costo por profesional ===== */
+/* ===== Resumen de costo por profesional (FORZADO EN FILAS) ===== */
 .resumen-profesionales{
-  text-align:left;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px;
+  text-align: left;
 }
 .resumen-profesionales .resumen-linea{
-  display:block !important;
-  width:100%;
-  margin-bottom:6px;
-  color:#16a34a;
-  font-weight:800;
+  width: 100%;
+  color: #16a34a;
+  font-weight: 800;
 }
 .resumen-profesionales .resumen-total{
-  display:block !important;
-  width:100%;
-  margin-top:10px;
-  padding-top:6px;
-  border-top:1px solid #e5e7eb;
-  color:#166534;
-  font-weight:900;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+  color: #166534;
+  font-weight: 900;
 }
 </style>
 
@@ -1621,25 +1622,26 @@ function obtenerCostoDeItem(it){
 </style>
 
 <style>
-/* ===== Resumen de costo por profesional ===== */
+/* ===== Resumen de costo por profesional (FORZADO EN FILAS) ===== */
 .resumen-profesionales{
-  text-align:left;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 6px;
+  text-align: left;
 }
 .resumen-profesionales .resumen-linea{
-  display:block !important;
-  width:100%;
-  margin-bottom:6px;
-  color:#16a34a;
-  font-weight:800;
+  width: 100%;
+  color: #16a34a;
+  font-weight: 800;
 }
 .resumen-profesionales .resumen-total{
-  display:block !important;
-  width:100%;
-  margin-top:10px;
-  padding-top:6px;
-  border-top:1px solid #e5e7eb;
-  color:#166534;
-  font-weight:900;
+  width: 100%;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #e5e7eb;
+  color: #166534;
+  font-weight: 900;
 }
 </style>
 
@@ -3265,7 +3267,7 @@ document
   
 
     /* =====================================================
-       ✅ RESUMEN DE COSTO POR PROFESIONAL (FILAS + TOTAL)
+       ✅ RESUMEN DE COSTO POR PROFESIONAL (COLUMN LAYOUT)
        ===================================================== */
     function renderResumenPorProfesional(){
       try{
@@ -3304,7 +3306,6 @@ document
           cont.appendChild(row);
         });
 
-        // TOTAL GENERAL
         const totalRow = document.createElement("div");
         totalRow.className = "resumen-total";
         totalRow.textContent = `TOTAL COSTOS: $ ${money(totalGeneral)}`;
@@ -3315,7 +3316,7 @@ document
       }
     }
 
-    // Hooks suaves (no rompen nada)
+    // Hooks suaves
     (function(){
       const _renderItems = renderItems;
       renderItems = function(){
@@ -3647,9 +3648,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
-
-
 
 
 
