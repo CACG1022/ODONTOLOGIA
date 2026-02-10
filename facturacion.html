@@ -1463,6 +1463,7 @@ if ((isFocused || filtro) && count > 0) {
     }
     function recalcularTotales(){
       const t = calcularTotalesObj();
+      state.subtotal = t.subtotal;
       $("subtotal").textContent = money(t.subtotal);
       $("iva_valor").textContent = money(t.iva_valor);
       if ($("descuento_valor")) $("descuento_valor").textContent = money(t.descuento_valor);
