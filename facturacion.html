@@ -402,15 +402,24 @@ input[type="number"] {
 
 <style>
 /* ===== Resumen de costo por profesional ===== */
-.resumen-profesionales {
-  text-align: left;
+.resumen-profesionales{
+  text-align:left;
 }
-.resumen-profesionales .resumen-linea {
-  display: block !important;
-  width: 100%;
-  margin-bottom: 4px;
-  color: #16a34a;
-  font-weight: 800;
+.resumen-profesionales .resumen-linea{
+  display:block !important;
+  width:100%;
+  margin-bottom:6px;
+  color:#16a34a;
+  font-weight:800;
+}
+.resumen-profesionales .resumen-total{
+  display:block !important;
+  width:100%;
+  margin-top:10px;
+  padding-top:6px;
+  border-top:1px solid #e5e7eb;
+  color:#166534;
+  font-weight:900;
 }
 </style>
 
@@ -1613,15 +1622,24 @@ function obtenerCostoDeItem(it){
 
 <style>
 /* ===== Resumen de costo por profesional ===== */
-.resumen-profesionales {
-  text-align: left;
+.resumen-profesionales{
+  text-align:left;
 }
-.resumen-profesionales .resumen-linea {
-  display: block !important;
-  width: 100%;
-  margin-bottom: 4px;
-  color: #16a34a;
-  font-weight: 800;
+.resumen-profesionales .resumen-linea{
+  display:block !important;
+  width:100%;
+  margin-bottom:6px;
+  color:#16a34a;
+  font-weight:800;
+}
+.resumen-profesionales .resumen-total{
+  display:block !important;
+  width:100%;
+  margin-top:10px;
+  padding-top:6px;
+  border-top:1px solid #e5e7eb;
+  color:#166534;
+  font-weight:900;
 }
 </style>
 
@@ -3247,7 +3265,7 @@ document
   
 
     /* =====================================================
-       ✅ RESUMEN DE COSTO POR PROFESIONAL (LINEAS FORZADAS)
+       ✅ RESUMEN DE COSTO POR PROFESIONAL (FILAS + TOTAL)
        ===================================================== */
     function renderResumenPorProfesional(){
       try{
@@ -3257,6 +3275,7 @@ document
         cont.innerHTML = "";
 
         const acc = Object.create(null);
+        let totalGeneral = 0;
 
         (state.items || []).forEach(it => {
           let prof = (obtenerProfesionalDeItem(it) || "").toString().trim();
@@ -3267,6 +3286,7 @@ document
           const totalCosto = Math.max(0, costoU * cant);
 
           acc[prof] = (acc[prof] || 0) + totalCosto;
+          totalGeneral += totalCosto;
         });
 
         const keys = Object.keys(acc);
@@ -3283,12 +3303,19 @@ document
           row.textContent = `${k}: $ ${money(acc[k])}`;
           cont.appendChild(row);
         });
+
+        // TOTAL GENERAL
+        const totalRow = document.createElement("div");
+        totalRow.className = "resumen-total";
+        totalRow.textContent = `TOTAL COSTOS: $ ${money(totalGeneral)}`;
+        cont.appendChild(totalRow);
+
       }catch(e){
         console.warn("Resumen profesional error:", e);
       }
     }
 
-    // Hooks suaves
+    // Hooks suaves (no rompen nada)
     (function(){
       const _renderItems = renderItems;
       renderItems = function(){
@@ -3620,7 +3647,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
