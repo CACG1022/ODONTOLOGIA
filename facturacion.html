@@ -479,21 +479,21 @@ table td.mono {
         <div class="ctrl">
           <label>&nbsp;</label>
           <button class="btn primary" id="btn-add" type="button">➕ Agregar</button>
+          <button class="btn" id="btn-aplicar-pct-costo" type="button">🧮 % → Costos</button>
         </div>
       </div>
       <div style="margin-top:12px; overflow:auto;">
         <table>
           <thead>
             <tr>
-              <th style="width:110px;">ID procedimiento</th>
+              <th style="width:90px;">ID proc</th>
               <th style="width:180px;">Profesional</th>
               <th style="width:160px;">Costo</th>
               <th style="width:160px;">Costo total</th>
               <th style="width:140px;">CUPS</th>
               <th>Procedimiento</th>
               <th style="width:110px;">Cant</th>
-              <th style="width:160px;">V/Unit</th>
-              <th style="width:160px;">Costo</th>
+              <th style="width:180px;">V/Unit</th>
               <th style="width:160px;">Total</th>
               <th style="width:120px;"></th>
             </tr>
@@ -1165,6 +1165,53 @@ if ((isFocused || filtro) && count > 0) {
       renderItems();
       recalcularTotales();
     }
+
+    function aplicarPorcentajeCostosDesdeVUnit(){
+  // 1) Validación rápida: debe haber items
+  if (!state.items || state.items.length === 0){
+    toast("No hay procedimientos en la tabla.", "warn");
+    return;
+  }
+
+  // 2) Pedir porcentaje
+  //    Ej: si el usuario escribe 30 => costo = V/Unit * 0.30
+  const raw = window.prompt(
+    "Ingresa el porcentaje para calcular COSTO desde V/Unit.\n\nEjemplos:\n- 30  = 30% del V/Unit\n- 12.5 = 12.5% del V/Unit",
+    "30"
+  );
+
+  if (raw === null) return; // cancelado
+
+  // 3) Normalizar (por si escribe 12,5 con coma)
+  const normalized = String(raw).replace(",", ".").trim();
+  const pct = num(normalized);
+
+  if (!Number.isFinite(pct) || pct < 0){
+    toast("Porcentaje inválido.", "warn");
+    return;
+  }
+
+  // 4) Convertir a factor
+  const factor = pct / 100;
+
+  // 5) Aplicar a TODOS los items:
+  //    costo = valor_unitario * factor
+  //    (esto NO afecta el total facturado porque tu total sale de valor_total, no de costo)
+  for (const it of state.items){
+    const vUnit = num(it.valor_unitario);
+    const nuevoCosto = Math.max(0, vUnit * factor);
+
+    // Guardar costo unitario calculado en el item
+    it.costo = nuevoCosto;
+  }
+
+  // 6) Renderizar para que se vean los nuevos costos y costos totales
+  renderItems();
+
+  toast(`Costos actualizados: Costo = V/Unit × ${pct}%`, "ok");
+}
+
+    
     function renderItems(){
       const tbody = $("tbody-items");
       tbody.innerHTML = "";
@@ -2916,6 +2963,9 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           openModal();
           await listarFacturas();
         });
+        $("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
+
+        
         $("btn-cerrar-modal").addEventListener("click", closeModal);
         $("modal-facturas").addEventListener("click", (e) => {
           if (e.target === $("modal-facturas")) closeModal();
