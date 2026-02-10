@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es"> 
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -799,28 +799,7 @@ table td.mono {
       const n = Number(raw);
       return Number.isFinite(n) ? n : 0;
     }
-    
-    // =========================
-    // ✅ COSTOS (precarga por ID)
-    // =========================
-    function getCostoPorProcedimientoId(procId){
-      const id = String(procId ?? "").trim();
-      if (!id) return 0;
-      const p = (state.procedimientos || []).find(x => String(x.id) === id);
-      const c = (p && (p.costo !== null && p.costo !== undefined)) ? Number(p.costo) : 0;
-      return Number.isFinite(c) ? c : 0;
-    }
-    function asegurarCostoEnItem(it){
-      if (!it) return;
-      const has = !(it.costo === null || it.costo === undefined || String(it.costo).trim() === "");
-      if (!has){
-        it.costo = getCostoPorProcedimientoId(it.procedimiento_id);
-      } else {
-        const c = Number(it.costo);
-        it.costo = Number.isFinite(c) ? c : 0;
-      }
-    }
-function hoyISO(){
+    function hoyISO(){
       const d = new Date();
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
@@ -954,20 +933,7 @@ async function validarPermisoDesdeTabla(){
       }
       const rows = data || [];
       state.procedimientos = rows.filter(r => (r.activo === null || r.activo === undefined) ? true : r.activo === true);
-
-      // ✅ Precargar costo en items ya existentes (por procedimiento_id)
-      try{
-        (state.items || []).forEach(it => {
-          asegurarCostoEnItem(it);
-          it.costo_total = Number(it.costo || 0) * Number(it.cantidad || 0);
-        });
-      }catch(e){}
-
       renderProcedimientosSelect();
-
-      // ✅ Re-render para reflejar costos precargados (sin tocar modales)
-      try{ renderItems(); }catch(e){}
-      try{ recalcularTotales(); }catch(e){}
     }
     async function cargarProfesionales(){
       const { data, error } = await supabase
@@ -1104,7 +1070,6 @@ if ((isFocused || filtro) && count > 0) {
       }
       const cantidad = Math.max(1, parseInt($("cantidad").value || "1", 10) || 1);
       const valorU = Math.max(0, num(p.valor || 0));
-      const costoProcedimiento = getCostoPorProcedimientoId(p.id);
       const item = {
   id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
   procedimiento_id: p.id,              // ✅ CLAVE
@@ -1137,14 +1102,12 @@ if ((isFocused || filtro) && count > 0) {
         return;
       }
       for (const it of state.items){
-        asegurarCostoEnItem(it);
-        const costoTotalCalc = (Number(it.costo || 0) * Number(it.cantidad || 0));
         const tr = document.createElement("tr");
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
-          <td><input type="number" min="0" step="100" value="${Number(it.costo || 0)}" data-k="costo"></td>
-          <td class="mono costo-total">$ ${money(costoTotalCalc)}</td>
+          <td><input type="number" min="0" step="100" value="${it.costo}" data-k="costo"></td>
+          <td class="mono costo-total">$ ${money(it.costo_total)}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
           <td>${escapeHtml(it.descripcion || "")}</td>
           <td><input type="number" min="1" step="1" value="${it.cantidad}" data-k="cantidad"></td>
@@ -1160,7 +1123,7 @@ if ((isFocused || filtro) && count > 0) {
         if (k === "cantidad") {
           it.cantidad = Math.max(1, parseInt(v) || 1);
           it.valor_total = it.cantidad * it.valor_unitario;
-          it.costo_total = Number(it.costo || 0) * Number(it.cantidad || 0);
+          it.costo_total = it.cantidad * it.costo;
           renderItems();
           recalcularTotales();
           return;
@@ -1169,7 +1132,6 @@ if ((isFocused || filtro) && count > 0) {
         if (k === "valor_unitario") {
           it.valor_unitario = Math.max(0, v);
           it.valor_total = it.cantidad * it.valor_unitario;
-          it.costo_total = Number(it.costo || 0) * Number(it.cantidad || 0);
           renderItems();
           recalcularTotales();
           return;
@@ -1177,7 +1139,7 @@ if ((isFocused || filtro) && count > 0) {
 
         if (k === "costo") {
           it.costo = Math.max(0, v);
-          it.costo_total = Number(it.costo || 0) * Number(it.cantidad || 0);
+          it.costo_total = it.cantidad * it.costo;
           const row = inp.closest("tr");
           if (row) {
             const ct = row.querySelector(".costo-total");
@@ -1652,9 +1614,6 @@ if ((isFocused || filtro) && count > 0) {
   cantidad: it.cantidad || 1,
   valor_unitario: it.valor_unitario || 0,
   valor_total: it.valor_total || 0,
-  // ✅ Costos (se guardan en factura_detalle)
-  costo: Number(it.costo || 0),
-  costo_total: Number(it.costo_total || (Number(it.costo || 0) * Number(it.cantidad || 0))),
   profesional: obtenerProfesionalRawDeItem(it)
 }));
 
@@ -2285,18 +2244,11 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
       const estado = ($("estado_facturas")?.value || "todos").trim();
       try{
         $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
-        const fullSelect = "id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago";
-        const baseSelect = "id, fecha, numero_factura, paciente_nombre, paciente_cedula, valor_total, profesional, pagada, saldo_pendiente";
-
-        // ✅ Intentar con columnas completas; si faltan en DB, fallback a columnas base
         let query = supabase
           .from("facturas")
-          .select(fullSelect)
+          .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
           .order("fecha", { ascending: false })
           .limit(limit);
-
-        // Nota: el error por columnas faltantes se detecta al ejecutar, pero también puede fallar al evaluar filtros.
-        // Por eso, al final, si hay error de columnas, reintentamos con baseSelect.
         if (desde){
           query = query.gte("fecha", dateStartISO(desde));
         }
@@ -2317,34 +2269,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
             query = query.ilike("numero_factura", `%${q}%`);
           }
         }
-        let { data, error } = await query;
-        if (error){
-          const msg = String(error.message || "").toLowerCase();
-          const missingCols = msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-          if (missingCols){
-            // Reintento con columnas mínimas (compatibilidad)
-            let q2 = supabase
-              .from("facturas")
-              .select(baseSelect)
-              .order("fecha", { ascending: false })
-              .limit(limit);
-
-            if (desde) q2 = q2.gte("fecha", dateStartISO(desde));
-            if (hasta) q2 = q2.lte("fecha", dateEndISO(hasta));
-            if (estado === "pagada") q2 = q2.eq("pagada", true);
-            else if (estado === "pendiente") q2 = q2.or("pagada.eq.false,pagada.is.null");
-            if (q){
-              const isNum = /^[0-9]+$/.test(q);
-              q2 = isNum ? q2.ilike("paciente_cedula", `%${q}%`) : q2.ilike("numero_factura", `%${q}%`);
-            }
-
-            const r2 = await q2;
-            if (r2.error) throw r2.error;
-            data = r2.data;
-          } else {
-            throw error;
-          }
-        }
+        const { data, error } = await query;
+        if (error) throw error;
         state.facturas = data || [];
         renderFacturasTabla(state.facturas);
       } catch(err){
@@ -2362,33 +2288,12 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           .eq("id", facturaId)
           .single();
         if (e1) throw e1;
-        let det = [];
-        // ✅ Intentar traer también costo/costo_total/profesional (si existen columnas)
-        {
-          const r = await supabase
-            .from("factura_detalle")
-            .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total, costo, costo_total, profesional")
-            .eq("factura_id", facturaId)
-            .order("id", { ascending: true });
-
-          if (r.error){
-            const msg = String(r.error.message || "").toLowerCase();
-            const missingCols = msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-            if (!missingCols) throw r.error;
-
-            // Fallback: columnas antiguas
-            const r2 = await supabase
-              .from("factura_detalle")
-              .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
-              .eq("factura_id", facturaId)
-              .order("id", { ascending: true });
-
-            if (r2.error) throw r2.error;
-            det = r2.data || [];
-          } else {
-            det = r.data || [];
-          }
-        }
+        const { data: det, error: e2 } = await supabase
+          .from("factura_detalle")
+          .select("procedimiento_id, codigo_cups, descripcion, cantidad, valor_unitario, valor_total")
+          .eq("factura_id", facturaId)
+          .order("id", { ascending: true });
+        if (e2) throw e2;
         $("fecha").value = (fac.fecha && String(fac.fecha).includes("T")) ? String(fac.fecha).slice(0,10) : (fac.fecha || hoyISO());
         $("numero_factura").value = fac.numero_factura || "";
         $("tipo_usuario").value = fac.tipo_usuario || "Particular";
@@ -2415,27 +2320,15 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
             $("iva_porcentaje").value = Number(ivaPctDB) || 0;
           }
         }
-        state.items = (det || []).map(it => {
-          const qty = Number(it.cantidad || 1);
-          const costoU = (it.costo !== null && it.costo !== undefined && String(it.costo).trim() !== "")
-            ? Number(it.costo || 0)
-            : getCostoPorProcedimientoId(it.procedimiento_id);
-          const costoT = (it.costo_total !== null && it.costo_total !== undefined && String(it.costo_total).trim() !== "")
-            ? Number(it.costo_total || 0)
-            : (Number(costoU || 0) * Number(qty || 0));
-          return {
-            id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
-            procedimiento_id: it.procedimiento_id,
-            codigo_cups: it.codigo_cups || "",
-            descripcion: it.descripcion || "",
-            cantidad: qty,
-            valor_unitario: Number(it.valor_unitario || 0),
-            valor_total: Number(it.valor_total || 0),
-            costo: Number.isFinite(costoU) ? costoU : 0,
-            costo_total: Number.isFinite(costoT) ? costoT : 0,
-            profesional: it.profesional || null
-          };
-        });
+        state.items = (det || []).map(it => ({
+          id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+          procedimiento_id: it.procedimiento_id,
+          codigo_cups: it.codigo_cups || "",
+          descripcion: it.descripcion || "",
+          cantidad: Number(it.cantidad || 1),
+          valor_unitario: Number(it.valor_unitario || 0),
+          valor_total: Number(it.valor_total || 0)
+        }));
         $("copago").value = Number(fac.copago || 0);
         $("cuota_moderadora").value = Number(fac.cuota_moderadora || 0);
         state.facturaGuardada = fac;
@@ -2759,8 +2652,7 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0),
-  costo: getCostoPorProcedimientoId(it.procedimiento_id)
+  valor_total: Number(it.valor_total || 0)
 });
 
   });
@@ -3081,7 +2973,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
