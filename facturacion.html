@@ -3393,6 +3393,36 @@ document
       };
     })();
 
+    function hookInputsCosto(){
+  document.querySelectorAll('input[data-role="costo"], input.costo, input[name="costo"]').forEach(inp => {
+    inp.addEventListener('input', () => {
+      // recalcula solo lo necesario
+      renderResumenPorProfesional();
+      renderMargenGanancia();
+    });
+  });
+}
+
+   (function(){
+  const _renderItems = renderItems;
+  renderItems = function(){
+    const r = _renderItems.apply(this, arguments);
+    renderResumenPorProfesional();
+    renderMargenGanancia(); 
+    return r;
+  };
+
+  const _recalc = recalcularTotales;
+  recalcularTotales = function(){
+    const r = _recalc.apply(this, arguments);
+    renderResumenPorProfesional();
+    renderMargenGanancia(); 
+    return r;
+  };
+})();
+
+
+
 </script>
 </body>
 </html>
