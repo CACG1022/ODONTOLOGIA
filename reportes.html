@@ -2099,7 +2099,7 @@ const totalCalc = Number(f.valor_total ?? 0)
 
     if (error) throw error;
 
-    const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo)||0), 0);
+    const totalCostos = (data || []).reduce((acc, r)=> acc + (Number(r.costo_total)||0), 0);
 
     $("k_costos_total").textContent = money(totalCostos);
     $("k_costos_total_s").textContent =
