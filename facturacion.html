@@ -1174,7 +1174,7 @@ if ((isFocused || filtro) && count > 0) {
       }
       for (const it of state.items){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
+        tr.dataset.idLocal = String(a.id);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
           <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
@@ -1870,7 +1870,7 @@ function obtenerCostoDeItem(it){
       }
       for (const r of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
+        tr.dataset.idLocal = String(r.procedimiento_id ?? "");
         tr.innerHTML = `
           <td class="mono">${escapeHtml(r.codigo_cups || "—")}</td>
           <td>${escapeHtml(r.descripcion || "—")}</td>
@@ -2155,7 +2155,7 @@ function obtenerCostoDeItem(it){
       }
       for (const a of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
+        tr.dataset.idLocal = String(a.id);
         const fecha = formatFechaHuman(a.fecha || a.created_at);
         const monto = money(a.monto || 0);
         const metodo = a.metodo_pago || "—";
