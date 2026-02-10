@@ -1395,6 +1395,9 @@ if ((isFocused || filtro) && count > 0) {
                    ct.textContent = "$ " + money(costoU * cant);
                  }
                }
+               // ✅ AGREGAR ESTO 👇
+                 renderResumenPorProfesional();
+                 renderMargenGanancia();
                return;
              }
            });
