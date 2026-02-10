@@ -376,6 +376,28 @@ input[type="number"] {
 }
 
 
+
+/* =========================
+   FILA / COLUMNAS DE COSTO EN ROJO
+   (NO altera lógica ni JS)
+   ========================= */
+
+/* Columnas: 3 = Costo, 4 = Costo total */
+#tbody-items tr td:nth-child(3),
+#tbody-items tr td:nth-child(4) {
+  background-color: #ED6666;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Inputs dentro de columnas de costo */
+#tbody-items tr td:nth-child(3) input,
+#tbody-items tr td:nth-child(4) input {
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+}
+
 </style>
 </head>
 <body>
@@ -1539,6 +1561,28 @@ function obtenerCostoDeItem(it){
   }
   .section-title{ font-weight:800; font-size:13px; margin: 2px 0 8px; }
   .mini-totals{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
+
+/* =========================
+   FILA / COLUMNAS DE COSTO EN ROJO
+   (NO altera lógica ni JS)
+   ========================= */
+
+/* Columnas: 3 = Costo, 4 = Costo total */
+#tbody-items tr td:nth-child(3),
+#tbody-items tr td:nth-child(4) {
+  background-color: #ED6666;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* Inputs dentro de columnas de costo */
+#tbody-items tr td:nth-child(3) input,
+#tbody-items tr td:nth-child(4) input {
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: 700;
+}
+
 </style>
 </head>
 <body>
@@ -3474,7 +3518,6 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
-
 
 
 
