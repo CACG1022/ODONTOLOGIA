@@ -2507,7 +2507,7 @@ function obtenerCostoDeItem(it){
       }
       for (const f of rows){
         const tr = document.createElement("tr");
-        tr.dataset.idLocal = String(it.id_local);
+        tr.dataset.idLocal = String(f.id);
         const fecha = formatFechaHuman(f.fecha);
         const numf = f.numero_factura || "—";
         const nom = f.paciente_nombre || "—";
