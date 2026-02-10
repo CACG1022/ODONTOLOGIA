@@ -2051,6 +2051,7 @@ const totalCalc = Number(f.valor_total ?? 0)
     <td>${formatFechaHuman(a.fecha)}</td>
     <td>${a.facturas?.paciente_nombre || "-"}</td>
     <td>${a.facturas?.numero_factura || "-"}</td>
+    <td>${a.metodo_pago || "-"}</td>
     <td class="mono">$ ${money(a.monto)}</td>
   </tr>
 `).join("");
