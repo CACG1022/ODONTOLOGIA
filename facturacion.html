@@ -400,9 +400,15 @@ input[type="number"] {
 
  /* Fuerza la sección de totales a alinearse a la izquierda */
 .totales{
-  justify-content: flex-start !important;
-  gap: 16px;
-}   
+  display:flex;
+  justify-content: space-between; /* 🔥 CLAVE */
+  padding: 12px 16px;
+  gap: 18px;
+  border-top: 1px solid var(--line);
+  background:#fbfcfd;
+  flex-wrap:wrap;
+}
+ 
 </style>
 
 <style>
