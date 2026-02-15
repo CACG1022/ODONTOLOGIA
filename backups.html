@@ -1,343 +1,300 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Panel de Backups · DENTOVA</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --bg:#0b1220; --card:#0f1b2d; --card2:#0c1626; --text:#e8eefc; --muted:#9bb0d0;
-      --brand:#3ea6ff; --ok:#2ecc71; --bad:#ff5c5c; --warn:#ffcc00; --line:rgba(255,255,255,.08);
-      --radius:16px;
-    }
-    *{box-sizing:border-box;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;}
-    body{margin:0;background:linear-gradient(180deg,#08101d,#050a12);color:var(--text);}
-    .wrap{max-width:1200px;margin:24px auto;padding:0 16px;}
-    .top{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
-    .title{font-size:22px;font-weight:800;letter-spacing:.2px}
-    .sub{color:var(--muted);font-size:13px;margin-top:4px}
-    .card{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
-    .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-    input,select,button{
-      border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);
-      padding:10px 12px;font-size:14px;outline:none;
-    }
-    input{min-width:260px}
-    button{cursor:pointer;font-weight:700}
-    button.primary{background:rgba(62,166,255,.16);border-color:rgba(62,166,255,.35)}
-    button.good{background:rgba(46,204,113,.14);border-color:rgba(46,204,113,.35)}
-    button.bad{background:rgba(255,92,92,.14);border-color:rgba(255,92,92,.35)}
-    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid var(--line);font-size:12px;color:var(--muted)}
-    .pill.ok{color:#bff7d2;border-color:rgba(46,204,113,.35);background:rgba(46,204,113,.10)}
-    .pill.fail{color:#ffd1d1;border-color:rgba(255,92,92,.35);background:rgba(255,92,92,.10)}
-    .table{width:100%;border-collapse:collapse;margin-top:14px}
-    th,td{padding:10px 10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:top}
-    th{color:#bcd0f5;text-align:left;font-weight:800}
-    td{color:#e8eefc}
-    .muted{color:var(--muted)}
-    .actions{display:flex;gap:8px;flex-wrap:wrap}
-    .small{font-size:12px}
-    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
-    .msg{margin-top:10px;color:var(--muted);font-size:13px}
-    .hr{height:1px;background:var(--line);margin:14px 0}
-    .right{margin-left:auto}
-    .hidden{display:none}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Panel de Backups · DENTOVA</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b1220;
+  --card:#111c2e;
+  --card-hover:#16263f;
+  --text:#eaf2ff;
+  --muted:#94a9c9;
+  --brand:#3ea6ff;
+  --success:#22c55e;
+  --danger:#ef4444;
+  --border:rgba(255,255,255,.08);
+  --radius:18px;
+}
+
+*{box-sizing:border-box;font-family:Inter,system-ui;}
+body{
+  margin:0;
+  background:linear-gradient(180deg,#08101d,#050a12);
+  color:var(--text);
+}
+
+.container{
+  max-width:1300px;
+  margin:auto;
+  padding:30px 20px 60px;
+}
+
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:25px;
+}
+
+.header h1{
+  margin:0;
+  font-size:24px;
+  font-weight:800;
+}
+
+.subtitle{
+  font-size:13px;
+  color:var(--muted);
+  margin-top:4px;
+}
+
+.auth-box{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.pill{
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid var(--border);
+}
+
+.pill.success{
+  background:rgba(34,197,94,.12);
+  border-color:rgba(34,197,94,.4);
+  color:#bbf7d0;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  box-shadow:0 10px 40px rgba(0,0,0,.4);
+}
+
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+input, select, button{
+  background:#0f1b2d;
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:14px;
+}
+
+input{min-width:260px;}
+
+button{
+  cursor:pointer;
+  font-weight:600;
+  transition:.2s;
+}
+
+button:hover{
+  transform:translateY(-1px);
+}
+
+.btn-primary{
+  background:rgba(62,166,255,.15);
+  border-color:rgba(62,166,255,.5);
+}
+
+.btn-success{
+  background:rgba(34,197,94,.15);
+  border-color:rgba(34,197,94,.5);
+}
+
+.btn-danger{
+  background:rgba(239,68,68,.15);
+  border-color:rgba(239,68,68,.5);
+}
+
+.table-wrapper{
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+thead{
+  background:#0c1626;
+}
+
+th{
+  text-align:left;
+  padding:14px 12px;
+  font-size:12px;
+  letter-spacing:.5px;
+  color:#a9c2ff;
+}
+
+td{
+  padding:16px 12px;
+  border-top:1px solid var(--border);
+  vertical-align:top;
+  font-size:13px;
+}
+
+tr:hover{
+  background:var(--card-hover);
+}
+
+.mono{
+  font-family:ui-monospace,monospace;
+  font-size:12px;
+  color:var(--muted);
+}
+
+.actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.status-success{
+  background:rgba(34,197,94,.12);
+  color:#bbf7d0;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  border:1px solid rgba(34,197,94,.4);
+}
+
+.footer-msg{
+  margin-top:15px;
+  font-size:13px;
+  color:var(--muted);
+}
+</style>
 </head>
 
 <body>
-<div class="wrap">
-  <div class="top">
-    <div>
-      <div class="title">📦 Panel de Backups · DENTOVA</div>
-      <div class="sub">Consulta, descarga y disparo de desencriptación/restauración vía n8n (solo Admin)</div>
-    </div>
-    <div class="row">
-      <span id="authPill" class="pill">🔒 Sin sesión</span>
-      <button class="primary" id="btnLogin">Iniciar sesión</button>
-      <button class="bad hidden" id="btnLogout">Cerrar sesión</button>
-    </div>
+<div class="container">
+
+<div class="header">
+  <div>
+    <h1>📦 Panel de Backups · DENTOVA</h1>
+    <div class="subtitle">Gestión, descarga y restauración segura de respaldos clínicos</div>
   </div>
-
-  <div class="card" style="margin-top:14px">
-    <div class="row">
-      <input id="q" placeholder="Buscar por archivo, status, id, fecha..." />
-      <select id="status">
-        <option value="">Status: Todos</option>
-        <option value="SUCCESS">SUCCESS</option>
-        <option value="FAILED">FAILED</option>
-      </select>
-      <select id="sort">
-        <option value="backup_date_desc">Orden: más reciente</option>
-        <option value="backup_date_asc">Orden: más antiguo</option>
-      </select>
-      <button class="primary" id="btnRefresh">Actualizar</button>
-      <span class="right pill">Registros: <b id="count">0</b></span>
-    </div>
-
-    <div class="msg" id="infoMsg">Cargando...</div>
-
-    <table class="table" id="tbl">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Archivo</th>
-          <th>Status</th>
-          <th>Filas / Tablas</th>
-          <th>Tamaño</th>
-          <th>SHA256</th>
-          <th>Acciones</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+  <div class="auth-box">
+    <span id="authPill" class="pill">🔒 Sin sesión</span>
+    <button id="btnLogin" class="btn-primary">Iniciar sesión</button>
+    <button id="btnLogout" class="btn-danger" style="display:none;">Cerrar sesión</button>
   </div>
 </div>
 
+<div class="card">
+
+<div class="filters">
+  <input id="q" placeholder="Buscar por archivo, ID, fecha..." />
+  <select id="status">
+    <option value="">Estado: Todos</option>
+    <option value="SUCCESS">SUCCESS</option>
+    <option value="FAILED">FAILED</option>
+  </select>
+  <select id="sort">
+    <option value="backup_date_desc">Más reciente</option>
+    <option value="backup_date_asc">Más antiguo</option>
+  </select>
+  <button id="btnRefresh" class="btn-primary">Actualizar</button>
+  <div style="margin-left:auto;font-size:13px;color:var(--muted);">
+    Registros: <b id="count">0</b>
+  </div>
+</div>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+<th>Fecha</th>
+<th>Archivo</th>
+<th>Estado</th>
+<th>Datos</th>
+<th>Tamaño</th>
+<th>SHA256</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+</div>
+
+<div id="infoMsg" class="footer-msg"></div>
+
+</div>
+</div>
+
 <script type="module">
-  import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  // =========================
-  // ✅ AJUSTA ESTO
-  // =========================
-  const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+const SUPABASE_ANON_KEY = "REEMPLAZA_CON_TU_ANON_KEY";
 
-  // Webhook n8n para desencriptar (y opcionalmente restaurar)
-  // Ej: https://tuservidor.n8n.cloud/webhook/decrypt-backup
-  const N8N_WEBHOOK_DECRYPT_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/5ed3ac35-06af-48bc-82a8-6c397ab54f20";
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  // ⚠️ Recomendación: NO dejes secretos en front.
-  // Si NO puedes evitarlo por ahora, al menos usa un token de baja criticidad y rota.
-  const N8N_SHARED_SECRET = ""; // "pon_aqui_un_secret" (idealmente vacío y se maneja distinto)
+const el = id => document.getElementById(id);
+const tbody = el("tbody");
+const infoMsg = el("infoMsg");
 
-  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+function fmtDate(d){ return new Date(d).toLocaleString(); }
+function short(s,n=14){ return s?.length>n? s.slice(0,n)+"…":s; }
 
-  const el = (id) => document.getElementById(id);
-  const tbody = el("tbody");
-  const infoMsg = el("infoMsg");
+async function refresh(){
+  infoMsg.textContent="Cargando...";
+  tbody.innerHTML="";
+  const {data,error} = await supabase.from("backups")
+  .select("*")
+  .order("backup_date",{ascending:false});
 
-  function fmtDate(iso){
-    if(!iso) return "";
-    const d = new Date(iso);
-    return d.toLocaleString();
-  }
-  function short(s, n=10){
-    if(!s) return "";
-    return s.length > n ? s.slice(0,n) + "…" : s;
-  }
-  function kb(n){
-    if(n === null || n === undefined) return "";
-    return `${Number(n).toLocaleString()} KB`;
+  if(error){
+    infoMsg.textContent="Error: "+error.message;
+    return;
   }
 
-  async function refresh(){
-    infoMsg.textContent = "Cargando backups...";
-    tbody.innerHTML = "";
-    el("count").textContent = "0";
+  el("count").textContent=data.length;
 
-    // filtros
-    const q = el("q").value.trim().toLowerCase();
-    const status = el("status").value;
-    const sort = el("sort").value;
-
-    let query = supabase
-      .from("backups")
-      .select("id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
-      .limit(200);
-
-    if(status) query = query.eq("status", status);
-
-    if(sort === "backup_date_desc") query = query.order("backup_date", { ascending:false });
-    else query = query.order("backup_date", { ascending:true });
-
-    const { data, error } = await query;
-    if(error){
-      infoMsg.textContent = "Error consultando Supabase: " + error.message;
-      return;
-    }
-
-    // búsqueda simple client-side (para no complicar el query)
-    const filtered = (data || []).filter(r => {
-      if(!q) return true;
-      const hay = [
-        r.id, r.file_name, r.status, r.drive_file_id, r.backup_date, r.created_at
-      ].filter(Boolean).join(" ").toLowerCase();
-      return hay.includes(q);
-    });
-
-    el("count").textContent = String(filtered.length);
-    infoMsg.textContent = filtered.length ? "" : "No hay registros con ese filtro.";
-
-    for(const r of filtered){
-      const tr = document.createElement("tr");
-
-      const statusPill = r.status === "SUCCESS"
-        ? `<span class="pill ok">✅ SUCCESS</span>`
-        : `<span class="pill fail">❌ ${r.status || "UNKNOWN"}</span>`;
-
-      tr.innerHTML = `
-        <td>${fmtDate(r.backup_date || r.created_at)}<div class="muted small mono">${short(r.id, 12)}</div></td>
-        <td>
-          <div><b>${r.file_name || "(sin nombre)"}</b></div>
-          <div class="muted small mono">Drive ID: ${short(r.drive_file_id, 14)}</div>
-        </td>
-        <td>${statusPill}${r.error_message ? `<div class="muted small">⚠ ${r.error_message}</div>` : ""}</td>
-        <td>
-          <div><b>${r.total_rows ?? ""}</b> filas</div>
-          <div class="muted small">${r.total_tables ?? ""} tablas</div>
-        </td>
-        <td>${kb(r.file_size_kb)}</td>
-        <td class="mono small">${r.file_sha256 ? short(r.file_sha256, 18) : ""}</td>
-        <td>
-          <div class="actions">
-            <button class="good" data-act="download" data-id="${r.id}">Descargar</button>
-            <button class="primary" data-act="decrypt" data-id="${r.id}">Desencriptar (n8n)</button>
-          </div>
-          <div class="muted small">IV: <span class="mono">${short(r.iv, 16)}</span></div>
-        </td>
-      `;
-      tbody.appendChild(tr);
-    }
-  }
-
-  async function getRowById(id){
-    const { data, error } = await supabase
-      .from("backups")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if(error) throw new Error(error.message);
-    return data;
-  }
-
-  function downloadEncrypted(row){
-    if(!row.drive_link){
-      alert("Este registro no tiene drive_link.");
-      return;
-    }
-    // descarga manual del archivo cifrado
-    window.open(row.drive_link, "_blank");
-  }
-
-  async function triggerDecrypt(row){
-    // Aquí disparamos n8n con la info mínima necesaria.
-    // Ideal: enviar solo el backup_id y que n8n consulte Supabase internamente.
-    const payload = {
-      backup_id: row.id,
-      drive_file_id: row.drive_file_id,
-      file_name: row.file_name,
-      iv: row.iv,
-      file_sha256: row.file_sha256,
-      // modo: "decrypt_only" o "restore" (cuando lo implementes)
-      mode: "decrypt_only"
-    };
-
-    const headers = { "Content-Type": "application/json" };
-    if(N8N_SHARED_SECRET) headers["X-Backup-Secret"] = N8N_SHARED_SECRET;
-
-    infoMsg.textContent = "Enviando a n8n para desencriptar...";
-    const resp = await fetch(N8N_WEBHOOK_DECRYPT_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(payload)
-    });
-
-    if(!resp.ok){
-      const t = await resp.text();
-      infoMsg.textContent = "n8n respondió error: " + t;
-      return;
-    }
-
-    // Opciones de respuesta:
-    // 1) n8n devuelve JSON con { download_url } ó { decrypted_json }
-    // 2) n8n devuelve directamente un archivo (attachment)
-    const ct = resp.headers.get("content-type") || "";
-
-    if(ct.includes("application/json")){
-      const out = await resp.json();
-      if(out.download_url){
-        infoMsg.textContent = "Listo. Abriendo descarga del JSON desencriptado...";
-        window.open(out.download_url, "_blank");
-      } else if(out.decrypted_json){
-        infoMsg.textContent = "Listo. Descargando JSON desencriptado (local)...";
-        const blob = new Blob([JSON.stringify(out.decrypted_json, null, 2)], { type:"application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = (row.file_name || "backup") + ".decrypted.json";
-        a.click();
-        URL.revokeObjectURL(url);
-      } else {
-        infoMsg.textContent = "n8n respondió JSON, pero no trae download_url ni decrypted_json.";
-      }
-    } else {
-      // si n8n devuelve archivo directo
-      const blob = await resp.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = (row.file_name || "backup") + ".decrypted.json";
-      a.click();
-      URL.revokeObjectURL(url);
-      infoMsg.textContent = "Listo. Archivo desencriptado descargado.";
-    }
-  }
-
-  async function ensureAuthUI(){
-    const { data: { session } } = await supabase.auth.getSession();
-    if(session?.user){
-      el("authPill").textContent = "✅ Sesión activa";
-      el("btnLogin").classList.add("hidden");
-      el("btnLogout").classList.remove("hidden");
-    } else {
-      el("authPill").textContent = "🔒 Sin sesión";
-      el("btnLogin").classList.remove("hidden");
-      el("btnLogout").classList.add("hidden");
-    }
-  }
-
-  // Login simple con email/password (puedes mejorarlo a tu UI)
-  el("btnLogin").onclick = async () => {
-    const email = prompt("Email admin:");
-    const password = prompt("Contraseña:");
-    if(!email || !password) return;
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if(error) return alert("Error login: " + error.message);
-    await ensureAuthUI();
-    await refresh();
-  };
-
-  el("btnLogout").onclick = async () => {
-    await supabase.auth.signOut();
-    await ensureAuthUI();
-    tbody.innerHTML = "";
-    infoMsg.textContent = "Sesión cerrada.";
-  };
-
-  el("btnRefresh").onclick = refresh;
-  el("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter") refresh(); });
-  el("status").onchange = refresh;
-  el("sort").onchange = refresh;
-
-  tbody.addEventListener("click", async (e) => {
-    const btn = e.target.closest("button");
-    if(!btn) return;
-    const act = btn.dataset.act;
-    const id = btn.dataset.id;
-    try{
-      const row = await getRowById(id);
-      if(act === "download") downloadEncrypted(row);
-      if(act === "decrypt") await triggerDecrypt(row);
-    }catch(err){
-      alert("Error: " + err.message);
-    }
+  data.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
+    <td>${fmtDate(r.backup_date)}</td>
+    <td>
+      <div><strong>${r.file_name}</strong></div>
+      <div class="mono">ID: ${short(r.drive_file_id)}</div>
+    </td>
+    <td><span class="status-success">${r.status}</span></td>
+    <td>${r.total_rows} filas<br><span class="mono">${r.total_tables} tablas</span></td>
+    <td>${r.file_size_kb} KB</td>
+    <td class="mono">${short(r.file_sha256,18)}</td>
+    <td>
+      <div class="actions">
+        <button class="btn-success" onclick="window.open('${r.drive_link}','_blank')">Descargar</button>
+      </div>
+    </td>
+    `;
+    tbody.appendChild(tr);
   });
 
-  // init
-  await ensureAuthUI();
-  await refresh();
+  infoMsg.textContent="";
+}
+
+refresh();
 </script>
 </body>
 </html>
