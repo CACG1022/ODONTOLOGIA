@@ -562,7 +562,13 @@
       // restore: { ok:true, mode:"restore", rows_affected:n, table_name, patient_document }
       if(out?.ok){
         if(action === "preview"){
-          const n = out.rows_found ?? out.rows ?? out.count ?? 0;
+  const n =
+    out.total_records ??
+    out.rows_found ??
+    out.rows ??
+    out.count ??
+    0;
+
           restoreResult.textContent = `🔎 Previsualización OK: ${n} registros encontrados para restaurar en ${out.table_name || tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
         } else {
           const n = out.rows_affected ?? out.rows_restored ?? out.count ?? 0;
