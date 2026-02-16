@@ -58,7 +58,79 @@
     .modal-label{font-size:13px;color:var(--muted);margin:6px 0}
     .modal-actions{display:flex;gap:10px;justify-content:flex-end;padding:0 6px 6px}
 
-  </style>
+  
+/* =========================
+   ✅ FASE 2.2: Preview 50 registros + Modal maximizable
+   (No modifica estilos existentes, solo agrega)
+   ========================= */
+#restoreModal .modal-card.maximized{
+  width: min(96vw, 1400px) !important;
+  height: 92vh !important;
+  max-height: 92vh !important;
+}
+#restoreModal .modal-card.maximized .modal-body{
+  max-height: calc(92vh - 120px) !important;
+}
+#restoreModal .preview-wrap{
+  margin-top: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 12px;
+  overflow: hidden;
+}
+#restoreModal .preview-head{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  justify-content:space-between;
+  padding:10px 12px;
+  background: rgba(255,255,255,.04);
+}
+#restoreModal .preview-head .muted{ opacity:.85; }
+#restoreModal .preview-table{
+  max-height: 340px;
+  overflow:auto;
+  background: rgba(0,0,0,.18);
+}
+#restoreModal .preview-table table{
+  width:100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+#restoreModal .preview-table th,
+#restoreModal .preview-table td{
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  padding: 6px 8px;
+  text-align:left;
+  white-space: nowrap;
+}
+#restoreModal .preview-table th{
+  position: sticky;
+  top: 0;
+  background: rgba(15,23,42,.95);
+  z-index: 1;
+}
+#restoreModal .preview-pager{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:10px 12px;
+  background: rgba(255,255,255,.04);
+}
+#restoreModal .btn-mini{
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: inherit;
+  cursor: pointer;
+}
+#restoreModal .btn-mini:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+}
+
+</style>
 </head>
 
 <body>
@@ -521,6 +593,125 @@
     return { __blob: blob, __content_type: ct || "application/octet-stream" };
   }
 
+  
+  // =========================
+  // ✅ Preview table (hasta 50 registros) + Paginación + Maximizar
+  // =========================
+  const btnRestoreMax = document.getElementById("btnRestoreMax");
+  const previewWrap = document.getElementById("previewWrap");
+  const previewTable = document.getElementById("previewTable");
+  const previewMeta = document.getElementById("previewMeta");
+  const previewCols = document.getElementById("previewCols");
+  const btnPrevPage = document.getElementById("btnPrevPage");
+  const btnNextPage = document.getElementById("btnNextPage");
+  const pageInfo = document.getElementById("pageInfo");
+
+  let previewState = {
+    page: 1,
+    pageSize: 50,
+    total: 0,
+    totalPages: 1,
+    lastPayloadBase: null
+  };
+
+  function setMaximized(on){
+    const card = restoreModal?.querySelector(".modal-card");
+    if(!card) return;
+    if(on) card.classList.add("maximized");
+    else card.classList.remove("maximized");
+  }
+
+  function toggleMaximized(){
+    const card = restoreModal?.querySelector(".modal-card");
+    if(!card) return;
+    card.classList.toggle("maximized");
+  }
+
+  btnRestoreMax?.addEventListener("click", toggleMaximized);
+
+  function escapeHtml(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function renderPreviewTable(rows){
+    if(!Array.isArray(rows) || rows.length === 0){
+      previewTable.innerHTML = `<div style="padding:10px" class="muted">Sin registros para mostrar en esta página.</div>`;
+      previewCols.textContent = "Columnas: 0";
+      previewWrap.style.display = "block";
+      return;
+    }
+    const cols = Object.keys(rows[0] || {});
+    previewCols.textContent = `Columnas: ${cols.length}`;
+
+    let thead = "<thead><tr>";
+    for(const c of cols) thead += `<th>${escapeHtml(c)}</th>`;
+    thead += "</tr></thead>";
+
+    let tbody = "<tbody>";
+    for(const r of rows){
+      tbody += "<tr>";
+      for(const c of cols){
+        tbody += `<td>${escapeHtml(r[c])}</td>`;
+      }
+      tbody += "</tr>";
+    }
+    tbody += "</tbody>";
+
+    previewTable.innerHTML = `<table>${thead}${tbody}</table>`;
+    previewWrap.style.display = "block";
+  }
+
+  function updatePagerUI(){
+    pageInfo.textContent = `Página ${previewState.page} de ${previewState.totalPages}`;
+    btnPrevPage.disabled = previewState.page <= 1;
+    btnNextPage.disabled = previewState.page >= previewState.totalPages;
+  }
+
+  async function runPreviewPage(page){
+    if(!previewState.lastPayloadBase) return;
+    previewState.page = Math.max(1, page || 1);
+
+    const payload = {
+      ...previewState.lastPayloadBase,
+      mode: "preview",
+      page: previewState.page,
+      pageSize: previewState.pageSize
+    };
+
+    restoreResult.textContent = `🔎 Cargando vista previa (página ${previewState.page})...`;
+    const out = await callN8N(payload);
+
+    // normalizar item array
+    let data = out;
+    if(Array.isArray(data)) data = data[0];
+
+    const total = data.total_records ?? data.rows_found ?? data.count ?? 0;
+    previewState.total = Number(total) || 0;
+    previewState.totalPages = Math.max(1, Math.ceil(previewState.total / previewState.pageSize));
+
+    const rows = data.rows_preview || data.preview_rows || data.rows || [];
+    previewMeta.textContent = `Total encontrados: ${previewState.total} · Mostrando hasta ${previewState.pageSize} (página ${previewState.page})`;
+    renderPreviewTable(rows);
+    updatePagerUI();
+
+    // Mensaje principal coherente
+    const tableName = data.table || data.table_name || payload.table_name || "";
+    const patientDoc = data.patient_document || payload.patient_document || "";
+    restoreResult.textContent = `🔎 Previsualización OK: ${previewState.total} registros encontrados para restaurar en ${tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
+  }
+
+  btnPrevPage?.addEventListener("click", async () => {
+    try{ await runPreviewPage(previewState.page - 1); }catch(e){ restoreResult.textContent = "Error: " + (e?.message||e); }
+  });
+  btnNextPage?.addEventListener("click", async () => {
+    try{ await runPreviewPage(previewState.page + 1); }catch(e){ restoreResult.textContent = "Error: " + (e?.message||e); }
+  });
+
   btnRestoreRun.addEventListener("click", async () => {
     try{
       const row = restoreContext.row;
@@ -548,7 +739,9 @@
         file_sha256: row.file_sha256,
         decrypt_password: restoreContext.decrypt_password,
         table_name: tableName,
-        patient_document: patientDoc
+        patient_document: patientDoc,
+        page: previewState.page,
+        pageSize: previewState.pageSize
       };
 
       restoreResult.textContent = (action === "preview")
@@ -562,14 +755,10 @@
       // restore: { ok:true, mode:"restore", rows_affected:n, table_name, patient_document }
       if(out?.ok){
         if(action === "preview"){
-  const n =
-    out.total_records ??
-    out.rows_found ??
-    out.rows ??
-    out.count ??
-    0;
-
-          restoreResult.textContent = `🔎 Previsualización OK: ${n} registros encontrados para restaurar en ${out.table_name || tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
+          // Guardamos base del payload para paginación y pedimos la página 1
+          previewState.page = 1;
+          previewState.lastPayloadBase = { ...payload };
+          await runPreviewPage(1);
         } else {
           const n = out.rows_affected ?? out.rows_restored ?? out.count ?? 0;
           restoreResult.textContent = `♻️ Restauración OK: ${n} registros aplicados en ${out.table_name || tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
@@ -636,6 +825,7 @@
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
       <div class="modal-head">
         <div class="modal-title" id="restoreTitle">🧩 Restauración controlada</div>
+        <button class="btn-mini" id="btnRestoreMax" type="button" title="Maximizar / Restaurar">⤢</button>
         <button class="modal-x" id="btnRestoreClose" type="button" title="Cerrar">✕</button>
       </div>
 
@@ -666,6 +856,23 @@
 
         <div class="hr"></div>
         <div id="restoreResult" class="msg">Seleccione una tabla para continuar.</div>
+
+        <!-- ✅ Preview (hasta 50 registros) -->
+        <div class="preview-wrap" id="previewWrap" style="display:none;">
+          <div class="preview-head">
+            <div class="muted" id="previewMeta">Vista previa</div>
+            <div class="muted" id="previewCols">Columnas: 0</div>
+          </div>
+
+          <div class="preview-table" id="previewTable"></div>
+
+          <div class="preview-pager">
+            <button class="btn-mini" id="btnPrevPage" type="button">◀ Anterior</button>
+            <div class="muted" id="pageInfo">Página 1</div>
+            <button class="btn-mini" id="btnNextPage" type="button">Siguiente ▶</button>
+          </div>
+        </div>
+
       </div>
 
       <div class="modal-actions">
@@ -678,6 +885,7 @@
 
 </body>
 </html>
+
 
 
 
