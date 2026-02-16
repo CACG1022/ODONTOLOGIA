@@ -246,14 +246,14 @@
       iv: row.iv,
       file_sha256: row.file_sha256,
       decrypt_password: decrypt_password || "",
-      // modo: "decrypt_only" o "restore" (cuando lo implementes)
-      mode: "decrypt_only"
+      // modo: "analyze" | "preview" | "restore"
+      mode: "analyze"
     };
 
     const headers = { "Content-Type": "application/json" };
     if(N8N_SHARED_SECRET) headers["X-Backup-Secret"] = N8N_SHARED_SECRET;
 
-    infoMsg.textContent = "Enviando a n8n para desencriptar...";
+    infoMsg.textContent = "Enviando a n8n (analyze) para validar integridad y preparar restauración...";
     const resp = await fetch(N8N_WEBHOOK_DECRYPT_URL, {
       method: "POST",
       headers,
@@ -273,6 +273,15 @@
 
     if(ct.includes("application/json")){
       const out = await resp.json();
+
+      // ✅ FASE 2: si n8n devuelve metadata (analyze), abrimos modal de restauración controlada
+      // Esperado: { ok:true, tables:[{name,rows}], backup_date, total_tables }
+      if(out && out.ok && Array.isArray(out.tables)){
+        infoMsg.textContent = "Integridad OK. Selecciona tabla/paciente para restaurar.";
+        openRestoreModal(row, decrypt_password, out);
+        return;
+      }
+
       if(out.download_url){
         infoMsg.textContent = "Listo. Abriendo descarga del JSON desencriptado...";
         window.open(out.download_url, "_blank");
@@ -411,6 +420,174 @@
   });
 
 
+
+
+  // =========================
+  // ✅ Modal de restauración controlada (Fase 2)
+  // =========================
+  const restoreModal = document.getElementById("restoreModal");
+  const restoreTable = document.getElementById("restoreTable");
+  const restorePatient = document.getElementById("restorePatient");
+  const restoreAction = document.getElementById("restoreAction");
+  const restoreResult = document.getElementById("restoreResult");
+  const restoreBackupId = document.getElementById("restoreBackupId");
+  const btnRestoreRun = document.getElementById("btnRestoreRun");
+  const btnRestoreCancel = document.getElementById("btnRestoreCancel");
+  const btnRestoreClose = document.getElementById("btnRestoreClose");
+
+  let restoreContext = {
+    row: null,
+    decrypt_password: "",
+    tables: [] // [{name, rows}]
+  };
+
+  function openRestoreModal(row, decrypt_password, analyzeResult){
+    restoreContext.row = row || null;
+    restoreContext.decrypt_password = decrypt_password || "";
+    restoreContext.tables = (analyzeResult?.tables || []).slice();
+
+    restoreBackupId.textContent = (row?.id || "").toString();
+
+    // llenar select
+    restoreTable.innerHTML = `<option value="">Seleccione una tabla...</option>`;
+    for(const t of restoreContext.tables){
+      const opt = document.createElement("option");
+      opt.value = t.name;
+      opt.textContent = `${t.name} (${t.rows ?? 0} registros)`;
+      restoreTable.appendChild(opt);
+    }
+
+    restorePatient.value = "";
+    restoreAction.value = "preview";
+    restoreResult.textContent = "Seleccione una tabla para continuar.";
+
+    restoreModal.classList.remove("hidden");
+    restoreModal.setAttribute("aria-hidden", "false");
+    setTimeout(() => restoreTable.focus(), 50);
+  }
+
+  function closeRestoreModal(){
+    restoreModal.classList.add("hidden");
+    restoreModal.setAttribute("aria-hidden", "true");
+    restoreContext = { row:null, decrypt_password:"", tables:[] };
+    // no borramos select por estética, pero lo reseteamos igual:
+    restoreTable.innerHTML = `<option value="">Seleccione una tabla...</option>`;
+    restorePatient.value = "";
+    restoreResult.textContent = "";
+  }
+
+  // cerrar por backdrop
+  restoreModal.addEventListener("click", (e) => {
+    if(e.target?.dataset?.modal === "close") closeRestoreModal();
+  });
+
+  btnRestoreCancel.addEventListener("click", closeRestoreModal);
+  btnRestoreClose.addEventListener("click", closeRestoreModal);
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "Escape" && !restoreModal.classList.contains("hidden")){
+      closeRestoreModal();
+    }
+  });
+
+  restoreTable.addEventListener("change", () => {
+    if(!restoreTable.value){
+      restoreResult.textContent = "Seleccione una tabla para continuar.";
+    } else {
+      restoreResult.textContent = `Tabla seleccionada: ${restoreTable.value}. Elija acción y ejecute.`;
+    }
+  });
+
+  async function callN8N(payload){
+    const headers = { "Content-Type": "application/json" };
+    if(N8N_SHARED_SECRET) headers["X-Backup-Secret"] = N8N_SHARED_SECRET;
+
+    const resp = await fetch(N8N_WEBHOOK_DECRYPT_URL, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(payload)
+    });
+
+    const ct = resp.headers.get("content-type") || "";
+    if(!resp.ok){
+      const t = await resp.text();
+      throw new Error("n8n respondió error: " + t);
+    }
+    if(ct.includes("application/json")){
+      return await resp.json();
+    }
+    // si n8n devuelve archivo directo
+    const blob = await resp.blob();
+    return { __blob: blob, __content_type: ct || "application/octet-stream" };
+  }
+
+  btnRestoreRun.addEventListener("click", async () => {
+    try{
+      const row = restoreContext.row;
+      if(!row?.id){
+        alert("No hay contexto de backup para restaurar.");
+        return;
+      }
+      const tableName = (restoreTable.value || "").trim();
+      if(!tableName){
+        alert("Selecciona una tabla.");
+        restoreTable.focus();
+        return;
+      }
+
+      const action = restoreAction.value; // preview | restore
+      const patientDoc = (restorePatient.value || "").trim();
+
+      // Payload: n8n debe manejar mode=preview / restore (y volver a validar hash internamente)
+      const payload = {
+        mode: action, // "preview" o "restore"
+        backup_id: row.id,
+        drive_file_id: row.drive_file_id,
+        file_name: row.file_name,
+        iv: row.iv,
+        file_sha256: row.file_sha256,
+        decrypt_password: restoreContext.decrypt_password,
+        table_name: tableName,
+        patient_document: patientDoc
+      };
+
+      restoreResult.textContent = (action === "preview")
+        ? "Calculando previsualización en n8n..."
+        : "Ejecutando restauración en n8n...";
+
+      const out = await callN8N(payload);
+
+      // Respuestas esperadas (tú las definirás en n8n):
+      // preview: { ok:true, mode:"preview", rows_found:n, table_name, patient_document }
+      // restore: { ok:true, mode:"restore", rows_affected:n, table_name, patient_document }
+      if(out?.ok){
+        if(action === "preview"){
+          const n = out.rows_found ?? out.rows ?? out.count ?? 0;
+          restoreResult.textContent = `🔎 Previsualización OK: ${n} registros encontrados para restaurar en ${out.table_name || tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
+        } else {
+          const n = out.rows_affected ?? out.rows_restored ?? out.count ?? 0;
+          restoreResult.textContent = `♻️ Restauración OK: ${n} registros aplicados en ${out.table_name || tableName}${patientDoc ? ` (paciente ${patientDoc})` : ""}.`;
+        }
+      } else if(out?.__blob){
+        // si alguna vez devuelves archivo desde preview/restore
+        const url = URL.createObjectURL(out.__blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${(row.file_name || "backup")}.${action}.${tableName}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        restoreResult.textContent = "Respuesta recibida como archivo. Descarga completada.";
+      } else {
+        restoreResult.textContent = "n8n respondió, pero no trae 'ok:true'. Revisa respuesta.";
+      }
+
+    }catch(err){
+      restoreResult.textContent = "Error: " + (err?.message || err);
+    }
+  });
+
+
+
   // init
   await ensureAuthUI();
   await refresh();
@@ -443,10 +620,58 @@
     </div>
   </div>
 
+
+  <!-- =========================
+       ✅ Modal: Restauración controlada (se abre DESPUÉS de "Analyze" exitoso en n8n)
+       ========================= -->
+  <div id="restoreModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop" data-modal="close"></div>
+
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="restoreTitle">
+      <div class="modal-head">
+        <div class="modal-title" id="restoreTitle">🧩 Restauración controlada</div>
+        <button class="modal-x" id="btnRestoreClose" type="button" title="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="pill" style="margin:6px 0 10px">
+          <span>Backup:</span>
+          <b id="restoreBackupId" class="mono" style="color:#e8eefc"></b>
+        </div>
+
+        <div class="modal-label">Tabla</div>
+        <select id="restoreTable" style="width:100%">
+          <option value="">Seleccione una tabla...</option>
+        </select>
+
+        <div class="modal-label">Documento / ID Paciente (opcional)</div>
+        <input id="restorePatient" placeholder="Ej: 12345678" autocomplete="off" />
+
+        <div class="modal-label">Acción</div>
+        <select id="restoreAction" style="width:100%">
+          <option value="preview">🔎 Previsualizar (no restaura)</option>
+          <option value="restore">♻️ Restaurar (UPsert)</option>
+        </select>
+
+        <div class="modal-hint muted small" style="margin-top:10px">
+          • Previsualizar: calcula cuántos registros se restaurarían.<br/>
+          • Restaurar: aplica restauración selectiva por tabla y, si ingresas paciente, solo de ese paciente.
+        </div>
+
+        <div class="hr"></div>
+        <div id="restoreResult" class="msg">Seleccione una tabla para continuar.</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="primary" id="btnRestoreRun" type="button">Ejecutar</button>
+        <button class="bad" id="btnRestoreCancel" type="button">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+
 </body>
 </html>
-
-
 
 
 
