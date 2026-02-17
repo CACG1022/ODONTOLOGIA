@@ -694,7 +694,7 @@
     previewState.total = Number(total) || 0;
     previewState.totalPages = Math.max(1, Math.ceil(previewState.total / previewState.pageSize));
 
-    const rows = data.rows_preview || data.preview_rows || data.rows || [];
+    const rows = data.records || data.rows_preview || data.preview_rows || data.rows || [];
     previewMeta.textContent = `Total encontrados: ${previewState.total} · Mostrando hasta ${previewState.pageSize} (página ${previewState.page})`;
     renderPreviewTable(rows);
     updatePagerUI();
