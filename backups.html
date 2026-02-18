@@ -582,6 +582,13 @@
     } else {
       restoreResult.textContent = `Tabla seleccionada: ${restoreTable.value}. Elija acción y ejecute.`;
     }
+    previewWrap.style.display = "none";
+    previewTable.innerHTML = "";
+    previewMeta.textContent = "";
+    previewCols.textContent = "";
+    previewState.lastPayloadBase = null;
+
+    
   });
 
   async function callN8N(payload){
@@ -727,6 +734,18 @@
   });
 
   btnRestoreRun.addEventListener("click", async () => {
+   const { data: { session } } = await supabase.auth.getSession();
+   if (!session?.user?.id) {
+  alert("Sesión inválida. Inicia sesión nuevamente.");
+  return;
+}
+
+const userId = session.user.id;
+const userEmail = session.user.email;
+
+
+
+    
     try{
       const row = restoreContext.row;
       if(!row?.id){
@@ -755,7 +774,9 @@
         table_name: tableName,
         patient_document: patientDoc,
         page: previewState.page,
-        pageSize: previewState.pageSize
+        pageSize: previewState.pageSize,
+        user_id: userId,
+        user_email: userEmail
       };
 
       restoreResult.textContent = (action === "preview")
