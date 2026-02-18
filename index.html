@@ -34,6 +34,8 @@
       reporte_pacientes: "https://cacg1022.github.io/ODONTOLOGIA/reporte-pacientes.html",
       reporte_ventas: "https://cacg1022.github.io/ODONTOLOGIA/reportes.html",
       reporte_costos_profesionales: "https://cacg1022.github.io/ODONTOLOGIA/reporte_costos_profesionales.html",
+      backups: "https://cacg1022.github.io/ODONTOLOGIA/backups.html",
+
 
 
       // ✅ NUEVO: Gastos (misma pestaña)
@@ -132,6 +134,9 @@
       // ✅ NUEVO: Gastos (debe existir como "gastos" en modulos_permisos.modulo)
       "go-gastos":            "gastos",
       "go-reporte-costos-profesionales": "reporte_costos_profesionales",
+      "go-backups": "backups",
+
+
 
     };
 
@@ -230,6 +235,8 @@
       wireNav("go-reporte-pacientes", URLS.reporte_pacientes, "href");
       wireNav("go-reporte-ventas", URLS.reporte_ventas, "href");
       wireNav("go-reporte-costos-profesionales", URLS.reporte_costos_profesionales,"href");
+      wireNav("go-backups", URLS.backups, "href");
+
 
 
       // ✅ NUEVO: Gastos (misma pestaña)
@@ -1235,6 +1242,22 @@ z-index: 1;
           <p>Registrar y consultar gastos.</p>
         </a>
       </div>
+
+      <a class="module" href="#" id="go-backups">
+  <div class="module-top">
+    <div class="micon" aria-hidden="true">
+      <!-- Icono nube -->
+      <svg viewBox="0 0 24 24">
+        <path d="M19 18H6a4 4 0 0 1 0-8 5 5 0 0 1 9.7-1.5A3.5 3.5 0 1 1 19 18Z"/>
+      </svg>
+    </div>
+    <span class="mgo">Abrir</span>
+  </div>
+  <h4>Backups</h4>
+  <p>Respaldo y gestión de copias de seguridad.</p>
+</a>
+
+      
 
       <div class="foot">
         <div>© <span id="year"></span> Clínica Dra. Leidi Silva</div>
