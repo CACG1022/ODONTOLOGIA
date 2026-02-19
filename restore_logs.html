@@ -13,13 +13,35 @@ body{
   color:#fff;
 }
 .container{
-  max-width:1200px;
+  max-width:1300px;
   margin:auto;
   padding:20px;
 }
-h1{
-  margin-bottom:10px;
+h1{ margin-bottom:15px; }
+
+.filters{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-bottom:15px;
 }
+.filters input{
+  background:#111c33;
+  border:1px solid rgba(255,255,255,.15);
+  color:#fff;
+  padding:8px;
+  border-radius:6px;
+  font-size:13px;
+}
+.filters button{
+  background:#2563eb;
+  border:none;
+  color:#fff;
+  padding:8px 14px;
+  border-radius:6px;
+  cursor:pointer;
+}
+
 .table-box{
   background:#0f1b2e;
   border-radius:12px;
@@ -35,13 +57,9 @@ th, td{
   border-bottom:1px solid rgba(255,255,255,.08);
   font-size:13px;
 }
-th{
-  background:#111c33;
-  text-align:left;
-}
-tr:hover{
-  background:rgba(255,255,255,.05);
-}
+th{ background:#111c33; text-align:left; }
+tr:hover{ background:rgba(255,255,255,.05); }
+
 .status{
   margin:10px 0;
   font-size:13px;
@@ -53,6 +71,16 @@ tr:hover{
 <body>
 <div class="container">
   <h1>Restore Logs</h1>
+
+  <div class="filters">
+    <input type="date" id="fechaDesde">
+    <input type="date" id="fechaHasta">
+    <input type="text" id="tablaFiltro" placeholder="Tabla">
+    <input type="text" id="docFiltro" placeholder="Documento">
+    <input type="text" id="emailFiltro" placeholder="Email">
+    <button onclick="cargar()">Filtrar</button>
+  </div>
+
   <div class="status">
     Registros: <span id="count">0</span> |
     <span id="status"></span>
@@ -66,6 +94,7 @@ tr:hover{
           <th>Backup</th>
           <th>Tabla</th>
           <th>Documento</th>
+          <th>Email</th>
           <th>Modo</th>
           <th>Filas</th>
           <th>Status</th>
@@ -73,7 +102,7 @@ tr:hover{
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="8">Cargando...</td></tr>
+        <tr><td colspan="9">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
@@ -84,27 +113,17 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+  "TU_ANON_KEY_AQUI"
 );
 
-const $ = (id)=>document.getElementById(id);
+const $ = id => document.getElementById(id);
 
-function setStatus(msg){
-  $("status").textContent = msg || "";
-}
-
-function setCount(n){
-  $("count").textContent = n ?? 0;
-}
+function setStatus(msg){ $("status").textContent = msg || ""; }
+function setCount(n){ $("count").textContent = n ?? 0; }
 
 async function checkAuth(){
-
   const { data:{ session } } = await supabase.auth.getSession();
-
-  if(!session){
-    setStatus("No hay sesión activa.");
-    return false;
-  }
+  if(!session){ setStatus("No hay sesión activa"); return false; }
 
   const { data:profile } = await supabase
     .from("profiles")
@@ -113,21 +132,44 @@ async function checkAuth(){
     .single();
 
   if(!profile || profile.role !== "admin"){
-    setStatus("Acceso restringido.");
+    setStatus("Acceso restringido");
     return false;
   }
-
   return true;
 }
 
 async function cargar(){
 
-  setStatus("Cargando datos...");
+  setStatus("Cargando...");
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("restore_logs")
     .select("*")
     .order("created_at",{ascending:false});
+
+  const fechaDesde = $("fechaDesde").value;
+  const fechaHasta = $("fechaHasta").value;
+  const tabla = $("tablaFiltro").value.trim();
+  const doc = $("docFiltro").value.trim();
+  const email = $("emailFiltro").value.trim();
+
+  if(fechaDesde){
+    query = query.gte("created_at", fechaDesde + " 00:00:00");
+  }
+  if(fechaHasta){
+    query = query.lte("created_at", fechaHasta + " 23:59:59");
+  }
+  if(tabla){
+    query = query.ilike("table_name", `%${tabla}%`);
+  }
+  if(doc){
+    query = query.ilike("patient_document", `%${doc}%`);
+  }
+  if(email){
+    query = query.ilike("restored_by_email", `%${email}%`);
+  }
+
+  const { data, error } = await query;
 
   if(error){
     console.error(error);
@@ -141,7 +183,7 @@ async function cargar(){
   tbody.innerHTML="";
 
   if(!data.length){
-    tbody.innerHTML="<tr><td colspan='8'>No hay registros</td></tr>";
+    tbody.innerHTML="<tr><td colspan='9'>No hay registros</td></tr>";
     return;
   }
 
@@ -152,6 +194,7 @@ async function cargar(){
       <td>${r.backup_id ?? "-"}</td>
       <td>${r.table_name ?? "-"}</td>
       <td>${r.patient_document ?? "-"}</td>
+      <td>${r.restored_by_email ?? "-"}</td>
       <td>${r.mode ?? "-"}</td>
       <td>${r.rows_affected ?? "-"}</td>
       <td>${r.status ?? "-"}</td>
@@ -169,10 +212,12 @@ async function init(){
   cargar();
 }
 
+window.cargar = cargar;
 init();
 </script>
 
 </body>
 </html>
+
 
 
