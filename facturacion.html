@@ -2528,14 +2528,6 @@ if (errorFactura) {
 const paciente_cedula = facturaData?.paciente_cedula ?? null;
   
 
-if (errorFactura) {
-  toast("No se pudo obtener la cédula del paciente", "err");
-  return;
-}
-
-const paciente_cedula = facturaData?.paciente_cedula || null;
-
-
         
         const payload = {
           factura_id: facturaId,
