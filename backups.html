@@ -174,6 +174,8 @@
         <option value="backup_date_asc">Orden: más antiguo</option>
       </select>
       <button class="primary" id="btnRefresh">Actualizar</button>
+      <button id="btnRestoreLogs">Restore Logs</button>
+
       <span class="right pill">Registros: <b id="count">0</b></span>
     </div>
 
@@ -429,6 +431,11 @@
 
   el("btnRefresh").onclick = refresh;
   el("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter") refresh(); });
+
+el("btnRestoreLogs").onclick = () => {
+  window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/restore_logs.html";
+};
+  
   el("status").onchange = refresh;
   el("sort").onchange = refresh;
 
