@@ -1951,6 +1951,7 @@ function obtenerCostoDeItem(it){
         }
         const detalle = state.items.map(it => ({
   factura_id: fac.id,
+  paciente_cedula: paciente_cedula,   // 👈 AGREGA ESTA LÍNEA       
   procedimiento_id: it.procedimiento_id, // ✅ CLAVE
   codigo_cups: it.codigo_cups || null,
   descripcion: it.descripcion || "",
