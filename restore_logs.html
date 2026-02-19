@@ -78,12 +78,12 @@ tr:hover{ background:rgba(255,255,255,.05); }
     <input type="text" id="tablaFiltro" placeholder="Tabla">
     <input type="text" id="docFiltro" placeholder="Documento">
     <input type="text" id="emailFiltro" placeholder="Email">
-    <button onclick="cargar()">Filtrar</button>
+    <button id="btnFiltrar">Filtrar</button>
   </div>
 
   <div class="status">
     Registros: <span id="count">0</span> |
-    <span id="status"></span>
+    <span id="status">Cargando...</span>
   </div>
 
   <div class="table-box">
@@ -121,10 +121,17 @@ const $ = id => document.getElementById(id);
 function setStatus(msg){ $("status").textContent = msg || ""; }
 function setCount(n){ $("count").textContent = n ?? 0; }
 
-async function checkAuth(){
-  const { data:{ session } } = await supabase.auth.getSession();
-  if(!session){ setStatus("No hay sesión activa"); return false; }
+async function init(){
 
+  // Esperar sesión correctamente
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if(!session){
+    setStatus("No hay sesión activa");
+    return;
+  }
+
+  // Validar rol admin
   const { data:profile } = await supabase
     .from("profiles")
     .select("role")
@@ -133,9 +140,12 @@ async function checkAuth(){
 
   if(!profile || profile.role !== "admin"){
     setStatus("Acceso restringido");
-    return false;
+    return;
   }
-  return true;
+
+  cargar();
+
+  $("btnFiltrar").addEventListener("click", cargar);
 }
 
 async function cargar(){
@@ -184,6 +194,7 @@ async function cargar(){
 
   if(!data.length){
     tbody.innerHTML="<tr><td colspan='9'>No hay registros</td></tr>";
+    setStatus("Sin resultados");
     return;
   }
 
@@ -206,18 +217,10 @@ async function cargar(){
   setStatus("Listo");
 }
 
-async function init(){
-  const ok = await checkAuth();
-  if(!ok) return;
-  cargar();
-}
-
-window.cargar = cargar;
 init();
 </script>
 
 </body>
 </html>
-
 
 
