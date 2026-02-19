@@ -2511,8 +2511,35 @@ function obtenerCostoDeItem(it){
       }
       setStatus("Guardando abono...");
       try{
+
+        // 🔎 Buscar la cédula desde facturas
+const { data: facturaData, error: errorFactura } = await supabase
+  .from("facturas")
+  .select("paciente_cedula")
+  .eq("id", facturaId)
+  .single();
+
+if (errorFactura) {
+  setStatus("");  // limpia "Guardando abono..."
+  toast("No se pudo obtener la cédula del paciente", "err");
+  return;
+}
+
+const paciente_cedula = facturaData?.paciente_cedula ?? null;
+  
+
+if (errorFactura) {
+  toast("No se pudo obtener la cédula del paciente", "err");
+  return;
+}
+
+const paciente_cedula = facturaData?.paciente_cedula || null;
+
+
+        
         const payload = {
           factura_id: facturaId,
+          paciente_cedula: paciente_cedula,
           fecha,
           monto,
           metodo_pago,
