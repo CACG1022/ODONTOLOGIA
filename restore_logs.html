@@ -1,129 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restore Logs</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0b1222;
+  color:#fff;
+}
+.container{
+  max-width:1200px;
+  margin:auto;
+  padding:20px;
+}
+h1{
+  margin-bottom:10px;
+}
+.table-box{
+  background:#0f1b2e;
+  border-radius:12px;
+  overflow:hidden;
+  box-shadow:0 20px 60px rgba(0,0,0,.4);
+}
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+th, td{
+  padding:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:13px;
+}
+th{
+  background:#111c33;
+  text-align:left;
+}
+tr:hover{
+  background:rgba(255,255,255,.05);
+}
+.status{
+  margin:10px 0;
+  font-size:13px;
+  color:#94a3b8;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+  <h1>Restore Logs</h1>
+  <div class="status">
+    Registros: <span id="count">0</span> |
+    <span id="status"></span>
+  </div>
+
+  <div class="table-box">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Backup</th>
+          <th>Tabla</th>
+          <th>Documento</th>
+          <th>Modo</th>
+          <th>Filas</th>
+          <th>Status</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="8">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
 <script type="module">
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-const state = {
-  page: 1,
-  pageSize: 25,
-  total: 0,
-  rows: [],
-  loading: false,
-};
-
-const $ = (id) => document.getElementById(id);
+const $ = (id)=>document.getElementById(id);
 
 function setStatus(msg){
   $("status").textContent = msg || "";
 }
 
 function setCount(n){
-  $("count").textContent = String(n ?? 0);
+  $("count").textContent = n ?? 0;
 }
 
 async function checkAuth(){
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data:{ session } } = await supabase.auth.getSession();
 
-  if (!session) {
-    setStatus("Debes iniciar sesión.");
+  if(!session){
+    setStatus("No hay sesión activa.");
     return false;
   }
 
-  const userId = session.user.id;
-
-  const { data: profile, error } = await supabase
+  const { data:profile } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", userId)
+    .eq("id", session.user.id)
     .single();
 
-  if (error || !profile) {
-    setStatus("No se pudo validar perfil.");
-    return false;
-  }
-
-  if (profile.role !== "admin") {
-    setStatus("Acceso restringido. Solo administradores.");
+  if(!profile || profile.role !== "admin"){
+    setStatus("Acceso restringido.");
     return false;
   }
 
   return true;
 }
 
-async function cargarLogs(){
+async function cargar(){
 
-  if(state.loading) return;
-  state.loading = true;
-  setStatus("Cargando restore_logs...");
+  setStatus("Cargando datos...");
 
-  try {
+  const { data, error } = await supabase
+    .from("restore_logs")
+    .select("*")
+    .order("created_at",{ascending:false});
 
-    const from = (state.page - 1) * state.pageSize;
-    const to = from + state.pageSize - 1;
-
-    const { data, error, count } = await supabase
-      .from("restore_logs")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false })
-      .range(from, to);
-
-    if(error) throw error;
-
-    state.rows = data || [];
-    state.total = count || 0;
-
-    setCount(state.total);
-    renderRows();
-
-    setStatus(`Mostrando ${state.rows.length} registros`);
-
-  } catch(err){
-    console.error(err);
+  if(error){
+    console.error(error);
     setStatus("Error cargando datos");
-  } finally {
-    state.loading = false;
-  }
-}
-
-function renderRows(){
-
-  const tbody = $("tbody");
-
-  if(!state.rows.length){
-    tbody.innerHTML = `<tr><td colspan="8">No hay registros</td></tr>`;
     return;
   }
 
-  tbody.innerHTML = "";
+  setCount(data.length);
 
-  state.rows.forEach(r => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+  const tbody = $("tbody");
+  tbody.innerHTML="";
+
+  if(!data.length){
+    tbody.innerHTML="<tr><td colspan='8'>No hay registros</td></tr>";
+    return;
+  }
+
+  data.forEach(r=>{
+    const tr=document.createElement("tr");
+    tr.innerHTML=`
       <td>${r.id}</td>
-      <td>${r.backup_id ?? "—"}</td>
-      <td>${r.table_name ?? "—"}</td>
-      <td>${r.patient_document ?? "—"}</td>
-      <td>${r.mode ?? "—"}</td>
-      <td>${r.rows_affected ?? "—"}</td>
-      <td>${r.status ?? "—"}</td>
-      <td>${r.created_at ?? "—"}</td>
+      <td>${r.backup_id ?? "-"}</td>
+      <td>${r.table_name ?? "-"}</td>
+      <td>${r.patient_document ?? "-"}</td>
+      <td>${r.mode ?? "-"}</td>
+      <td>${r.rows_affected ?? "-"}</td>
+      <td>${r.status ?? "-"}</td>
+      <td>${r.created_at ?? "-"}</td>
     `;
     tbody.appendChild(tr);
   });
+
+  setStatus("Listo");
 }
 
 async function init(){
-
-  const allowed = await checkAuth();
-  if(!allowed) return;
-
-  cargarLogs();
+  const ok = await checkAuth();
+  if(!ok) return;
+  cargar();
 }
 
-window.addEventListener("DOMContentLoaded", init);
+init();
 </script>
+
+</body>
+</html>
+
 
