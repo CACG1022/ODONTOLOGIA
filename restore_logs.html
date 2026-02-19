@@ -1,612 +1,129 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Restore Logs — Clínica Odontológica</title>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-  <!-- Supabase JS (ESM) -->
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
 
-    // =========================
-    // ✅ CONFIG SUPABASE (TU PROYECTO)
-    // =========================
-    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // =========================
-    // ✅ UI STATE
-    // =========================
-    const state = {
-      page: 1,
-      pageSize: 25,
-      total: 0,
-      rows: [],
-      loading: false,
-    };
+const state = {
+  page: 1,
+  pageSize: 25,
+  total: 0,
+  rows: [],
+  loading: false,
+};
 
-    const $ = (id) => document.getElementById(id);
+const $ = (id) => document.getElementById(id);
 
-    function esc(s){
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
+function setStatus(msg){
+  $("status").textContent = msg || "";
+}
 
-    function fmtDate(s){
-      if(!s) return "—";
-      // created_at está como text en tu tabla. Intentamos parsear:
-      const d = new Date(s);
-      if(!Number.isNaN(d.getTime())){
-        return d.toLocaleString("es-CO", {
-          year:"numeric", month:"2-digit", day:"2-digit",
-          hour:"2-digit", minute:"2-digit", second:"2-digit"
-        });
-      }
-      return String(s);
-    }
+function setCount(n){
+  $("count").textContent = String(n ?? 0);
+}
 
-    function setStatus(msg){
-      const el = $("status");
-      if(el) el.textContent = msg || "";
-    }
+async function checkAuth(){
 
-    function setCount(n){
-      const el = $("count");
-      if(el) el.textContent = String(n ?? 0);
-    }
+  const { data: { session } } = await supabase.auth.getSession();
 
-    function setPager(){
-      $("page").textContent = String(state.page);
-      $("pageSizeLabel").textContent = String(state.pageSize);
-      $("btn-prev").disabled = state.page <= 1 || state.loading;
-      const maxPage = Math.max(1, Math.ceil((state.total || 0) / state.pageSize));
-      $("btn-next").disabled = state.page >= maxPage || state.loading;
-    }
+  if (!session) {
+    setStatus("Debes iniciar sesión.");
+    return false;
+  }
 
-    function badgeStatus(v){
-      const s = String(v || "").toUpperCase();
-      if(s === "SUCCESS") return `<span class="badge ok">SUCCESS</span>`;
-      if(s === "ERROR" || s === "FAILED") return `<span class="badge err">${esc(s)}</span>`;
-      if(s === "PENDING" || s === "RUNNING") return `<span class="badge warn">${esc(s)}</span>`;
-      if(!s) return `<span class="badge muted">—</span>`;
-      return `<span class="badge">${esc(s)}</span>`;
-    }
+  const userId = session.user.id;
 
-    function renderRows(){
-      const tbody = $("tbody");
-      if(!tbody) return;
+  const { data: profile, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .single();
 
-      if(state.loading){
-        tbody.innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
-        return;
-      }
+  if (error || !profile) {
+    setStatus("No se pudo validar perfil.");
+    return false;
+  }
 
-      if(!state.rows || state.rows.length === 0){
-        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay registros para ese filtro.</td></tr>`;
-        return;
-      }
+  if (profile.role !== "admin") {
+    setStatus("Acceso restringido. Solo administradores.");
+    return false;
+  }
 
-      tbody.innerHTML = "";
-      for(const r of state.rows){
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td class="mono">${esc(r.id)}</td>
-          <td class="mono">${esc(r.backup_id || "—")}</td>
-          <td>${badgeStatus(r.status)}</td>
-          <td class="mono">${esc(r.table_name || "—")}</td>
-          <td class="mono">${esc(r.patient_document || "—")}</td>
-          <td class="mono">${esc(r.mode || "—")}</td>
-          <td class="mono tr">${esc(r.rows_affected ?? "—")}</td>
-          <td class="mono">${esc(fmtDate(r.created_at))}</td>
-        `;
-        tr.addEventListener("click", () => openDrawer(r));
-        tbody.appendChild(tr);
-      }
-    }
+  return true;
+}
 
-    function openDrawer(row){
-      $("drawer").classList.add("show");
-      $("drawer-title").textContent = "Detalle de restore_logs";
-      $("drawer-sub").textContent = `ID: ${row?.id || "—"}`;
+async function cargarLogs(){
 
-      const details = [
-        ["id", row.id],
-        ["backup_id", row.backup_id],
-        ["restored_by", row.restored_by],
-        ["restored_by_email", row.restored_by_email],
-        ["table_name", row.table_name],
-        ["patient_document", row.patient_document],
-        ["mode", row.mode],
-        ["rows_affected", row.rows_affected],
-        ["status", row.status],
-        ["error_message", row.error_message],
-        ["created_at", fmtDate(row.created_at)],
-      ];
+  if(state.loading) return;
+  state.loading = true;
+  setStatus("Cargando restore_logs...");
 
-      const cont = $("drawer-body");
-      cont.innerHTML = details.map(([k,v]) => `
-        <div class="kv">
-          <div class="k">${esc(k)}</div>
-          <div class="v mono">${esc(v ?? "—")}</div>
-        </div>
-      `).join("");
-    }
+  try {
 
-    function closeDrawer(){
-      $("drawer").classList.remove("show");
-    }
+    const from = (state.page - 1) * state.pageSize;
+    const to = from + state.pageSize - 1;
 
-    // =========================
-    // ✅ QUERY SUPABASE
-    // =========================
-    async function cargarLogs({ resetPage = false } = {}){
-      if(state.loading) return;
-      state.loading = true;
-      renderRows();
-      setPager();
-      setStatus("Cargando restore_logs...");
+    const { data, error, count } = await supabase
+      .from("restore_logs")
+      .select("*", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(from, to);
 
-      try{
-        if(resetPage) state.page = 1;
+    if(error) throw error;
 
-        const q = ($("q").value || "").trim();
-        const status = ($("statusFilter").value || "todos").trim();
-        const order = ($("order").value || "reciente").trim();
-        const pageSize = parseInt($("pageSize").value || "25", 10) || 25;
-        state.pageSize = pageSize;
+    state.rows = data || [];
+    state.total = count || 0;
 
-        // Base query
-        let query = supabase
-          .from("restore_logs")
-          .select("id, backup_id, restored_by, restored_by_email, table_name, patient_document, mode, rows_affected, status, error_message, created_at", { count: "exact" });
+    setCount(state.total);
+    renderRows();
 
-        // Filtros
-        if(status !== "todos"){
-          query = query.eq("status", status);
-        }
+    setStatus(`Mostrando ${state.rows.length} registros`);
 
-        // Búsqueda: intenta por varios campos (id, backup_id, table_name, patient_document, restored_by_email, status)
-        if(q){
-          // ilike sobre texto. OJO: id/uuid también funciona como texto en ilike.
-          // Si quieres más estricto, se puede separar por si es UUID.
-          const like = `%${q}%`;
-          query = query.or([
-            `id.ilike.${like}`,
-            `backup_id.ilike.${like}`,
-            `table_name.ilike.${like}`,
-            `patient_document.ilike.${like}`,
-            `restored_by_email.ilike.${like}`,
-            `status.ilike.${like}`
-          ].join(","));
-        }
+  } catch(err){
+    console.error(err);
+    setStatus("Error cargando datos");
+  } finally {
+    state.loading = false;
+  }
+}
 
-        // Orden
-        // created_at es text; igual lo ordena lexicográfico.
-        // Si lo guardas en timestamptz sería perfecto.
-        const asc = (order === "antiguo");
-        query = query.order("created_at", { ascending: asc });
+function renderRows(){
 
-        // Paginación
-        const from = (state.page - 1) * state.pageSize;
-        const to = from + state.pageSize - 1;
-        query = query.range(from, to);
+  const tbody = $("tbody");
 
-        const { data, error, count } = await query;
-        if(error) throw error;
+  if(!state.rows.length){
+    tbody.innerHTML = `<tr><td colspan="8">No hay registros</td></tr>`;
+    return;
+  }
 
-        state.rows = data || [];
-        state.total = count || 0;
-        setCount(state.total);
+  tbody.innerHTML = "";
 
-        setStatus(`Listo. Mostrando ${state.rows.length} de ${state.total}.`);
-      }catch(err){
-        console.error(err);
-        state.rows = [];
-        state.total = 0;
-        setCount(0);
+  state.rows.forEach(r => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${r.id}</td>
+      <td>${r.backup_id ?? "—"}</td>
+      <td>${r.table_name ?? "—"}</td>
+      <td>${r.patient_document ?? "—"}</td>
+      <td>${r.mode ?? "—"}</td>
+      <td>${r.rows_affected ?? "—"}</td>
+      <td>${r.status ?? "—"}</td>
+      <td>${r.created_at ?? "—"}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
 
-        // Mensaje típico si no tienes permisos/RLS:
-        const msg = String(err?.message || err || "Error");
-        setStatus("Error cargando: " + msg);
-        toast("No se pudieron cargar logs:\n" + msg, "err");
-      }finally{
-        state.loading = false;
-        renderRows();
-        setPager();
-      }
-    }
+async function init(){
 
-    function toast(msg, type="ok"){
-      const el = $("toast");
-      el.textContent = msg;
-      el.dataset.type = type;
-      el.classList.add("show");
-      clearTimeout(window.__t);
-      window.__t = setTimeout(()=> el.classList.remove("show"), 2600);
-    }
+  const allowed = await checkAuth();
+  if(!allowed) return;
 
-    function nextPage(){
-      const maxPage = Math.max(1, Math.ceil((state.total || 0) / state.pageSize));
-      if(state.page < maxPage){
-        state.page++;
-        cargarLogs();
-      }
-    }
-    function prevPage(){
-      if(state.page > 1){
-        state.page--;
-        cargarLogs();
-      }
-    }
+  cargarLogs();
+}
 
-    function init(){
-      // Defaults
-      $("pageSize").value = "25";
-      $("statusFilter").value = "todos";
-      $("order").value = "reciente";
+window.addEventListener("DOMContentLoaded", init);
+</script>
 
-      // Eventos
-      $("btn-refresh").addEventListener("click", () => cargarLogs());
-      $("q").addEventListener("keydown", (e) => { if(e.key === "Enter") cargarLogs({ resetPage:true }); });
-      $("statusFilter").addEventListener("change", () => cargarLogs({ resetPage:true }));
-      $("order").addEventListener("change", () => cargarLogs({ resetPage:true }));
-      $("pageSize").addEventListener("change", () => cargarLogs({ resetPage:true }));
-      $("btn-next").addEventListener("click", nextPage);
-      $("btn-prev").addEventListener("click", prevPage);
-
-      $("drawer-close").addEventListener("click", closeDrawer);
-      $("drawer-backdrop").addEventListener("click", closeDrawer);
-
-      // Primera carga
-      cargarLogs();
-    }
-
-    if(document.readyState === "loading"){
-      window.addEventListener("DOMContentLoaded", init);
-    } else {
-      init();
-    }
-  </script>
-
-  <style>
-    :root{
-      --bg0:#070a13;
-      --bg1:#0b1222;
-      --card:#0f1b2e;
-      --card2:#0c1628;
-      --text:#e5e7eb;
-      --muted:#94a3b8;
-      --line: rgba(148,163,184,.18);
-      --shadow: 0 24px 80px rgba(0,0,0,.45);
-      --accent:#3b82f6;
-      --accent2:#2563eb;
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --err:#ef4444;
-      --radius: 16px;
-    }
-    *{ box-sizing:border-box; }
-    html, body{ height:100%; }
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      background: radial-gradient(1200px 600px at 20% 0%, rgba(59,130,246,.18), transparent 55%),
-                  radial-gradient(1000px 600px at 80% 10%, rgba(34,197,94,.10), transparent 55%),
-                  linear-gradient(180deg, var(--bg0), var(--bg1));
-      color: var(--text);
-      padding: 18px;
-    }
-    .wrap{
-      max-width: 1220px;
-      margin: 0 auto;
-    }
-    .header{
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-    .title{
-      font-weight: 900;
-      letter-spacing: .2px;
-      font-size: 18px;
-      margin: 0;
-    }
-    .sub{
-      margin: 4px 0 0;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-    }
-    .panel{
-      background: rgba(15,27,46,.82);
-      border: 1px solid var(--line);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      backdrop-filter: blur(10px);
-    }
-    .tools{
-      padding: 14px;
-      border-bottom: 1px solid var(--line);
-      display:flex;
-      flex-wrap:wrap;
-      gap: 10px;
-      align-items:flex-end;
-      justify-content:space-between;
-    }
-    .tools-left{
-      display:flex;
-      flex-wrap:wrap;
-      gap: 10px;
-      align-items:flex-end;
-      flex: 1 1 720px;
-    }
-    .ctrl{
-      min-width: 240px;
-    }
-    label{
-      display:block;
-      font-size: 11px;
-      color: var(--muted);
-      font-weight: 800;
-      margin-bottom: 6px;
-      letter-spacing: .2px;
-    }
-    input, select{
-      width:100%;
-      border: 1px solid var(--line);
-      background: rgba(7,10,19,.35);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 12px;
-      outline:none;
-      font-size: 13px;
-    }
-    input::placeholder{ color: rgba(148,163,184,.7); }
-    .btn{
-      border: 1px solid var(--line);
-      background: rgba(7,10,19,.35);
-      color: var(--text);
-      border-radius: 12px;
-      padding: 10px 12px;
-      font-weight: 900;
-      cursor: pointer;
-      transition: transform .06s ease, filter .12s ease, background .12s ease;
-      white-space:nowrap;
-    }
-    .btn:hover{ filter: brightness(1.05); }
-    .btn:active{ transform: translateY(1px); }
-    .btn.primary{
-      background: linear-gradient(180deg, rgba(59,130,246,.95), rgba(37,99,235,.95));
-      border-color: rgba(59,130,246,.55);
-    }
-    .btn:disabled{ opacity:.55; cursor:not-allowed; }
-    .meta{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      justify-content:flex-end;
-      flex: 0 0 auto;
-    }
-    .chip{
-      border: 1px solid var(--line);
-      background: rgba(7,10,19,.35);
-      border-radius: 999px;
-      padding: 8px 12px;
-      font-size: 12px;
-      color: var(--muted);
-      display:flex;
-      gap: 8px;
-      align-items:center;
-      white-space:nowrap;
-    }
-    .chip b{ color: var(--text); }
-
-    .table-wrap{
-      overflow:auto;
-    }
-    table{
-      width: 100%;
-      border-collapse: collapse;
-      min-width: 980px;
-    }
-    thead th{
-      position: sticky;
-      top: 0;
-      z-index: 1;
-      background: rgba(12,22,40,.95);
-      border-bottom: 1px solid var(--line);
-      color: var(--muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      padding: 12px 12px;
-      text-align:left;
-      white-space:nowrap;
-    }
-    tbody td{
-      padding: 12px 12px;
-      border-bottom: 1px solid rgba(148,163,184,.12);
-      font-size: 13px;
-      vertical-align: middle;
-      color: rgba(229,231,235,.92);
-    }
-    tbody tr{
-      cursor: pointer;
-    }
-    tbody tr:hover{
-      background: rgba(59,130,246,.06);
-    }
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size: 12px;
-    }
-    .tr{ text-align:right; }
-    .empty{
-      text-align:center;
-      padding: 24px 10px !important;
-      color: var(--muted);
-    }
-    .badge{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: rgba(7,10,19,.35);
-      font-weight: 900;
-      font-size: 11px;
-      letter-spacing: .02em;
-      color: var(--text);
-    }
-    .badge.ok{
-      border-color: rgba(22,163,74,.35);
-      background: rgba(22,163,74,.12);
-      color: #a7f3d0;
-    }
-    .badge.warn{
-      border-color: rgba(245,158,11,.40);
-      background: rgba(245,158,11,.12);
-      color: #fde68a;
-    }
-    .badge.err{
-      border-color: rgba(239,68,68,.40);
-      background: rgba(239,68,68,.12);
-      color: #fecaca;
-    }
-    .badge.muted{
-      color: var(--muted);
-    }
-    .footer{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      color: var(--muted);
-      font-size: 12px;
-      border-top: 1px solid var(--line);
-      background: rgba(12,22,40,.55);
-    }
-    #toast{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: rgba(12,22,40,.92);
-      box-shadow: var(--shadow);
-      font-weight: 900;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity .15s ease, transform .15s ease;
-      pointer-events: none;
-      max-width: 360px;
-      white-space: pre-wrap;
-      z-index: 999;
-    }
-    #toast.show{ opacity: 1; transform: translateY(0); }
-    #toast[data-type="ok"]{ border-color: rgba(22,163,74,.45); }
-    #toast[data-type="err"]{ border-color: rgba(239,68,68,.45); }
-    #toast[data-type="warn"]{ border-color: rgba(245,158,11,.55); }
-
-    /* Drawer (detalle) */
-    .drawer{
-      position: fixed;
-      inset: 0;
-      display:none;
-      z-index: 200;
-    }
-    .drawer.show{ display:block; }
-    .drawer-backdrop{
-      position:absolute;
-      inset:0;
-      background: rgba(0,0,0,.55);
-    }
-    .drawer-panel{
-      position:absolute;
-      top: 14px;
-      right: 14px;
-      bottom: 14px;
-      width: min(520px, calc(100vw - 28px));
-      background: rgba(15,27,46,.96);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      backdrop-filter: blur(12px);
-    }
-    .drawer-head{
-      padding: 14px;
-      border-bottom: 1px solid var(--line);
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      align-items:flex-start;
-    }
-    .drawer-head h2{
-      margin:0;
-      font-size: 14px;
-      font-weight: 1000;
-      letter-spacing:.2px;
-    }
-    .drawer-head .small{
-      margin-top: 4px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .drawer-body{
-      padding: 14px;
-      overflow:auto;
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-    .kv{
-      border: 1px solid rgba(148,163,184,.14);
-      background: rgba(7,10,19,.28);
-      border-radius: 14px;
-      padding: 10px 12px;
-    }
-    .kv .k{
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      color: var(--muted);
-      font-weight: 900;
-    }
-    .kv .v{
-      margin-top: 6px;
-      color: var(--text);
-      font-weight: 800;
-      word-break: break-word;
-      line-height: 1.35;
-    }
-
-    @media (max-width: 720px){
-      .ctrl{ min-width: 100%; }
-      table{ min-width: 920px; }
-      .header{ flex-direction:column; align-items:flex-start; }
-      .meta{ width:100%; justify-content:flex-start; }
-    }
-  </style>
-</head>
-
-<body>
-  <div class="wrap">
-    <div class="header">
-      <div>
-        <h1 class="title">Restore Logs</h1>
-        <p class="sub">Vista de registros de <span class="mono">public.restore_logs</span>_
