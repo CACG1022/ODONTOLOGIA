@@ -939,15 +939,8 @@ function _evolucionesToHTML(evos){
 
   <div class="grid g-2">
 
-       <!-- PROFESIONAL QUE DIAGNOSTICA -->
-<div class="ctrl">
-  <label>Profesional que diagnostica *</label>
-  <select id="diag_profesional" required>
-    <option value="">Seleccione profesional...</option>
-  </select>
-</div>
-
   
+
 
     
     <div class="ctrl full" style="position:relative;">
@@ -966,6 +959,7 @@ function _evolucionesToHTML(evos){
 
   
   </section>
+  
   <!-- ✅ EVOLUCIONES -->
   <section class="card" id="seccionEvoluciones">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -1982,9 +1976,7 @@ async function cargarProfesionalesDesdeSupabase() {
 
   function enviarAN8N() {
 
-    const selectProf = document.getElementById("diag_profesional");
-
-
+ 
 
     
     // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
@@ -2020,7 +2012,6 @@ async function cargarProfesionalesDesdeSupabase() {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
       evoluciones: evoluciones,
-      diagnosticos_secundarios: diagnosticosSecundarios,
       profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
