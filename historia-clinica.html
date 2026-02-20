@@ -939,10 +939,15 @@ function _evolucionesToHTML(evos){
 
   <div class="grid g-2">
 
-  
-
-
+       <!-- PROFESIONAL QUE DIAGNOSTICA -->
+<div class="ctrl">
+  <label>Profesional que diagnostica *</label>
+  <select id="diag_profesional" required>
+    <option value="">Seleccione profesional...</option>
+  </select>
+</div>
     
+    <!-- DIAGNÓSTICO PRINCIPAL -->
     <div class="ctrl full" style="position:relative;">
   <label>Diagnóstico principal (CIE-10) *</label>
   <input type="text" id="diag_principal_busqueda"
@@ -951,6 +956,22 @@ function _evolucionesToHTML(evos){
   <div id="diag_principal_resultados" class="cie-dropdown"></div>
 </div>
 
+<button 
+  type="button" 
+  id="btn_confirmar_diag_principal"
+  class="btn btn-diagnostico"
+  onclick="confirmarDiagnosticoPrincipal()">
+  Confirmar diagnóstico principal
+</button>
+    
+
+    <!-- DIAGNÓSTICOS SECUNDARIOS -->
+    <div class="ctrl full">
+      <label>Diagnósticos secundarios</label>
+      <button type="button" class="btn btn-agregar btn-diagnostico"
+        onclick="agregarDiagnosticoSecundario()">
+     + Agregar diagnóstico
+    </button>
 
       <div id="lista_diagnosticos_secundarios"></div>
     </div>
@@ -959,7 +980,6 @@ function _evolucionesToHTML(evos){
 
   
   </section>
-  
   <!-- ✅ EVOLUCIONES -->
   <section class="card" id="seccionEvoluciones">
     <div class="legend">Evoluciones (procedimientos realizados)</div>
@@ -1948,7 +1968,8 @@ async function cargarProfesionalesDesdeSupabase() {
     
     const errores = [];
 
-
+    const profesionalDiag = document.getElementById("diag_profesional")?.value?.trim();
+    if (!profesionalDiag) errores.push("Profesional que diagnostica");
     
     const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
     if (!nombre) errores.push("Nombres y apellidos");
@@ -1961,7 +1982,8 @@ async function cargarProfesionalesDesdeSupabase() {
     const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
     if (!fechaNac) errores.push("Fecha de nacimiento");
     if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
-   
+    const diagPrincipal = document.getElementById("diag_principal_codigo")?.value?.trim();
+if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
 
     if (errores.length > 0) {
       alert(
@@ -1976,7 +1998,23 @@ async function cargarProfesionalesDesdeSupabase() {
 
   function enviarAN8N() {
 
- 
+    const selectProf = document.getElementById("diag_profesional");
+
+const profesionalDiagnostico =
+  document.getElementById("diag_profesional")?.value || "";
+    
+   const diagnosticoPrincipal = {
+  codigo: document.getElementById("diag_principal_codigo")?.value || "",
+  texto: document.getElementById("diag_principal_busqueda")?.value || ""
+};
+
+const diagnosticosSecundarios = [];
+document.querySelectorAll(".diag-sec-item").forEach(item => {
+  diagnosticosSecundarios.push({
+    codigo: item.dataset.codigo,
+    texto: item.dataset.texto
+  });
+});
 
     
     // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
@@ -2012,6 +2050,8 @@ async function cargarProfesionalesDesdeSupabase() {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
       evoluciones: evoluciones,
+      diagnostico_principal: diagnosticoPrincipal,
+      diagnosticos_secundarios: diagnosticosSecundarios,
       profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
@@ -2901,41 +2941,29 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
   });
 
 }
+  
 
+function confirmarDiagnosticoPrincipal() {
 
-function agregarDiagnosticoPrincipal() {
+  const input = document.getElementById("diag_principal_busqueda");
+  const codigo = document.getElementById("diag_principal_codigo");
+  const btn = document.getElementById("btn_confirmar_diag_principal");
 
-  const codigo = document.getElementById("diag_principal_codigo").value;
-  const texto = document.getElementById("diag_principal_busqueda").value;
-
-  if (!codigo || !texto) {
-    alert("Seleccione un diagnóstico válido");
+  if (!codigo.value) {
+    alert("⚠️ Debe seleccionar un diagnóstico válido.");
     return;
   }
 
-  const container = document.getElementById("contenedor_diag_principal");
+  // 🔒 Bloquear campo
+  input.disabled = true;
+  btn.disabled = true;
 
-  // Solo permitir uno principal visual
-  container.innerHTML = "";
+  input.style.background = "#f3f4f6";
+  input.style.cursor = "not-allowed";
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "diag-principal-item";
-  wrapper.dataset.codigo = codigo;
-  wrapper.dataset.texto = texto;
-
-  wrapper.innerHTML = `
-    <input type="text" value="${texto}" disabled>
-    <button type="button" onclick="this.parentElement.remove()">❌</button>
-  `;
-
-  container.appendChild(wrapper);
-
-  // limpiar buscador
-  document.getElementById("diag_principal_busqueda").value = "";
-  document.getElementById("diag_principal_codigo").value = "";
 }
-  
 
+  
   // ==============================
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
   // ==============================
@@ -2986,6 +3014,10 @@ const secundarios = diagnosticos.filter(d => d.tipo === "secundario");
 
 // 🔹 DIAGNÓSTICO PRINCIPAL
 if (principal) {
+// 🔒 bloquear si ya existe guardado
+document.getElementById("diag_principal_busqueda").disabled = true;
+document.getElementById("btn_confirmar_diag_principal").disabled = true;
+  
   document.getElementById("diag_principal_busqueda").value =
     `${principal.codigo} - ${principal.descripcion}`;
 
@@ -4014,4 +4046,5 @@ document.addEventListener("DOMContentLoaded", async function () {
   
 </body>
 </html>
+
 
