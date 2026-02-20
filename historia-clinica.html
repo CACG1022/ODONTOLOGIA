@@ -258,6 +258,7 @@ function agregarDiagnosticoSecundario() {
   const wrapper = document.createElement("div");
   wrapper.className = "diag-sec-item";
   wrapper.style.marginBottom = "10px";
+  wrapper.style.position = "relative";  // 🔥 AGREGA ESTO
 
   const input = document.createElement("input");
   input.type = "text";
@@ -1031,13 +1032,13 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
   <div class="grid g-2">
     
     <!-- DIAGNÓSTICO PRINCIPAL -->
-    <div class="ctrl full">
-      <label>Diagnóstico principal (CIE-10) *</label>
-      <input type="text" id="diag_principal_busqueda" 
-             placeholder="Buscar diagnóstico por código o descripción">
-      <input type="hidden" id="diag_principal_codigo">
-      <div id="diag_principal_resultados" class="cie-dropdown"></div>
-    </div>
+    <div class="ctrl full" style="position:relative;">
+  <label>Diagnóstico principal (CIE-10) *</label>
+  <input type="text" id="diag_principal_busqueda"
+         placeholder="Buscar diagnóstico por código o descripción">
+  <input type="hidden" id="diag_principal_codigo">
+  <div id="diag_principal_resultados" class="cie-dropdown"></div>
+</div>
 
     <!-- DIAGNÓSTICOS SECUNDARIOS -->
     <div class="ctrl full">
