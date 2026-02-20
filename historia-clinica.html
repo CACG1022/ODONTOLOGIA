@@ -1989,7 +1989,10 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
 
   function enviarAN8N() {
 
-    const profesionalDiagnostico = document.getElementById("diag_profesional")?.value || "";
+    const selectProf = document.getElementById("diag_profesional");
+
+const profesionalDiagnostico =
+  selectProf?.options[selectProf.selectedIndex]?.text || "";
 
    const diagnosticoPrincipal = {
   codigo: document.getElementById("diag_principal_codigo")?.value || "",
