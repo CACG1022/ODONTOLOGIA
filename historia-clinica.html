@@ -1749,7 +1749,7 @@ async function cargarProfesionalesDesdeSupabase() {
     }));
   }
 
-  document.addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", async () => {
   _initCanvasDoc("doc_firmaPaciente");
   _initCanvasDoc("doc_firmaProfesional");
   nuevoDocumento();
@@ -1791,7 +1791,8 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 }
 
-cargarDiagnosticosCIE10();
+await cargarDiagnosticosCIE10();
+
 filtrarDiagnosticos(
   "diag_principal_busqueda",
   "diag_principal_resultados",
