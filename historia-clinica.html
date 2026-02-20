@@ -956,6 +956,15 @@ function _evolucionesToHTML(evos){
   <div id="diag_principal_resultados" class="cie-dropdown"></div>
 </div>
 
+<button 
+  type="button" 
+  id="btn_confirmar_diag_principal"
+  class="btn btn-diagnostico"
+  onclick="confirmarDiagnosticoPrincipal()">
+  Confirmar diagnóstico principal
+</button>
+    
+
     <!-- DIAGNÓSTICOS SECUNDARIOS -->
     <div class="ctrl full">
       <label>Diagnósticos secundarios</label>
@@ -2934,6 +2943,27 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
 }
   
 
+function confirmarDiagnosticoPrincipal() {
+
+  const input = document.getElementById("diag_principal_busqueda");
+  const codigo = document.getElementById("diag_principal_codigo");
+  const btn = document.getElementById("btn_confirmar_diag_principal");
+
+  if (!codigo.value) {
+    alert("⚠️ Debe seleccionar un diagnóstico válido.");
+    return;
+  }
+
+  // 🔒 Bloquear campo
+  input.disabled = true;
+  btn.disabled = true;
+
+  input.style.background = "#f3f4f6";
+  input.style.cursor = "not-allowed";
+
+}
+
+  
   // ==============================
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
   // ==============================
@@ -2984,6 +3014,10 @@ const secundarios = diagnosticos.filter(d => d.tipo === "secundario");
 
 // 🔹 DIAGNÓSTICO PRINCIPAL
 if (principal) {
+// 🔒 bloquear si ya existe guardado
+document.getElementById("diag_principal_busqueda").disabled = true;
+document.getElementById("btn_confirmar_diag_principal").disabled = true;
+  
   document.getElementById("diag_principal_busqueda").value =
     `${principal.codigo} - ${principal.descripcion}`;
 
