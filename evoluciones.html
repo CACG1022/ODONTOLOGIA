@@ -1302,6 +1302,7 @@ async function cargarDiagnosticosCIE10() {
   // ==============================
   let evoluciones = [];
   let _cedulaActual = "";
+  let diagnosticosGlobales = [];   // 🔥 AGREGAR ESTA LÍNEA
 
   function limpiarEvolucionForm() {
     const f = document.getElementById("evo_fecha");
@@ -1577,6 +1578,10 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
 
       const raw = r.data;
       const data = unwrapWebhookRespuesta(raw);
+      // 🔥 Guardar diagnósticos globales
+diagnosticosGlobales = Array.isArray(data?.diagnosticos)
+  ? data.diagnosticos
+  : [];
 
       const nombre = extraerNombrePaciente(raw);
       mostrarNombrePaciente(nombre);
