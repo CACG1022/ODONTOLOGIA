@@ -2776,23 +2776,28 @@ async function cargarDiagnosticosCIE10() {
   }
 }
 
-    function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
+ function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
+
   const input = document.getElementById(inputId);
   const resultados = document.getElementById(resultadosId);
   const hidden = document.getElementById(hiddenId);
 
-  input.addEventListener("input", () => {
-    const texto = input.value.toLowerCase().trim();
+  function renderLista(filtro = "") {
+
     resultados.innerHTML = "";
 
-    if (texto.length < 2) return;
+    const texto = filtro.toLowerCase().trim();
 
-    const filtrados = CIE10_LISTA.filter(d =>
-      d.codigo.toLowerCase().includes(texto) ||
-      d.descripcion.toLowerCase().includes(texto)
-    ).slice(0, 15);
+    let listaFiltrada = CIE10_LISTA;
 
-    filtrados.forEach(d => {
+    if (texto.length > 0) {
+      listaFiltrada = CIE10_LISTA.filter(d =>
+        d.codigo.toLowerCase().includes(texto) ||
+        d.descripcion.toLowerCase().includes(texto)
+      );
+    }
+
+    listaFiltrada.slice(0, 200).forEach(d => {
       const div = document.createElement("div");
       div.className = "cie-item";
       div.textContent = `${d.codigo} - ${d.descripcion}`;
@@ -2803,7 +2808,19 @@ async function cargarDiagnosticosCIE10() {
       };
       resultados.appendChild(div);
     });
+
+  }
+
+  // 🔹 Mostrar todos al hacer click
+  input.addEventListener("focus", () => {
+    renderLista();
   });
+
+  // 🔹 Filtrar al escribir
+  input.addEventListener("input", () => {
+    renderLista(input.value);
+  });
+
 }
 
 function agregarDiagnosticoSecundario() {
@@ -2834,18 +2851,23 @@ function agregarDiagnosticoSecundario() {
 }
 
 function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
-  input.addEventListener("input", () => {
-    const texto = input.value.toLowerCase().trim();
+
+  function renderLista(filtro = "") {
+
     resultados.innerHTML = "";
 
-    if (texto.length < 2) return;
+    const texto = filtro.toLowerCase().trim();
 
-    const filtrados = CIE10_LISTA.filter(d =>
-      d.codigo.toLowerCase().includes(texto) ||
-      d.descripcion.toLowerCase().includes(texto)
-    ).slice(0, 15);
+    let listaFiltrada = CIE10_LISTA;
 
-    filtrados.forEach(d => {
+    if (texto.length > 0) {
+      listaFiltrada = CIE10_LISTA.filter(d =>
+        d.codigo.toLowerCase().includes(texto) ||
+        d.descripcion.toLowerCase().includes(texto)
+      );
+    }
+
+    listaFiltrada.slice(0, 200).forEach(d => {
       const div = document.createElement("div");
       div.className = "cie-item";
       div.textContent = `${d.codigo} - ${d.descripcion}`;
@@ -2858,7 +2880,17 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
       };
       resultados.appendChild(div);
     });
+
+  }
+
+  input.addEventListener("focus", () => {
+    renderLista();
   });
+
+  input.addEventListener("input", () => {
+    renderLista(input.value);
+  });
+
 }
   
 
