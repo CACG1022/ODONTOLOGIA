@@ -1791,13 +1791,7 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 }
 
-await cargarDiagnosticosCIE10();
 
-filtrarDiagnosticos(
-  "diag_principal_busqueda",
-  "diag_principal_resultados",
-  "diag_principal_codigo"
-);
   
     
 });
@@ -3764,6 +3758,23 @@ function _evolucionesToHTML(evos){
   
   
 window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
+
+  // ==============================
+// ✅ INICIALIZAR DIAGNÓSTICOS CIE10
+// ==============================
+document.addEventListener("DOMContentLoaded", async function () {
+
+  console.log("🔵 Inicializando diagnósticos CIE10...");
+
+  await cargarDiagnosticosCIE10();
+
+  filtrarDiagnosticos(
+    "diag_principal_busqueda",
+    "diag_principal_resultados",
+    "diag_principal_codigo"
+  );
+
+});
 
 </script>
 <!-- ✅ MODAL EVOLUCIONES (ventana modal con iframe) -->
