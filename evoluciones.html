@@ -517,6 +517,27 @@
           placeholder="Buscar o escribir procedimiento..." autocomplete="off" />
       </div>
 
+
+      <div class="ctrl">
+  <label for="diag_principal_select">Diagnóstico principal</label>
+  <select id="diag_principal_select">
+    <option value="">Seleccione diagnóstico...</option>
+  </select>
+</div>
+
+<div class="ctrl full">
+  <label>Diagnósticos secundarios</label>
+  <div id="diag_sec_container"></div>
+  <button type="button"
+          class="btn btn-buscar"
+          style="max-width:260px;"
+          onclick="agregarDiagnosticoSecundario()">
+    + Agregar diagnóstico secundario
+  </button>
+</div>
+
+      
+
       <div class="ctrl full">
         <label for="evo_detalle">Detalle / Observaciones</label>
         <div class="vwrap">
@@ -1157,6 +1178,65 @@
     }
   }
 
+// ==============================
+// ✅ DIAGNÓSTICOS CIE10 DESDE SUPABASE
+// ==============================
+async function cargarDiagnosticosCIE10() {
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  const select = document.getElementById("diag_principal_select");
+  if (!select) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("cie10_odontologia")
+      .select("codigo, nombre, descripcion")
+      .eq("activo", true)
+      .order("codigo", { ascending: true });
+
+    if (error) throw error;
+
+    select.innerHTML = `<option value="">Seleccione diagnóstico...</option>`;
+
+    (data || []).forEach(dx => {
+      const option = document.createElement("option");
+      option.value = JSON.stringify(dx);
+      option.textContent = `${dx.codigo} - ${dx.nombre}`;
+      select.appendChild(option);
+    });
+
+  } catch (err) {
+    console.warn("Error cargando CIE10:", err);
+  }
+}
+
+  function agregarDiagnosticoSecundario() {
+  const container = document.getElementById("diag_sec_container");
+  const selectPrincipal = document.getElementById("diag_principal_select");
+
+  const clone = selectPrincipal.cloneNode(true);
+  clone.removeAttribute("id");
+
+  const wrapper = document.createElement("div");
+  wrapper.style.display = "flex";
+  wrapper.style.gap = "8px";
+  wrapper.style.marginBottom = "8px";
+
+  const btnRemove = document.createElement("button");
+  btnRemove.type = "button";
+  btnRemove.textContent = "X";
+  btnRemove.onclick = () => wrapper.remove();
+
+  wrapper.appendChild(clone);
+  wrapper.appendChild(btnRemove);
+  container.appendChild(wrapper);
+}
+  
   // ==============================
   // ✅ EVOLUCIONES
   // ==============================
@@ -1175,6 +1255,13 @@
     if (p) p.value = "";
     if (t) t.value = "";
     if (d) d.value = "";
+
+    // 🔹 Limpiar diagnósticos
+const diagPrincipal = document.getElementById("diag_principal_select");
+if (diagPrincipal) diagPrincipal.value = "";
+
+const diagSecContainer = document.getElementById("diag_sec_container");
+if (diagSecContainer) diagSecContainer.innerHTML = "";
 
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
@@ -1331,6 +1418,10 @@
 
     if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
     if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
+    if (!diagnosticoPrincipal) {
+  alert("⚠️ Debes seleccionar un diagnóstico principal.");
+  return;
+}
 
     const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
@@ -1339,6 +1430,24 @@
 
     const firmaPaciente = obtenerFirmaBase64("firma_paciente");
     const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
+    // ==============================
+// DIAGNÓSTICOS SELECCIONADOS
+// ==============================
+const diagPrincipalSelect = document.getElementById("diag_principal_select");
+let diagnosticoPrincipal = null;
+
+if (diagPrincipalSelect && diagPrincipalSelect.value) {
+  diagnosticoPrincipal = JSON.parse(diagPrincipalSelect.value);
+}
+
+const diagnosticosSecundarios = [];
+
+document.querySelectorAll("#diag_sec_container select").forEach(sel => {
+  if (sel.value) {
+    diagnosticosSecundarios.push(JSON.parse(sel.value));
+  }
+});
 
     const item = {
       id: generarEvolucionId(),
@@ -1363,6 +1472,8 @@
         evento: "agregar_evolucion",
         cedula: cedula,
         evolucion: item,
+        diagnostico_principal: diagnosticoPrincipal,
+        diagnosticos_secundarios: diagnosticosSecundarios,
         fecha_envio: new Date().toISOString(),
         usuario_logueado: usuario
       };
@@ -1469,6 +1580,7 @@
 
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
+    await cargarDiagnosticosCIE10();
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
