@@ -956,6 +956,26 @@ function _evolucionesToHTML(evos){
   <div id="diag_principal_resultados" class="cie-dropdown"></div>
 </div>
 
+<button 
+  type="button" 
+  id="btn_confirmar_diag_principal"
+  class="btn btn-diagnostico"
+  onclick="confirmarDiagnosticoPrincipal()">
+  Confirmar diagnóstico principal
+</button>
+    
+
+    <!-- DIAGNÓSTICOS SECUNDARIOS -->
+    <div class="ctrl full">
+      <label>Diagnósticos secundarios</label>
+      <button type="button" class="btn btn-agregar btn-diagnostico"
+        onclick="agregarDiagnosticoSecundario()">
+     + Agregar diagnóstico
+    </button>
+
+      <div id="lista_diagnosticos_secundarios"></div>
+    </div>
+
   </div>
 
   
@@ -1978,7 +1998,25 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
 
   function enviarAN8N() {
 
- 
+    const selectProf = document.getElementById("diag_profesional");
+
+const profesionalDiagnostico =
+  document.getElementById("diag_profesional")?.value || "";
+    
+   const diagnosticoPrincipal = {
+  codigo: document.getElementById("diag_principal_codigo")?.value || "",
+  texto: document.getElementById("diag_principal_busqueda")?.value || ""
+};
+
+const diagnosticosSecundarios = [];
+document.querySelectorAll(".diag-sec-item").forEach(item => {
+  diagnosticosSecundarios.push({
+    codigo: item.dataset.codigo,
+    texto: item.dataset.texto
+  });
+});
+
+    
     // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
     if (String(window.__ROL_ACTUAL || "").toLowerCase() === "auxiliar") {
       alert("⛔ Rol auxiliar: no autorizado para Guardar y Enviar.");
@@ -2012,6 +2050,8 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
       evoluciones: evoluciones,
+      diagnostico_principal: diagnosticoPrincipal,
+      diagnosticos_secundarios: diagnosticosSecundarios,
       profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
@@ -4006,5 +4046,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   
 </body>
 </html>
+
 
 
