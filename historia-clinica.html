@@ -938,6 +938,14 @@ function _evolucionesToHTML(evos){
   <div class="legend">Diagnóstico odontológico</div>
 
   <div class="grid g-2">
+
+       <!-- PROFESIONAL QUE DIAGNOSTICA -->
+<div class="ctrl">
+  <label>Profesional que diagnostica *</label>
+  <select id="diag_profesional" required>
+    <option value="">Seleccione profesional...</option>
+  </select>
+</div>
     
     <!-- DIAGNÓSTICO PRINCIPAL -->
     <div class="ctrl full" style="position:relative;">
@@ -1948,7 +1956,12 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 
   function validarCamposObligatorios() {
+    
     const errores = [];
+
+    const profesionalDiag = document.getElementById("diag_profesional")?.value?.trim();
+    if (!profesionalDiag) errores.push("Profesional que diagnostica");
+    
     const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
     if (!nombre) errores.push("Nombres y apellidos");
     const edad = document.getElementById("paciente_edad")?.value || "";
@@ -1975,6 +1988,8 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
   }
 
   function enviarAN8N() {
+
+    const profesionalDiagnostico = document.getElementById("diag_profesional")?.value || "";
 
    const diagnosticoPrincipal = {
   codigo: document.getElementById("diag_principal_codigo")?.value || "",
@@ -2025,6 +2040,7 @@ document.querySelectorAll(".diag-sec-item").forEach(item => {
       evoluciones: evoluciones,
       diagnostico_principal: diagnosticoPrincipal,
       diagnosticos_secundarios: diagnosticosSecundarios,
+      profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -3097,6 +3113,38 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
     }
   }
 
+
+  // ======================================
+// CARGAR PROFESIONALES PARA DIAGNÓSTICO
+// ======================================
+async function cargarProfesionalesDiagnostico() {
+  try {
+    const { data, error } = await supabase
+      .from("profesionales")
+      .select("id, nombre")
+      .eq("activo", true)
+      .order("nombre", { ascending: true });
+
+    if (error) throw error;
+
+    const select = document.getElementById("diag_profesional");
+
+    select.innerHTML = '<option value="">Seleccione profesional...</option>';
+
+    (data || []).forEach(p => {
+      const option = document.createElement("option");
+      option.value = p.id;       // guardamos el ID
+      option.textContent = p.nombre;
+      select.appendChild(option);
+    });
+
+    console.log("✅ Profesionales cargados en diagnóstico:", data?.length);
+
+  } catch (err) {
+    console.error("❌ Error cargando profesionales diagnóstico:", err);
+  }
+}
+
   // ============================================================
 // ✅✅✅ PLANTILLAS DE CONSENTIMIENTOS (SUPABASE)
 // Tabla: consentimiento_plantillas
@@ -3823,6 +3871,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   console.log("🔵 Inicializando diagnósticos CIE10...");
 
   await cargarDiagnosticosCIE10();
+  await cargarProfesionalesDiagnostico();  // 🔥 NUEVO
 
   filtrarDiagnosticos(
     "diag_principal_busqueda",
