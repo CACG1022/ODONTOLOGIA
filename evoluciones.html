@@ -1024,6 +1024,10 @@
     if (!modal || !body || !title) return;
 
     const evo = evoluciones?.[idx];
+    // 🔎 Filtrar diagnósticos que pertenecen a esta evolución
+const diagnosticosDeEstaEvolucion = diagnosticosGlobales
+  .filter(d => d.id_evolucion === (evo.id_evolucion ?? evo.id));
+    
     if (!evo) return;
 
     const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
@@ -1079,6 +1083,30 @@
         <div class="k">Detalle / Observaciones</div>
         <div class="v">${escapeHtml(detalle)}</div>
       </div>
+
+      ${
+  diagnosticosDeEstaEvolucion.length > 0
+    ? `
+      <div class="doc-box" style="margin-top:12px;">
+        <div class="k">Diagnósticos asociados</div>
+        <div class="v">
+          ${diagnosticosDeEstaEvolucion.map(d => `
+            <div style="margin-bottom:8px;">
+              <strong>${escapeHtml(d.tipo.toUpperCase())}</strong> -
+              ${escapeHtml(d.codigo)}<br>
+              <span>${escapeHtml(d.descripcion)}</span>
+            </div>
+          `).join("")}
+        </div>
+      </div>
+    `
+    : `
+      <div class="doc-box" style="margin-top:12px;">
+        <div class="k">Diagnósticos asociados</div>
+        <div class="v">Sin diagnósticos registrados</div>
+      </div>
+    `
+}
 
       <div class="doc-firmas">
         <div class="doc-firma">
