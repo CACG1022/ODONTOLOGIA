@@ -2969,7 +2969,7 @@ const diagnosticos = Array.isArray(data.diagnosticos)
 document.getElementById("diag_principal_busqueda").value = "";
 document.getElementById("diag_principal_codigo").value = "";
 document.getElementById("lista_diagnosticos_secundarios").innerHTML = "";
-document.getElementById("diag_profesional").value = "";
+
 
 // Separar principal y secundarios
 const principal = diagnosticos.find(d => d.tipo === "principal");
@@ -2979,7 +2979,6 @@ const secundarios = diagnosticos.filter(d => d.tipo === "secundario");
 if (principal) {
 // 🔒 bloquear si ya existe guardado
 document.getElementById("diag_principal_busqueda").disabled = true;
-document.getElementById("btn_confirmar_diag_principal").disabled = true;
   
   document.getElementById("diag_principal_busqueda").value =
     `${principal.codigo} - ${principal.descripcion}`;
@@ -2987,9 +2986,6 @@ document.getElementById("btn_confirmar_diag_principal").disabled = true;
   document.getElementById("diag_principal_codigo").value =
     principal.codigo || "";
 
-  // Profesional
-  document.getElementById("diag_profesional").value =
-    principal.profesional || "";
 }
 
 // 🔹 DIAGNÓSTICOS SECUNDARIOS
