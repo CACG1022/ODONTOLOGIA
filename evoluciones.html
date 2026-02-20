@@ -1231,25 +1231,38 @@ async function cargarDiagnosticosCIE10() {
   const container = document.getElementById("diag_sec_container");
   const selectPrincipal = document.getElementById("diag_principal_select");
 
-  const clone = selectPrincipal.cloneNode(true);
-  clone.removeAttribute("id");
+  if (!container || !selectPrincipal) return;
+
+  // 🔥 Crear un nuevo select limpio
+  const newSelect = document.createElement("select");
+
+  // Copiar todas las opciones del principal
+  Array.from(selectPrincipal.options).forEach(opt => {
+    const option = document.createElement("option");
+    option.value = opt.value;
+    option.textContent = opt.textContent;
+    newSelect.appendChild(option);
+  });
 
   const wrapper = document.createElement("div");
   wrapper.style.display = "flex";
   wrapper.style.gap = "8px";
   wrapper.style.marginBottom = "8px";
+  wrapper.style.alignItems = "center";
 
   const btnRemove = document.createElement("button");
   btnRemove.type = "button";
   btnRemove.textContent = "X";
+  btnRemove.style.padding = "6px 10px";
+  btnRemove.style.cursor = "pointer";
   btnRemove.onclick = () => wrapper.remove();
 
-  wrapper.appendChild(clone);
+  wrapper.appendChild(newSelect);
   wrapper.appendChild(btnRemove);
   container.appendChild(wrapper);
 
-  // 🔥 ACTIVAR BUSCADOR TAMBIÉN EN EL SECUNDARIO
-  new TomSelect(clone, {
+  // 🔥 Inicializar TomSelect correctamente
+  new TomSelect(newSelect, {
     searchField: ['text'],
     placeholder: "Buscar diagnóstico secundario...",
     allowEmptyOption: true
