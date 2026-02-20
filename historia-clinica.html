@@ -193,6 +193,119 @@ function _evolucionesToHTML(evos){
   return html;
 } 
 
+// =====================================================
+// ✅ CARGAR DIAGNÓSTICOS CIE10 DESDE SUPABASE
+// =====================================================
+let CIE10_LISTA = [];
+
+async function cargarDiagnosticosCIE10() {
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("cie10_odontologia")
+      .select("codigo, descripcion")
+      .order("codigo", { ascending: true });
+
+    if (error) throw error;
+
+    CIE10_LISTA = data || [];
+    console.log("✅ Diagnósticos CIE10 cargados:", CIE10_LISTA.length);
+
+  } catch (e) {
+    console.error("❌ Error cargando CIE10:", e);
+  }
+}
+
+    function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
+  const input = document.getElementById(inputId);
+  const resultados = document.getElementById(resultadosId);
+  const hidden = document.getElementById(hiddenId);
+
+  input.addEventListener("input", () => {
+    const texto = input.value.toLowerCase().trim();
+    resultados.innerHTML = "";
+
+    if (texto.length < 2) return;
+
+    const filtrados = CIE10_LISTA.filter(d =>
+      d.codigo.toLowerCase().includes(texto) ||
+      d.descripcion.toLowerCase().includes(texto)
+    ).slice(0, 15);
+
+    filtrados.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "cie-item";
+      div.textContent = `${d.codigo} - ${d.descripcion}`;
+      div.onclick = () => {
+        input.value = `${d.codigo} - ${d.descripcion}`;
+        hidden.value = d.codigo;
+        resultados.innerHTML = "";
+      };
+      resultados.appendChild(div);
+    });
+  });
+}
+
+function agregarDiagnosticoSecundario() {
+  const container = document.getElementById("lista_diagnosticos_secundarios");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "diag-sec-item";
+  wrapper.style.marginBottom = "10px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Buscar diagnóstico secundario";
+  input.className = "diag-sec-busqueda";
+
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+
+  const resultados = document.createElement("div");
+  resultados.className = "cie-dropdown";
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(hidden);
+  wrapper.appendChild(resultados);
+  container.appendChild(wrapper);
+
+  filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper);
+}
+
+function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
+  input.addEventListener("input", () => {
+    const texto = input.value.toLowerCase().trim();
+    resultados.innerHTML = "";
+
+    if (texto.length < 2) return;
+
+    const filtrados = CIE10_LISTA.filter(d =>
+      d.codigo.toLowerCase().includes(texto) ||
+      d.descripcion.toLowerCase().includes(texto)
+    ).slice(0, 15);
+
+    filtrados.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "cie-item";
+      div.textContent = `${d.codigo} - ${d.descripcion}`;
+      div.onclick = () => {
+        input.value = `${d.codigo} - ${d.descripcion}`;
+        hidden.value = d.codigo;
+        wrapper.dataset.codigo = d.codigo;
+        wrapper.dataset.texto = d.descripcion;
+        resultados.innerHTML = "";
+      };
+      resultados.appendChild(div);
+    });
+  });
+}
+    
   </script>
 
   <style>
@@ -904,8 +1017,10 @@ function _evolucionesToHTML(evos){
         </div>
       </div>
 
-      <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
+      <p class="hint full">....</p>
     </div>
+    
+  </section>
 
 <!-- ============================= -->
 <!--  DIAGNÓSTICO ODONTOLÓGICO   -->
@@ -936,9 +1051,8 @@ function _evolucionesToHTML(evos){
     </div>
 
   </div>
-</section>
 
-    
+  
   </section>
   <!-- ✅ EVOLUCIONES -->
   <section class="card" id="seccionEvoluciones">
@@ -1368,7 +1482,7 @@ Fecha: {{FECHA}}
   function _reiniciarTimerInactividad() {
     if (_timerInactividad) clearTimeout(_timerInactividad);
     _timerInactividad = setTimeout(() => {
-      cerrarSesion("Tu sesión se cerró por inactividad (5 minutos).");
+      cerrarSesion("Tu sesión se cerró por inactividad (60 minutos).");
     }, INACTIVIDAD_MS);
   }
   ["click","mousemove","keydown","scroll","touchstart"].forEach(evt => {
@@ -1676,6 +1790,13 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 }
 
+cargarDiagnosticosCIE10();
+filtrarDiagnosticos(
+  "diag_principal_busqueda",
+  "diag_principal_resultados",
+  "diag_principal_codigo"
+);
+  
     
 });
 
@@ -1935,6 +2056,8 @@ async function cargarProfesionalesDesdeSupabase() {
     const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
     if (!fechaNac) errores.push("Fecha de nacimiento");
     if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
+    const diagPrincipal = document.getElementById("diag_principal_codigo")?.value?.trim();
+if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
 
     if (errores.length > 0) {
       alert(
@@ -1948,6 +2071,21 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 
   function enviarAN8N() {
+
+   const diagnosticoPrincipal = {
+  codigo: document.getElementById("diag_principal_codigo")?.value || "",
+  texto: document.getElementById("diag_principal_busqueda")?.value || ""
+};
+
+const diagnosticosSecundarios = [];
+document.querySelectorAll(".diag-sec-item").forEach(item => {
+  diagnosticosSecundarios.push({
+    codigo: item.dataset.codigo,
+    texto: item.dataset.texto
+  });
+});
+
+    
     // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
     if (String(window.__ROL_ACTUAL || "").toLowerCase() === "auxiliar") {
       alert("⛔ Rol auxiliar: no autorizado para Guardar y Enviar.");
@@ -1981,6 +2119,8 @@ async function cargarProfesionalesDesdeSupabase() {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
       evoluciones: evoluciones,
+      diagnostico_principal: diagnosticoPrincipal,
+      diagnosticos_secundarios: diagnosticosSecundarios,
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
     };
@@ -3617,6 +3757,9 @@ function _evolucionesToHTML(evos){
     }, 300);
   });
 })();
+
+
+  
   
 window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
 
