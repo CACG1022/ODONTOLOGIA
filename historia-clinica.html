@@ -1992,8 +1992,8 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
     const selectProf = document.getElementById("diag_profesional");
 
 const profesionalDiagnostico =
-  selectProf?.options[selectProf.selectedIndex]?.text || "";
-
+  document.getElementById("diag_profesional")?.value || "";
+    
    const diagnosticoPrincipal = {
   codigo: document.getElementById("diag_principal_codigo")?.value || "",
   texto: document.getElementById("diag_principal_busqueda")?.value || ""
@@ -3124,7 +3124,7 @@ async function cargarProfesionalesDiagnostico() {
   try {
     const { data, error } = await supabase
       .from("profesionales")
-      .select("id, nombre")
+      .select("nombre")
       .eq("activo", true)
       .order("nombre", { ascending: true });
 
@@ -3136,8 +3136,11 @@ async function cargarProfesionalesDiagnostico() {
 
     (data || []).forEach(p => {
       const option = document.createElement("option");
-      option.value = p.id;       // guardamos el ID
+
+      // ✅ Ahora el value ES el nombre
+      option.value = p.nombre;       
       option.textContent = p.nombre;
+
       select.appendChild(option);
     });
 
