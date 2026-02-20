@@ -193,119 +193,6 @@ function _evolucionesToHTML(evos){
   return html;
 } 
 
-// =====================================================
-// ✅ CARGAR DIAGNÓSTICOS CIE10 DESDE SUPABASE
-// =====================================================
-let CIE10_LISTA = [];
-
-async function cargarDiagnosticosCIE10() {
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  try {
-    const { data, error } = await window.supabase
-      .from("cie10_odontologia")
-      .select("codigo, descripcion")
-      .order("codigo", { ascending: true });
-
-    if (error) throw error;
-
-    CIE10_LISTA = data || [];
-    console.log("✅ Diagnósticos CIE10 cargados:", CIE10_LISTA.length);
-
-  } catch (e) {
-    console.error("❌ Error cargando CIE10:", e);
-  }
-}
-
-    function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
-  const input = document.getElementById(inputId);
-  const resultados = document.getElementById(resultadosId);
-  const hidden = document.getElementById(hiddenId);
-
-  input.addEventListener("input", () => {
-    const texto = input.value.toLowerCase().trim();
-    resultados.innerHTML = "";
-
-    if (texto.length < 2) return;
-
-    const filtrados = CIE10_LISTA.filter(d =>
-      d.codigo.toLowerCase().includes(texto) ||
-      d.descripcion.toLowerCase().includes(texto)
-    ).slice(0, 15);
-
-    filtrados.forEach(d => {
-      const div = document.createElement("div");
-      div.className = "cie-item";
-      div.textContent = `${d.codigo} - ${d.descripcion}`;
-      div.onclick = () => {
-        input.value = `${d.codigo} - ${d.descripcion}`;
-        hidden.value = d.codigo;
-        resultados.innerHTML = "";
-      };
-      resultados.appendChild(div);
-    });
-  });
-}
-
-function agregarDiagnosticoSecundario() {
-  const container = document.getElementById("lista_diagnosticos_secundarios");
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "diag-sec-item";
-  wrapper.style.marginBottom = "10px";
-  wrapper.style.position = "relative";  // 🔥 AGREGA ESTO
-
-  const input = document.createElement("input");
-  input.type = "text";
-  input.placeholder = "Buscar diagnóstico secundario";
-  input.className = "diag-sec-busqueda";
-
-  const hidden = document.createElement("input");
-  hidden.type = "hidden";
-
-  const resultados = document.createElement("div");
-  resultados.className = "cie-dropdown";
-
-  wrapper.appendChild(input);
-  wrapper.appendChild(hidden);
-  wrapper.appendChild(resultados);
-  container.appendChild(wrapper);
-
-  filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper);
-}
-
-function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
-  input.addEventListener("input", () => {
-    const texto = input.value.toLowerCase().trim();
-    resultados.innerHTML = "";
-
-    if (texto.length < 2) return;
-
-    const filtrados = CIE10_LISTA.filter(d =>
-      d.codigo.toLowerCase().includes(texto) ||
-      d.descripcion.toLowerCase().includes(texto)
-    ).slice(0, 15);
-
-    filtrados.forEach(d => {
-      const div = document.createElement("div");
-      div.className = "cie-item";
-      div.textContent = `${d.codigo} - ${d.descripcion}`;
-      div.onclick = () => {
-        input.value = `${d.codigo} - ${d.descripcion}`;
-        hidden.value = d.codigo;
-        wrapper.dataset.codigo = d.codigo;
-        wrapper.dataset.texto = d.descripcion;
-        resultados.innerHTML = "";
-      };
-      resultados.appendChild(div);
-    });
-  });
-}
     
   </script>
 
@@ -2858,6 +2745,122 @@ const profesionalNombre = (d.profesional || "").trim();
     _initCanvasDoc("doc_firmaProfesional");
     nuevoDocumento();
   });
+
+
+// =====================================================
+// ✅ CARGAR DIAGNÓSTICOS CIE10 DESDE SUPABASE
+// =====================================================
+let CIE10_LISTA = [];
+
+async function cargarDiagnosticosCIE10() {
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("cie10_odontologia")
+      .select("codigo, descripcion")
+      .order("codigo", { ascending: true });
+
+    if (error) throw error;
+
+    CIE10_LISTA = data || [];
+    console.log("✅ Diagnósticos CIE10 cargados:", CIE10_LISTA.length);
+
+  } catch (e) {
+    console.error("❌ Error cargando CIE10:", e);
+  }
+}
+
+    function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
+  const input = document.getElementById(inputId);
+  const resultados = document.getElementById(resultadosId);
+  const hidden = document.getElementById(hiddenId);
+
+  input.addEventListener("input", () => {
+    const texto = input.value.toLowerCase().trim();
+    resultados.innerHTML = "";
+
+    if (texto.length < 2) return;
+
+    const filtrados = CIE10_LISTA.filter(d =>
+      d.codigo.toLowerCase().includes(texto) ||
+      d.descripcion.toLowerCase().includes(texto)
+    ).slice(0, 15);
+
+    filtrados.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "cie-item";
+      div.textContent = `${d.codigo} - ${d.descripcion}`;
+      div.onclick = () => {
+        input.value = `${d.codigo} - ${d.descripcion}`;
+        hidden.value = d.codigo;
+        resultados.innerHTML = "";
+      };
+      resultados.appendChild(div);
+    });
+  });
+}
+
+function agregarDiagnosticoSecundario() {
+  const container = document.getElementById("lista_diagnosticos_secundarios");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "diag-sec-item";
+  wrapper.style.marginBottom = "10px";
+  wrapper.style.position = "relative";  // 🔥 AGREGA ESTO
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.placeholder = "Buscar diagnóstico secundario";
+  input.className = "diag-sec-busqueda";
+
+  const hidden = document.createElement("input");
+  hidden.type = "hidden";
+
+  const resultados = document.createElement("div");
+  resultados.className = "cie-dropdown";
+
+  wrapper.appendChild(input);
+  wrapper.appendChild(hidden);
+  wrapper.appendChild(resultados);
+  container.appendChild(wrapper);
+
+  filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper);
+}
+
+function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
+  input.addEventListener("input", () => {
+    const texto = input.value.toLowerCase().trim();
+    resultados.innerHTML = "";
+
+    if (texto.length < 2) return;
+
+    const filtrados = CIE10_LISTA.filter(d =>
+      d.codigo.toLowerCase().includes(texto) ||
+      d.descripcion.toLowerCase().includes(texto)
+    ).slice(0, 15);
+
+    filtrados.forEach(d => {
+      const div = document.createElement("div");
+      div.className = "cie-item";
+      div.textContent = `${d.codigo} - ${d.descripcion}`;
+      div.onclick = () => {
+        input.value = `${d.codigo} - ${d.descripcion}`;
+        hidden.value = d.codigo;
+        wrapper.dataset.codigo = d.codigo;
+        wrapper.dataset.texto = d.descripcion;
+        resultados.innerHTML = "";
+      };
+      resultados.appendChild(div);
+    });
+  });
+}
+  
 
   // ==============================
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
