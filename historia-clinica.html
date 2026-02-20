@@ -408,6 +408,29 @@ function _evolucionesToHTML(evos){
   height: calc(100vh - 70px) !important; /* resta el header */
 }
 
+.cie-dropdown{
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#fff;
+  max-height:200px;
+  overflow:auto;
+  position:absolute;
+  width:100%;
+  z-index:1000;
+}
+
+.cie-item{
+  padding:8px 12px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.cie-item:hover{
+  background:#eef6ff;
+}
+
+    
+    
   </style>
 </head>
 
@@ -883,6 +906,39 @@ function _evolucionesToHTML(evos){
 
       <p class="hint full">Abajo está el odontograma para marcar preexistencias.</p>
     </div>
+
+<!-- ============================= -->
+<!--  DIAGNÓSTICO ODONTOLÓGICO   -->
+<!-- ============================= -->
+<section class="card">
+  <div class="legend">Diagnóstico odontológico</div>
+
+  <div class="grid g-2">
+    
+    <!-- DIAGNÓSTICO PRINCIPAL -->
+    <div class="ctrl full">
+      <label>Diagnóstico principal (CIE-10) *</label>
+      <input type="text" id="diag_principal_busqueda" 
+             placeholder="Buscar diagnóstico por código o descripción">
+      <input type="hidden" id="diag_principal_codigo">
+      <div id="diag_principal_resultados" class="cie-dropdown"></div>
+    </div>
+
+    <!-- DIAGNÓSTICOS SECUNDARIOS -->
+    <div class="ctrl full">
+      <label>Diagnósticos secundarios</label>
+      <button type="button" class="btn btn-agregar" 
+              onclick="agregarDiagnosticoSecundario()">
+        + Agregar diagnóstico
+      </button>
+
+      <div id="lista_diagnosticos_secundarios"></div>
+    </div>
+
+  </div>
+</section>
+
+    
   </section>
   <!-- ✅ EVOLUCIONES -->
   <section class="card" id="seccionEvoluciones">
