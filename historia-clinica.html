@@ -198,6 +198,27 @@ function _evolucionesToHTML(evos){
 
   <style>
 
+/* ============================= */
+/* BOTÓN AGREGAR DIAGNÓSTICO */
+/* ============================= */
+
+.btn-diagnostico{
+  background-color: #54E3C6;     /* color fondo */
+  color: #ffffff;                /* color texto */
+  border: none;
+  border-radius: 10px;
+  padding: 10px 18px;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.btn-diagnostico:hover{
+  background-color: #114a75;     /* color al pasar el mouse */
+  transform: translateY(-1px);
+}
+    
+
     .btn:disabled{
   opacity: .55;
   cursor: not-allowed;
@@ -930,10 +951,10 @@ function _evolucionesToHTML(evos){
     <!-- DIAGNÓSTICOS SECUNDARIOS -->
     <div class="ctrl full">
       <label>Diagnósticos secundarios</label>
-      <button type="button" class="btn btn-agregar" 
-              onclick="agregarDiagnosticoSecundario()">
-        + Agregar diagnóstico
-      </button>
+      <button type="button" class="btn btn-agregar btn-diagnostico"
+        onclick="agregarDiagnosticoSecundario()">
+     + Agregar diagnóstico
+    </button>
 
       <div id="lista_diagnosticos_secundarios"></div>
     </div>
