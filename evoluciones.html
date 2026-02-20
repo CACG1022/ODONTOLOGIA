@@ -7,6 +7,9 @@
   <title>Evoluciones - Historia Clínica Odontológica</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+  <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+   <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+  
   <!-- 🔐 SUPABASE + LOGIN -->
   <script type="module">
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
@@ -16,6 +19,8 @@
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
     );
 
+   
+    
     window.supabase = supabase;
 
     window.APP_URLS = {
@@ -1201,13 +1206,20 @@ async function cargarDiagnosticosCIE10() {
 
     if (error) throw error;
 
-    select.innerHTML = `<option value="">Seleccione diagnóstico...</option>`;
+    select.innerHTML = "";
 
     (data || []).forEach(dx => {
       const option = document.createElement("option");
       option.value = JSON.stringify(dx);
       option.textContent = `${dx.codigo} - ${dx.nombre}`;
       select.appendChild(option);
+    });
+
+    // 🔥 ACTIVAR BUSCADOR
+    new TomSelect(select, {
+      searchField: ['text'],
+      placeholder: "Escribe para buscar diagnóstico...",
+      allowEmptyOption: true
     });
 
   } catch (err) {
@@ -1235,6 +1247,13 @@ async function cargarDiagnosticosCIE10() {
   wrapper.appendChild(clone);
   wrapper.appendChild(btnRemove);
   container.appendChild(wrapper);
+
+  // 🔥 ACTIVAR BUSCADOR TAMBIÉN EN EL SECUNDARIO
+  new TomSelect(clone, {
+    searchField: ['text'],
+    placeholder: "Buscar diagnóstico secundario...",
+    allowEmptyOption: true
+  });
 }
   
   // ==============================
@@ -1258,7 +1277,9 @@ async function cargarDiagnosticosCIE10() {
 
     // 🔹 Limpiar diagnósticos
 const diagPrincipal = document.getElementById("diag_principal_select");
-if (diagPrincipal) diagPrincipal.value = "";
+if (diagPrincipal && diagPrincipal.tomselect) {
+  diagPrincipal.tomselect.clear();
+}
 
 const diagSecContainer = document.getElementById("diag_sec_container");
 if (diagSecContainer) diagSecContainer.innerHTML = "";
@@ -1418,10 +1439,7 @@ if (diagSecContainer) diagSecContainer.innerHTML = "";
 
     if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
     if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
-    if (!diagnosticoPrincipal) {
-  alert("⚠️ Debes seleccionar un diagnóstico principal.");
-  return;
-}
+    
 
     const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
@@ -1440,7 +1458,11 @@ let diagnosticoPrincipal = null;
 if (diagPrincipalSelect && diagPrincipalSelect.value) {
   diagnosticoPrincipal = JSON.parse(diagPrincipalSelect.value);
 }
-
+if (!diagnosticoPrincipal) {
+  alert("⚠️ Debes seleccionar un diagnóstico principal.");
+  return;
+}
+    
 const diagnosticosSecundarios = [];
 
 document.querySelectorAll("#diag_sec_container select").forEach(sel => {
