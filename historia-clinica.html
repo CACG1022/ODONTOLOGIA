@@ -2964,6 +2964,57 @@ function filtrarDiagnosticosDinamico(input, resultados, hidden, wrapper) {
       const od = data.odontograma || {};
       evoluciones = normalizarEvolucionesDeWebhook(data);
       renderEvoluciones();
+
+     // =============================
+// ✅ CARGAR DIAGNÓSTICOS
+// =============================
+const diagnosticos = Array.isArray(data.diagnosticos)
+  ? data.diagnosticos
+  : [];
+
+// Limpiar campos primero
+document.getElementById("diag_principal_busqueda").value = "";
+document.getElementById("diag_principal_codigo").value = "";
+document.getElementById("lista_diagnosticos_secundarios").innerHTML = "";
+document.getElementById("diag_profesional").value = "";
+
+// Separar principal y secundarios
+const principal = diagnosticos.find(d => d.tipo === "principal");
+const secundarios = diagnosticos.filter(d => d.tipo === "secundario");
+
+// 🔹 DIAGNÓSTICO PRINCIPAL
+if (principal) {
+  document.getElementById("diag_principal_busqueda").value =
+    `${principal.codigo} - ${principal.descripcion}`;
+
+  document.getElementById("diag_principal_codigo").value =
+    principal.codigo || "";
+
+  // Profesional
+  document.getElementById("diag_profesional").value =
+    principal.profesional || "";
+}
+
+// 🔹 DIAGNÓSTICOS SECUNDARIOS
+secundarios.forEach(sec => {
+  const container = document.getElementById("lista_diagnosticos_secundarios");
+
+  const wrapper = document.createElement("div");
+  wrapper.className = "diag-sec-item";
+  wrapper.dataset.codigo = sec.codigo || "";
+  wrapper.dataset.texto = sec.descripcion || "";
+  wrapper.style.marginBottom = "10px";
+
+  const input = document.createElement("input");
+  input.type = "text";
+  input.value = `${sec.codigo} - ${sec.descripcion}`;
+  input.disabled = true;
+
+  wrapper.appendChild(input);
+  container.appendChild(wrapper);
+});
+
+      
       // ✅ cargar historia / odontograma / evoluciones SIEMPRE
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
