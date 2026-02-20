@@ -939,14 +939,6 @@ function _evolucionesToHTML(evos){
 
   <div class="grid g-2">
 
-       <!-- PROFESIONAL QUE DIAGNOSTICA -->
-<div class="ctrl">
-  <label>Profesional que diagnostica *</label>
-  <select id="diag_profesional" required>
-    <option value="">Seleccione profesional...</option>
-  </select>
-</div>
-    
     <!-- DIAGNÓSTICO PRINCIPAL -->
     <div class="ctrl full" style="position:relative;">
   <label>Diagnóstico principal (CIE-10) *</label>
@@ -956,23 +948,12 @@ function _evolucionesToHTML(evos){
   <div id="diag_principal_resultados" class="cie-dropdown"></div>
 </div>
 
-<button 
-  type="button" 
-  id="btn_confirmar_diag_principal"
-  class="btn btn-diagnostico"
-  onclick="confirmarDiagnosticoPrincipal()">
-  Confirmar diagnóstico principal
-</button>
+
     
 
     <!-- DIAGNÓSTICOS SECUNDARIOS -->
     <div class="ctrl full">
       <label>Diagnósticos secundarios</label>
-      <button type="button" class="btn btn-agregar btn-diagnostico"
-        onclick="agregarDiagnosticoSecundario()">
-     + Agregar diagnóstico
-    </button>
-
       <div id="lista_diagnosticos_secundarios"></div>
     </div>
 
@@ -1968,9 +1949,6 @@ async function cargarProfesionalesDesdeSupabase() {
     
     const errores = [];
 
-    const profesionalDiag = document.getElementById("diag_profesional")?.value?.trim();
-    if (!profesionalDiag) errores.push("Profesional que diagnostica");
-    
     const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
     if (!nombre) errores.push("Nombres y apellidos");
     const edad = document.getElementById("paciente_edad")?.value || "";
@@ -2003,19 +1981,6 @@ if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
 const profesionalDiagnostico =
   document.getElementById("diag_profesional")?.value || "";
     
-   const diagnosticoPrincipal = {
-  codigo: document.getElementById("diag_principal_codigo")?.value || "",
-  texto: document.getElementById("diag_principal_busqueda")?.value || ""
-};
-
-const diagnosticosSecundarios = [];
-document.querySelectorAll(".diag-sec-item").forEach(item => {
-  diagnosticosSecundarios.push({
-    codigo: item.dataset.codigo,
-    texto: item.dataset.texto
-  });
-});
-
     
     // 🔒 Bloqueo adicional (seguridad): rol auxiliar no puede enviar a N8N
     if (String(window.__ROL_ACTUAL || "").toLowerCase() === "auxiliar") {
@@ -2050,8 +2015,6 @@ document.querySelectorAll(".diag-sec-item").forEach(item => {
       historia_clinica: datosHistoria,
       odontograma: odontogramaCompleto,
       evoluciones: evoluciones,
-      diagnostico_principal: diagnosticoPrincipal,
-      diagnosticos_secundarios: diagnosticosSecundarios,
       profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
       fecha_envio: new Date().toISOString(),
       usuario_logueado: usuario
