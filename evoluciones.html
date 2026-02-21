@@ -1579,9 +1579,26 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
       const raw = r.data;
       const data = unwrapWebhookRespuesta(raw);
       // 🔥 Guardar diagnósticos globales
-diagnosticosGlobales = Array.isArray(data?.diagnosticos)
-  ? data.diagnosticos
-  : [];
+// 🔥 ADAPTAR A ESTRUCTURA REAL DEL WEBHOOK
+diagnosticosGlobales = [];
+
+// Principal
+if (data?.diagnostico_principal) {
+  diagnosticosGlobales.push({
+    ...data.diagnostico_principal,
+    tipo: "principal"
+  });
+}
+
+// Secundarios
+if (Array.isArray(data?.diagnosticos_secundarios)) {
+  data.diagnosticos_secundarios.forEach(dx => {
+    diagnosticosGlobales.push({
+      ...dx,
+      tipo: "secundario"
+    });
+  });
+}
 
       const nombre = extraerNombrePaciente(raw);
       mostrarNombrePaciente(nombre);
