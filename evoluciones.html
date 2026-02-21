@@ -1024,10 +1024,6 @@
     if (!modal || !body || !title) return;
 
     const evo = evoluciones?.[idx];
-    // 🔎 Filtrar diagnósticos que pertenecen a esta evolución
-const diagnosticosDeEstaEvolucion = diagnosticosGlobales
-  .filter(d => d.id_evolucion === (evo.id_evolucion ?? evo.id));
-    
     if (!evo) return;
 
     const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
@@ -1083,30 +1079,6 @@ const diagnosticosDeEstaEvolucion = diagnosticosGlobales
         <div class="k">Detalle / Observaciones</div>
         <div class="v">${escapeHtml(detalle)}</div>
       </div>
-
-      ${
-  diagnosticosDeEstaEvolucion.length > 0
-    ? `
-      <div class="doc-box" style="margin-top:12px;">
-        <div class="k">Diagnósticos asociados</div>
-        <div class="v">
-          ${diagnosticosDeEstaEvolucion.map(d => `
-            <div style="margin-bottom:8px;">
-              <strong>${escapeHtml(d.tipo.toUpperCase())}</strong> -
-              ${escapeHtml(d.codigo)}<br>
-              <span>${escapeHtml(d.descripcion)}</span>
-            </div>
-          `).join("")}
-        </div>
-      </div>
-    `
-    : `
-      <div class="doc-box" style="margin-top:12px;">
-        <div class="k">Diagnósticos asociados</div>
-        <div class="v">Sin diagnósticos registrados</div>
-      </div>
-    `
-}
 
       <div class="doc-firmas">
         <div class="doc-firma">
@@ -1302,7 +1274,6 @@ async function cargarDiagnosticosCIE10() {
   // ==============================
   let evoluciones = [];
   let _cedulaActual = "";
-  let diagnosticosGlobales = [];   // 🔥 AGREGAR ESTA LÍNEA
 
   function limpiarEvolucionForm() {
     const f = document.getElementById("evo_fecha");
@@ -1578,27 +1549,6 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
 
       const raw = r.data;
       const data = unwrapWebhookRespuesta(raw);
-      // 🔥 Guardar diagnósticos globales
-// 🔥 ADAPTAR A ESTRUCTURA REAL DEL WEBHOOK
-diagnosticosGlobales = [];
-
-// Principal
-if (data?.diagnostico_principal) {
-  diagnosticosGlobales.push({
-    ...data.diagnostico_principal,
-    tipo: "principal"
-  });
-}
-
-// Secundarios
-if (Array.isArray(data?.diagnosticos_secundarios)) {
-  data.diagnosticos_secundarios.forEach(dx => {
-    diagnosticosGlobales.push({
-      ...dx,
-      tipo: "secundario"
-    });
-  });
-}
 
       const nombre = extraerNombrePaciente(raw);
       mostrarNombrePaciente(nombre);
@@ -1797,6 +1747,20 @@ if (Array.isArray(data?.diagnosticos_secundarios)) {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
