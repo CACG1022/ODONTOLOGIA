@@ -1697,7 +1697,11 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 }
 
-
+// ✅ CALCULAR EDAD AUTOMÁTICAMENTE
+  const fechaInput = document.getElementById("paciente_nacimiento");
+  if (fechaInput) {
+    fechaInput.addEventListener("change", calcularEdadDesdeFecha);
+  }
   
     
 });
@@ -2926,6 +2930,35 @@ function confirmarDiagnosticoPrincipal() {
 
 }
 
+  function calcularEdadDesdeFecha() {
+  const fechaInput = document.getElementById("paciente_nacimiento");
+  const edadInput = document.getElementById("paciente_edad");
+
+  if (!fechaInput || !fechaInput.value) {
+    edadInput.value = "";
+    return;
+  }
+
+  const fechaNacimiento = new Date(fechaInput.value);
+  const hoy = new Date();
+
+  let edad = hoy.getFullYear() - fechaNacimiento.getFullYear();
+
+  const mesActual = hoy.getMonth();
+  const diaActual = hoy.getDate();
+  const mesNacimiento = fechaNacimiento.getMonth();
+  const diaNacimiento = fechaNacimiento.getDate();
+
+  // Ajustar si aún no ha cumplido años este año
+  if (
+    mesActual < mesNacimiento ||
+    (mesActual === mesNacimiento && diaActual < diaNacimiento)
+  ) {
+    edad--;
+  }
+
+  edadInput.value = edad >= 0 ? edad : 0;
+}
   
   // ==============================
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
