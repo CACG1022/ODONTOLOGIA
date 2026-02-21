@@ -524,16 +524,26 @@ function _evolucionesToHTML(evos){
       </div>
 
       <div class="ctrl full">
-        <label>*Identificación</label>
-        <div class="inline">
-          <label class="chip"><input type="checkbox" name="idtipo" value="CC"> C.C.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="CE"> C.E.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="TI"> T.I.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="RC"> R.C.</label>
-          <label class="chip"><input type="checkbox" name="idtipo" value="Otro"> Otro</label>
-          <span class="hint">Complemente con No. y lugar</span>
-        </div>
-      </div>
+  <label for="paciente_tipo_id">*Tipo de identificación</label>
+  <select id="paciente_tipo_id" name="paciente_tipo_id" required>
+    <option value="">Seleccione una opción</option>
+    <option value="RC">Registro civil (RC)</option>
+    <option value="TI">Tarjeta de Identidad (TI)</option>
+    <option value="CC">Cédula de Ciudadanía (CC)</option>
+    <option value="CE">Cédula de Extranjería (CE)</option>
+    <option value="PA">Pasaporte (PA)</option>
+    <option value="SC">Salvoconducto (SC)</option>
+    <option value="PEP">Permiso Especial de Permanencia (PEP)</option>
+    <option value="CD">Carné Diplomático (CD)</option>
+    <option value="PPT">Permiso por protección temporal (PPT)</option>
+    <option value="DE">Documento extranjero (DE)</option>
+    <option value="MS">Menor sin identificación (MS)</option>
+    <option value="AS">Adulto sin identificación (AS)</option>
+    <option value="CN">Certificado de nacido vivo (CN)</option>
+    <option value="NIT">Número de identificación tributaria (NIT)</option>
+    <option value="SI">Sin identificación (SI)</option>
+  </select>
+</div>
 
       <div class="ctrl">
         <label for="paciente_numdoc">*No.</label>
@@ -1957,8 +1967,8 @@ async function cargarProfesionalesDesdeSupabase() {
     if (!nombre) errores.push("Nombres y apellidos");
     const edad = document.getElementById("paciente_edad")?.value || "";
     if (!edad) errores.push("Edad");
-    const tipoID = document.querySelectorAll("input[name='idtipo']:checked");
-    if (tipoID.length === 0) errores.push("Tipo de identificación");
+    const tipoID = document.getElementById("paciente_tipo_id")?.value || "";
+    if (!tipoID) errores.push("Tipo de identificación");
     const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
     if (!numDoc) errores.push("Número de identificación");
     const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
@@ -3063,9 +3073,17 @@ secundarios.forEach(sec => {
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      let tiposID = [];
-      try { tiposID = JSON.parse(h["Tipo identificación"] || "[]"); } catch(e) { tiposID = []; }
-      document.querySelectorAll("input[name='idtipo']").forEach(c => { c.checked = tiposID.includes(c.value); });
+      const selTipo = document.getElementById("paciente_tipo_id");
+if (selTipo) {
+  // si en tu data viene como "CC" directo:
+  selTipo.value = (h["Tipo identificación"] || "").trim();
+
+  // si en tu data viene como JSON ["CC"] (como lo tienes hoy):
+  try {
+    const arr = JSON.parse(h["Tipo identificación"] || "[]");
+    if (Array.isArray(arr) && arr[0]) selTipo.value = String(arr[0]).trim();
+  } catch(e) {}
+}
 
       let hijos = [];
       try { hijos = JSON.parse(h["paciente_hijos"] || "[]"); } catch(e) { hijos = []; }
