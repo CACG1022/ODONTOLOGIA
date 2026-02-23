@@ -3289,11 +3289,11 @@ document.getElementById("ciudad_codigo").value = data.ciudad_codigo || "";
       const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
   // si en tu data viene como "CC" directo:
-  selTipo.value = (h["Tipo identificación"] || "").trim();
+  selTipo.value = (h["paciente_tipo_id"] || "").trim();
 
   // si en tu data viene como JSON ["CC"] (como lo tienes hoy):
   try {
-    const arr = JSON.parse(h["Tipo identificación"] || "[]");
+    const arr = JSON.parse(h["paciente_tipo_id"] || "[]");
     if (Array.isArray(arr) && arr[0]) selTipo.value = String(arr[0]).trim();
   } catch(e) {}
 }
