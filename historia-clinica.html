@@ -3364,7 +3364,11 @@ if (seltipopac) {
 
 // ✅ estado civil paciente
 const selestadoc = document.getElementById("paciente_estadocivil");
-if (selestadoc) selestadoc.value = h["paciente_estadocivil"] || "";
+if (selestadoc) {
+  selestadoc.value = String(
+    data.paciente_estadocivil?? h.paciente_estadocivil ?? ""
+  );
+}
       
 
 const selTipo = document.getElementById("paciente_tipo_id");
