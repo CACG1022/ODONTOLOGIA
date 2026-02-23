@@ -3263,17 +3263,17 @@ secundarios.forEach(sec => {
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
       // ✅ Zona residencial (es estática, esta sí puede ir directa)
 const selZona = document.getElementById("zonaresidencial");
-if (selZona) selZona.value = data.zonaresidencial || "";
+if (selZona) selZona.value = h.zonaresidencial || "";
 
 // ✅ Países (esperar que estén cargados)
 await cargarPaises();
 
 const selPaisOrigen = document.getElementById("pais_origen");
-if (selPaisOrigen) selPaisOrigen.value = data.pais_origen || "";
+if (selPaisOrigen) selPaisOrigen.value = h.pais_origen || "";
 
 const selPaisResidencia = document.getElementById("pais_residencia");
-if (selPaisResidencia) selPaisResidencia.value = data.pais_residencia || "";
-      document.getElementById("estado_civil").value = data.estado_civil || "";
+if (selPaisResidencia) selPaisResidencia.value = h.pais_residencia || "";
+      document.getElementById("estado_civil").value = h.estado_civil || "";
       document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
 
       // ✅ FIX: id sin espacios
@@ -3298,7 +3298,7 @@ if (selPaisResidencia) selPaisResidencia.value = data.pais_residencia || "";
 }
 
 const selCiudad = document.getElementById("ciudad_codigo");
-if (selCiudad) selCiudad.value = data.ciudad_codigo || "";
+if (selCiudad) selCiudad.value = h.ciudad_codigo || "";
 
 const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
