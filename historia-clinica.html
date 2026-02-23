@@ -646,9 +646,110 @@ function _evolucionesToHTML(evos){
       </div>
 
       <div class="ctrl">
+        <label for="gruposanguineo">Grupo sanguíneo</label>
+           <select id="gruposanguineo">
+            <option value="">Seleccione</option>
+           <option>A+</option>
+          <option>A-</option>
+          <option>B+</option>
+          <option>B-</option>
+          <option>AB+</option>
+          <option>AB-</option>
+          <option>O+</option>
+       <option>O-</option>
+        </select>
+     </div>
+      
+    <div class="ctrl">
+  <label for="sexo">Sexo</label>
+  <select id="sexo">
+    <option value="">Seleccione</option>
+    <option value="M">Masculino</option>
+    <option value="F">Femenino</option>
+  </select>
+</div>
+
+<div class="ctrl">
+  <label for="genero">Género</label>
+  <select id="genero">
+    <option value="">Seleccione</option>
+    <option>Masculino</option>
+    <option>Femenino</option>
+    <option>Masculino Trans</option>
+    <option>Femenino Trans</option>
+    <option>Prefiero no decirlo</option>
+  </select>
+</div>
+
+<div class="ctrl">
+  <label for="incapacidad">Incapacidad</label>
+  <select id="incapacidad">
+    <option value="">Seleccione</option>
+    <option value="SI">SI</option>
+    <option value="NO">NO</option>
+  </select>
+</div>
+
+    <div class="ctrl full">
+  <label for="pertenencia_etnica">Pertenencia étnica</label>
+  <select id="pertenencia_etnica">
+    <option value="">Seleccione</option>
+    <option>Indígena</option>
+    <option>ROM (gitano)</option>
+    <option>Raizal (archipiélago de San Andres y Providencia)</option>
+    <option>Palenquero de San Basilio</option>
+    <option>Negro(a)</option>
+    <option>Mulato(a)</option>
+    <option>Afrocolombiano o Afrodescendiente</option>
+    <option>Ninguna de las anteriores</option>
+    <option>No definido</option>
+  </select>
+</div>
+
+      <div class="ctrl">
+  <label for="nivel_educativo">Nivel educativo</label>
+  <select id="nivel_educativo">
+    <option value="">Seleccione</option>
+    <option>Preescolar</option>
+    <option>Basica Primaria</option>
+    <option>Basica Secundaria</option>
+    <option>Media academica</option>
+    <option>Media Tecnica</option>
+    <option>Normalista</option>
+    <option>Tecnica Profesional</option>
+    <option>Tecnologica</option>
+    <option>Profesional</option>
+    <option>Especialización</option>
+    <option>Maestria</option>
+    <option>Doctorado</option>
+  </select>
+</div>
+      
+      <div class="ctrl">
         <label for="paciente_ocupacion">Ocupación</label>
         <input id="paciente_ocupacion" type="text">
       </div>
+
+      <div class="ctrl full">
+  <label for="tipo_paciente">Tipo de paciente</label>
+  <select id="tipo_paciente">
+    <option value="">Seleccione</option>
+
+    <option value="01">01 - Contributivo cotizante</option>
+    <option value="02">02 - Contributivo beneficiario</option>
+    <option value="03">03 - Contributivo adicional</option>
+    <option value="04">04 - Subsidiado</option>
+    <option value="05">05 - No afiliado</option>
+    <option value="06">06 - Especial o Excepción cotizante</option>
+    <option value="07">07 - Especial o Excepción beneficiario</option>
+    <option value="08">08 - Personas privadas de la libertad</option>
+    <option value="09">09 - Tomador / Amparado ARL</option>
+    <option value="10">10 - Tomador / Amparado SOAT</option>
+    <option value="11">11 - Tomador / Amparado Planes Voluntarios de Salud</option>
+    <option value="12">12 - Particular</option>
+
+  </select>
+</div>
 
       <div class="ctrl">
         <label for="paciente_tel">Teléfono</label>
