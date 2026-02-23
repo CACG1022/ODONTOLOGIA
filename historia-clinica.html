@@ -3302,7 +3302,7 @@ if (selPaisResidencia) {
 await cargarDepartamentos();
 
 // ✅ El webhook envía "departamento"
-const codigoDepto = String(data.departamento || "");
+const codigoDepto = String(h.departamento || "");
 
 const selDepto = document.getElementById("departamento_codigo");
 if (selDepto && codigoDepto) {
@@ -3313,7 +3313,7 @@ if (selDepto && codigoDepto) {
 }
 
 // ✅ Ahora seleccionar ciudad
-const codigoCiudad = String(data.Ciudad_de_Residencia || "");
+const codigoCiudad = String(h.Ciudad_de_Residencia || "");
 
 const selCiudad = document.getElementById("ciudad_codigo");
 if (selCiudad && codigoCiudad) {
