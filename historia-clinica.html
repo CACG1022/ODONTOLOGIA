@@ -3266,9 +3266,11 @@ secundarios.forEach(sec => {
       document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
 
       // ✅ FIX: id sin espacios
-      document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
+      //document.getElementById("ciudad_codigo").value = h["Ciudad_de_Residencia"] ?? "";
 
-      document.getElementById("EPS_Paciente").value = h["EPS_Paciente"] ?? "";
+      const selEps = document.getElementById("eps_codigo");
+        if (selEps) selEps.value = String(data.EPS_Paciente || "");
+      
       document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
       document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
       document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
@@ -3284,18 +3286,26 @@ secundarios.forEach(sec => {
      await cargarMunicipios(data.departamento_codigo);
 }
 
-document.getElementById("ciudad_codigo").value = data.ciudad_codigo || "";
+const selCiudad = document.getElementById("ciudad_codigo");
+if (selCiudad) selCiudad.value = data.ciudad_codigo || "";
 
-      const selTipo = document.getElementById("paciente_tipo_id");
+const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
-  // si en tu data viene como "CC" directo:
-  selTipo.value = (h["paciente_tipo_id"] || "").trim();
+  let v = data.paciente_tipo_id ?? h["paciente_tipo_id"] ?? "";
 
-  // si en tu data viene como JSON ["CC"] (como lo tienes hoy):
-  try {
-    const arr = JSON.parse(h["paciente_tipo_id"] || "[]");
-    if (Array.isArray(arr) && arr[0]) selTipo.value = String(arr[0]).trim();
-  } catch(e) {}
+  // si viene como JSON string ["CC"]
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (s.startsWith("[") && s.endsWith("]")) {
+      try {
+        const arr = JSON.parse(s);
+        if (Array.isArray(arr) && arr[0]) v = arr[0];
+      } catch(e) {}
+    }
+  }
+
+  selTipo.value = String(v || "").trim();
+}
 }
 
       let hijos = [];
