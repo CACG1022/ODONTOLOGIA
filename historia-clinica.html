@@ -3261,7 +3261,18 @@ secundarios.forEach(sec => {
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
-      document.getElementById("zonaresidencial").value = data.zonaresidencial || "";
+      // ✅ Zona residencial (es estática, esta sí puede ir directa)
+const selZona = document.getElementById("zonaresidencial");
+if (selZona) selZona.value = data.zonaresidencial || "";
+
+// ✅ Países (esperar que estén cargados)
+await cargarPaises();
+
+const selPaisOrigen = document.getElementById("pais_origen");
+if (selPaisOrigen) selPaisOrigen.value = data.pais_origen || "";
+
+const selPaisResidencia = document.getElementById("pais_residencia");
+if (selPaisResidencia) selPaisResidencia.value = data.pais_residencia || "";
       document.getElementById("estado_civil").value = data.estado_civil || "";
       document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
 
