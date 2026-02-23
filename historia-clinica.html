@@ -3298,15 +3298,24 @@ if (selPaisResidencia) {
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-// ✅ Departamento
+// ✅ Primero asegurarnos que departamentos estén cargados
+await cargarDepartamentos();
+
+// ✅ Ahora sí seleccionar departamento
 const selDepto = document.getElementById("departamento_codigo");
 if (selDepto) {
   selDepto.value = String(data.departamento_codigo || "");
 }
 
-// ✅ Esperar a que carguen municipios
+// ✅ Luego cargar municipios
 if (data.departamento_codigo) {
   await cargarMunicipios(data.departamento_codigo);
+}
+
+// ✅ Finalmente seleccionar ciudad
+const selCiudad = document.getElementById("ciudad_codigo");
+if (selCiudad) {
+  selCiudad.value = String(data.Ciudad_de_Residencia || "");
 }
 
 // ✅ Ciudad (usar data, no h)
@@ -3539,7 +3548,7 @@ async function cargarEPS() {
   }
 }
 
-  async function cargarDepartamentos() {
+async function cargarDepartamentos() {
   try {
     const { data, error } = await supabase
       .from("deptosymunicipios")
@@ -3553,7 +3562,6 @@ async function cargarEPS() {
 
     select.innerHTML = `<option value="">Seleccione departamento...</option>`;
 
-    // Evitar duplicados
     const vistos = new Set();
 
     (data || []).forEach(d => {
@@ -3561,17 +3569,19 @@ async function cargarEPS() {
       vistos.add(d.CODIGO_DEPTO);
 
       const option = document.createElement("option");
-      option.value = d.CODIGO_DEPTO;   // ✅ se guarda código
-      option.textContent = d.NOMBRE_DEPTO; // 👁 se muestra nombre
+      option.value = String(d.CODIGO_DEPTO);
+      option.textContent = d.NOMBRE_DEPTO;
       select.appendChild(option);
     });
 
-    console.log("✅ Departamentos cargados");
+    return true; // 🔥 IMPORTANTE
 
   } catch (err) {
     console.error("❌ Error cargando departamentos:", err);
+    return false;
   }
 }
+  
 async function cargarMunicipios(codigoDepto) {
   try {
     const { data, error } = await supabase
