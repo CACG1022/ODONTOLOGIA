@@ -144,6 +144,9 @@
 
   // ✅ EJECUCIÓN SEGURA (sin await directo)
   validarPermisoModulo();
+    document.addEventListener("DOMContentLoaded", () => {
+  cargarEPS();
+});
 
   supabase.auth.onAuthStateChange((_event, session) => {
     if (!session) {
@@ -641,9 +644,11 @@ function _evolucionesToHTML(evos){
       </div>
 
       <div class="ctrl">
-        <label for="EPS_Paciente">EPS</label>
-        <input id="EPS_Paciente" type="text">
-      </div>
+       <label for="eps_codigo">EPS</label>
+       <select id="eps_codigo">
+       <option value="">Cargando EPS...</option>
+  </select>
+</div>
 
       <div class="ctrl">
         <label for="gruposanguineo">Grupo sanguíneo</label>
@@ -3211,6 +3216,7 @@ secundarios.forEach(sec => {
       
       // ✅ cargar historia / odontograma / evoluciones SIEMPRE
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
+      document.getElementById("eps_codigo").value = data.eps_codigo || "";
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
       document.getElementById("paciente_numdoc").value = data.id ?? cedula;
       document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
@@ -3401,6 +3407,35 @@ async function cargarProfesionalesDiagnostico() {
 
   } catch (err) {
     console.error("❌ Error cargando profesionales diagnóstico:", err);
+  }
+}
+
+async function cargarEPS() {
+  try {
+    const { data, error } = await supabase
+      .from("eps")
+      .select("Codigo, Nombre")
+      .eq("Habilitado", "SI")
+      .order("Nombre", { ascending: true });
+
+    if (error) throw error;
+
+    const select = document.getElementById("eps_codigo");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Seleccione EPS...</option>`;
+
+    (data || []).forEach(e => {
+      const option = document.createElement("option");
+      option.value = e.Codigo;      // ✅ SE GUARDA EL CÓDIGO
+      option.textContent = e.Nombre; // 👁 SE MUESTRA EL NOMBRE
+      select.appendChild(option);
+    });
+
+    console.log("✅ EPS cargadas:", data?.length);
+
+  } catch (err) {
+    console.error("❌ Error cargando EPS:", err);
   }
 }
 
