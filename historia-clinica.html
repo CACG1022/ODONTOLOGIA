@@ -3304,18 +3304,18 @@ await cargarDepartamentos();
 // ✅ Ahora sí seleccionar departamento
 const selDepto = document.getElementById("departamento_codigo");
 if (selDepto) {
-  selDepto.value = String(data.departamento_codigo || "");
+  selDepto.value = String(h.departamento_codigo || "");
 }
 
 // ✅ Luego cargar municipios
 if (data.departamento_codigo) {
-  await cargarMunicipios(data.departamento_codigo);
+  await cargarMunicipios(h.departamento_codigo);
 }
 
 // ✅ Finalmente seleccionar ciudad
 const selCiudad = document.getElementById("ciudad_codigo");
 if (selCiudad) {
-  selCiudad.value = String(data.Ciudad_de_Residencia || "");
+  selCiudad.value = String(h.Ciudad_de_Residencia || "");
 }
 
 
