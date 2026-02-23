@@ -564,17 +564,21 @@ function _evolucionesToHTML(evos){
   <section class="card">
     <div class="legend">Datos básicos del paciente</div>
     <div class="grid g-2">
-      <div class="ctrl">
-        <label for="paciente_nombre">*Nombres y apellidos</label>
-        <input id="paciente_nombre" type="text">
-      </div>
 
-      <div class="ctrl">
-        <label for="paciente_edad">*Edad</label>
-        <input id="paciente_edad" type="number" min="0">
-      </div>
+     <div class="ctrl">
+  <label for="paciente_numdoc">*No.</label>
+  <input
+    id="paciente_numdoc"
+    type="text"
+    inputmode="text"
+    pattern="[A-Za-z0-9]+"
+    required
+    oninput="this.value = this.value.replace(/[^A-Za-z0-9]/g, '')"
+    placeholder="Letras y números">
+</div>
+      
 
-      <div class="ctrl full">
+  <div class="ctrl">
   <label for="paciente_tipo_id">*Tipo de identificación</label>
   <select id="paciente_tipo_id" name="paciente_tipo_id" required>
     <option value="">Seleccione una opción</option>
@@ -595,17 +599,20 @@ function _evolucionesToHTML(evos){
     <option value="SI">Sin identificación (SI)</option>
   </select>
 </div>
+      
+      <div class="ctrl">
+        <label for="paciente_nombre">*Nombres y apellidos</label>
+        <input id="paciente_nombre" type="text">
+      </div>
 
       <div class="ctrl">
-        <label for="paciente_numdoc">*No.</label>
-        <input
-          id="paciente_numdoc"
-          type="text"
-          inputmode="numeric"
-          pattern="[0-9]+"
-          required
-          oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-          placeholder="Solo números">
+        <label for="paciente_nacimiento">*Fecha de nacimiento</label>
+        <input id="paciente_nacimiento" type="date">
+      </div>
+      
+      <div class="ctrl">
+        <label for="paciente_edad">*Edad</label>
+        <input id="paciente_edad" type="number" min="0">
       </div>
 
       <div class="ctrl">
@@ -613,10 +620,7 @@ function _evolucionesToHTML(evos){
         <input id="paciente_lugardoc" type="text">
       </div>
 
-      <div class="ctrl">
-        <label for="paciente_nacimiento">*Fecha de nacimiento</label>
-        <input id="paciente_nacimiento" type="date">
-      </div>
+     
 
       <div class="ctrl">
         <label for="paciente_lugarnac">Lugar de nacimiento</label>
