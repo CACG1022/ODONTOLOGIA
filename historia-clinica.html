@@ -3198,6 +3198,9 @@ function confirmarDiagnosticoPrincipal() {
       }
 
       const h = data.historia || {};
+
+      console.log("DATA COMPLETA:", data);
+      console.log("HISTORIA:", h);
       const od = data.odontograma || {};
       evoluciones = normalizarEvolucionesDeWebhook(data);
       renderEvoluciones();
