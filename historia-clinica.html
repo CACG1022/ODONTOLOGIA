@@ -3298,15 +3298,22 @@ if (selPaisResidencia) {
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
-      document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
-
-    if (data.departamento_codigo) {
-     await cargarMunicipios(data.departamento_codigo);
+// ✅ Departamento
+const selDepto = document.getElementById("departamento_codigo");
+if (selDepto) {
+  selDepto.value = String(data.departamento_codigo || "");
 }
 
-const selCiudad = document.getElementById("ciudad_codigo");
-if (selCiudad) selCiudad.value = h["Ciudad_de_Residencia"] || "";
+// ✅ Esperar a que carguen municipios
+if (data.departamento_codigo) {
+  await cargarMunicipios(data.departamento_codigo);
+}
 
+// ✅ Ciudad (usar data, no h)
+const selCiudad = document.getElementById("ciudad_codigo");
+if (selCiudad) {
+  selCiudad.value = String(data.Ciudad_de_Residencia || "");
+};
 
 // ✅ Departamento
 const selDepto = document.getElementById("departamento_codigo");
