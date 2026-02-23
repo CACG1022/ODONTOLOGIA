@@ -3301,22 +3301,25 @@ if (selPaisResidencia) {
 // ✅ Primero asegurarnos que departamentos estén cargados
 await cargarDepartamentos();
 
-// ✅ Ahora sí seleccionar departamento
+// ✅ El webhook envía "departamento"
+const codigoDepto = String(data.departamento || "");
+
 const selDepto = document.getElementById("departamento_codigo");
-if (selDepto) {
-  selDepto.value = String(h.departamento_codigo || "");
+if (selDepto && codigoDepto) {
+  selDepto.value = codigoDepto;
+
+  // ✅ Cargar municipios del departamento correcto
+  await cargarMunicipios(codigoDepto);
 }
 
-// ✅ Luego cargar municipios
-if (data.departamento_codigo) {
-  await cargarMunicipios(h.departamento_codigo);
-}
+// ✅ Ahora seleccionar ciudad
+const codigoCiudad = String(data.Ciudad_de_Residencia || "");
 
-// ✅ Finalmente seleccionar ciudad
 const selCiudad = document.getElementById("ciudad_codigo");
-if (selCiudad) {
-  selCiudad.value = String(h.Ciudad_de_Residencia || "");
+if (selCiudad && codigoCiudad) {
+  selCiudad.value = codigoCiudad;
 }
+      
 
 
 // ✅ Sexo
