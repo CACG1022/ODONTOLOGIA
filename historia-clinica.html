@@ -148,6 +148,13 @@
     document.addEventListener("DOMContentLoaded", () => {
   cargarEPS();
   cargarDepartamentos();
+  document.getElementById("departamento_codigo")
+  ?.addEventListener("change", function() {
+    const codigoDepto = this.value;
+    if (!codigoDepto) return;
+
+    cargarMunicipios(codigoDepto);
+  }); 
 });
 
   supabase.auth.onAuthStateChange((_event, session) => {
@@ -649,11 +656,14 @@ function _evolucionesToHTML(evos){
   </select>
 </div>
 
-      
+
+
       <div class="ctrl">
-        <label for="Ciudad_de_Residencia">Ciudad de Residencia</label>
-        <input id="Ciudad_de_Residencia" type="text">
-      </div>
+          <label for="ciudad_codigo">Ciudad</label>
+         <select id="ciudad_codigo">
+         <option value="">Seleccione primero departamento</option>
+  </select>
+</div>
 
       <div class="ctrl">
        <label for="eps_codigo">EPS</label>
@@ -3268,6 +3278,14 @@ secundarios.forEach(sec => {
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
+      document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
+
+    if (data.departamento_codigo) {
+     await cargarMunicipios(data.departamento_codigo);
+}
+
+document.getElementById("ciudad_codigo").value = data.ciudad_codigo || "";
+
       const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
   // si en tu data viene como "CC" directo:
@@ -3503,6 +3521,35 @@ async function cargarEPS() {
     console.error("❌ Error cargando departamentos:", err);
   }
 }
+async function cargarMunicipios(codigoDepto) {
+  try {
+    const { data, error } = await supabase
+      .from("deptosymunicipios")
+      .select("NOMBRE_MPIO, CODIGO_MUNICIPIO")
+      .eq("CODIGO_DEPTO", codigoDepto)
+      .order("NOMBRE_MPIO", { ascending: true });
+
+    if (error) throw error;
+
+    const select = document.getElementById("ciudad_codigo");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Seleccione ciudad...</option>`;
+
+    (data || []).forEach(m => {
+      const option = document.createElement("option");
+      option.value = m.CODIGO_MUNICIPIO; // ✅ se guarda código
+      option.textContent = m.NOMBRE_MPIO; // 👁 se muestra nombre
+      select.appendChild(option);
+    });
+
+    console.log("✅ Municipios cargados");
+
+  } catch (err) {
+    console.error("❌ Error cargando municipios:", err);
+  }
+}
+  
 
   // ============================================================
 // ✅✅✅ PLANTILLAS DE CONSENTIMIENTOS (SUPABASE)
