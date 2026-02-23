@@ -3299,7 +3299,28 @@ if (selPaisResidencia) selPaisResidencia.value = h["pais_residencia"] || h["Paí
 }
 
 const selCiudad = document.getElementById("ciudad_codigo");
-if (selCiudad) selCiudad.value = h.ciudad_codigo || "";
+if (selCiudad) selCiudad.value = h["Ciudad_de_Residencia"] || "";
+
+
+// ✅ Departamento
+const selDepto = document.getElementById("departamento_codigo");
+if (selDepto) selDepto.value = h["departamento"] || "";
+
+// ✅ Sexo
+const selSexo = document.getElementById("sexo");
+if (selSexo) selSexo.value = h["sexo"] || "";
+
+// ✅ Grupo sanguíneo
+const selGrupo = document.getElementById("gruposanguineo");
+if (selGrupo) selGrupo.value = h["gruposanguineo"] || "";
+
+// ✅ Género
+const selGenero = document.getElementById("genero");
+if (selGenero) selGenero.value = h["genero"] || "";
+
+// ✅ Incapacidad
+const selIncapacidad = document.getElementById("incapacidad");
+if (selIncapacidad) selIncapacidad.value = h["incapacidad"] || "";
 
 const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
