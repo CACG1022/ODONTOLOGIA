@@ -3255,7 +3255,7 @@ secundarios.forEach(sec => {
       
       // ✅ cargar historia / odontograma / evoluciones SIEMPRE
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
-      document.getElementById("eps_codigo").value = data.eps_codigo || "";
+     
       document.getElementById("paciente_edad").value = h["Edad"] ?? "";
       document.getElementById("paciente_numdoc").value = data.id ?? cedula;
       document.getElementById("paciente_lugardoc").value = h["Lugar exp"] ?? "";
@@ -3337,6 +3337,18 @@ if (selGenero) selGenero.value = h["genero"] || "";
 // ✅ Incapacidad
 const selIncapacidad = document.getElementById("incapacidad");
 if (selIncapacidad) selIncapacidad.value = h["incapacidad"] || "";
+
+// ✅ EPS
+ document.getElementById("eps_codigo").value = data.eps_codigo || "";
+      
+const selEPS = document.getElementById("eps_codigo");
+if (selEPS) {
+  selEPS.value = String(
+    data.eps_codigo ?? h.EPS_Paciente ?? ""
+  );
+}
+
+      
 
 const selTipo = document.getElementById("paciente_tipo_id");
 if (selTipo) {
