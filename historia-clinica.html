@@ -144,8 +144,10 @@
 
   // ✅ EJECUCIÓN SEGURA (sin await directo)
   validarPermisoModulo();
+    
     document.addEventListener("DOMContentLoaded", () => {
   cargarEPS();
+  cargarDepartamentos();
 });
 
   supabase.auth.onAuthStateChange((_event, session) => {
@@ -621,6 +623,16 @@ function _evolucionesToHTML(evos){
         <input id="paciente_direccion" type="text">
       </div>
 
+      <div class="ctrl">
+  <label for="zonaresidencial">Zona residencial</label>
+  <select id="zonaresidencial">
+    <option value="">Seleccione</option>
+    <option value="Rural">Rural</option>
+    <option value="Urbano">Urbano</option>
+  </select>
+</div>
+
+      
       <!-- ✅ FIX: id sin espacios -->
 
     <div class="ctrl">
@@ -762,6 +774,13 @@ function _evolucionesToHTML(evos){
       </div>
 
       <div class="ctrl">
+     <label for="departamento_codigo">Departamento</label>
+     <select id="departamento_codigo">
+    <option value="">Cargando departamentos...</option>
+  </select>
+</div>
+
+      <div class="ctrl">
         <label for="paciente_ciudad">Ciudad</label>
         <input id="paciente_ciudad" type="text">
       </div>
@@ -777,9 +796,18 @@ function _evolucionesToHTML(evos){
       </div>
 
       <div class="ctrl">
-        <label for="paciente_estadocivil">Estado civil</label>
-        <input id="paciente_estadocivil" type="text">
-      </div>
+  <label for="paciente_estadocivil">Estado civil</label>
+     <select id="estado_civil">
+    <option value="">Seleccione</option>
+    <option>Soltero</option>
+    <option>Casado</option>
+    <option>Unión Libre</option>
+    <option>Separado</option>
+    <option>Divorciado</option>
+    <option>Viudo</option>
+    <option>Otro</option>
+  </select>
+</div>
 
       <div class="ctrl">
         <label>Hijos</label>
@@ -3223,6 +3251,9 @@ secundarios.forEach(sec => {
       document.getElementById("paciente_nacimiento").value = h["Fecha de nacimiento"] ?? "";
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
+      document.getElementById("zonaresidencial").value = data.zonaresidencial || "";
+      document.getElementById("estado_civil").value = data.estado_civil || "";
+      document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
 
       // ✅ FIX: id sin espacios
       document.getElementById("Ciudad_de_Residencia").value = h["Ciudad_de_Residencia"] ?? "";
@@ -3233,7 +3264,7 @@ secundarios.forEach(sec => {
       document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
       document.getElementById("paciente_email").value = h["paciente_email"] ?? "";
-      document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
+     // document.getElementById("paciente_estadocivil").value = h["paciente_estadocivil"] ?? "";
       document.getElementById("padre_tipo").value = h["padre_tipo"] ?? "";
       document.getElementById("madre_tipo").value = h["madre_tipo"] ?? "";
 
@@ -3436,6 +3467,40 @@ async function cargarEPS() {
 
   } catch (err) {
     console.error("❌ Error cargando EPS:", err);
+  }
+}
+
+  async function cargarDepartamentos() {
+  try {
+    const { data, error } = await supabase
+      .from("deptosymunicipios")
+      .select("NOMBRE_DEPTO, CODIGO_DEPTO")
+      .order("NOMBRE_DEPTO", { ascending: true });
+
+    if (error) throw error;
+
+    const select = document.getElementById("departamento_codigo");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Seleccione departamento...</option>`;
+
+    // Evitar duplicados
+    const vistos = new Set();
+
+    (data || []).forEach(d => {
+      if (vistos.has(d.CODIGO_DEPTO)) return;
+      vistos.add(d.CODIGO_DEPTO);
+
+      const option = document.createElement("option");
+      option.value = d.CODIGO_DEPTO;   // ✅ se guarda código
+      option.textContent = d.NOMBRE_DEPTO; // 👁 se muestra nombre
+      select.appendChild(option);
+    });
+
+    console.log("✅ Departamentos cargados");
+
+  } catch (err) {
+    console.error("❌ Error cargando departamentos:", err);
   }
 }
 
