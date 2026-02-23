@@ -53,6 +53,45 @@
     return session;
   }
 
+   async function cargarPaises() {
+  try {
+    const { data, error } = await supabase
+      .from("Tablapais")
+      .select("Codigo, Nombre")
+      .eq("Tabla", "Pais")
+      .eq("Habilitado", "SI")
+      .order("Nombre", { ascending: true });
+
+    if (error) {
+      console.error("Error cargando países:", error);
+      return;
+    }
+
+    const selectOrigen = document.getElementById("pais_origen");
+    const selectResidencia = document.getElementById("pais_residencia");
+
+    if (!selectOrigen || !selectResidencia) return;
+
+    // Limpiar
+    selectOrigen.innerHTML = `<option value="">Seleccione...</option>`;
+    selectResidencia.innerHTML = `<option value="">Seleccione...</option>`;
+
+    data.forEach(pais => {
+      const opt1 = document.createElement("option");
+      opt1.value = pais.Codigo;      // 🔐 Se guarda el código
+      opt1.textContent = pais.Nombre; // 👁 Se muestra el nombre
+
+      const opt2 = opt1.cloneNode(true);
+
+      selectOrigen.appendChild(opt1);
+      selectResidencia.appendChild(opt2);
+    });
+
+  } catch (err) {
+    console.error("Error inesperado:", err);
+  }
+} 
+
   async function validarPermisoModulo() {
     const session = await verificarSesion();
     if (!session) return;
@@ -112,7 +151,9 @@
     }
   });
 
- 
+ document.addEventListener("DOMContentLoaded", () => {
+  cargarPaises();
+});
 
 function _fmt(val){
   if (val === null || val === undefined) return "";
@@ -578,6 +619,22 @@ function _evolucionesToHTML(evos){
       </div>
 
       <!-- ✅ FIX: id sin espacios -->
+
+    <div class="ctrl">
+  <label>País de origen</label>
+  <select id="pais_origen">
+    <option value="">Cargando países...</option>
+  </select>
+</div>
+
+<div class="ctrl">
+  <label>País de residencia</label>
+  <select id="pais_residencia">
+    <option value="">Cargando países...</option>
+  </select>
+</div>
+
+      
       <div class="ctrl">
         <label for="Ciudad_de_Residencia">Ciudad de Residencia</label>
         <input id="Ciudad_de_Residencia" type="text">
