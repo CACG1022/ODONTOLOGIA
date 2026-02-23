@@ -3262,19 +3262,17 @@ secundarios.forEach(sec => {
       document.getElementById("paciente_lugarnac").value = h["Lugar de nacimiento"] ?? "";
       document.getElementById("paciente_direccion").value = h["paciente_direccion"] ?? "";
       // ✅ Zona residencial (es estática, esta sí puede ir directa)
-const selZona = document.getElementById("zonaresidencial");
-if (selZona) selZona.value = h.zonaresidencial || "";
+       const selZona = document.getElementById("zonaresidencial");
+       if (selZona) selZona.value = h.zonaresidencial || "";
 
 // ✅ Países (esperar que estén cargados)
 await cargarPaises();
 
 const selPaisOrigen = document.getElementById("pais_origen");
-if (selPaisOrigen) selPaisOrigen.value = h.pais_origen || "";
+if (selPaisOrigen) selPaisOrigen.value = h["pais_origen"] || h["País de origen"] || "";
 
 const selPaisResidencia = document.getElementById("pais_residencia");
-if (selPaisResidencia) selPaisResidencia.value = h.pais_residencia || "";
-      document.getElementById("estado_civil").value = h.estado_civil || "";
-      document.getElementById("departamento_codigo").value = data.departamento_codigo || "";
+if (selPaisResidencia) selPaisResidencia.value = h["pais_residencia"] || h["País de residencia"] || "";
 
       // ✅ FIX: id sin espacios
       //document.getElementById("ciudad_codigo").value = h["Ciudad_de_Residencia"] ?? "";
