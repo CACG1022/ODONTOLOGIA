@@ -54,43 +54,41 @@
   }
 
    async function cargarPaises() {
-  try {
-    const { data, error } = await supabase
-      .from("Tablapais")
-      .select("Codigo, Nombre")
-      .eq("Tabla", "Pais")
-      .eq("Habilitado", "SI")
-      .order("Nombre", { ascending: true });
 
-    if (error) {
-      console.error("Error cargando países:", error);
-      return;
-    }
+  const { data, error } = await supabase
+    .from("Tablapais")
+    .select("Codigo, Nombre")
+    .eq("Habilitado", "SI")
+    .order("Nombre", { ascending: true });
 
-    const selectOrigen = document.getElementById("pais_origen");
-    const selectResidencia = document.getElementById("pais_residencia");
-
-    if (!selectOrigen || !selectResidencia) return;
-
-    // Limpiar
-    selectOrigen.innerHTML = `<option value="">Seleccione...</option>`;
-    selectResidencia.innerHTML = `<option value="">Seleccione...</option>`;
-
-    data.forEach(pais => {
-      const opt1 = document.createElement("option");
-      opt1.value = pais.Codigo;      // 🔐 Se guarda el código
-      opt1.textContent = pais.Nombre; // 👁 Se muestra el nombre
-
-      const opt2 = opt1.cloneNode(true);
-
-      selectOrigen.appendChild(opt1);
-      selectResidencia.appendChild(opt2);
-    });
-
-  } catch (err) {
-    console.error("Error inesperado:", err);
+  if (error) {
+    console.error("Error cargando países:", error);
+    return;
   }
-} 
+
+  const selectOrigen = document.getElementById("pais_origen");
+  const selectResidencia = document.getElementById("pais_residencia");
+
+  if (!selectOrigen || !selectResidencia) return;
+
+  // 🔥 LIMPIAR COMPLETAMENTE
+  selectOrigen.innerHTML = '<option value="">Seleccione...</option>';
+  selectResidencia.innerHTML = '<option value="">Seleccione...</option>';
+
+  data.forEach(p => {
+
+    const option1 = document.createElement("option");
+    option1.value = String(p.Codigo);
+    option1.textContent = p.Nombre;
+    selectOrigen.appendChild(option1);
+
+    const option2 = document.createElement("option");
+    option2.value = String(p.Codigo);
+    option2.textContent = p.Nombre;
+    selectResidencia.appendChild(option2);
+  });
+
+}
 
   async function validarPermisoModulo() {
     const session = await verificarSesion();
@@ -3269,13 +3267,21 @@ secundarios.forEach(sec => {
        if (selZona) selZona.value = h.zonaresidencial || "";
 
 // ✅ Países (esperar que estén cargados)
-await cargarPaises();
-
 const selPaisOrigen = document.getElementById("pais_origen");
-if (selPaisOrigen) selPaisOrigen.value = h["pais_origen"] || h["País de origen"] || "";
+if (selPaisOrigen) {
+  selPaisOrigen.value = String(
+    data.pais_origen ?? h.pais_origen ?? ""
+  );
+}
 
 const selPaisResidencia = document.getElementById("pais_residencia");
-if (selPaisResidencia) selPaisResidencia.value = h["pais_residencia"] || h["País de residencia"] || "";
+if (selPaisResidencia) {
+  selPaisResidencia.value = String(
+    data.pais_residencia ?? h.pais_residencia ?? ""
+  );
+}
+
+
 
       // ✅ FIX: id sin espacios
       //document.getElementById("ciudad_codigo").value = h["Ciudad_de_Residencia"] ?? "";
