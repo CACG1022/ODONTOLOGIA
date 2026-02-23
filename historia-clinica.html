@@ -761,7 +761,7 @@ function _evolucionesToHTML(evos){
         <input id="paciente_ocupacion" type="text">
       </div>
 
-      <div class="ctrl full">
+      <div class="ctrl">
   <label for="tipo_paciente">Tipo de paciente</label>
   <select id="tipo_paciente">
     <option value="">Seleccione</option>
@@ -3339,15 +3339,32 @@ const selIncapacidad = document.getElementById("incapacidad");
 if (selIncapacidad) selIncapacidad.value = h["incapacidad"] || "";
 
 // ✅ EPS
- document.getElementById("eps_codigo").value = data.eps_codigo || "";
-      
+
 const selEPS = document.getElementById("eps_codigo");
 if (selEPS) {
   selEPS.value = String(
     data.eps_codigo ?? h.EPS_Paciente ?? ""
   );
 }
+// ✅ pertenencia etnica
+const seletcnia = document.getElementById("pertenencia_etnica");
+if (seletcnia) seletcnia.value = h["pertenencia_etnica"] || "";
 
+// ✅ nivel educativo
+const seleduca = document.getElementById("nivel_educativo");
+if (seleduca) seleduca.value = h["nivel_educativo"] || "";
+
+// ✅ tipo de paciente
+const seltipopac = document.getElementById("tipo_paciente");
+if (seltipopac) {
+  seltipopac.value = String(
+    data.tipo_paciente ?? h.tipo_paciente ?? ""
+  );
+}
+
+// ✅ estado civil paciente
+const selestadoc = document.getElementById("paciente_estadocivil");
+if (selestadoc) selestadoc.value = h["paciente_estadocivil"] || "";
       
 
 const selTipo = document.getElementById("paciente_tipo_id");
