@@ -220,7 +220,7 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
     if (ced){
       const pacRes = await sb.from("HISTORIAS CLINICAS")
         .select("*")
-        .eq("Numero de Identificacion", ced)
+        .eq("Numero de Identificacion", Number(ced))
         .maybeSingle();
       if (pacRes.error) throw pacRes.error;
       pac = pacRes.data || null;
@@ -337,7 +337,7 @@ const { data: paciente } = await sb
     sexo,
     codigo_municipio
   `)
-  .eq("Numero de Identificacion", cedula)
+  .eq("Numero de Identificacion", Number(cedula))
   .maybeSingle();
 
 if(!paciente){
