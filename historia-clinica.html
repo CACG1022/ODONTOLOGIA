@@ -146,6 +146,7 @@
     document.addEventListener("DOMContentLoaded", () => {
   cargarEPS();
   cargarDepartamentos();
+  cargarocupaciones();
   document.getElementById("departamento_codigo")
   ?.addEventListener("change", function() {
     const codigoDepto = this.value;
@@ -3620,6 +3621,34 @@ async function cargarEPS() {
 
   } catch (err) {
     console.error("❌ Error cargando EPS:", err);
+  }
+}
+
+async function cargarocupaciones() {
+  try {
+    const { data, error } = await supabase
+      .from("ocupaciones")
+      .select("codigo, ocupacion")
+      .order("ocupacion", { ascending: true });
+
+    if (error) throw error;
+
+    const select = document.getElementById("ocupacion_codigo");
+    if (!select) return;
+
+    select.innerHTML = `<option value="">Seleccione EOcupacion...</option>`;
+
+    (data || []).forEach(e => {
+      const option = document.createElement("option");
+      option.value = e.codigo;      // ✅ SE GUARDA EL CÓDIGO
+      option.textContent = e.ocupacion; // 👁 SE MUESTRA EL NOMBRE
+      select.appendChild(option);
+    });
+
+    console.log("✅ ocupaciones cargadas:", data?.length);
+
+  } catch (err) {
+    console.error("❌ Error cargando ocupaciones:", err);
   }
 }
 
