@@ -228,7 +228,7 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
 
       const evoRes = await sb.from("EVOLUCIONES")
         .select("*")
-        .eq("numero_identificacion", ced);
+        .eq("paciente_numdoc", ced);
       if (evoRes.error) throw evoRes.error;
       evos = evoRes.data || [];
     }
