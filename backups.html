@@ -187,7 +187,6 @@ button.warn:active{
       </select>
       <button class="primary" id="btnRefresh">Actualizar</button>
       <button class="warn" id="btnRestoreLogs">Restore Logs</button>
-
       <button class="btn" onclick="ejecutarBackup()"> 💾 Ejecutar Backup Ahora </button>
 
       <span class="right pill">Registros: <b id="count">0</b></span>
@@ -466,8 +465,6 @@ el("btnRestoreLogs").onclick = () => {
       alert("Error: " + err.message);
     }
   });
-
-<script>
 async function ejecutarBackup() {
   if (!confirm("¿Deseas ejecutar el backup ahora?")) return;
 
@@ -493,7 +490,6 @@ async function ejecutarBackup() {
     alert("❌ Error ejecutando backup");
   }
 }
-</script>
 
   
   // =========================
