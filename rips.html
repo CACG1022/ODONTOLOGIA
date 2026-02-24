@@ -160,7 +160,7 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
           <td class="mono">${esc(f.numero_factura || "")}</td>
           <td>${esc(String(f.fecha || "").slice(0,10))}</td>
           <td>${esc(f.paciente_nombre || "")}</td>
-          <td class="mono">$ ${money(f.total)}</td>
+          <td class="mono">$ ${money(f.valor_total)}</td>
           <td><span class="pill warn">Pendiente</span></td>
           <td>
             <div class="row-actions">
