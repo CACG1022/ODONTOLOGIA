@@ -189,7 +189,17 @@ button.cyan:active {
 
   <div class="card" style="margin-top:14px">
     <div class="row">
-      <input id="q" placeholder="Buscar por archivo, status, id, fecha..." autocomplete="off" />
+      <input 
+  id="q"
+  type="search"
+  name="backup_search"
+  placeholder="Buscar por archivo, status, id, fecha..."
+  autocomplete="off"
+  autocorrect="off"
+  autocapitalize="off"
+  spellcheck="false"
+/>
+      
       <select id="status">
         <option value="">Status: Todos</option>
         <option value="SUCCESS">SUCCESS</option>
