@@ -328,7 +328,16 @@ const cedula = String(factura.paciente_cedula || "")
 // ==========================
 // 🔹 Buscar paciente
 // ==========================
-const { data: paciente } = await sb
+
+const cedulaLimpia = String(factura.paciente_cedula || "")
+  .replace(/\./g,"")
+  .trim();
+
+const cedulaNumero = parseInt(cedulaLimpia, 10);
+
+console.log("CEDULA NUMERICA:", cedulaNumero, typeof cedulaNumero);
+
+const pacRes = await sb
   .from("HISTORIAS CLINICAS")
   .select(`
     "Tipo identificacion",
@@ -337,11 +346,17 @@ const { data: paciente } = await sb
     sexo,
     codigo_municipio
   `)
-  .eq("Numero de Identificacion", Number(cedula))
-  .maybeSingle();
+  .eq("Numero de Identificacion", cedulaNumero)
+  .limit(1);
 
-if(!paciente){
-  alert("⚠ No se encontró el paciente en HISTORIAS_CLINICAS con documento: " + cedula);
+if (pacRes.error) throw pacRes.error;
+
+const paciente = pacRes.data?.[0] || null;
+
+console.log("PACIENTE ENCONTRADO:", paciente);
+
+if (!paciente) {
+  alert("⚠ No se encontró el paciente con documento: " + cedulaNumero);
   return;
 }
     
