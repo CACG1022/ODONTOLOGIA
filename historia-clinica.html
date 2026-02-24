@@ -1132,12 +1132,17 @@ textarea:required {
 
   <div class="grid g-2">
 
-    <!-- DIAGNÓSTICO PRINCIPAL -->
-    <div class="ctrl full" style="position:relative;">
+   <!-- DIAGNÓSTICO PRINCIPAL -->
+<div class="ctrl full" style="position:relative;">
   <label>Diagnóstico principal (CIE-10) *</label>
-  <input type="text" id="diag_principal_busqueda"
-         placeholder="Buscar diagnóstico por código o descripción">
-  <input type="hidden" id="diag_principal_codigo" disabled>
+
+  <input type="text"
+         id="diag_principal_busqueda"
+         placeholder="Buscar diagnóstico por código o descripción"
+         readonly>
+
+  <input type="hidden" id="diag_principal_codigo">
+
   <div id="diag_principal_resultados" class="cie-dropdown"></div>
 </div>
 
