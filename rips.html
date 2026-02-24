@@ -208,7 +208,12 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
     if (detRes.error) throw detRes.error;
 
     // 4) paciente (si tu campo en facturas se llama distinto, ajusta aquí)
-    const ced = factura.paciente_cedula || factura.cedula || factura.numero_identificacion || null;
+    const ced = String(
+  factura.paciente_cedula ||
+  factura.cedula ||
+  factura.numero_identificacion ||
+  ""
+).replace(/\./g,"").trim();
 
     let pac = null, diags = [], evos = [];
 
@@ -313,24 +318,33 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
       return;
     }
 
-    const cedula = String(factura.paciente_cedula).trim();
+   // ==========================
+// 🔹 Normalizar cédula
+// ==========================
+const cedula = String(factura.paciente_cedula || "")
+  .replace(/\./g,"")
+  .trim();
 
-    const { data: paciente } = await sb
-      .from("HISTORIAS CLINICAS")
-      .select(`
-        "Tipo identificacion",
-        "Numero de Identificacion",
-        "Fecha de nacimiento",
-        sexo,
-        codigo_municipio
-      `)
-      .eq("Numero de Identificacion", cedula)
-      .maybeSingle();
+// ==========================
+// 🔹 Buscar paciente
+// ==========================
+const { data: paciente } = await sb
+  .from("HISTORIAS CLINICAS")
+  .select(`
+    "Tipo identificacion",
+    "Numero de Identificacion",
+    "Fecha de nacimiento",
+    sexo,
+    codigo_municipio
+  `)
+  .eq("Numero de Identificacion", cedula)
+  .maybeSingle();
 
-    if(!paciente){
-      alert("⚠ No se encontró el paciente en HISTORIAS CLINICAS con documento: " + cedula);
-      return;
-    }
+if(!paciente){
+  alert("⚠ No se encontró el paciente en HISTORIAS_CLINICAS con documento: " + cedula);
+  return;
+}
+    
 
     const { data: emisor } = await sb
       .from("emisor_dian")
