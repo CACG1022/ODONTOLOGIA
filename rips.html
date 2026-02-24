@@ -5,158 +5,331 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Facturas pendientes RIPS</title>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Supabase JS v2 (UMD) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 
 <style>
 :root{
-  --bg:#f3f5f7; --card:#fff; --text:#1f2a37; --line:#e5e7eb;
-  --brand:#1f6aa5; --brand2:#114a75; --ok:#16a34a; --bad:#dc2626;
+  --bg:#f3f5f7; --card:#fff; --text:#1f2a37; --muted:#6b7280; --line:#e5e7eb;
+  --brand:#1f6aa5; --brand2:#114a75; --ok:#16a34a; --bad:#dc2626; --warn:#f59e0b;
+  --radius:12px; --shadow:0 10px 30px rgba(0,0,0,.06);
 }
-body{margin:0;padding:20px;background:var(--bg);font-family:Arial;}
-.container{background:#fff;border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.05);}
-h1{margin-top:0;}
+*{box-sizing:border-box}
+body{margin:0;padding:20px;background:var(--bg);font-family:Arial;color:var(--text);}
+.container{max-width:1200px;margin:0 auto;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--line);}
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+h1{margin:0;font-size:18px}
+.meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:700;}
+.btn{padding:9px 12px;border:1px solid var(--line);border-radius:10px;cursor:pointer;font-weight:800;background:#fff;}
+.btn:hover{filter:brightness(.98)}
+.btn-primary{background:var(--brand);color:#fff;border-color:var(--brand);}
+.btn-primary:hover{background:var(--brand2);border-color:var(--brand2);}
+.btn-export{background:var(--ok);color:#fff;border-color:var(--ok);}
+.btn-export:hover{filter:brightness(.95)}
+.btn:disabled{opacity:.6;cursor:not-allowed}
 table{width:100%;border-collapse:collapse;}
-th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;}
-th{background:#fafafa;text-align:left;}
-button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
-.btn-primary{background:var(--brand);color:#fff;}
-.btn-primary:hover{background:var(--brand2);}
-.btn-export{background:#16a34a;color:#fff;}
-.btn-export:hover{opacity:.9;}
-.pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;}
-.pill.warn{background:#fff3cd;color:#856404;}
-.pill.ok{background:#d4edda;color:#155724;}
+th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
+th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position:sticky;top:0}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid var(--line);background:#fff;white-space:nowrap;}
+.pill.warn{color:var(--warn);border-color:rgba(245,158,11,.25)}
+.pill.ok{color:var(--ok);border-color:rgba(22,163,74,.25)}
+.pill.bad{color:var(--bad);border-color:rgba(220,38,38,.25)}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px}
+.row-actions{display:flex;gap:8px;flex-wrap:wrap}
+.empty{color:var(--muted);text-align:center;padding:18px}
+#toast{
+  position:fixed;right:16px;bottom:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
+  background:#fff;box-shadow:var(--shadow);font-weight:900;opacity:0;transform:translateY(8px);
+  transition:opacity .15s ease,transform .15s ease;pointer-events:none;max-width:520px;white-space:pre-wrap;z-index:99;
+}
+#toast.show{opacity:1;transform:translateY(0)}
+#toast[data-type="ok"]{border-color:#b7e4c7}
+#toast[data-type="err"]{border-color:#f2c6c6}
+#toast[data-type="warn"]{border-color:#ffe7b3}
 </style>
 </head>
+
 <body>
-
 <div class="container">
-<h1>Facturas pendientes de RIPS</h1>
+  <div class="topbar">
+    <h1>Facturas pendientes de RIPS</h1>
+    <div class="meta">
+      <span id="count">—</span>
+      <button class="btn" id="btn-reload" type="button">🔄 Recargar</button>
+    </div>
+  </div>
 
-<table>
-<thead>
-<tr>
-<th>Factura</th>
-<th>Fecha</th>
-<th>Paciente</th>
-<th>Total</th>
-<th>Estado</th>
-<th>Acción</th>
-</tr>
-</thead>
-<tbody id="tbody">
-<tr><td colspan="6">Cargando...</td></tr>
-</tbody>
-</table>
-
+  <div style="overflow:auto; max-height:72vh; border:1px solid var(--line); border-radius:12px;">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:220px;">Factura</th>
+          <th style="width:120px;">Fecha</th>
+          <th>Paciente</th>
+          <th style="width:140px;">Total</th>
+          <th style="width:130px;">Estado</th>
+          <th style="width:340px;">Acción</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="6" class="empty">Cargando...</td></tr>
+      </tbody>
+    </table>
+  </div>
 </div>
 
+<div id="toast"></div>
+
 <script>
-const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
-const WEBHOOK_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bb200fb9-3acf-4995-9c42-af837e328432";
+  // =======================
+  // CONFIG
+  // =======================
+  const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+  const WEBHOOK_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bb200fb9-3acf-4995-9c42-af837e328432";
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  // UMD expone window.supabase
+  const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function cargarFacturas() {
+  const $ = (id)=>document.getElementById(id);
 
-  const { data: facturas } = await supabase
-    .from("facturas")
-    .select("*")
-    .order("fecha",{ascending:false});
-
-  const { data: rips } = await supabase
-    .from("rips_generados")
-    .select("factura_id");
-
-  const facturasConRips = new Set((rips||[]).map(r=>r.factura_id));
-
-  const pendientes = facturas.filter(f => !facturasConRips.has(f.id));
-
-  const tbody = document.getElementById("tbody");
-  tbody.innerHTML="";
-
-  if(pendientes.length===0){
-    tbody.innerHTML="<tr><td colspan='6'>No hay facturas pendientes</td></tr>";
-    return;
+  function toast(msg, type="ok"){
+    const el = $("toast");
+    el.textContent = msg;
+    el.dataset.type = type;
+    el.classList.add("show");
+    clearTimeout(window.__toastT);
+    window.__toastT = setTimeout(()=> el.classList.remove("show"), 2600);
   }
 
-  pendientes.forEach(f=>{
-    const tr = document.createElement("tr");
-    tr.innerHTML=`
-      <td>${f.numero_factura}</td>
-      <td>${f.fecha}</td>
-      <td>${f.paciente_nombre}</td>
-      <td>$${Number(f.total).toLocaleString()}</td>
-      <td><span class="pill warn">Pendiente</span></td>
-      <td>
-        <button class="btn-primary" onclick="generarRips(${f.id})">Generar RIPS</button>
-        <button class="btn-export" onclick="exportarDatos(${f.id})">Exportar datos</button>
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-}
-
-async function construirPayload(facturaId){
-
-  const { data: emisor } = await supabase.from("emisor_dian").select("*").eq("activo",true).single();
-  const { data: factura } = await supabase.from("facturas").select("*").eq("id",facturaId).single();
-  const { data: detalle } = await supabase.from("factura_detalle").select("*").eq("factura_id",facturaId);
-  const { data: paciente } = await supabase.from("HISTORIAS CLINICAS")
-        .select("*").eq("Numero de Identificacion",factura.paciente_cedula).single();
-  const { data: diagnosticos } = await supabase.from("historia_diagnosticos")
-        .select("*").eq("numero_identificacion",factura.paciente_cedula);
-  const { data: evoluciones } = await supabase.from("EVOLUCIONES")
-        .select("*").eq("numero_identificacion",factura.paciente_cedula);
-  const { data: abonos } = await supabase.from("abonos")
-        .select("*").eq("factura_id",facturaId);
-
-  return {
-    emisor,
-    factura,
-    detalle,
-    paciente,
-    diagnosticos,
-    evoluciones,
-    abonos
-  };
-}
-
-async function generarRips(facturaId){
-
-  if(!confirm("¿Enviar datos a n8n para generar RIPS?")) return;
-
-  const payload = await construirPayload(facturaId);
-
-  const res = await fetch(WEBHOOK_URL,{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify(payload)
-  });
-
-  if(res.ok){
-    alert("Datos enviados a n8n correctamente");
-  }else{
-    alert("Error enviando a n8n");
+  function money(v){
+    const n = Number(v || 0);
+    try{ return n.toLocaleString("es-CO"); }catch{ return String(n); }
   }
-}
 
-async function exportarDatos(facturaId){
-  const payload = await construirPayload(facturaId);
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
 
-  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href=url;
-  a.download="datos_rips_factura_"+facturaId+".json";
-  a.click();
-  URL.revokeObjectURL(url);
-}
+  // =======================
+  // CARGAR FACTURAS PENDIENTES
+  // =======================
+  async function cargarFacturas(){
+    const tbody = $("tbody");
+    tbody.innerHTML = `<tr><td colspan="6" class="empty">Cargando...</td></tr>`;
+    $("count").textContent = "—";
 
-cargarFacturas();
+    try{
+      // 1) traer facturas + rips en paralelo
+      const [facRes, ripsRes] = await Promise.all([
+        sb.from("facturas").select("*").order("fecha", { ascending:false }),
+        sb.from("rips_generados").select("factura_id")
+      ]);
+
+      if (facRes.error) throw facRes.error;
+      if (ripsRes.error) throw ripsRes.error;
+
+      const facturas = facRes.data || [];
+      const rips = ripsRes.data || [];
+
+      // 2) map de facturas con rips (maneja uuid/número como string)
+      const facturasConRips = new Set(rips.map(r => String(r.factura_id)));
+
+      // 3) filtrar pendientes
+      const pendientes = facturas.filter(f => !facturasConRips.has(String(f.id)));
+
+      $("count").textContent = `Pendientes: ${pendientes.length}`;
+
+      if (pendientes.length === 0){
+        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay facturas pendientes.</td></tr>`;
+        return;
+      }
+
+      // 4) render
+      tbody.innerHTML = "";
+      pendientes.forEach(f=>{
+        const idStr = String(f.id); // ✅ importante para uuid
+        const tr = document.createElement("tr");
+
+        tr.innerHTML = `
+          <td class="mono">${esc(f.numero_factura || "")}</td>
+          <td>${esc(String(f.fecha || "").slice(0,10))}</td>
+          <td>${esc(f.paciente_nombre || "")}</td>
+          <td class="mono">$ ${money(f.total)}</td>
+          <td><span class="pill warn">Pendiente</span></td>
+          <td>
+            <div class="row-actions">
+              <button class="btn btn-primary" type="button" data-gen="${esc(idStr)}">Generar RIPS</button>
+              <button class="btn btn-export" type="button" data-exp="${esc(idStr)}">Exportar datos</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      // 5) wire events (sin onclick inline)
+      tbody.querySelectorAll("[data-gen]").forEach(btn=>{
+        btn.addEventListener("click", ()=> generarRips(btn.getAttribute("data-gen"), btn));
+      });
+      tbody.querySelectorAll("[data-exp]").forEach(btn=>{
+        btn.addEventListener("click", ()=> exportarDatos(btn.getAttribute("data-exp"), btn));
+      });
+
+    } catch (err){
+      console.error("Error cargando:", err);
+      tbody.innerHTML = `<tr><td colspan="6" class="empty">❌ Error cargando datos: ${esc(err.message || err)}</td></tr>`;
+      toast("❌ Error cargando facturas (mira consola)", "err");
+    }
+  }
+
+  // =======================
+  // ARMAR PAYLOAD COMPLETO
+  // =======================
+  async function construirPayload(facturaId){
+    // facturaId es string (uuid o número)
+    // 1) emisor activo
+    const emRes = await sb.from("emisor_dian").select("*").eq("activo", true).limit(1).maybeSingle();
+    if (emRes.error) throw emRes.error;
+
+    // 2) factura
+    const facRes = await sb.from("facturas").select("*").eq("id", facturaId).maybeSingle();
+    if (facRes.error) throw facRes.error;
+    if (!facRes.data) throw new Error("No se encontró la factura con id: " + facturaId);
+
+    const factura = facRes.data;
+
+    // 3) detalle
+    const detRes = await sb.from("factura_detalle").select("*").eq("factura_id", facturaId);
+    if (detRes.error) throw detRes.error;
+
+    // 4) paciente (si tu campo en facturas se llama distinto, ajusta aquí)
+    const ced = factura.paciente_cedula || factura.cedula || factura.numero_identificacion || null;
+
+    let pac = null, diags = [], evos = [];
+
+    if (ced){
+      const pacRes = await sb.from("HISTORIAS CLINICAS")
+        .select("*")
+        .eq("Numero de Identificacion", ced)
+        .maybeSingle();
+      if (pacRes.error) throw pacRes.error;
+      pac = pacRes.data || null;
+
+      const diagRes = await sb.from("historia_diagnosticos")
+        .select("*")
+        .eq("numero_identificacion", ced);
+      if (diagRes.error) throw diagRes.error;
+      diags = diagRes.data || [];
+
+      const evoRes = await sb.from("EVOLUCIONES")
+        .select("*")
+        .eq("numero_identificacion", ced);
+      if (evoRes.error) throw evoRes.error;
+      evos = evoRes.data || [];
+    }
+
+    // 5) abonos
+    const abRes = await sb.from("abonos").select("*").eq("factura_id", facturaId);
+    if (abRes.error) throw abRes.error;
+
+    return {
+      meta: {
+        generated_at: new Date().toISOString(),
+        source: "html_rips_pendientes",
+        webhook: WEBHOOK_URL
+      },
+      emisor: emRes.data || null,
+      factura,
+      detalle: detRes.data || [],
+      paciente: pac,
+      diagnosticos: diags,
+      evoluciones: evos,
+      abonos: abRes.data || []
+    };
+  }
+
+  // =======================
+  // ENVIAR A N8N
+  // =======================
+  async function generarRips(facturaId, btn){
+    if (!confirm("¿Enviar datos a n8n para generar el RIPS?")) return;
+
+    const oldText = btn?.textContent;
+    try{
+      if (btn){ btn.disabled = true; btn.textContent = "Enviando…"; }
+      toast("Enviando a n8n…", "warn");
+
+      const payload = await construirPayload(facturaId);
+
+      const res = await fetch(WEBHOOK_URL, {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok){
+        const t = await res.text().catch(()=> "");
+        throw new Error(`Webhook respondió ${res.status}. ${t}`.trim());
+      }
+
+      toast("✅ Enviado a n8n correctamente", "ok");
+      alert("✅ Datos enviados a n8n correctamente.");
+
+      // opcional: recargar para que desaparezca si n8n guarda en rips_generados
+      // (si n8n aún no marca rips_generados, seguirá apareciendo)
+      await cargarFacturas();
+
+    } catch (e){
+      console.error(e);
+      toast("❌ Error enviando a n8n (mira consola)", "err");
+      alert("❌ Error enviando a n8n:\n" + (e.message || e));
+    } finally{
+      if (btn){ btn.disabled = false; btn.textContent = oldText || "Generar RIPS"; }
+    }
+  }
+
+  // =======================
+  // EXPORTAR JSON COMPLETO
+  // =======================
+  async function exportarDatos(facturaId, btn){
+    const oldText = btn?.textContent;
+    try{
+      if (btn){ btn.disabled = true; btn.textContent = "Exportando…"; }
+      const payload = await construirPayload(facturaId);
+
+      const fileName = `datos_rips_factura_${String(payload.factura?.numero_factura || facturaId)}.json`
+        .replaceAll(" ","_")
+        .replaceAll("/","-");
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      toast("✅ Exportación lista", "ok");
+    } catch(e){
+      console.error(e);
+      toast("❌ Error exportando (mira consola)", "err");
+      alert("❌ Error exportando:\n" + (e.message || e));
+    } finally{
+      if (btn){ btn.disabled = false; btn.textContent = oldText || "Exportar datos"; }
+    }
+  }
+
+  // init
+  $("btn-reload").addEventListener("click", cargarFacturas);
+  window.addEventListener("DOMContentLoaded", cargarFacturas);
 </script>
 
 </body>
 </html>
-
