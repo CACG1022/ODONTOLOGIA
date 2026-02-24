@@ -297,34 +297,100 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
   // EXPORTAR JSON COMPLETO
   // =======================
   async function exportarDatos(facturaId, btn){
-    const oldText = btn?.textContent;
-    try{
-      if (btn){ btn.disabled = true; btn.textContent = "Exportando…"; }
-      const payload = await construirPayload(facturaId);
 
-      const fileName = `datos_rips_factura_${String(payload.factura?.numero_factura || facturaId)}.json`
-        .replaceAll(" ","_")
-        .replaceAll("/","-");
+  try{
 
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type:"application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+    if(btn){ btn.disabled = true; btn.textContent = "Exportando..."; }
 
-      toast("✅ Exportación lista", "ok");
-    } catch(e){
-      console.error(e);
-      toast("❌ Error exportando (mira consola)", "err");
-      alert("❌ Error exportando:\n" + (e.message || e));
-    } finally{
-      if (btn){ btn.disabled = false; btn.textContent = oldText || "Exportar datos"; }
-    }
+    // ==========================
+    // 1️⃣ DATOS BASE
+    // ==========================
+
+    const { data: emisor } = await sb
+      .from("emisor_dian")
+      .select("nit, razon_social, codigo_municipio")
+      .eq("activo", true)
+      .single();
+
+    const { data: factura } = await sb
+      .from("facturas")
+      .select("id, numero_factura, fecha, valor_total, paciente_cedula")
+      .eq("id", facturaId)
+      .single();
+
+    const { data: paciente } = await sb
+      .from("HISTORIAS CLINICAS")
+      .select(`
+        "Tipo identificacion",
+        "Numero de Identificacion",
+        "Fecha de nacimiento",
+        sexo,
+        codigo_municipio
+      `)
+      .eq("Numero de Identificacion", factura.paciente_cedula)
+      .single();
+
+    const { data: diagnosticos } = await sb
+      .from("historia_diagnosticos")
+      .select("codigo_cie10")
+      .eq("numero_identificacion", factura.paciente_cedula);
+
+    const { data: procedimientos } = await sb
+      .from("factura_detalle")
+      .select("codigo_cups, valor_unitario")
+      .eq("factura_id", facturaId);
+
+    // ==========================
+    // 2️⃣ ARMAR ESTRUCTURA RIPS
+    // ==========================
+
+    const rips = {
+      transaccion: {
+        numDocumentoIdObligado: emisor.nit,
+        numFactura: factura.numero_factura
+      },
+      usuarios: [
+        {
+          tipoDocumento: paciente["Tipo identificacion"],
+          numDocumento: paciente["Numero de Identificacion"],
+          fechaNacimiento: paciente["Fecha de nacimiento"],
+          codSexo: paciente.sexo,
+          codMunicipioResidencia: paciente.codigo_municipio
+        }
+      ],
+      servicios: {
+        procedimientos: procedimientos.map(p => ({
+          codPrestador: emisor.codigo_municipio,
+          fechaAtencion: factura.fecha,
+          codProcedimiento: p.codigo_cups,
+          codDiagnosticoPrincipal: diagnosticos?.[0]?.codigo_cie10 || null,
+          valorServicio: p.valor_unitario
+        }))
+      }
+    };
+
+    // ==========================
+    // 3️⃣ EXPORTAR JSON LIMPIO
+    // ==========================
+
+    const blob = new Blob([JSON.stringify(rips, null, 2)], {
+      type: "application/json"
+    });
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "RIPS_FACTURA_" + factura.numero_factura + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+
+  } catch(e){
+    console.error(e);
+    alert("Error exportando: " + e.message);
+  } finally{
+    if(btn){ btn.disabled = false; btn.textContent = "Exportar datos"; }
   }
+}
 
   // init
   $("btn-reload").addEventListener("click", cargarFacturas);
