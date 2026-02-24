@@ -768,11 +768,16 @@ textarea:required {
     <option>Doctorado</option>
   </select>
 </div>
-      
-      <div class="ctrl">
-        <label for="paciente_ocupacion">Ocupación</label>
-        <input id="paciente_ocupacion" type="text">
-      </div>
+
+
+
+  <div class="ctrl">
+       <label for="ocupacion_codigo">Ocupación</label>
+       <select id="ocupacion_codigo" required>
+       <option value="">Cargando ocupacion...</option>
+  </select>
+</div>
+
 
       <div class="ctrl">
   <label for="tipo_paciente">Tipo de paciente</label>
@@ -857,7 +862,7 @@ textarea:required {
       </div>
 
       <div class="ctrl">
-        <label for="madre_tel">Nombre del responsable</label>
+        <label for="madre_tel">Teléfono del responsable</label>
         <input id="madre_tel" type="tel">
       </div>
     </div>  
@@ -3319,7 +3324,7 @@ if (selPaisResidencia) {
       const selEps = document.getElementById("eps_codigo");
         if (selEps) selEps.value = String(data.EPS_Paciente || "");
       
-      document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
+      //document.getElementById("paciente_ocupacion").value = h["paciente_ocupacion"] ?? "";
       document.getElementById("paciente_tel").value = h["paciente_tel"] ?? "";
       //document.getElementById("paciente_ciudad").value = h["paciente_ciudad"] ?? "";
       document.getElementById("paciente_cel").value = h["paciente_cel"] ?? "";
@@ -3397,6 +3402,15 @@ const selestadoc = document.getElementById("estado_civil");
 if (selestadoc) {
   selestadoc.value = String(
     data.paciente_estadocivil?? h.paciente_estadocivil ?? ""
+  );
+}
+
+// ✅ ocupacion
+
+const selocup = document.getElementById("ocupacion_codigo");
+if (selocup) {
+  selocup.value = String(
+    data.ocupacion_codigo ?? h.paciente_ocupacion ?? ""
   );
 }
       
