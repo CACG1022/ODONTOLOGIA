@@ -502,7 +502,9 @@ function _evolucionesToHTML(evos){
   background:#eef6ff;
 }
 
-    
+ .campo-obligatorio {
+    background-color: #D4E8FF;
+}   
     
   </style>
 </head>
@@ -519,6 +521,7 @@ function _evolucionesToHTML(evos){
         <label for="buscar_cedula">Ingrese número de identificación</label>
         <input id="buscar_cedula" type="text" placeholder="Ej: 10229566001">
       </div>
+      
       <div class="ctrl">
         <label>&nbsp;</label>
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
@@ -569,6 +572,7 @@ function _evolucionesToHTML(evos){
   <label for="paciente_numdoc">*Numero de identificacion.</label>
   <input
     id="paciente_numdoc"
+    class="campo-obligatorio"
     type="text"
     inputmode="text"
     pattern="[A-Za-z0-9]+"
@@ -602,12 +606,12 @@ function _evolucionesToHTML(evos){
       
       <div class="ctrl">
         <label for="paciente_nombre">*Nombres y apellidos</label>
-        <input id="paciente_nombre" type="text">
+        <input id="paciente_nombre" type="text" required>
       </div>
 
       <div class="ctrl">
         <label for="paciente_nacimiento">*Fecha de nacimiento</label>
-        <input id="paciente_nacimiento" type="date">
+        <input id="paciente_nacimiento" type="date" required>
       </div>
       
       <div class="ctrl">
@@ -634,7 +638,7 @@ function _evolucionesToHTML(evos){
 
       <div class="ctrl">
   <label for="zonaresidencial">Zona residencial</label>
-  <select id="zonaresidencial">
+  <select id="zonaresidencial" required>
     <option value="">Seleccione</option>
     <option value="01">Urbano</option>
     <option value="02">Rural</option>
@@ -646,21 +650,21 @@ function _evolucionesToHTML(evos){
 
     <div class="ctrl">
   <label>País de origen</label>
-  <select id="pais_origen">
+  <select id="pais_origen" required>
     <option value="">Cargando países...</option>
   </select>
 </div>
 
 <div class="ctrl">
   <label>País de residencia</label>
-  <select id="pais_residencia">
+  <select id="pais_residencia" required>
     <option value="">Cargando países...</option>
   </select>
 </div>
 
    <div class="ctrl">
      <label for="departamento_codigo">Departamento</label>
-     <select id="departamento_codigo">
+     <select id="departamento_codigo" required>
     <option value="">Cargando departamentos...</option>
   </select>
 </div>
@@ -668,14 +672,14 @@ function _evolucionesToHTML(evos){
 
       <div class="ctrl">
           <label for="ciudad_codigo">Ciudad de residencia</label>
-         <select id="ciudad_codigo">
+         <select id="ciudad_codigo" required>
          <option value="">Seleccione primero departamento</option>
   </select>
 </div>
 
       <div class="ctrl">
        <label for="eps_codigo">EPS</label>
-       <select id="eps_codigo">
+       <select id="eps_codigo" required>
        <option value="">Cargando EPS...</option>
   </select>
 </div>
@@ -697,7 +701,7 @@ function _evolucionesToHTML(evos){
       
     <div class="ctrl">
   <label for="sexo">Sexo</label>
-  <select id="sexo">
+  <select id="sexo" required>
     <option value="">Seleccione</option>
     <option value="M">Masculino</option>
     <option value="F">Femenino</option>
@@ -718,7 +722,7 @@ function _evolucionesToHTML(evos){
 
 <div class="ctrl">
   <label for="incapacidad">Incapacidad</label>
-  <select id="incapacidad">
+  <select id="incapacidad" required>
     <option value="">Seleccione</option>
     <option value="SI">SI</option>
     <option value="NO">NO</option>
@@ -767,7 +771,7 @@ function _evolucionesToHTML(evos){
 
       <div class="ctrl">
   <label for="tipo_paciente">Tipo de paciente</label>
-  <select id="tipo_paciente">
+  <select id="tipo_paciente" required>
     <option value="">Seleccione</option>
 
     <option value="01">01 - Contributivo cotizante</option>
@@ -2128,33 +2132,91 @@ async function cargarProfesionalesDesdeSupabase() {
   }
 
   function validarCamposObligatorios() {
-    
-    const errores = [];
 
-    const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
-    if (!nombre) errores.push("Nombres y apellidos");
-    const edad = document.getElementById("paciente_edad")?.value || "";
-    if (!edad) errores.push("Edad");
-    const tipoID = document.getElementById("paciente_tipo_id")?.value || "";
-    if (!tipoID) errores.push("Tipo de identificación");
-    const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
-    if (!numDoc) errores.push("Número de identificación");
-    const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
-    if (!fechaNac) errores.push("Fecha de nacimiento");
-    if (!reporte || Object.keys(reporte).length === 0) errores.push("Odontograma (debe marcar al menos un diente)");
-    const diagPrincipal = document.getElementById("diag_principal_codigo")?.value?.trim();
-if (!diagPrincipal) errores.push("Diagnóstico principal (CIE-10)");
+  const errores = [];
 
-    if (errores.length > 0) {
-      alert(
-        "⚠️ No se puede enviar la historia clínica.\n\n" +
-        "Faltan los siguientes campos obligatorios:\n\n" +
-        errores.map(e => "• " + e).join("\n")
-      );
-      return false;
+  // =========================
+  // CAMPOS OBLIGATORIOS
+  // =========================
+  const nombre = document.getElementById("paciente_nombre")?.value?.trim() || "";
+  if (!nombre) errores.push("Nombres y apellidos");
+
+  const numDoc = document.getElementById("paciente_numdoc")?.value?.trim() || "";
+  if (!numDoc) errores.push("Número de identificación");
+
+  const tipoID = document.getElementById("paciente_tipo_id")?.value || "";
+  if (!tipoID) errores.push("Tipo de identificación");
+
+  const fechaNac = document.getElementById("paciente_nacimiento")?.value || "";
+  if (!fechaNac) errores.push("Fecha de nacimiento");
+
+  const edadRaw = document.getElementById("paciente_edad")?.value || "";
+  if (!edadRaw) errores.push("Edad");
+
+  const paisResidencia = document.getElementById("pais_residencia")?.value || "";
+  if (!paisResidencia) errores.push("País de residencia");
+
+  const paisOrigen = document.getElementById("pais_origen")?.value || "";
+  if (!paisOrigen) errores.push("País de origen");
+
+  const depto = document.getElementById("departamento_codigo")?.value || "";
+  if (!depto) errores.push("Departamento");
+
+  const ciudad = document.getElementById("ciudad_codigo")?.value || "";
+  if (!ciudad) errores.push("Ciudad");
+
+  const eps = document.getElementById("eps_codigo")?.value || "";
+  if (!eps) errores.push("EPS");
+
+  const sexo = document.getElementById("sexo")?.value || "";
+  if (!sexo) errores.push("Sexo");
+
+  const incapacidad = document.getElementById("incapacidad")?.value || "";
+  if (!incapacidad) errores.push("Incapacidad");
+
+  const zona = document.getElementById("zonaresidencial")?.value || "";
+  if (!zona) errores.push("Zona residencial");
+
+  const tipoPaciente = document.getElementById("tipo_paciente")?.value || "";
+  if (!tipoPaciente) errores.push("Tipo de paciente");
+
+  // =========================
+  // REGLA EDAD >= 19
+  // =========================
+  const edad = parseInt(edadRaw, 10);
+  if (!Number.isNaN(edad) && edad >= 19) {
+    const noPermitidos = ["RC", "TI", "MS", "CN"];
+    if (noPermitidos.includes(String(tipoID).trim())) {
+      errores.push("Tipo de identificación inválido para edad ≥ 19 (No puede ser RC, TI, MS, CN)");
     }
-    return true;
   }
+
+  // =========================
+  // VALIDACIONES EXISTENTES
+  // =========================
+  if (!reporte || Object.keys(reporte).length === 0) {
+    errores.push("Odontograma (debe marcar al menos un diente)");
+  }
+
+  const diagPrincipal = document.getElementById("diag_principal_codigo")?.value?.trim();
+  if (!diagPrincipal) {
+    errores.push("Diagnóstico principal (CIE-10)");
+  }
+
+  // =========================
+  // MOSTRAR ERRORES
+  // =========================
+  if (errores.length > 0) {
+    alert(
+      "⚠️ No se puede enviar la historia clínica.\n\n" +
+      "Faltan o están inválidos los siguientes campos:\n\n" +
+      errores.map(e => "• " + e).join("\n")
+    );
+    return false;
+  }
+
+  return true;
+}
 
   function enviarAN8N() {
 
