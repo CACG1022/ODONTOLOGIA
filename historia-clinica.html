@@ -2203,10 +2203,7 @@ async function cargarProfesionalesDesdeSupabase() {
     errores.push("Odontograma (debe marcar al menos un diente)");
   }
 
-  const diagPrincipal = document.getElementById("diag_principal_codigo")?.value?.trim();
-  if (!diagPrincipal) {
-    errores.push("Diagnóstico principal (CIE-10)");
-  }
+
 
   // =========================
   // MOSTRAR ERRORES
