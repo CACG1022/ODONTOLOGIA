@@ -1,195 +1,161 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>Gestión de RIPS por Factura</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Facturas pendientes RIPS</title>
 
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-/* ===============================
-   CONFIGURACIÓN SUPABASE
-================================ */
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
-
-const tbody = document.getElementById("tbody");
-
-/* ===============================
-   CARGAR FACTURAS + ESTADO RIPS
-================================ */
-async function cargarFacturas() {
-  tbody.innerHTML = `<tr><td colspan="7">Cargando facturas...</td></tr>`;
-
-  // 1️⃣ Obtener facturas
-  const { data: facturas, error } = await supabase
-    .from("facturas")
-    .select(`
-      id,
-      numero_factura,
-      fecha,
-      paciente_nombre,
-      paciente_cedula,
-      valor_total
-    `)
-    .order("fecha", { ascending: false });
-
-  if (error) {
-    console.error("Error facturas:", error);
-    tbody.innerHTML = `<tr><td colspan="7">❌ Error cargando facturas</td></tr>`;
-    return;
-  }
-
-  // 2️⃣ Obtener RIPS ya generados
-  const { data: rips } = await supabase
-    .from("rips_envios")
-    .select("factura_id");
-
-  const facturasConRips = new Set((rips || []).map(r => r.factura_id));
-
-  tbody.innerHTML = "";
-
-  // 3️⃣ Pintar tabla
-  facturas.forEach(f => {
-    const tieneRips = facturasConRips.has(f.id);
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${f.numero_factura}</td>
-      <td>${f.fecha}</td>
-      <td>${f.paciente_nombre || "-"}</td>
-      <td>${f.paciente_cedula || "-"}</td>
-      <td>$${Number(f.valor_total || 0).toLocaleString()}</td>
-      <td>
-        <span class="estado ${tieneRips ? "ok" : "pendiente"}">
-          ${tieneRips ? "RIPS generado" : "Pendiente"}
-        </span>
-      </td>
-      <td>
-        ${
-          tieneRips
-          ? `<button disabled>✔</button>`
-          : `<button onclick="generarRips('${f.id}', '${f.numero_factura}')">
-               Generar RIPS
-             </button>`
-        }
-      </td>
-    `;
-    tbody.appendChild(tr);
-  });
-
-  if (facturas.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7">No hay facturas registradas</td></tr>`;
-  }
-}
-
-/* ===============================
-   GENERAR RIPS (REGISTRO)
-================================ */
-window.generarRips = async function (facturaId, numeroFactura) {
-
-  const confirmar = confirm(
-    `¿Deseas generar el RIPS para la factura ${numeroFactura}?`
-  );
-  if (!confirmar) return;
-
-  const { error } = await supabase
-    .from("rips_envios")
-    .insert([{
-      factura_id: facturaId,
-      numero_factura: numeroFactura,
-      estado: "PENDIENTE",
-      fecha_generacion: new Date().toISOString()
-    }]);
-
-  if (error) {
-    console.error("❌ Error insertando RIPS:", error);
-    alert("❌ Error generando RIPS (revisa consola)");
-    return;
-  }
-
-  alert("✅ RIPS creado correctamente");
-  cargarFacturas();
-};
-
-
-window.onload = cargarFacturas;
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-body{
-  font-family: Arial, sans-serif;
-  background:#f4f6f8;
-  padding:20px;
+:root{
+  --bg:#f3f5f7; --card:#fff; --text:#1f2a37; --line:#e5e7eb;
+  --brand:#1f6aa5; --brand2:#114a75; --ok:#16a34a; --bad:#dc2626;
 }
-h1{
-  margin-bottom:20px;
-}
-table{
-  width:100%;
-  border-collapse:collapse;
-  background:#fff;
-}
-th, td{
-  padding:12px;
-  border-bottom:1px solid #e5e7eb;
-  text-align:left;
-  font-size:14px;
-}
-th{
-  background:#1f6aa5;
-  color:#fff;
-}
-.estado{
-  padding:6px 12px;
-  border-radius:999px;
-  font-weight:bold;
-  font-size:12px;
-}
-.estado.ok{
-  background:#d1fae5;
-  color:#065f46;
-}
-.estado.pendiente{
-  background:#fee2e2;
-  color:#991b1b;
-}
-button{
-  padding:6px 12px;
-  border:none;
-  border-radius:8px;
-  background:#1f6aa5;
-  color:#fff;
-  cursor:pointer;
-}
-button:disabled{
-  opacity:.5;
-  cursor:not-allowed;
-}
+body{margin:0;padding:20px;background:var(--bg);font-family:Arial;}
+.container{background:#fff;border-radius:12px;padding:20px;box-shadow:0 10px 30px rgba(0,0,0,.05);}
+h1{margin-top:0;}
+table{width:100%;border-collapse:collapse;}
+th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;}
+th{background:#fafafa;text-align:left;}
+button{padding:8px 12px;border:none;border-radius:8px;cursor:pointer;font-weight:600;}
+.btn-primary{background:var(--brand);color:#fff;}
+.btn-primary:hover{background:var(--brand2);}
+.btn-export{background:#16a34a;color:#fff;}
+.btn-export:hover{opacity:.9;}
+.pill{padding:4px 8px;border-radius:999px;font-size:12px;font-weight:700;}
+.pill.warn{background:#fff3cd;color:#856404;}
+.pill.ok{background:#d4edda;color:#155724;}
 </style>
 </head>
-
 <body>
 
-<h1>📄 Gestión de RIPS por Factura</h1>
+<div class="container">
+<h1>Facturas pendientes de RIPS</h1>
 
 <table>
 <thead>
 <tr>
-  <th>N° Factura</th>
-  <th>Fecha</th>
-  <th>Paciente</th>
-  <th>Cédula</th>
-  <th>Total</th>
-  <th>Estado RIPS</th>
-  <th>Acción</th>
+<th>Factura</th>
+<th>Fecha</th>
+<th>Paciente</th>
+<th>Total</th>
+<th>Estado</th>
+<th>Acción</th>
 </tr>
 </thead>
-<tbody id="tbody"></tbody>
+<tbody id="tbody">
+<tr><td colspan="6">Cargando...</td></tr>
+</tbody>
 </table>
+
+</div>
+
+<script>
+const SUPABASE_URL = "https://TU_PROYECTO.supabase.co";
+const SUPABASE_ANON_KEY = "TU_ANON_KEY";
+const WEBHOOK_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bb200fb9-3acf-4995-9c42-af837e328432";
+
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+async function cargarFacturas() {
+
+  const { data: facturas } = await supabase
+    .from("facturas")
+    .select("*")
+    .order("fecha",{ascending:false});
+
+  const { data: rips } = await supabase
+    .from("rips_generados")
+    .select("factura_id");
+
+  const facturasConRips = new Set((rips||[]).map(r=>r.factura_id));
+
+  const pendientes = facturas.filter(f => !facturasConRips.has(f.id));
+
+  const tbody = document.getElementById("tbody");
+  tbody.innerHTML="";
+
+  if(pendientes.length===0){
+    tbody.innerHTML="<tr><td colspan='6'>No hay facturas pendientes</td></tr>";
+    return;
+  }
+
+  pendientes.forEach(f=>{
+    const tr = document.createElement("tr");
+    tr.innerHTML=`
+      <td>${f.numero_factura}</td>
+      <td>${f.fecha}</td>
+      <td>${f.paciente_nombre}</td>
+      <td>$${Number(f.total).toLocaleString()}</td>
+      <td><span class="pill warn">Pendiente</span></td>
+      <td>
+        <button class="btn-primary" onclick="generarRips(${f.id})">Generar RIPS</button>
+        <button class="btn-export" onclick="exportarDatos(${f.id})">Exportar datos</button>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+async function construirPayload(facturaId){
+
+  const { data: emisor } = await supabase.from("emisor_dian").select("*").eq("activo",true).single();
+  const { data: factura } = await supabase.from("facturas").select("*").eq("id",facturaId).single();
+  const { data: detalle } = await supabase.from("factura_detalle").select("*").eq("factura_id",facturaId);
+  const { data: paciente } = await supabase.from("HISTORIAS CLINICAS")
+        .select("*").eq("Numero de Identificacion",factura.paciente_cedula).single();
+  const { data: diagnosticos } = await supabase.from("historia_diagnosticos")
+        .select("*").eq("numero_identificacion",factura.paciente_cedula);
+  const { data: evoluciones } = await supabase.from("EVOLUCIONES")
+        .select("*").eq("numero_identificacion",factura.paciente_cedula);
+  const { data: abonos } = await supabase.from("abonos")
+        .select("*").eq("factura_id",facturaId);
+
+  return {
+    emisor,
+    factura,
+    detalle,
+    paciente,
+    diagnosticos,
+    evoluciones,
+    abonos
+  };
+}
+
+async function generarRips(facturaId){
+
+  if(!confirm("¿Enviar datos a n8n para generar RIPS?")) return;
+
+  const payload = await construirPayload(facturaId);
+
+  const res = await fetch(WEBHOOK_URL,{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(payload)
+  });
+
+  if(res.ok){
+    alert("Datos enviados a n8n correctamente");
+  }else{
+    alert("Error enviando a n8n");
+  }
+}
+
+async function exportarDatos(facturaId){
+  const payload = await construirPayload(facturaId);
+
+  const blob = new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href=url;
+  a.download="datos_rips_factura_"+facturaId+".json";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+cargarFacturas();
+</script>
 
 </body>
 </html>
