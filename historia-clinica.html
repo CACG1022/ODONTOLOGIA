@@ -147,6 +147,8 @@
   cargarEPS();
   cargarDepartamentos();
   cargarocupaciones();
+  filtrarOcupaciones();
+      
   document.getElementById("departamento_codigo")
   ?.addEventListener("change", function() {
     const codigoDepto = this.value;
@@ -772,12 +774,21 @@ textarea:required {
 
 
 
-  <div class="ctrl">
-       <label for="ocupacion_codigo">Ocupación</label>
-       <select id="ocupacion_codigo" required>
-       <option value="">Cargando ocupacion...</option>
-  </select>
+<div class="ctrl" style="position:relative;">
+  <label for="ocupacion_busqueda">Ocupación</label>
+
+  <input type="text"
+         id="ocupacion_busqueda"
+         placeholder="Escriba para buscar ocupación..."
+         autocomplete="off"
+         required>
+
+  <input type="hidden" id="ocupacion_codigo">
+
+  <div id="ocupacion_resultados" class="cie-dropdown"></div>
 </div>
+
+
 
 
       <div class="ctrl">
@@ -3012,6 +3023,7 @@ const profesionalNombre = (d.profesional || "").trim();
 // ✅ CARGAR DIAGNÓSTICOS CIE10 DESDE SUPABASE
 // =====================================================
 let CIE10_LISTA = [];
+let OCUPACIONES_LISTA = [];
 
 async function cargarDiagnosticosCIE10() {
   let tries = 0;
@@ -3035,6 +3047,56 @@ async function cargarDiagnosticosCIE10() {
   } catch (e) {
     console.error("❌ Error cargando CIE10:", e);
   }
+}
+
+function filtrarOcupaciones() {
+
+  const input = document.getElementById("ocupacion_busqueda");
+  const resultados = document.getElementById("ocupacion_resultados");
+  const hidden = document.getElementById("ocupacion_codigo");
+
+  function renderLista(filtro = "") {
+
+    resultados.innerHTML = "";
+
+    const texto = filtro.toLowerCase().trim();
+
+    let listaFiltrada = OCUPACIONES_LISTA;
+
+    if (texto.length > 0) {
+      listaFiltrada = OCUPACIONES_LISTA.filter(o =>
+        o.descripcion.toLowerCase().includes(texto) ||
+        o.codigo.toLowerCase().includes(texto)
+      );
+    }
+
+    listaFiltrada.slice(0, 100).forEach(o => {
+      const div = document.createElement("div");
+      div.className = "cie-item";
+      div.textContent = `${o.codigo} - ${o.descripcion}`;
+      div.onclick = () => {
+        input.value = `${o.codigo} - ${o.descripcion}`;
+        hidden.value = o.codigo;
+        resultados.innerHTML = "";
+      };
+      resultados.appendChild(div);
+    });
+  }
+
+  input.addEventListener("focus", () => {
+    renderLista();
+  });
+
+  input.addEventListener("input", () => {
+    renderLista(input.value);
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!input.contains(e.target)) {
+      resultados.innerHTML = "";
+    }
+  });
+
 }
 
  function filtrarDiagnosticos(inputId, resultadosId, hiddenId) {
@@ -3625,31 +3687,25 @@ async function cargarEPS() {
 }
 
 async function cargarocupaciones() {
-  try {
-    const { data, error } = await supabase
-      .from("ocupaciones")
-      .select("codigo, ocupacion")
-      .order("ocupacion", { ascending: true });
 
-    if (error) throw error;
-
-    const select = document.getElementById("ocupacion_codigo");
-    if (!select) return;
-
-    select.innerHTML = `<option value="">Seleccione EOcupacion...</option>`;
-
-    (data || []).forEach(e => {
-      const option = document.createElement("option");
-      option.value = e.codigo;      // ✅ SE GUARDA EL CÓDIGO
-      option.textContent = e.ocupacion; // 👁 SE MUESTRA EL NOMBRE
-      select.appendChild(option);
-    });
-
-    console.log("✅ ocupaciones cargadas:", data?.length);
-
-  } catch (err) {
-    console.error("❌ Error cargando ocupaciones:", err);
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
   }
+  if (!window.supabase) return;
+
+  const { data, error } = await window.supabase
+    .from("tabla_ocupaciones")  // usa el nombre real de tu tabla
+    .select("codigo, descripcion")
+    .order("descripcion", { ascending: true });
+
+  if (error) {
+    console.error("Error cargando ocupaciones:", error);
+    return;
+  }
+
+  OCUPACIONES_LISTA = data || [];
 }
 
 async function cargarDepartamentos() {
