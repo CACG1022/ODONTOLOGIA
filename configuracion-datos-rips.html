@@ -133,6 +133,7 @@ th{
 <th>ID</th>
 <th>CUPS</th>
 <th>Procedimiento</th>
+<th>Cod Servicio</th>
 <th>Servicio</th>
 <th>Finalidad</th>
 <th>Acción</th>
@@ -210,12 +211,16 @@ async function cargarFinalidades(){
 
   finalidadSelect.innerHTML='<option value="">Seleccione finalidad</option>';
   data.forEach(f=>{
-    finalidadSelect.innerHTML+=`<option value="${f.codigo}">${f.descripcion}</option>`;
+    finalidadSelect.innerHTML+=`
+      <option value="${f.codigo}">
+        ${f.descripcion}
+      </option>`;
   });
 }
 
 async function cargarServicios(sedeId){
   servicioSelect.disabled=false;
+
   const {data}=await supabase
   .from("servicios_habilitados_sede")
   .select("id,nombre_servicio,cod_servicio")
@@ -225,7 +230,7 @@ async function cargarServicios(sedeId){
   servicioSelect.innerHTML='<option value="">Seleccione servicio</option>';
   data.forEach(s=>{
     servicioSelect.innerHTML+=`
-      <option value="${s.id}">
+      <option value="${s.id}" data-cod="${s.cod_servicio}">
         ${s.cod_servicio} - ${s.nombre_servicio}
       </option>`;
   });
@@ -247,8 +252,9 @@ async function cargarConfigurados(){
     procedimiento_id,
     finalidad_codigo,
     servicio_habilitado_id,
+    cod_servicio,
     procedimientos_precios(id,procedimiento,codigo_cups),
-    servicios_habilitados_sede(nombre_servicio,cod_servicio),
+    servicios_habilitados_sede(nombre_servicio),
     finalidad_tecnologia(descripcion)
   `);
 
@@ -259,7 +265,8 @@ async function cargarConfigurados(){
       <td>${c.procedimientos_precios.id}</td>
       <td>${c.procedimientos_precios.codigo_cups ?? '-'}</td>
       <td>${c.procedimientos_precios.procedimiento}</td>
-      <td>${c.servicios_habilitados_sede.cod_servicio} - ${c.servicios_habilitados_sede.nombre_servicio}</td>
+      <td>${c.cod_servicio ?? '-'}</td>
+      <td>${c.servicios_habilitados_sede.nombre_servicio}</td>
       <td>${c.finalidad_tecnologia.descripcion}</td>
       <td>
         <button class="btn-edit" onclick="editar('${c.id}','${c.procedimiento_id}','${c.servicio_habilitado_id}','${c.finalidad_codigo}')">Editar</button>
@@ -291,10 +298,14 @@ window.editar=async(id,procId,servId,finId)=>{
 }
 
 document.getElementById("guardarBtn").onclick=async()=>{
+  const selectedOption = servicioSelect.options[servicioSelect.selectedIndex];
+  const codServicio = parseInt(selectedOption.dataset.cod);
+
   const payload={
     procedimiento_id:Number(procedimientoSelect.value),
     servicio_habilitado_id:servicioSelect.value,
-    finalidad_codigo:Number(finalidadSelect.value)
+    finalidad_codigo:Number(finalidadSelect.value),
+    cod_servicio: codServicio
   };
 
   if(editandoId){
@@ -308,7 +319,7 @@ document.getElementById("guardarBtn").onclick=async()=>{
 
   editandoId=null;
   await cargarConfigurados();
-};
+}
 
 init();
 </script>
