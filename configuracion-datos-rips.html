@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Configuración RIPS</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
 <style>
 :root{
@@ -25,49 +25,42 @@ body{
 }
 
 .container{
-  max-width:1000px;
-  margin:50px auto;
+  max-width:1200px;
+  margin:40px auto;
   padding:20px;
 }
 
-h1{font-size:28px;margin-bottom:5px;}
-.subtitle{color:var(--muted);margin-bottom:30px;}
+h1{margin-bottom:5px;}
+.subtitle{color:var(--muted);margin-bottom:25px;}
 
 .card{
   background:var(--card);
-  border-radius:14px;
-  padding:30px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.05);
+  border-radius:12px;
+  padding:25px;
   border:1px solid var(--border);
-  margin-bottom:30px;
+  margin-bottom:25px;
 }
 
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:20px;
+  gap:15px;
 }
 
 .field{display:flex;flex-direction:column;}
 .field.full{grid-column:1/-1;}
 
-label{font-weight:600;margin-bottom:6px;font-size:14px;}
+label{font-weight:600;font-size:14px;margin-bottom:5px;}
 
 select,input{
-  padding:12px;
+  padding:10px;
   border-radius:8px;
   border:1px solid var(--border);
-  font-size:14px;
-}
-
-select:focus,input:focus{
-  outline:none;
-  border-color:var(--primary);
 }
 
 button{
-  margin-top:25px;
-  padding:14px;
+  margin-top:20px;
+  padding:12px;
   border:none;
   border-radius:8px;
   background:var(--primary);
@@ -76,28 +69,42 @@ button{
   cursor:pointer;
 }
 
-button:hover{opacity:.9;}
-
-.message{margin-top:15px;font-size:14px;}
-.success{color:#15803d;}
-.error{color:#b91c1c;}
+button.secondary{
+  background:#6b7280;
+}
 
 table{
   width:100%;
   border-collapse:collapse;
-  margin-top:15px;
 }
 
 th,td{
-  padding:12px;
+  padding:10px;
   border-bottom:1px solid var(--border);
-  text-align:left;
 }
 
 th{
   background:#f9fafb;
-  font-weight:600;
+  text-align:left;
 }
+
+.action-btn{
+  padding:6px 10px;
+  font-size:12px;
+  border-radius:6px;
+  border:none;
+  cursor:pointer;
+  background:#10b981;
+  color:white;
+}
+
+.section-title{
+  font-weight:600;
+  margin-bottom:15px;
+}
+.message{margin-top:10px;}
+.success{color:#15803d;}
+.error{color:#b91c1c;}
 </style>
 </head>
 <body>
@@ -105,7 +112,7 @@ th{
 <div class="container">
 
 <h1>Configuración RIPS</h1>
-<div class="subtitle">Configura procedimiento → servicio → finalidad</div>
+<div class="subtitle">Administra configuración de procedimientos</div>
 
 <div class="card">
 <div class="grid">
@@ -116,37 +123,47 @@ th{
 </div>
 
 <div class="field">
-<label>Activo</label>
-<select id="activo">
-<option value="true">Activo</option>
-<option value="false">Inactivo</option>
-</select>
-</div>
-
-<div class="field full">
 <label>Procedimiento</label>
 <select id="procedimiento"></select>
 </div>
 
-<div class="field full">
-<label>Servicio habilitado</label>
+<div class="field">
+<label>Servicio</label>
 <select id="servicio"></select>
 </div>
 
-<div class="field full">
-<label>Finalidad tecnología</label>
+<div class="field">
+<label>Finalidad</label>
 <select id="finalidad"></select>
 </div>
 
 </div>
 
 <button id="guardarBtn">Guardar configuración</button>
+<button id="cancelarBtn" class="secondary" style="display:none;">Cancelar edición</button>
+
 <div id="msg" class="message"></div>
 </div>
 
-<!-- TABLA DE PROCEDIMIENTOS PENDIENTES -->
+<!-- CONFIGURADOS -->
 <div class="card">
-<h2>Procedimientos pendientes de configuración</h2>
+<div class="section-title">Procedimientos configurados</div>
+<table>
+<thead>
+<tr>
+<th>Procedimiento</th>
+<th>Servicio</th>
+<th>Finalidad</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody id="tablaConfigurados"></tbody>
+</table>
+</div>
+
+<!-- PENDIENTES -->
+<div class="card">
+<div class="section-title">Procedimientos pendientes</div>
 <table>
 <thead>
 <tr>
@@ -163,22 +180,34 @@ th{
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL="https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+const supabase=createClient(
+"https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+"PEGA_AQUI_TU_ANON_KEY"
+);
 
-const supabase=createClient(SUPABASE_URL,SUPABASE_ANON_KEY);
+let editandoId=null;
 
 const sedeSelect=document.getElementById("sedeSelect");
 const procedimientoSelect=document.getElementById("procedimiento");
 const servicioSelect=document.getElementById("servicio");
 const finalidadSelect=document.getElementById("finalidad");
 const guardarBtn=document.getElementById("guardarBtn");
+const cancelarBtn=document.getElementById("cancelarBtn");
 const msg=document.getElementById("msg");
 const tablaPendientes=document.getElementById("tablaPendientes");
+const tablaConfigurados=document.getElementById("tablaConfigurados");
 
 function showMessage(text,type){
   msg.className="message "+type;
   msg.textContent=text;
+}
+
+async function cargarTodo(){
+  await cargarSedes();
+  await cargarProcedimientos();
+  await cargarFinalidades();
+  await cargarConfigurados();
+  await cargarPendientes();
 }
 
 async function cargarSedes(){
@@ -218,59 +247,92 @@ async function cargarServicios(sedeId){
   });
 }
 
-async function cargarPendientes(){
-  const {data:procedimientos}=await supabase
-    .from("procedimientos_precios")
-    .select("id,procedimiento")
-    .eq("activo",true);
+async function cargarConfigurados(){
+  const {data}=await supabase
+  .from("procedimiento_configuracion_rips")
+  .select(`
+    id,
+    procedimiento_id,
+    finalidad_codigo,
+    servicio_habilitado_id,
+    procedimientos_precios(procedimiento),
+    servicios_habilitados_sede(nombre_servicio,cod_servicio),
+    finalidad_tecnologia(descripcion)
+  `);
 
-  const {data:configurados}=await supabase
-    .from("procedimiento_configuracion_rips")
-    .select("procedimiento_id");
-
-  const idsConfigurados=configurados.map(c=>c.procedimiento_id);
-
-  const pendientes=procedimientos.filter(p=>!idsConfigurados.includes(p.id));
-
-  tablaPendientes.innerHTML="";
-  pendientes.forEach(p=>{
-    tablaPendientes.innerHTML+=`
-      <tr>
-        <td>${p.id}</td>
-        <td>${p.procedimiento}</td>
-      </tr>
+  tablaConfigurados.innerHTML="";
+  data.forEach(c=>{
+    tablaConfigurados.innerHTML+=`
+    <tr>
+      <td>${c.procedimientos_precios.procedimiento}</td>
+      <td>${c.servicios_habilitados_sede.cod_servicio} - ${c.servicios_habilitados_sede.nombre_servicio}</td>
+      <td>${c.finalidad_tecnologia.descripcion}</td>
+      <td>
+        <button class="action-btn" onclick="editar('${c.id}','${c.procedimiento_id}','${c.servicio_habilitado_id}','${c.finalidad_codigo}')">
+        Editar
+        </button>
+      </td>
+    </tr>
     `;
   });
 }
 
-guardarBtn.addEventListener("click",async ()=>{
+async function cargarPendientes(){
+  const {data:procedimientos}=await supabase.from("procedimientos_precios").select("id,procedimiento").eq("activo",true);
+  const {data:configurados}=await supabase.from("procedimiento_configuracion_rips").select("procedimiento_id");
+  const ids=configurados.map(c=>c.procedimiento_id);
+  const pendientes=procedimientos.filter(p=>!ids.includes(p.id));
+  tablaPendientes.innerHTML="";
+  pendientes.forEach(p=>{
+    tablaPendientes.innerHTML+=`<tr><td>${p.id}</td><td>${p.procedimiento}</td></tr>`;
+  });
+}
+
+window.editar=(id,procId,servId,finId)=>{
+  editandoId=id;
+  procedimientoSelect.value=procId;
+  servicioSelect.value=servId;
+  finalidadSelect.value=finId;
+  guardarBtn.textContent="Actualizar configuración";
+  cancelarBtn.style.display="inline-block";
+}
+
+cancelarBtn.onclick=()=>{
+  editandoId=null;
+  guardarBtn.textContent="Guardar configuración";
+  cancelarBtn.style.display="none";
+}
+
+guardarBtn.onclick=async ()=>{
   const payload={
     procedimiento_id:Number(procedimientoSelect.value),
     servicio_habilitado_id:servicioSelect.value,
-    finalidad_codigo:Number(finalidadSelect.value),
-    activo:true
+    finalidad_codigo:Number(finalidadSelect.value)
   };
 
-  const {error}=await supabase
-    .from("procedimiento_configuracion_rips")
-    .insert(payload);
-
-  if(error){
-    showMessage(error.message,"error");
+  if(editandoId){
+    await supabase.from("procedimiento_configuracion_rips")
+    .update(payload)
+    .eq("id",editandoId);
+    showMessage("Actualizado correctamente","success");
   }else{
-    showMessage("Configuración guardada","success");
-    cargarPendientes(); // actualizar tabla
+    await supabase.from("procedimiento_configuracion_rips")
+    .insert(payload);
+    showMessage("Guardado correctamente","success");
   }
-});
+
+  editandoId=null;
+  guardarBtn.textContent="Guardar configuración";
+  cancelarBtn.style.display="none";
+  cargarConfigurados();
+  cargarPendientes();
+}
 
 sedeSelect.addEventListener("change",()=>{
   if(sedeSelect.value) cargarServicios(sedeSelect.value);
 });
 
-cargarSedes();
-cargarProcedimientos();
-cargarFinalidades();
-cargarPendientes();
+cargarTodo();
 </script>
 
 </body>
