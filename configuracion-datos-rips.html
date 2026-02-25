@@ -10,7 +10,7 @@
 <style>
 :root{
   --primary:#2563eb;
-  --bg:#f4f6f9;
+  --bg:#f3f4f6;
   --card:#ffffff;
   --border:#e5e7eb;
   --text:#1f2937;
@@ -30,9 +30,6 @@ body{
   padding:20px;
 }
 
-h1{margin-bottom:5px;}
-.subtitle{color:var(--muted);margin-bottom:25px;}
-
 .card{
   background:var(--card);
   border-radius:12px;
@@ -44,15 +41,14 @@ h1{margin-bottom:5px;}
 .grid{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:15px;
+  gap:20px;
 }
 
 .field{display:flex;flex-direction:column;}
-.field.full{grid-column:1/-1;}
 
-label{font-weight:600;font-size:14px;margin-bottom:5px;}
+label{font-weight:600;margin-bottom:6px;}
 
-select,input{
+select{
   padding:10px;
   border-radius:8px;
   border:1px solid var(--border);
@@ -60,17 +56,13 @@ select,input{
 
 button{
   margin-top:20px;
-  padding:12px;
+  padding:10px 18px;
   border:none;
   border-radius:8px;
   background:var(--primary);
   color:white;
   font-weight:600;
   cursor:pointer;
-}
-
-button.secondary{
-  background:#6b7280;
 }
 
 table{
@@ -97,22 +89,13 @@ th{
   background:#10b981;
   color:white;
 }
-
-.section-title{
-  font-weight:600;
-  margin-bottom:15px;
-}
-.message{margin-top:10px;}
-.success{color:#15803d;}
-.error{color:#b91c1c;}
 </style>
 </head>
 <body>
 
 <div class="container">
 
-<h1>Configuración RIPS</h1>
-<div class="subtitle">Administra configuración de procedimientos</div>
+<h2>Configuración RIPS</h2>
 
 <div class="card">
 <div class="grid">
@@ -129,7 +112,7 @@ th{
 
 <div class="field">
 <label>Servicio</label>
-<select id="servicio"></select>
+<select id="servicio" disabled></select>
 </div>
 
 <div class="field">
@@ -140,17 +123,16 @@ th{
 </div>
 
 <button id="guardarBtn">Guardar configuración</button>
-<button id="cancelarBtn" class="secondary" style="display:none;">Cancelar edición</button>
 
-<div id="msg" class="message"></div>
 </div>
 
-<!-- CONFIGURADOS -->
 <div class="card">
-<div class="section-title">Procedimientos configurados</div>
+<h3>Procedimientos configurados</h3>
 <table>
 <thead>
 <tr>
+<th>ID</th>
+<th>CUPS</th>
 <th>Procedimiento</th>
 <th>Servicio</th>
 <th>Finalidad</th>
@@ -161,9 +143,8 @@ th{
 </table>
 </div>
 
-<!-- PENDIENTES -->
 <div class="card">
-<div class="section-title">Procedimientos pendientes</div>
+<h3>Procedimientos pendientes</h3>
 <table>
 <thead>
 <tr>
@@ -180,7 +161,7 @@ th{
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const supabase=createClient(
+const supabase = createClient(
 "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
@@ -191,24 +172,8 @@ const sedeSelect=document.getElementById("sedeSelect");
 const procedimientoSelect=document.getElementById("procedimiento");
 const servicioSelect=document.getElementById("servicio");
 const finalidadSelect=document.getElementById("finalidad");
-const guardarBtn=document.getElementById("guardarBtn");
-const cancelarBtn=document.getElementById("cancelarBtn");
-const msg=document.getElementById("msg");
-const tablaPendientes=document.getElementById("tablaPendientes");
 const tablaConfigurados=document.getElementById("tablaConfigurados");
-
-function showMessage(text,type){
-  msg.className="message "+type;
-  msg.textContent=text;
-}
-
-async function cargarTodo(){
-  await cargarSedes();
-  await cargarProcedimientos();
-  await cargarFinalidades();
-  await cargarConfigurados();
-  await cargarPendientes();
-}
+const tablaPendientes=document.getElementById("tablaPendientes");
 
 async function cargarSedes(){
   const {data}=await supabase.from("sedes").select("id,nombre").eq("activo",true);
@@ -219,7 +184,10 @@ async function cargarSedes(){
 }
 
 async function cargarProcedimientos(){
-  const {data}=await supabase.from("procedimientos_precios").select("id,procedimiento").eq("activo",true);
+  const {data}=await supabase.from("procedimientos_precios")
+  .select("id,procedimiento")
+  .eq("activo",true);
+
   procedimientoSelect.innerHTML='<option value="">Seleccione procedimiento</option>';
   data.forEach(p=>{
     procedimientoSelect.innerHTML+=`<option value="${p.id}">${p.procedimiento}</option>`;
@@ -227,14 +195,19 @@ async function cargarProcedimientos(){
 }
 
 async function cargarFinalidades(){
-  const {data}=await supabase.from("finalidad_tecnologia").select("codigo,descripcion").eq("activo",true);
+  const {data}=await supabase.from("finalidad_tecnologia")
+  .select("codigo,descripcion")
+  .eq("activo",true);
+
   finalidadSelect.innerHTML='<option value="">Seleccione finalidad</option>';
   data.forEach(f=>{
-    finalidadSelect.innerHTML+=`<option value="${f.codigo}">${f.codigo} - ${f.descripcion}</option>`;
+    finalidadSelect.innerHTML+=`<option value="${f.codigo}">${f.descripcion}</option>`;
   });
 }
 
 async function cargarServicios(sedeId){
+  servicioSelect.disabled=false;
+
   const {data}=await supabase
   .from("servicios_habilitados_sede")
   .select("id,nombre_servicio,cod_servicio")
@@ -247,6 +220,15 @@ async function cargarServicios(sedeId){
   });
 }
 
+sedeSelect.addEventListener("change",()=>{
+  if(sedeSelect.value){
+    cargarServicios(sedeSelect.value);
+  }else{
+    servicioSelect.innerHTML="";
+    servicioSelect.disabled=true;
+  }
+});
+
 async function cargarConfigurados(){
   const {data}=await supabase
   .from("procedimiento_configuracion_rips")
@@ -255,7 +237,7 @@ async function cargarConfigurados(){
     procedimiento_id,
     finalidad_codigo,
     servicio_habilitado_id,
-    procedimientos_precios(procedimiento),
+    procedimientos_precios(id,procedimiento,codigo_cups),
     servicios_habilitados_sede(nombre_servicio,cod_servicio),
     finalidad_tecnologia(descripcion)
   `);
@@ -264,11 +246,14 @@ async function cargarConfigurados(){
   data.forEach(c=>{
     tablaConfigurados.innerHTML+=`
     <tr>
+      <td>${c.procedimientos_precios.id}</td>
+      <td>${c.procedimientos_precios.codigo_cups ?? '-'}</td>
       <td>${c.procedimientos_precios.procedimiento}</td>
       <td>${c.servicios_habilitados_sede.cod_servicio} - ${c.servicios_habilitados_sede.nombre_servicio}</td>
       <td>${c.finalidad_tecnologia.descripcion}</td>
       <td>
-        <button class="action-btn" onclick="editar('${c.id}','${c.procedimiento_id}','${c.servicio_habilitado_id}','${c.finalidad_codigo}')">
+        <button class="action-btn"
+        onclick="editar('${c.id}','${c.procedimiento_id}','${c.servicio_habilitado_id}','${c.finalidad_codigo}')">
         Editar
         </button>
       </td>
@@ -278,32 +263,38 @@ async function cargarConfigurados(){
 }
 
 async function cargarPendientes(){
-  const {data:procedimientos}=await supabase.from("procedimientos_precios").select("id,procedimiento").eq("activo",true);
-  const {data:configurados}=await supabase.from("procedimiento_configuracion_rips").select("procedimiento_id");
+  const {data:procedimientos}=await supabase.from("procedimientos_precios")
+  .select("id,procedimiento")
+  .eq("activo",true);
+
+  const {data:configurados}=await supabase
+  .from("procedimiento_configuracion_rips")
+  .select("procedimiento_id");
+
   const ids=configurados.map(c=>c.procedimiento_id);
   const pendientes=procedimientos.filter(p=>!ids.includes(p.id));
+
   tablaPendientes.innerHTML="";
   pendientes.forEach(p=>{
-    tablaPendientes.innerHTML+=`<tr><td>${p.id}</td><td>${p.procedimiento}</td></tr>`;
+    tablaPendientes.innerHTML+=`
+    <tr>
+      <td>${p.id}</td>
+      <td>${p.procedimiento}</td>
+    </tr>
+    `;
   });
 }
 
-window.editar=(id,procId,servId,finId)=>{
+window.editar=async(id,procId,servId,finId)=>{
   editandoId=id;
   procedimientoSelect.value=procId;
-  servicioSelect.value=servId;
   finalidadSelect.value=finId;
-  guardarBtn.textContent="Actualizar configuración";
-  cancelarBtn.style.display="inline-block";
+
+  await cargarServicios(sedeSelect.value);
+  servicioSelect.value=servId;
 }
 
-cancelarBtn.onclick=()=>{
-  editandoId=null;
-  guardarBtn.textContent="Guardar configuración";
-  cancelarBtn.style.display="none";
-}
-
-guardarBtn.onclick=async ()=>{
+document.getElementById("guardarBtn").onclick=async()=>{
   const payload={
     procedimiento_id:Number(procedimientoSelect.value),
     servicio_habilitado_id:servicioSelect.value,
@@ -314,25 +305,21 @@ guardarBtn.onclick=async ()=>{
     await supabase.from("procedimiento_configuracion_rips")
     .update(payload)
     .eq("id",editandoId);
-    showMessage("Actualizado correctamente","success");
   }else{
     await supabase.from("procedimiento_configuracion_rips")
     .insert(payload);
-    showMessage("Guardado correctamente","success");
   }
 
   editandoId=null;
-  guardarBtn.textContent="Guardar configuración";
-  cancelarBtn.style.display="none";
   cargarConfigurados();
   cargarPendientes();
 }
 
-sedeSelect.addEventListener("change",()=>{
-  if(sedeSelect.value) cargarServicios(sedeSelect.value);
-});
-
-cargarTodo();
+cargarSedes();
+cargarProcedimientos();
+cargarFinalidades();
+cargarConfigurados();
+cargarPendientes();
 </script>
 
 </body>
