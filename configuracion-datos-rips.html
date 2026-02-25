@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="es">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>Configuración RIPS</title>
 
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
@@ -11,7 +11,7 @@
 :root{
   --primary:#2563eb;
   --danger:#dc2626;
-  --success:#16a34a;
+  --success:#10b981;
   --bg:#f3f4f6;
   --card:#ffffff;
   --border:#e5e7eb;
@@ -19,7 +19,7 @@
 
 body{
   margin:0;
-  font-family:'Inter', sans-serif;
+  font-family:'Inter',sans-serif;
   background:var(--bg);
 }
 
@@ -31,9 +31,9 @@ body{
 
 .card{
   background:var(--card);
+  border:1px solid var(--border);
   border-radius:12px;
   padding:25px;
-  border:1px solid var(--border);
   margin-bottom:25px;
 }
 
@@ -45,7 +45,10 @@ body{
 
 .field{display:flex;flex-direction:column;}
 
-label{font-weight:600;margin-bottom:6px;}
+label{
+  font-weight:600;
+  margin-bottom:6px;
+}
 
 select{
   padding:10px;
@@ -58,13 +61,20 @@ button{
   padding:10px 18px;
   border:none;
   border-radius:8px;
+  background:var(--primary);
+  color:white;
   font-weight:600;
   cursor:pointer;
 }
 
-.btn-primary{ background:var(--primary); color:white; }
-.btn-danger{ background:var(--danger); color:white; }
-.btn-success{ background:var(--success); color:white; }
+.btn-edit{
+  background:var(--success);
+  margin-right:5px;
+}
+
+.btn-delete{
+  background:var(--danger);
+}
 
 table{
   width:100%;
@@ -78,16 +88,6 @@ th,td{
 
 th{
   background:#f9fafb;
-  text-align:left;
-}
-
-.action-btn{
-  padding:6px 10px;
-  font-size:12px;
-  border-radius:6px;
-  border:none;
-  cursor:pointer;
-  margin-right:5px;
 }
 </style>
 </head>
@@ -122,8 +122,7 @@ th{
 
 </div>
 
-<button id="guardarBtn" class="btn-primary">Guardar configuración</button>
-
+<button id="guardarBtn">Guardar configuración</button>
 </div>
 
 <div class="card">
@@ -143,19 +142,6 @@ th{
 </table>
 </div>
 
-<div class="card">
-<h3>Procedimientos pendientes</h3>
-<table>
-<thead>
-<tr>
-<th>ID</th>
-<th>Procedimiento</th>
-</tr>
-</thead>
-<tbody id="tablaPendientes"></tbody>
-</table>
-</div>
-
 </div>
 
 <script type="module">
@@ -163,17 +149,24 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const supabase = createClient(
 "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+"PEGA_AQUI_TU_ANON_KEY"
 );
 
-let procedimientosPendientesGlobal=[];
+let editandoId=null;
+let procedimientosGlobal=[];
 
 const sedeSelect=document.getElementById("sedeSelect");
 const procedimientoSelect=document.getElementById("procedimiento");
 const servicioSelect=document.getElementById("servicio");
 const finalidadSelect=document.getElementById("finalidad");
 const tablaConfigurados=document.getElementById("tablaConfigurados");
-const tablaPendientes=document.getElementById("tablaPendientes");
+
+async function init(){
+  await cargarSedes();
+  await cargarFinalidades();
+  await cargarProcedimientos();
+  await cargarConfigurados();
+}
 
 async function cargarSedes(){
   const {data}=await supabase.from("sedes").select("id,nombre").eq("activo",true);
@@ -183,17 +176,30 @@ async function cargarSedes(){
   });
 }
 
-async function cargarServicios(sedeId){
-  servicioSelect.disabled=false;
-  const {data}=await supabase
-  .from("servicios_habilitados_sede")
-  .select("id,nombre_servicio,cod_servicio")
-  .eq("sede_id",sedeId)
+async function cargarProcedimientos(){
+  const {data}=await supabase.from("procedimientos_precios")
+  .select("id,procedimiento,codigo_cups")
   .eq("activo",true);
 
-  servicioSelect.innerHTML='<option value="">Seleccione servicio</option>';
-  data.forEach(s=>{
-    servicioSelect.innerHTML+=`<option value="${s.id}">${s.cod_servicio} - ${s.nombre_servicio}</option>`;
+  procedimientosGlobal=data;
+  actualizarDropdownProcedimientos();
+}
+
+async function actualizarDropdownProcedimientos(){
+  const {data:configurados}=await supabase
+  .from("procedimiento_configuracion_rips")
+  .select("procedimiento_id");
+
+  const ids=configurados.map(c=>c.procedimiento_id);
+
+  const disponibles=procedimientosGlobal.filter(p=>!ids.includes(p.id));
+
+  procedimientoSelect.innerHTML='<option value="">Seleccione procedimiento</option>';
+  disponibles.forEach(p=>{
+    procedimientoSelect.innerHTML+=`
+      <option value="${p.id}">
+        ${p.procedimiento} (${p.codigo_cups ?? 'Sin CUPS'})
+      </option>`;
   });
 }
 
@@ -208,35 +214,30 @@ async function cargarFinalidades(){
   });
 }
 
-async function cargarPendientesYSelect(){
-  const {data:procedimientos}=await supabase
-  .from("procedimientos_precios")
-  .select("id,procedimiento")
+async function cargarServicios(sedeId){
+  servicioSelect.disabled=false;
+  const {data}=await supabase
+  .from("servicios_habilitados_sede")
+  .select("id,nombre_servicio,cod_servicio")
+  .eq("sede_id",sedeId)
   .eq("activo",true);
 
-  const {data:configurados}=await supabase
-  .from("procedimiento_configuracion_rips")
-  .select("procedimiento_id");
-
-  const ids=configurados.map(c=>c.procedimiento_id);
-  procedimientosPendientesGlobal=procedimientos.filter(p=>!ids.includes(p.id));
-
-  // Tabla pendientes
-  tablaPendientes.innerHTML="";
-  procedimientosPendientesGlobal.forEach(p=>{
-    tablaPendientes.innerHTML+=`
-      <tr><td>${p.id}</td><td>${p.procedimiento}</td></tr>
-    `;
-  });
-
-  // Select procedimiento
-  procedimientoSelect.innerHTML='<option value="">Seleccione procedimiento</option>';
-  procedimientosPendientesGlobal.forEach(p=>{
-    procedimientoSelect.innerHTML+=`
-      <option value="${p.id}">${p.procedimiento}</option>
-    `;
+  servicioSelect.innerHTML='<option value="">Seleccione servicio</option>';
+  data.forEach(s=>{
+    servicioSelect.innerHTML+=`
+      <option value="${s.id}">
+        ${s.cod_servicio} - ${s.nombre_servicio}
+      </option>`;
   });
 }
+
+sedeSelect.addEventListener("change",()=>{
+  if(sedeSelect.value){
+    cargarServicios(sedeSelect.value);
+  }else{
+    servicioSelect.disabled=true;
+  }
+});
 
 async function cargarConfigurados(){
   const {data}=await supabase
@@ -244,6 +245,8 @@ async function cargarConfigurados(){
   .select(`
     id,
     procedimiento_id,
+    finalidad_codigo,
+    servicio_habilitado_id,
     procedimientos_precios(id,procedimiento,codigo_cups),
     servicios_habilitados_sede(nombre_servicio,cod_servicio),
     finalidad_tecnologia(descripcion)
@@ -259,18 +262,17 @@ async function cargarConfigurados(){
       <td>${c.servicios_habilitados_sede.cod_servicio} - ${c.servicios_habilitados_sede.nombre_servicio}</td>
       <td>${c.finalidad_tecnologia.descripcion}</td>
       <td>
-        <button class="action-btn btn-danger"
-          onclick="eliminar('${c.id}')">
-          Eliminar
-        </button>
+        <button class="btn-edit" onclick="editar('${c.id}','${c.procedimiento_id}','${c.servicio_habilitado_id}','${c.finalidad_codigo}')">Editar</button>
+        <button class="btn-delete" onclick="eliminar('${c.id}')">Eliminar</button>
       </td>
-    </tr>
-    `;
+    </tr>`;
   });
+
+  actualizarDropdownProcedimientos();
 }
 
 window.eliminar=async(id)=>{
-  if(!confirm("¿Seguro que desea eliminar esta configuración?")) return;
+  if(!confirm("¿Seguro que deseas eliminar esta configuración?")) return;
 
   await supabase
   .from("procedimiento_configuracion_rips")
@@ -278,7 +280,14 @@ window.eliminar=async(id)=>{
   .eq("id",id);
 
   await cargarConfigurados();
-  await cargarPendientesYSelect();
+}
+
+window.editar=async(id,procId,servId,finId)=>{
+  editandoId=id;
+  procedimientoSelect.value=procId;
+  finalidadSelect.value=finId;
+  await cargarServicios(sedeSelect.value);
+  servicioSelect.value=servId;
 }
 
 document.getElementById("guardarBtn").onclick=async()=>{
@@ -288,20 +297,20 @@ document.getElementById("guardarBtn").onclick=async()=>{
     finalidad_codigo:Number(finalidadSelect.value)
   };
 
-  await supabase.from("procedimiento_configuracion_rips").insert(payload);
+  if(editandoId){
+    await supabase.from("procedimiento_configuracion_rips")
+    .update(payload)
+    .eq("id",editandoId);
+  }else{
+    await supabase.from("procedimiento_configuracion_rips")
+    .insert(payload);
+  }
 
+  editandoId=null;
   await cargarConfigurados();
-  await cargarPendientesYSelect();
-}
+};
 
-sedeSelect.addEventListener("change",()=>{
-  if(sedeSelect.value) cargarServicios(sedeSelect.value);
-});
-
-cargarSedes();
-cargarFinalidades();
-cargarConfigurados();
-cargarPendientesYSelect();
+init();
 </script>
 
 </body>
