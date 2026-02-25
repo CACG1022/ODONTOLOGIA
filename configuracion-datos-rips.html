@@ -1,232 +1,309 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Configurar RIPS por Procedimiento</title>
-  <style>
-    body { font-family: system-ui, Arial; margin: 24px; max-width: 900px; }
-    .card { border: 1px solid #ddd; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
-    label { display:block; font-weight: 600; margin-top: 10px; }
-    select, input, button { width: 100%; padding: 10px; margin-top: 6px; }
-    button { cursor: pointer; font-weight: 700; }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .muted { color: #666; font-size: 14px; }
-    .ok { color: #0a7a2f; white-space: pre-wrap; }
-    .err { color: #b00020; white-space: pre-wrap; }
-    code { background:#f6f6f6; padding: 2px 6px; border-radius: 6px; }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Configuración RIPS</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --primary:#2563eb;
+  --bg:#f4f6f9;
+  --card:#ffffff;
+  --border:#e5e7eb;
+  --text:#1f2937;
+  --muted:#6b7280;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  font-family:'Inter', sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+.container{
+  max-width:900px;
+  margin:50px auto;
+  padding:20px;
+}
+
+h1{
+  font-size:28px;
+  margin-bottom:8px;
+}
+
+.subtitle{
+  color:var(--muted);
+  margin-bottom:30px;
+}
+
+.card{
+  background:var(--card);
+  border-radius:14px;
+  padding:30px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.05);
+  border:1px solid var(--border);
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+}
+
+.field{
+  display:flex;
+  flex-direction:column;
+}
+
+.field.full{
+  grid-column:1/-1;
+}
+
+label{
+  font-weight:600;
+  margin-bottom:6px;
+  font-size:14px;
+}
+
+select,input{
+  padding:12px;
+  border-radius:8px;
+  border:1px solid var(--border);
+  font-size:14px;
+}
+
+select:focus,input:focus{
+  outline:none;
+  border-color:var(--primary);
+}
+
+button{
+  margin-top:25px;
+  padding:14px;
+  border:none;
+  border-radius:8px;
+  background:var(--primary);
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+  transition:.2s;
+}
+
+button:hover{
+  opacity:.9;
+}
+
+.message{
+  margin-top:15px;
+  font-size:14px;
+}
+
+.success{ color:#15803d; }
+.error{ color:#b91c1c; }
+
+.footer-card{
+  margin-top:30px;
+  padding:20px;
+  background:white;
+  border-radius:12px;
+  border:1px solid var(--border);
+}
+</style>
 </head>
 <body>
+
+<div class="container">
+
   <h1>Configuración RIPS</h1>
-  <p class="muted">
-    Este formulario inserta en <code>procedimiento_configuracion_rips</code> la relación:
-    procedimiento → servicio habilitado → finalidad.
-  </p>
-
-  <div class="card">
-    <div class="row">
-      <div>
-        <label for="sedeId">Sede (UUID)</label>
-        <input id="sedeId" placeholder="Pega el UUID de la sede" />
-        <p class="muted">Se usa para filtrar <code>servicios_habilitados_sede</code> por sede.</p>
-      </div>
-      <div>
-        <label for="activo">Activo</label>
-        <select id="activo">
-          <option value="true" selected>true</option>
-          <option value="false">false</option>
-        </select>
-      </div>
-    </div>
-
-    <label for="procedimiento">Procedimiento</label>
-    <select id="procedimiento"></select>
-
-    <label for="servicio">Servicio habilitado (según sede)</label>
-    <select id="servicio"></select>
-
-    <label for="finalidad">Finalidad tecnología</label>
-    <select id="finalidad"></select>
-
-    <button id="guardar">Guardar configuración</button>
-
-    <div id="msg" style="margin-top:12px;"></div>
+  <div class="subtitle">
+    Configura la relación entre procedimiento, servicio habilitado y finalidad.
   </div>
 
   <div class="card">
-    <h2>Tips</h2>
-    <ul class="muted">
-      <li>Si el dropdown de servicios sale vacío: revisa que exista <code>sede_id</code> y servicios en <code>servicios_habilitados_sede</code>.</li>
-      <li>Si al guardar da “permission denied” o similar: es RLS (políticas) o falta permiso de insert.</li>
+
+    <div class="grid">
+
+      <div class="field">
+        <label>Sede</label>
+        <select id="sedeSelect">
+          <option value="">Cargando sedes...</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Activo</label>
+        <select id="activo">
+          <option value="true" selected>Activo</option>
+          <option value="false">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="field full">
+        <label>Procedimiento</label>
+        <select id="procedimiento"></select>
+      </div>
+
+      <div class="field full">
+        <label>Servicio habilitado (según sede)</label>
+        <select id="servicio"></select>
+      </div>
+
+      <div class="field full">
+        <label>Finalidad tecnología</label>
+        <select id="finalidad"></select>
+      </div>
+
+    </div>
+
+    <button id="guardarBtn">Guardar configuración</button>
+
+    <div id="msg" class="message"></div>
+
+  </div>
+
+  <div class="footer-card">
+    <strong>Tips:</strong>
+    <ul>
+      <li>Si no aparecen servicios, revisa que la sede tenga servicios habilitados.</li>
+      <li>Si hay error de permisos, revisa RLS en Supabase.</li>
     </ul>
   </div>
 
-  <!-- Supabase JS v2 -->
-  <script type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+</div>
 
-    // ✅ Tu Project URL (esto no es secreto)
-    const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    // ❗ NO pegues aquí tu key real en un repo público.
-    // Ideal: inyectarla con tu build system o backend.
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const elSedeId = document.getElementById("sedeId");
-    const elProcedimiento = document.getElementById("procedimiento");
-    const elServicio = document.getElementById("servicio");
-    const elFinalidad = document.getElementById("finalidad");
-    const elActivo = document.getElementById("activo");
-    const elGuardar = document.getElementById("guardar");
-    const elMsg = document.getElementById("msg");
+const sedeSelect = document.getElementById("sedeSelect");
+const procedimientoSelect = document.getElementById("procedimiento");
+const servicioSelect = document.getElementById("servicio");
+const finalidadSelect = document.getElementById("finalidad");
+const activoSelect = document.getElementById("activo");
+const guardarBtn = document.getElementById("guardarBtn");
+const msg = document.getElementById("msg");
 
-    function setMsg(type, text) {
-      elMsg.className = type === "ok" ? "ok" : "err";
-      elMsg.textContent = text;
-    }
+function showMessage(text,type){
+  msg.className = "message " + type;
+  msg.textContent = text;
+}
 
-    function clearSelect(selectEl, placeholder) {
-      selectEl.innerHTML = "";
-      const opt = document.createElement("option");
-      opt.value = "";
-      opt.textContent = placeholder;
-      opt.disabled = true;
-      opt.selected = true;
-      selectEl.appendChild(opt);
-    }
+async function cargarSedes(){
+  const {data,error} = await supabase
+    .from("sedes")
+    .select("id,nombre")
+    .eq("activo",true)
+    .order("nombre",{ascending:true});
 
-    async function loadProcedimientos() {
-      clearSelect(elProcedimiento, "Cargando procedimientos...");
-      const { data, error } = await supabase
-        .from("procedimientos_precios")
-        .select("id, procedimiento")
-        .eq("activo", true)
-        .order("procedimiento", { ascending: true });
+  if(error){
+    showMessage("Error cargando sedes: "+error.message,"error");
+    return;
+  }
 
-      if (error) {
-        clearSelect(elProcedimiento, "Error cargando procedimientos");
-        setMsg("err", "Error cargando procedimientos:\n" + error.message);
-        return;
-      }
+  sedeSelect.innerHTML='<option value="">Seleccione una sede</option>';
+  data.forEach(s=>{
+    const opt=document.createElement("option");
+    opt.value=s.id;
+    opt.textContent=s.nombre;
+    sedeSelect.appendChild(opt);
+  });
+}
 
-      clearSelect(elProcedimiento, "Selecciona un procedimiento");
-      data.forEach(row => {
-        const opt = document.createElement("option");
-        opt.value = row.id;
-        opt.textContent = `${row.procedimiento} (id: ${row.id})`;
-        elProcedimiento.appendChild(opt);
-      });
-    }
+async function cargarProcedimientos(){
+  const {data,error} = await supabase
+    .from("procedimientos_precios")
+    .select("id,procedimiento")
+    .eq("activo",true)
+    .order("procedimiento",{ascending:true});
 
-    async function loadFinalidades() {
-      clearSelect(elFinalidad, "Cargando finalidades...");
-      const { data, error } = await supabase
-        .from("finalidad_tecnologia")
-        .select("codigo, descripcion")
-        .eq("activo", true)
-        .order("codigo", { ascending: true });
+  procedimientoSelect.innerHTML='<option value="">Seleccione procedimiento</option>';
+  data.forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.id;
+    opt.textContent=p.procedimiento;
+    procedimientoSelect.appendChild(opt);
+  });
+}
 
-      if (error) {
-        clearSelect(elFinalidad, "Error cargando finalidades");
-        setMsg("err", "Error cargando finalidades:\n" + error.message);
-        return;
-      }
+async function cargarFinalidades(){
+  const {data} = await supabase
+    .from("finalidad_tecnologia")
+    .select("codigo,descripcion")
+    .eq("activo",true)
+    .order("codigo");
 
-      clearSelect(elFinalidad, "Selecciona una finalidad");
-      data.forEach(row => {
-        const opt = document.createElement("option");
-        opt.value = row.codigo;
-        opt.textContent = `${row.codigo} - ${row.descripcion}`;
-        elFinalidad.appendChild(opt);
-      });
-    }
+  finalidadSelect.innerHTML='<option value="">Seleccione finalidad</option>';
+  data.forEach(f=>{
+    const opt=document.createElement("option");
+    opt.value=f.codigo;
+    opt.textContent=f.codigo+" - "+f.descripcion;
+    finalidadSelect.appendChild(opt);
+  });
+}
 
-    async function loadServiciosBySede() {
-      const sedeId = elSedeId.value.trim();
-      clearSelect(elServicio, sedeId ? "Cargando servicios..." : "Primero escribe el UUID de la sede");
+async function cargarServicios(sedeId){
+  servicioSelect.innerHTML='<option value="">Cargando servicios...</option>';
 
-      if (!sedeId) return;
+  const {data,error} = await supabase
+    .from("servicios_habilitados_sede")
+    .select("id,nombre_servicio,cod_servicio")
+    .eq("sede_id",sedeId)
+    .eq("activo",true)
+    .order("cod_servicio");
 
-      const { data, error } = await supabase
-        .from("servicios_habilitados_sede")
-        .select("id, nombre_servicio, cod_servicio")
-        .eq("sede_id", sedeId)
-        .eq("activo", true)
-        .order("cod_servicio", { ascending: true });
+  if(error){
+    showMessage(error.message,"error");
+    return;
+  }
 
-      if (error) {
-        clearSelect(elServicio, "Error cargando servicios");
-        setMsg("err", "Error cargando servicios:\n" + error.message);
-        return;
-      }
+  servicioSelect.innerHTML='<option value="">Seleccione servicio</option>';
+  data.forEach(s=>{
+    const opt=document.createElement("option");
+    opt.value=s.id;
+    opt.textContent=s.cod_servicio+" - "+s.nombre_servicio;
+    servicioSelect.appendChild(opt);
+  });
+}
 
-      if (!data || data.length === 0) {
-        clearSelect(elServicio, "No hay servicios para esa sede");
-        setMsg("err", "No se encontraron servicios habilitados para esa sede. Revisa sede_id y datos.");
-        return;
-      }
+sedeSelect.addEventListener("change",()=>{
+  const sedeId=sedeSelect.value;
+  if(sedeId) cargarServicios(sedeId);
+});
 
-      clearSelect(elServicio, "Selecciona un servicio");
-      data.forEach(row => {
-        const opt = document.createElement("option");
-        opt.value = row.id; // uuid del registro en servicios_habilitados_sede
-        opt.textContent = `${row.cod_servicio} - ${row.nombre_servicio} (id: ${row.id})`;
-        elServicio.appendChild(opt);
-      });
+guardarBtn.addEventListener("click",async ()=>{
+  const payload={
+    procedimiento_id: Number(procedimientoSelect.value),
+    servicio_habilitado_id: servicioSelect.value,
+    finalidad_codigo: Number(finalidadSelect.value),
+    activo: activoSelect.value==="true"
+  };
 
-      setMsg("ok", "Servicios cargados para la sede.");
-    }
+  const {data,error} = await supabase
+    .from("procedimiento_configuracion_rips")
+    .insert(payload)
+    .select()
+    .single();
 
-    async function guardarConfig() {
-      elGuardar.disabled = true;
-      try {
-        const sedeId = elSedeId.value.trim();
-        const procedimientoId = elProcedimiento.value;
-        const servicioId = elServicio.value;
-        const finalidadCodigo = parseInt(elFinalidad.value, 10);
-        const activo = elActivo.value === "true";
+  if(error){
+    showMessage("Error: "+error.message,"error");
+  }else{
+    showMessage("Configuración guardada correctamente","success");
+  }
+});
 
-        if (!sedeId) throw new Error("Debes ingresar el UUID de la sede.");
-        if (!procedimientoId) throw new Error("Debes seleccionar un procedimiento.");
-        if (!servicioId) throw new Error("Debes seleccionar un servicio habilitado.");
-        if (!Number.isFinite(finalidadCodigo)) throw new Error("Debes seleccionar una finalidad válida.");
+cargarSedes();
+cargarProcedimientos();
+cargarFinalidades();
+</script>
 
-        // Inserta en procedimiento_configuracion_rips
-        const payload = {
-          procedimiento_id: Number(procedimientoId),          // bigint en tu tabla
-          servicio_habilitado_id: servicioId,                 // uuid
-          finalidad_codigo: finalidadCodigo,                  // int
-          activo: activo
-        };
-
-        const { data, error } = await supabase
-          .from("procedimiento_configuracion_rips")
-          .insert(payload)
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        setMsg("ok", "✅ Guardado:\n" + JSON.stringify(data, null, 2));
-      } catch (e) {
-        setMsg("err", "❌ No se pudo guardar:\n" + (e?.message || String(e)));
-      } finally {
-        elGuardar.disabled = false;
-      }
-    }
-
-    // Eventos
-    elSedeId.addEventListener("change", loadServiciosBySede);
-    elSedeId.addEventListener("blur", loadServiciosBySede);
-    elGuardar.addEventListener("click", guardarConfig);
-
-    // Init
-    await loadProcedimientos();
-    await loadFinalidades();
-    clearSelect(elServicio, "Primero escribe el UUID de la sede");
-  </script>
 </body>
 </html>
