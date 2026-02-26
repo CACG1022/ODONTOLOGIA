@@ -267,6 +267,65 @@
     }
     @media(max-width:700px){ .grid{ grid-template-columns:1fr; } }
   </style>
+
+  <!-- ========================= -->
+  <!-- 🎨 NUEVO: estilos modal sedes (solo se agrega, no modifica estilos existentes) -->
+  <!-- ========================= -->
+  <style>
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(2,6,23,.55);
+      padding:18px;
+      z-index:9999;
+    }
+    .modal{
+      width:min(680px, 100%);
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      box-shadow:0 30px 70px rgba(2,6,23,.35);
+      overflow:hidden;
+    }
+    .modal-header{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:16px;
+      padding:18px 18px 12px;
+      border-bottom:1px solid var(--line);
+      background:#ffffff;
+    }
+    .modal-title{ font-weight:900; font-size:16px; }
+    .modal-subtitle{ color:var(--muted); font-size:12px; margin-top:2px; }
+    .modal-close{
+      background:transparent;
+      border:none;
+      cursor:pointer;
+      font-size:18px;
+      line-height:1;
+      padding:8px 10px;
+      border-radius:12px;
+    }
+    .modal-body{ padding:16px 18px; }
+    .modal-actions{
+      display:flex;
+      justify-content:flex-end;
+      gap:10px;
+      padding:14px 18px 18px;
+      border-top:1px solid var(--line);
+      background:#ffffff;
+    }
+    .btn-secondary{
+      background:#0f172a;
+      color:#fff;
+      box-shadow:none;
+    }
+    .table-sedes td{ padding:12px 14px; border-bottom:1px solid var(--line); font-size:13px; }
+  </style>
 </head>
 
 <body>
@@ -331,8 +390,204 @@
         <button onclick="guardarEmisor()">Guardar información</button>
       </div>
     </div>
+
+    <!-- ========================= -->
+    <!-- 🏥 NUEVO: Gestión de sedes -->
+    <!-- ========================= -->
+    <div class="card" style="margin-top:22px;">
+      <div class="section">
+        <h3>Sedes</h3>
+        <div class="grid">
+          <div class="full">
+            <button type="button" id="btnAbrirModalSede" onclick="abrirModalSede()">Agregar sede</button>
+          </div>
+        </div>
+        <div class="grid" style="margin-top:14px;">
+          <div class="full">
+            <label>Sedes registradas</label>
+            <div style="overflow:auto; border:1px solid var(--line); border-radius:12px;">
+              <table class="table-sedes" style="width:100%; border-collapse:collapse; min-width:720px;">
+                <thead>
+                  <tr>
+                    <th style="text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); background:#f8fafc;">Nombre</th>
+                    <th style="text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); background:#f8fafc;">Dirección</th>
+                    <th style="text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); background:#f8fafc;">Código REPS</th>
+                    <th style="text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); background:#f8fafc;">Activo</th>
+                    <th style="text-align:left; padding:12px 14px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); background:#f8fafc;">Creado</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody_sedes">
+                  <tr><td colspan="5" style="padding:14px; color:var(--muted);">Cargando sedes...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================= -->
+    <!-- 🪟 NUEVO: Modal crear sede -->
+    <!-- ========================= -->
+    <div id="modalSedeOverlay" class="modal-overlay" aria-hidden="true">
+      <div class="modal">
+        <div class="modal-header">
+          <div>
+            <div class="modal-title">Agregar sede</div>
+            <div class="modal-subtitle">Crea una nueva sede para habilitación / RIPS</div>
+          </div>
+          <button type="button" class="modal-close" onclick="cerrarModalSede()" aria-label="Cerrar">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <div class="grid" style="grid-template-columns:repeat(2,1fr); gap:14px 16px;">
+            <div class="full">
+              <label>Nombre</label>
+              <input id="sede_nombre" placeholder="Ej: Dentova Sede Principal" />
+            </div>
+            <div class="full">
+              <label>Dirección</label>
+              <input id="sede_direccion" placeholder="Ej: Cra 15 # 93-60" />
+            </div>
+            <div>
+              <label>Código REPS</label>
+              <input id="sede_codigo_reps" placeholder="Ej: 1100101234" />
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+              <label class="checkline" style="margin:0;">
+                <input type="checkbox" id="sede_activo" checked />
+                Sede activa
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" onclick="cerrarModalSede()">Cancelar</button>
+          <button type="button" onclick="guardarSede()">Guardar sede</button>
+        </div>
+      </div>
+    </div>
+
   </div>
+
+  <!-- ========================= -->
+  <!-- 🧠 NUEVO: lógica sedes (solo se agrega, no modifica scripts existentes) -->
+  <!-- ========================= -->
+  <script>
+    // =========================
+    // 🏥 SEDES · UI + CRUD básico
+    // =========================
+    function abrirModalSede(){
+      const ov = document.getElementById("modalSedeOverlay");
+      if (!ov) return;
+      ov.style.display = "flex";
+      ov.setAttribute("aria-hidden","false");
+      // limpiar campos (solo si existen)
+      const n = document.getElementById("sede_nombre");
+      const d = document.getElementById("sede_direccion");
+      const c = document.getElementById("sede_codigo_reps");
+      const a = document.getElementById("sede_activo");
+      if (n) n.value = "";
+      if (d) d.value = "";
+      if (c) c.value = "";
+      if (a) a.checked = true;
+    }
+
+    function cerrarModalSede(){
+      const ov = document.getElementById("modalSedeOverlay");
+      if (!ov) return;
+      ov.style.display = "none";
+      ov.setAttribute("aria-hidden","true");
+    }
+
+    async function cargarSedesTabla(){
+      const tbody = document.getElementById("tbody_sedes");
+      if (!tbody) return;
+
+      const { data, error } = await supabaseClient
+        .from("sedes")
+        .select("id,nombre,direccion,codigo_reps,activo,created_at")
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        console.error("❌ Error cargando sedes:", error);
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:14px; color:var(--muted);">Error cargando sedes</td></tr>`;
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:14px; color:var(--muted);">No hay sedes registradas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = "";
+      data.forEach(s => {
+        const created = s.created_at ? new Date(s.created_at).toLocaleString() : "";
+        tbody.insertAdjacentHTML("beforeend", `
+          <tr>
+            <td style="padding:12px 14px; border-bottom:1px solid var(--line); font-weight:800;">${(s.nombre ?? "").replaceAll("<","&lt;").replaceAll(">","&gt;")}</td>
+            <td style="padding:12px 14px; border-bottom:1px solid var(--line);">${(s.direccion ?? "").replaceAll("<","&lt;").replaceAll(">","&gt;")}</td>
+            <td style="padding:12px 14px; border-bottom:1px solid var(--line);">${(s.codigo_reps ?? "").replaceAll("<","&lt;").replaceAll(">","&gt;")}</td>
+            <td style="padding:12px 14px; border-bottom:1px solid var(--line);">${s.activo ? "Sí" : "No"}</td>
+            <td style="padding:12px 14px; border-bottom:1px solid var(--line); color:var(--muted); font-size:12px;">${created}</td>
+          </tr>
+        `);
+      });
+    }
+
+    async function guardarSede(){
+      const nombre = document.getElementById("sede_nombre")?.value?.trim();
+      const direccion = document.getElementById("sede_direccion")?.value?.trim();
+      const codigo_reps = document.getElementById("sede_codigo_reps")?.value?.trim();
+      const activo = !!document.getElementById("sede_activo")?.checked;
+
+      if (!nombre) { alert("⚠️ El nombre de la sede es obligatorio."); return; }
+
+      const { error } = await supabaseClient
+        .from("sedes")
+        .insert([{ nombre, direccion, codigo_reps, activo }]);
+
+      if (error) {
+        console.error("❌ Error guardando sede:", error);
+        alert("❌ No se pudo guardar la sede (revisa consola)");
+        return;
+      }
+
+      cerrarModalSede();
+      await cargarSedesTabla();
+      alert("✅ Sede guardada");
+    }
+
+    // Exponer funciones para onclick
+    window.abrirModalSede = abrirModalSede;
+    window.cerrarModalSede = cerrarModalSede;
+    window.guardarSede = guardarSede;
+
+    // Cargar sedes al iniciar (sin tocar el init existente; se agrega otro listener)
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // Reusa el verificador existente si está disponible
+        if (typeof window.verificarSesionYPermisos === "function") {
+          const ok = await window.verificarSesionYPermisos();
+          if (!ok) return;
+        }
+        await cargarSedesTabla();
+      } catch (e) {
+        console.error("❌ Error inicializando sedes:", e);
+      }
+    });
+
+    // Cerrar modal al hacer click fuera
+    document.addEventListener("click", (ev) => {
+      const ov = document.getElementById("modalSedeOverlay");
+      if (!ov) return;
+      if (ov.style.display !== "flex") return;
+      if (ev.target === ov) cerrarModalSede();
+    });
+  </script>
 </body>
 </html>
+
 
 
