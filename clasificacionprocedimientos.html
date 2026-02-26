@@ -89,6 +89,16 @@ th,td{
 th{
   background:#f9fafb;
 }
+
+
+.info-note{
+  font-size:12px;
+  color:#6b7280;
+  margin-top:6px;
+  line-height:1.4;
+}
+
+  
 </style>
 </head>
 <body>
@@ -113,11 +123,25 @@ th{
 <div class="field">
 <label>Servicio</label>
 <select id="servicio" disabled></select>
+<div class="info-note">
+Corresponde al código de tres (3) dígitos del servicio habilitado ante el REPS para la sede.
+Ejemplo: <strong>334 – Odontología General</strong>, 
+<strong>347 – Rehabilitación Oral</strong>.
+Este código es obligatorio para la generación correcta de los RIPS.
 </div>
+</div>
+
+  
 
 <div class="field">
 <label>Finalidad</label>
 <select id="finalidad"></select>
+<div class="info-note">
+Indica el propósito principal de la atención en salud según la normatividad RIPS 
+(Resolución 2275 de 2023). Es un código numérico de dos (2) dígitos que clasifica 
+si la atención fue por diagnóstico, tratamiento, rehabilitación, promoción o prevención.
+Este campo participa en validaciones automáticas relacionadas con edad, sexo,
+diagnóstico principal y pago moderador.
 </div>
 
 </div>
