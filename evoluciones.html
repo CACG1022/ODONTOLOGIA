@@ -1205,8 +1205,12 @@
     const finCod = conf.finalidad_codigo ?? "";
 
     if (inpFin) {
-      inpFin.value = finDesc ? `${finCod} - ${finDesc}` : String(finCod);
-    }
+  // Mostrar código + descripción al usuario
+  inpFin.value = finDesc ? `${finCod} - ${finDesc}` : String(finCod);
+
+  // 🔒 Guardar SOLO el código en un atributo oculto
+  inpFin.dataset.codigo = String(finCod);
+}
 
   } catch (err) {
     console.warn("⚠️ Error cargando config RIPS:", err);
@@ -1357,6 +1361,7 @@ async function cargarDiagnosticosCIE10() {
     
     if (cs) cs.value = "";
     if (fi) fi.value = "";
+    if (fi) delete fi.dataset.codigo;
     if (f) f.value = _hoyISO();
     if (h) h.value = _horaHHMM();
     if (p) p.value = "";
@@ -1561,7 +1566,8 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
 });
 
     const codServicio = (document.getElementById("evo_codservicio")?.value || "").trim();
-const finalidadTecnologiaSalud = (document.getElementById("evo_finalidad")?.value || "").trim();
+const inpFinalidad = document.getElementById("evo_finalidad");
+const finalidadTecnologiaSalud = (inpFinalidad?.dataset?.codigo || "").trim();
 
     
 
