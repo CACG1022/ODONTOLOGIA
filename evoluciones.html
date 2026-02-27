@@ -1591,7 +1591,7 @@ if (diagSecContainer) diagSecContainer.innerHTML = "";
             type="button"
             class="btn btn-agenda"
             style="padding:8px 10px; width:auto;"
-            onclick="openEvolucionDoc(${idx})"
+            onclick="verEvolucionDesdeWebhook('${idEvo}')"
             title="Ver evolución como documento"
           >
             Ver
@@ -1853,6 +1853,101 @@ if (inpProc) {
   window.openEvolucionDoc = openEvolucionDoc;
   window.closeEvoDocModal = closeEvoDocModal;
 
+  async function verEvolucionDesdeWebhook(idEvolucion) {
+
+  const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+
+  if (!cedula) {
+    alert("⚠️ No se pudo determinar la cédula del paciente.");
+    return;
+  }
+
+  const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9810501c-5c79-41b0-929b-1d13e8f4354c"
+    + "?cedula=" + encodeURIComponent(cedula)
+    + "&id_evolucion=" + encodeURIComponent(idEvolucion);
+
+  try {
+
+    const resp = await fetch(url, { cache: "no-store" });
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    const data = await resp.json();
+
+    if (!data || !data.evolucion) {
+      alert("⚠️ No se encontró la evolución.");
+      return;
+    }
+
+    abrirModalConDatos(data.evolucion);
+
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error consultando evolución.");
+  }
+}
+
+  function abrirModalConDatos(evo) {
+
+  const modal = document.getElementById("modalEvoDoc");
+  const body = document.getElementById("modalEvoDocBody");
+  const title = document.getElementById("modalEvoDocTitulo");
+
+  if (!modal || !body || !title) return;
+
+  title.textContent = "Evolución (Documento)";
+
+  const dxPrincipal = evo.diagnostico_principal
+    ? `${evo.diagnostico_principal.codigo} - ${evo.diagnostico_principal.descripcion}`
+    : "—";
+
+  const dxSec = (evo.diagnosticos_secundarios || [])
+    .map(d => `${d.codigo} - ${d.descripcion}`)
+    .join("<br>") || "—";
+
+  body.innerHTML = `
+    <div class="doc-title">Evolución clínica odontológica</div>
+
+    <div class="doc-box">
+      <div class="k">Procedimiento</div>
+      <div class="v">${evo.evo_tipo || "—"}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">Cod servicio</div>
+      <div class="v">${evo.codservicio || "—"}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">FinalidadTecnologiaSalud</div>
+      <div class="v">${evo.finalidadtecnologiasalud || "—"}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">Motivo atención</div>
+      <div class="v">${evo.causamotivoatencion || "—"}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">Diagnóstico principal</div>
+      <div class="v">${dxPrincipal}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">Diagnósticos secundarios</div>
+      <div class="v">${dxSec}</div>
+    </div>
+
+    <div class="doc-box">
+      <div class="k">Detalle</div>
+      <div class="v">${evo.evo_detalle || "—"}</div>
+    </div>
+  `;
+
+  modal.classList.add("show");
+}
+
+  window.verEvolucionDesdeWebhook = verEvolucionDesdeWebhook;
 
   function cargarResumenFirma(evo) {
   const box = document.getElementById("resumenFirma");
