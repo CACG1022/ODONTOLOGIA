@@ -1569,6 +1569,14 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
 const inpFinalidad = document.getElementById("evo_finalidad");
 const finalidadTecnologiaSalud = (inpFinalidad?.dataset?.codigo || "").trim();
 
+// ==============================
+// VALIDAR CLASIFICACIÓN RIPS
+// ==============================
+if (!codServicio || !finalidadTecnologiaSalud) {
+  alert("⛔ El procedimiento seleccionado aún no ha sido clasificado para RIPS.");
+  return;
+}
+
     
 
     const item = {
