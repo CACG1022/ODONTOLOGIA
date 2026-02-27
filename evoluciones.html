@@ -523,6 +523,20 @@
       </div>
 
       <div class="ctrl">
+  <label for="diag_principal_select">Diagnóstico principal</label>
+  <select id="diag_principal_select">
+    <option value="">Seleccione diagnóstico...</option>
+  </select>
+</div>
+
+<div class="ctrl">
+  <label for="evo_motivo_atencion">Motivo atención</label>
+  <select id="evo_motivo_atencion">
+    <option value="">Seleccione motivo...</option>
+  </select>
+</div>
+    
+<div class="ctrl">
   <label for="evo_codservicio">Cod servicio</label>
   <input id="evo_codservicio" type="text" readonly placeholder="Se carga automáticamente">
 </div>
@@ -532,14 +546,7 @@
   <input id="evo_finalidad" type="text" readonly placeholder="Se carga automáticamente">
 </div>
 
-      <div class="ctrl">
-  <label for="diag_principal_select">Diagnóstico principal</label>
-  <select id="diag_principal_select">
-    <option value="">Seleccione diagnóstico...</option>
-  </select>
-</div>
-
-<div class="ctrl full">
+<div class="ctrl">
   <label>Diagnósticos secundarios</label>
   <div id="diag_sec_container"></div>
   <button type="button"
@@ -763,6 +770,57 @@
   // ==============================
   // UTILIDADES
   // ==============================
+// ==============================
+// MOTIVO ATENCIÓN RIPS
+// ==============================
+function cargarMotivosAtencion() {
+
+  const motivos = [
+    { codigo: "21", nombre: "ACCIDENTE DE TRABAJO" },
+    { codigo: "22", nombre: "ACCIDENTE EN EL HOGAR" },
+    { codigo: "23", nombre: "ACCIDENTE DE TRANSITO DE ORIGEN COMUN" },
+    { codigo: "24", nombre: "ACCIDENTE DE TRANSITO DE ORIGEN LABORAL" },
+    { codigo: "25", nombre: "ACCIDENTE EN EL ENTORNO EDUCATIVO" },
+    { codigo: "26", nombre: "OTRO TIPO DE ACCIDENTE" },
+    { codigo: "27", nombre: "EVENTO CATASTROFICO DE ORIGEN NATURAL" },
+    { codigo: "28", nombre: "LESION POR AGRESION" },
+    { codigo: "29", nombre: "LESION AUTO INFLIGIDA" },
+    { codigo: "30", nombre: "SOSPECHA DE VIOLENCIA FISICA" },
+    { codigo: "31", nombre: "SOSPECHA DE VIOLENCIA PSICOLOGICA" },
+    { codigo: "32", nombre: "SOSPECHA DE VIOLENCIA SEXUAL" },
+    { codigo: "33", nombre: "SOSPECHA DE NEGLIGENCIA Y ABANDONO" },
+    { codigo: "34", nombre: "IVE RELACIONADO CON PELIGRO A LA SALUD O VIDA DE LA MUJER" },
+    { codigo: "35", nombre: "IVE POR MALFORMACION CONGENITA INCOMPATIBLE CON LA VIDA" },
+    { codigo: "36", nombre: "IVE POR VIOLENCIA SEXUAL..." },
+    { codigo: "37", nombre: "EVENTO ADVERSO EN SALUD" },
+    { codigo: "38", nombre: "ENFERMEDAD GENERAL" },
+    { codigo: "39", nombre: "ENFERMEDAD LABORAL" },
+    { codigo: "40", nombre: "PROMOCION Y MANTENIMIENTO DE LA SALUD - INTERVENCIONES INDIVIDUALES" },
+    { codigo: "41", nombre: "INTERVENCION COLECTIVA" },
+    { codigo: "42", nombre: "ATENCION DE POBLACION MATERNO PERINATAL" },
+    { codigo: "43", nombre: "RIESGO AMBIENTAL" },
+    { codigo: "44", nombre: "OTROS EVENTOS CATASTROFICOS" },
+    { codigo: "45", nombre: "ACCIDENTE DE MINA ANTIPERSONAL - MAP" },
+    { codigo: "46", nombre: "ACCIDENTE DE ARTEFACTO EXPLOSIVO IMPROVISADO - AEI" },
+    { codigo: "47", nombre: "ACCIDENTE DE MUNICION SIN EXPLOTAR - MUSE" },
+    { codigo: "48", nombre: "OTRA VICTIMA DE CONFLICTO ARMADO COLOMBIANO" },
+    { codigo: "49", nombre: "IVE POR DECISION O MANIFESTACION DE VOLUNTAD..." }
+  ];
+
+  const select = document.getElementById("evo_motivo_atencion");
+  if (!select) return;
+
+  select.innerHTML = '<option value="">Seleccione motivo...</option>';
+
+  motivos.forEach(m => {
+    const option = document.createElement("option");
+    option.value = m.codigo; // 🔥 SOLO CODIGO
+    option.textContent = `${m.codigo} ${m.nombre}`; // 🔥 CODIGO + NOMBRE
+    select.appendChild(option);
+  });
+}
+
+  
   function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
@@ -1281,7 +1339,8 @@ async function cargarDiagnosticosCIE10() {
 
     if (error) throw error;
 
-    select.innerHTML = "";
+    //select.innerHTML = "";
+    select.innerHTML = '<option value="">Seleccione diagnóstico...</option>';
 
     (data || []).forEach(dx => {
       const option = document.createElement("option");
@@ -1292,10 +1351,12 @@ async function cargarDiagnosticosCIE10() {
 
     // 🔥 ACTIVAR BUSCADOR
     new TomSelect(select, {
-      searchField: ['text'],
-      placeholder: "Escribe para buscar diagnóstico...",
-      allowEmptyOption: true
-    });
+  searchField: ['text'],
+  placeholder: "Escribe para buscar diagnóstico...",
+  allowEmptyOption: true,
+  create: false,
+  preload: false
+});
 
   } catch (err) {
     console.warn("Error cargando CIE10:", err);
@@ -1531,6 +1592,13 @@ if (diagSecContainer) diagSecContainer.innerHTML = "";
     const tipo = (document.getElementById("evo_tipo").value || "").trim();
     const detalle = (document.getElementById("evo_detalle").value || "").trim();
 
+    const motivoAtencion = (document.getElementById("evo_motivo_atencion")?.value || "").trim();
+
+if (!motivoAtencion) {
+  alert("⚠️ Debes seleccionar el motivo de atención.");
+  return;
+}
+
     if (!profesional) { alert("⚠️ Debes ingresar el nombre del profesional."); return; }
     if (!tipo) { alert("⚠️ Debes ingresar el procedimiento."); return; }
     
@@ -1588,6 +1656,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
       codservicio: codServicio,
       finalidadTecnologiaSalud: finalidadTecnologiaSalud,
       detalle,
+      motivo_atencion: motivoAtencion,
       firma_paciente: firmaPaciente,
       firma_profesional: firmaProfesional,
       cedula_paciente: cedula,
@@ -1713,6 +1782,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
+    await cargarMotivosAtencion();
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
