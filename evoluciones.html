@@ -1106,6 +1106,18 @@ function cargarMotivosAtencion() {
     const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
     const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
 
+    const codServicio = evo.codservicio || "";
+    const finalidad = evo.finalidadTecnologiaSalud || "";
+    const motivo = evo.motivo_atencion || "";
+
+const dxPrincipal = evo.diagnostico_principal
+  ? `${evo.diagnostico_principal.codigo} - ${evo.diagnostico_principal.nombre}`
+  : "—";
+
+const dxSec = (evo.diagnosticos_secundarios || [])
+  .map(d => `${d.codigo} - ${d.nombre}`)
+  .join("<br>");
+
     title.textContent = "Evolución (Documento)";
 
     body.innerHTML = `
@@ -1141,6 +1153,31 @@ function cargarMotivosAtencion() {
           <div class="v">${escapeHtml(String(procedimiento).toUpperCase())}</div>
         </div>
       </div>
+
+      <div class="doc-box">
+  <div class="k">Cod servicio</div>
+  <div class="v">${escapeHtml(codServicio || "—")}</div>
+</div>
+
+<div class="doc-box">
+  <div class="k">FinalidadTecnologiaSalud</div>
+  <div class="v">${escapeHtml(finalidad || "—")}</div>
+</div>
+
+<div class="doc-box">
+  <div class="k">Motivo atención</div>
+  <div class="v">${escapeHtml(motivo || "—")}</div>
+</div>
+
+<div class="doc-box">
+  <div class="k">Diagnóstico principal</div>
+  <div class="v">${escapeHtml(dxPrincipal)}</div>
+</div>
+
+<div class="doc-box">
+  <div class="k">Diagnósticos secundarios</div>
+  <div class="v">${dxSec || "—"}</div>
+</div>
 
       <div class="doc-box">
         <div class="k">Detalle / Observaciones</div>
@@ -1461,29 +1498,26 @@ if (diagSecContainer) diagSecContainer.innerHTML = "";
     if (!Array.isArray(evol)) evol = [];
 
     return evol.map((e) => ({
-      id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
-      fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
-      hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
-      profesional: e.profesional ?? e.evo_profesional ?? "",
-      procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
-      detalle: e.detalle ?? e.evo_detalle ?? "",
+  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
+  fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
+  hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
+  profesional: e.profesional ?? e.evo_profesional ?? "",
+  procedimiento: e.procedimiento ?? e.evo_tipo ?? "",
+  detalle: e.detalle ?? e.evo_detalle ?? "",
 
-      // ✅ FIX: soportar firmas históricas y actuales (NO rompe nada)
-      firma_paciente:
-        e.firma_paciente ??
-        e.firmaPaciente ??
-        e.firma_paciente_base64 ??
-        "",
+  codservicio: e.codservicio ?? "",
+  finalidadTecnologiaSalud: e.finalidadTecnologiaSalud ?? "",
+  motivo_atencion: e.motivo_atencion ?? "",
 
-      firma_profesional:
-        e.firma_profesional ??
-        e.firmaProfesional ??
-        e.firma_profesional_base64 ??
-        "",
+  diagnostico_principal: e.diagnostico_principal ?? null,
+  diagnosticos_secundarios: e.diagnosticos_secundarios ?? [],
 
-      created_at: e.created_at ?? null,
-      ts: e.ts ?? e.created_at ?? new Date().toISOString()
-    }));
+  firma_paciente: e.firma_paciente ?? "",
+  firma_profesional: e.firma_profesional ?? "",
+
+  created_at: e.created_at ?? null,
+  ts: e.ts ?? e.created_at ?? new Date().toISOString()
+}));
   }
 
   function renderEvoluciones() {
@@ -1661,6 +1695,11 @@ if (!codServicio || !finalidadTecnologiaSalud) {
       firma_profesional: firmaProfesional,
       cedula_paciente: cedula,
       usuario,
+
+      diagnostico_principal: diagnosticoPrincipal,
+      diagnosticos_secundarios: diagnosticosSecundarios,
+
+      
       ts: new Date().toISOString()
     };
 
