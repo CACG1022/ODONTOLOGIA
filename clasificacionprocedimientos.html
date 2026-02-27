@@ -252,8 +252,55 @@ const supabase = createClient(
 "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
+const LOGIN_URL = "login.html";
+const INDEX_URL = "index.html";
+
 let editandoId=null;
 let procedimientosGlobal=[];
+
+// =========================
+// 🔐 VALIDAR SESIÓN Y ROL
+// =========================
+async function verificarSesionYPermisos(){
+
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    console.error("❌ Error getSession:", sessionError);
+    alert("❌ Error verificando sesión");
+    window.location.href = INDEX_URL;
+    return false;
+  }
+
+  if (!session) {
+    window.location.href = LOGIN_URL;
+    return false;
+  }
+
+  const { data: perfil, error } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", session.user.id)
+    .maybeSingle();
+
+  if (error) {
+    console.error("❌ Error leyendo perfil:", error);
+    alert("❌ No se pudo verificar el rol del usuario");
+    window.location.href = INDEX_URL;
+    return false;
+  }
+
+  const rol = String(perfil?.role || "").toLowerCase();
+
+  if (rol !== "admin") {
+    alert("⛔ Solo el administrador puede acceder a este módulo.");
+    window.location.href = INDEX_URL;
+    return false;
+  }
+
+  console.log("✅ Acceso autorizado (rol admin)");
+  return true;
+}  
 
 const sedeSelect=document.getElementById("sedeSelect");
 const procedimientoSelect=document.getElementById("procedimiento");
@@ -420,7 +467,12 @@ document.getElementById("guardarBtn").onclick=async()=>{
   await cargarConfigurados();
 }
 
-init();
+(async () => {
+  const autorizado = await verificarSesionYPermisos();
+  if (!autorizado) return;
+
+  await init();
+})();
 window.abrirModalEjemplo = function(){
   document.getElementById("modalEjemplo").style.display="flex";
 }
