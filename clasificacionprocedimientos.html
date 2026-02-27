@@ -97,7 +97,48 @@ th{
   margin-top:6px;
   line-height:1.4;
 }
+/* Modal informativo */
+.modal-overlay{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.4);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
 
+.modal{
+  background:white;
+  width:90%;
+  max-width:500px;
+  border-radius:12px;
+  padding:25px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.2);
+  animation:fadeIn .2s ease-in-out;
+}
+
+.modal h4{
+  margin-top:0;
+}
+
+.modal table{
+  width:100%;
+  margin-top:10px;
+}
+
+.modal-close{
+  margin-top:15px;
+  background:var(--primary);
+}
+
+@keyframes fadeIn{
+  from{opacity:0; transform:scale(.95);}
+  to{opacity:1; transform:scale(1);}
+}
   
 </style>
 </head>
@@ -136,15 +177,24 @@ Este código es obligatorio para la generación correcta de los RIPS.
 <div class="field">
 <label>Finalidad</label>
 <select id="finalidad"></select>
+
 <div class="info-note">
 Indica el propósito principal de la atención en salud según la normatividad RIPS 
 (Resolución 2275 de 2023). Es un código numérico de dos (2) dígitos que clasifica 
 si la atención fue por diagnóstico, tratamiento, rehabilitación, promoción o prevención.
 Este campo participa en validaciones automáticas relacionadas con edad, sexo,
 diagnóstico principal y pago moderador.
+
+<br><br>
+<a href="#" onclick="abrirModalEjemplo(); return false;" 
+style="color:#2563eb; font-weight:600; text-decoration:underline;">
+Ver ejemplo
+</a>
 </div>
 
 </div>
+
+  
 
 <button id="guardarBtn">Guardar configuración</button>
 </div>
@@ -169,6 +219,31 @@ diagnóstico principal y pago moderador.
 
 </div>
 
+<!-- Modal Ejemplo Finalidad -->
+<div class="modal-overlay" id="modalEjemplo">
+  <div class="modal">
+    <h4>🧾 Ejemplos prácticos</h4>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Servicio</th>
+          <th>FinalidadTecnologiaSalud</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Limpieza dental</td><td>Prevención</td></tr>
+        <tr><td>Toma de radiografía</td><td>Diagnóstico</td></tr>
+        <tr><td>Exodoncia</td><td>Tratamiento</td></tr>
+        <tr><td>Terapia física post cirugía</td><td>Rehabilitación</td></tr>
+        <tr><td>Vacunación</td><td>Protección específica</td></tr>
+      </tbody>
+    </table>
+
+    <button class="modal-close" onclick="cerrarModalEjemplo()">Cerrar</button>
+  </div>
+</div>
+  
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -346,6 +421,14 @@ document.getElementById("guardarBtn").onclick=async()=>{
 }
 
 init();
+window.abrirModalEjemplo = function(){
+  document.getElementById("modalEjemplo").style.display="flex";
+}
+
+window.cerrarModalEjemplo = function(){
+  document.getElementById("modalEjemplo").style.display="none";
+}
+  
 </script>
 
 </body>
