@@ -522,6 +522,15 @@
           placeholder="Buscar o escribir procedimiento..." autocomplete="off" />
       </div>
 
+      <div class="ctrl">
+  <label for="evo_codservicio">Cod servicio</label>
+  <input id="evo_codservicio" type="text" readonly placeholder="Se carga automáticamente">
+</div>
+
+<div class="ctrl">
+  <label for="evo_finalidad">FinalidadTecnologiaSalud</label>
+  <input id="evo_finalidad" type="text" readonly placeholder="Se carga automáticamente">
+</div>
 
       <div class="ctrl">
   <label for="diag_principal_select">Diagnóstico principal</label>
@@ -1142,6 +1151,68 @@
     }
   }
 
+  async function cargarConfigRipsPorProcedimientoNombre(nombreProcedimiento) {
+  // campos UI
+  const inpCod = document.getElementById("evo_codservicio");
+  const inpFin = document.getElementById("evo_finalidad");
+
+  // limpiar primero
+  if (inpCod) inpCod.value = "";
+  if (inpFin) inpFin.value = "";
+
+  const nombre = String(nombreProcedimiento || "").trim();
+  if (!nombre) return;
+
+  // esperar supabase
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  try {
+    // 1) Buscar procedimiento_id en procedimientos_precios por nombre (procedimiento)
+    const { data: proc, error: eProc } = await window.supabase
+      .from("procedimientos_precios")
+      .select("id, procedimiento")
+      .eq("activo", true)
+      .eq("procedimiento", nombre)
+      .maybeSingle();
+
+    if (eProc) throw eProc;
+    if (!proc?.id) return; // no encontrado
+
+    // 2) Con ese id buscar configuración rips
+    const { data: conf, error: eConf } = await window.supabase
+      .from("procedimiento_configuracion_rips")
+      .select(`
+        cod_servicio,
+        finalidad_codigo,
+        finalidad_tecnologia:finalidad_codigo (descripcion)
+      `)
+      .eq("procedimiento_id", proc.id)
+      .maybeSingle();
+
+    if (eConf) throw eConf;
+    if (!conf) return;
+
+    // 3) cargar UI (cod + finalidad)
+    if (inpCod) inpCod.value = conf.cod_servicio ?? "";
+
+    // aquí puedes mostrar el código o la descripción (yo recomiendo descripción + código)
+    const finDesc = conf?.finalidad_tecnologia?.descripcion || "";
+    const finCod = conf.finalidad_codigo ?? "";
+
+    if (inpFin) {
+      inpFin.value = finDesc ? `${finCod} - ${finDesc}` : String(finCod);
+    }
+
+  } catch (err) {
+    console.warn("⚠️ Error cargando config RIPS:", err);
+  }
+}
+
   // ==============================
   // ✅ PROFESIONALES DESDE SUPABASE
   // ==============================
@@ -1281,12 +1352,17 @@ async function cargarDiagnosticosCIE10() {
     const p = document.getElementById("evo_profesional");
     const t = document.getElementById("evo_tipo");
     const d = document.getElementById("evo_detalle");
-
+    const cs = document.getElementById("evo_codservicio");
+    const fi = document.getElementById("evo_finalidad");
+    
+    if (cs) cs.value = "";
+    if (fi) fi.value = "";
     if (f) f.value = _hoyISO();
     if (h) h.value = _horaHHMM();
     if (p) p.value = "";
     if (t) t.value = "";
     if (d) d.value = "";
+    
 
     // 🔹 Limpiar diagnósticos
 const diagPrincipal = document.getElementById("diag_principal_select");
@@ -1484,12 +1560,19 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
   }
 });
 
+    const codServicio = (document.getElementById("evo_codservicio")?.value || "").trim();
+const finalidadTecnologiaSalud = (document.getElementById("evo_finalidad")?.value || "").trim();
+
+    
+
     const item = {
       id: generarEvolucionId(),
       fecha,
       hora,
       profesional,
       procedimiento: tipo,
+      codservicio: codServicio,
+      finalidadTecnologiaSalud: finalidadTecnologiaSalud,
       detalle,
       firma_paciente: firmaPaciente,
       firma_profesional: firmaProfesional,
@@ -1619,6 +1702,17 @@ document.querySelectorAll("#diag_sec_container select").forEach(sel => {
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
+
+    const inpProc = document.getElementById("evo_tipo");
+if (inpProc) {
+  inpProc.addEventListener("change", async () => {
+    await cargarConfigRipsPorProcedimientoNombre(inpProc.value);
+  });
+
+  inpProc.addEventListener("blur", async () => {
+    await cargarConfigRipsPorProcedimientoNombre(inpProc.value);
+  });
+}
   });
 
   // Exponer
