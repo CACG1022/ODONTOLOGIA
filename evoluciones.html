@@ -1875,23 +1875,26 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
     const raw = await resp.json();
 
-    // 🔎 Detectar estructura
-    let lista = [];
+    console.log("🔎 RESPUESTA WEBHOOK:", raw);
 
-    if (Array.isArray(raw)) {
-      lista = raw;
-    } else if (Array.isArray(raw.data)) {
-      lista = raw.data;
-    } else if (Array.isArray(raw.evoluciones)) {
-      lista = raw.evoluciones;
+    let evo = null;
+
+    if (Array.isArray(raw) && raw.length > 0) {
+      evo = raw[0];
+    } else if (Array.isArray(raw.data) && raw.data.length > 0) {
+      evo = raw.data[0];
+    } else if (Array.isArray(raw.evoluciones) && raw.evoluciones.length > 0) {
+      evo = raw.evoluciones[0];
+    } else if (raw && typeof raw === "object") {
+      evo = raw;
     }
 
-    if (!Array.isArray(lista) || lista.length === 0) {
+    if (!evo) {
       alert("⚠️ No se encontró la evolución.");
       return;
     }
 
-    abrirModalConDatos(lista[0]);
+    abrirModalConDatos(evo);
 
   } catch (err) {
     console.error(err);
