@@ -618,42 +618,6 @@ document.getElementById("btn-cerrar-modal").addEventListener("click", ()=>{
     }
 
 
-// COSTO (opcional)
-if (newCosto) {
-  newCosto.style.color = "#FF7657";
-  newCosto.style.fontWeight = "700";
-
-  newCosto.addEventListener("focus", () => {
-    newCosto.value = unformatMiles(newCosto.value);
-  });
-
-  newCosto.addEventListener("blur", () => {
-    newCosto.value = formatMiles(newCosto.value);
-  });
-
-  newCosto.addEventListener("input", () => {
-    newCosto.value = newCosto.value.replace(/[^\d,]/g, "");
-  });
-}
-
-// VALOR (opcional)
-if (newValor) {
-  newValor.style.color = "#1DAD95";
-  newValor.style.fontWeight = "700";
-
-  newValor.addEventListener("focus", () => {
-    newValor.value = unformatMiles(newValor.value);
-  });
-
-  newValor.addEventListener("blur", () => {
-    newValor.value = formatMiles(newValor.value);
-  });
-
-  newValor.addEventListener("input", () => {
-    newValor.value = newValor.value.replace(/[^\d,]/g, "");
-  });
-}
-
 
     init();
 
