@@ -1912,35 +1912,83 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
   title.textContent = "Evolución (Documento)";
 
+  // 🔎 Datos base
+  const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
+  const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+
+  const idEvo = evo.id || evo.id_evolucion || evo["id-evolucion"] || "—";
+  const fecha = evo.evo_fecha || evo.fecha || "—";
+  const hora = evo.evo_hora || evo.hora || "";
+  const profesional = evo.evo_profesional || evo.profesional || "—";
+  const procedimiento = evo.evo_tipo || evo.procedimiento || "—";
+  const detalle = evo.evo_detalle || evo.detalle || "—";
+
+  const codServicio = evo.codservicio || "—";
+  const finalidad = evo.finalidadtecnologiasalud || evo.finalidadTecnologiaSalud || "—";
+  const motivo = evo.causamotivoatencion || evo.motivo_atencion || "—";
+
+  const firmaPaciente = evo.firma_paciente || "";
+  const firmaProfesional = evo.firma_profesional || "";
+
+  // 🔎 Diagnósticos
   const dxPrincipal = evo.diagnostico_principal
-    ? `${evo.diagnostico_principal.codigo} - ${evo.diagnostico_principal.descripcion}`
+    ? `${evo.diagnostico_principal.codigo} - ${evo.diagnostico_principal.nombre || evo.diagnostico_principal.descripcion}`
     : "—";
 
   const dxSec = (evo.diagnosticos_secundarios || [])
-    .map(d => `${d.codigo} - ${d.descripcion}`)
+    .map(d => `${d.codigo} - ${d.nombre || d.descripcion}`)
     .join("<br>") || "—";
 
   body.innerHTML = `
     <div class="doc-title">Evolución clínica odontológica</div>
 
-    <div class="doc-box">
-      <div class="k">Procedimiento</div>
-      <div class="v">${evo.evo_tipo || "—"}</div>
+    <div class="doc-meta">
+      <div class="doc-box">
+        <div class="k">Paciente</div>
+        <div class="v">${escapeHtml(paciente)}</div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Cédula</div>
+        <div class="v">${escapeHtml(cedula)}</div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">ID Evolución</div>
+        <div class="v" style="font-family:monospace;font-size:12px;">
+          ${escapeHtml(idEvo)}
+        </div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Fecha / Hora</div>
+        <div class="v">${escapeHtml(fecha)} ${escapeHtml(hora)}</div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Profesional</div>
+        <div class="v">${escapeHtml(profesional)}</div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Procedimiento</div>
+        <div class="v">${escapeHtml(procedimiento)}</div>
+      </div>
     </div>
 
     <div class="doc-box">
       <div class="k">Cod servicio</div>
-      <div class="v">${evo.codservicio || "—"}</div>
+      <div class="v">${escapeHtml(codServicio)}</div>
     </div>
 
     <div class="doc-box">
       <div class="k">FinalidadTecnologiaSalud</div>
-      <div class="v">${evo.finalidadtecnologiasalud || "—"}</div>
+      <div class="v">${escapeHtml(finalidad)}</div>
     </div>
 
     <div class="doc-box">
       <div class="k">Motivo atención</div>
-      <div class="v">${evo.causamotivoatencion || "—"}</div>
+      <div class="v">${escapeHtml(motivo)}</div>
     </div>
 
     <div class="doc-box">
@@ -1954,8 +2002,28 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     </div>
 
     <div class="doc-box">
-      <div class="k">Detalle</div>
-      <div class="v">${evo.evo_detalle || "—"}</div>
+      <div class="k">Detalle / Observaciones</div>
+      <div class="v">${escapeHtml(detalle)}</div>
+    </div>
+
+    <div class="doc-firmas">
+      <div class="doc-firma">
+        <div class="k">Firma del paciente</div>
+        ${
+          firmaPaciente
+            ? `<img src="${firmaPaciente}" />`
+            : `<div class="doc-nofirma">Sin firma del paciente</div>`
+        }
+      </div>
+
+      <div class="doc-firma">
+        <div class="k">Firma del profesional</div>
+        ${
+          firmaProfesional
+            ? `<img src="${firmaProfesional}" />`
+            : `<div class="doc-nofirma">Sin firma del profesional</div>`
+        }
+      </div>
     </div>
   `;
 
