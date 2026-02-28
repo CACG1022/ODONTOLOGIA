@@ -1872,13 +1872,12 @@ if (inpProc) {
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-    const data = await resp.json();
+   const data = await response.json();
 
-    if (!data || !data.evolucion) {
-      alert("⚠️ No se encontró la evolución.");
-      return;
-    }
-
+if (!data || !data.id_evolucion) {
+   alert("⚠️ No se encontró la evolución.");
+   return;
+}
     abrirModalConDatos(data.evolucion);
 
   } catch (err) {
