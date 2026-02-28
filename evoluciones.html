@@ -1873,14 +1873,25 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-    const data = await resp.json();  // ✅ AQUÍ VA
+    const raw = await resp.json();
 
-    if (!Array.isArray(data) || data.length === 0) {
+    // 🔎 Detectar estructura
+    let lista = [];
+
+    if (Array.isArray(raw)) {
+      lista = raw;
+    } else if (Array.isArray(raw.data)) {
+      lista = raw.data;
+    } else if (Array.isArray(raw.evoluciones)) {
+      lista = raw.evoluciones;
+    }
+
+    if (!Array.isArray(lista) || lista.length === 0) {
       alert("⚠️ No se encontró la evolución.");
       return;
     }
 
-    abrirModalConDatos(data[0]);  // ✅ AQUÍ VA
+    abrirModalConDatos(lista[0]);
 
   } catch (err) {
     console.error(err);
