@@ -209,7 +209,8 @@ function render(){
           inpEsp.appendChild(o);
         });
         inpEsp.value = row.especialidad ?? "";
-        inpEsp.addEventListener("input", ()=>{
+        //inpEsp.addEventListener("input", ()=>{
+        inpEsp.addEventListener("change", ()=>{
           const prev = state.editing.get(row.id) || {
             profesional: row.profesional,
             especialidad: row.especialidad,
