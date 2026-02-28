@@ -1916,7 +1916,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
   const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
   const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
 
-  const idEvo = evo.id || evo.id_evolucion || evo["id-evolucion"] || "—";
+  const idEvo = evo.id_evolucion || evo["id-evolucion"] || evo.id || "—";
   const fecha = evo.evo_fecha || evo.fecha || "—";
   const hora = evo.evo_hora || evo.hora || "";
   const profesional = evo.evo_profesional || evo.profesional || "—";
