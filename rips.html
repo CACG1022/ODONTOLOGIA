@@ -377,30 +377,91 @@ if (!paciente) {
       .select("codigo_cups, valor_unitario")
       .eq("factura_id", facturaId);
 
-    const rips = {
-      transaccion: {
-        numDocumentoIdObligado: emisor?.nit || null,
-        numFactura: factura.numero_factura
-      },
-      usuarios: [
-        {
-          tipoDocumento: paciente["Tipo identificacion"] || null,
-          numDocumento: paciente["Numero de Identificacion"] || null,
-          fechaNacimiento: paciente["Fecha de nacimiento"] || null,
-          codSexo: paciente.sexo || null,
-          codMunicipioResidencia: paciente.ciudad_de_residencia || null
-        }
-      ],
-      servicios: {
-        procedimientos: (procedimientos || []).map(p => ({
-          codPrestador: emisor?.codigo_municipio || null,
-          fechaAtencion: factura.fecha,
-          codProcedimiento: p.codigo_cups,
-          codDiagnosticoPrincipal: diagnosticos?.[0]?.codigo_cie10 || null,
-          valorServicio: p.valor_unitario
-        }))
-      }
-    };
+    // ==========================
+// 🔹 Consultar especialidad de cada procedimiento
+// ==========================
+
+const codigosCups = (procedimientos || []).map(p => p.codigo_cups);
+
+let mapaEspecialidades = {};
+
+if (codigosCups.length > 0) {
+
+  const { data: infoProcedimientos } = await sb
+    .from("procedimientos_precios")
+    .select("codigo, especialidad")
+    .in("codigo", codigosCups);
+
+  (infoProcedimientos || []).forEach(p => {
+    mapaEspecialidades[p.codigo] = p.especialidad;
+  });
+}
+
+  // ==========================
+// 🔹 Separar consultas y procedimientos dinámicamente
+// ==========================
+
+const listaConsultas = [];
+const listaProcedimientos = [];
+
+(procedimientos || []).forEach(p => {
+
+  const especialidad = mapaEspecialidades[p.codigo_cups];
+
+  const estructuraBase = {
+    codPrestador: emisor?.codigo_municipio || null,
+    fechaAtencion: factura.fecha,
+    codProcedimiento: p.codigo_cups,
+    codDiagnosticoPrincipal: diagnosticos?.[0]?.codigo_cie10 || null,
+    valorServicio: p.valor_unitario
+  };
+
+  if (especialidad === "Consultas y valoraciones") {
+
+    listaConsultas.push({
+      ...estructuraBase
+    });
+
+  } else {
+
+    listaProcedimientos.push({
+      ...estructuraBase
+    });
+
+  }
+
+});
+
+// ==========================
+// 🔹 Construcción final del JSON
+// ==========================
+
+const rips = {
+  transaccion: {
+    numDocumentoIdObligado: emisor?.nit || null,
+    numFactura: factura.numero_factura
+  },
+  usuarios: [
+    {
+      tipoDocumento: paciente["Tipo identificacion"] || null,
+      numDocumento: paciente["Numero de Identificacion"] || null,
+      fechaNacimiento: paciente["Fecha de nacimiento"] || null,
+      codSexo: paciente.sexo || null,
+      codMunicipioResidencia: paciente.ciudad_de_residencia || null
+    }
+  ],
+  servicios: {}
+};
+
+// 🔹 SOLO agregar secciones si tienen datos
+
+if (listaConsultas.length > 0) {
+  rips.servicios.consultas = listaConsultas;
+}
+
+if (listaProcedimientos.length > 0) {
+  rips.servicios.procedimientos = listaProcedimientos;
+}
 
     const blob = new Blob([JSON.stringify(rips, null, 2)], { type:"application/json" });
     const url = URL.createObjectURL(blob);
