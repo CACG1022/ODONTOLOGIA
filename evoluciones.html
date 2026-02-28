@@ -1853,7 +1853,7 @@ if (inpProc) {
   window.openEvolucionDoc = openEvolucionDoc;
   window.closeEvoDocModal = closeEvoDocModal;
 
-  async function verEvolucionDesdeWebhook(idEvolucion) {
+async function verEvolucionDesdeWebhook(idEvolucion) {
 
   const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
 
@@ -1862,7 +1862,8 @@ if (inpProc) {
     return;
   }
 
-  const url = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9810501c-5c79-41b0-929b-1d13e8f4354c"
+  const url =
+    "https://ftth-n8n2.pzveh5.easypanel.host/webhook/9810501c-5c79-41b0-929b-1d13e8f4354c"
     + "?cedula=" + encodeURIComponent(cedula)
     + "&id_evolucion=" + encodeURIComponent(idEvolucion);
 
@@ -1872,13 +1873,14 @@ if (inpProc) {
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
-   const data = await response.json();
+    const data = await resp.json();  // ✅ AQUÍ VA
 
-if (!data || !data.id_evolucion) {
-   alert("⚠️ No se encontró la evolución.");
-   return;
-}
-    abrirModalConDatos(data.evolucion);
+    if (!Array.isArray(data) || data.length === 0) {
+      alert("⚠️ No se encontró la evolución.");
+      return;
+    }
+
+    abrirModalConDatos(data[0]);  // ✅ AQUÍ VA
 
   } catch (err) {
     console.error(err);
