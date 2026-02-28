@@ -399,71 +399,73 @@ function render(){
       }
     }
 
-    async function guardarFila(id){
-      const edit = state.editing.get(id);
-      if(!edit){
-        showToast("No hay cambios", "warn");
-        return;
-      }
+   async function guardarFila(id){
 
-      const procedimiento = normalizeName(edit.procedimiento);
-      const valor = money(edit.valor);
-      const costo = money(edit.costo);
+  const original = state.all.find(r => r.id === id);
+  const edit = state.editing.get(id) || {};
 
-      if(!procedimiento){
-  showToast("El nombre del procedimiento es obligatorio", "err");
-  return;
+  const procedimiento = normalizeName(edit.procedimiento ?? original.procedimiento);
+  const especialidad = edit.especialidad ?? original.especialidad;
+  const profesional = edit.profesional ?? original.profesional;
+  const valor = money(edit.valor ?? original.valor);
+  const costo = money(edit.costo ?? original.costo);
+  const cups = String(edit.codigo_cups ?? original.codigo_cups || "").trim();
+
+  if(!procedimiento){
+    showToast("El nombre del procedimiento es obligatorio", "err");
+    return;
+  }
+
+  if(!especialidad){
+    showToast("La especialidad es obligatoria", "err");
+    return;
+  }
+
+  if(!cups){
+    showToast("El código CUPS es obligatorio", "err");
+    return;
+  }
+
+  if(valor === null){
+    showToast("El precio es obligatorio", "err");
+    return;
+  }
+
+  const cupsValido = await validarCUPS(cups);
+  if(!cupsValido){
+    showToast("El código CUPS no existe en la base de datos", "err");
+    return;
+  }
+
+  const payload = {
+    profesional: profesional || null,
+    especialidad,
+    procedimiento,
+    valor,
+    costo,
+    codigo_cups: cups
+  };
+
+  setStatus("Guardando...");
+
+  const { error } = await supabase
+    .from("procedimientos_precios")
+    .update(payload)
+    .eq("id", id);
+
+  setStatus("");
+
+  if(error){
+    showToast("Error al guardar: " + error.message, "err");
+    return;
+  }
+
+  showToast("Guardado ✅", "ok");
+
+  state.editing.delete(id);
+
+  await cargarProcedimientos();
 }
-
-if(!edit.especialidad){
-  showToast("La especialidad es obligatoria", "err");
-  return;
-}
-
-if(!edit.codigo_cups){
-  showToast("El código CUPS es obligatorio", "err");
-  return;
-}
-
-if(valor === null){
-  showToast("El precio es obligatorio", "err");
-  return;
-}
-
-// 🔎 Validar que el CUPS exista
-const cupsValido = await validarCUPS(edit.codigo_cups);
-if(!cupsValido){
-  showToast("El código CUPS no existe en la base de datos", "err");
-  return;
-}
-
-      const payload = {
-        profesional: edit.profesional || null,
-        especialidad: edit.especialidad || null,
-        procedimiento,
-        valor: valor === null ? null : valor,
-        costo: costo === null ? null : costo,
-        codigo_cups: edit.codigo_cups || null
-      };
-
-      setStatus("Guardando...");
-      const { error } = await supabase
-        .from("procedimientos_precios")
-        .update(payload)
-        .eq("id", id);
-
-      setStatus("");
-      if(error){
-        console.error(error);
-        showToast("Error al guardar: " + error.message, "err");
-        return;
-      }
-
-      showToast("Guardado ✅", "ok");
-      await cargarProcedimientos();
-      applyFilter();
-      document.getElementById("search").dispatchEvent(new Event("input"));
-    }
 
     async function guardarTodos(){
   if(state.editing.size === 0){
