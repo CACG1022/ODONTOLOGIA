@@ -409,7 +409,7 @@ function render(){
   const profesional = edit.profesional ?? original.profesional;
   const valor = money(edit.valor ?? original.valor);
   const costo = money(edit.costo ?? original.costo);
-  const cups = String(edit.codigo_cups ?? original.codigo_cups || "").trim();
+  const cups = String((edit.codigo_cups ?? original.codigo_cups) || "").trim();
 
   if(!procedimiento){
     showToast("El nombre del procedimiento es obligatorio", "err");
