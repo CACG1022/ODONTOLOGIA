@@ -464,6 +464,60 @@ if(!cupsValido){
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
 
+    async function guardarTodos(){
+  if(state.editing.size === 0){
+    showToast("No hay cambios para guardar", "warn");
+    return;
+  }
+
+  if(!confirm(`¿Guardar ${state.editing.size} cambios?`)) return;
+
+  setStatus("Guardando cambios...");
+
+  const updates = [];
+
+  for(const [id, edit] of state.editing.entries()){
+
+    const procedimiento = normalizeName(edit.procedimiento);
+    const valor = money(edit.valor);
+    const costo = money(edit.costo);
+    const cups = String(edit.codigo_cups || "").trim().padStart(6,"0");
+
+    if(!procedimiento || !edit.especialidad || !cups || valor === null){
+      showToast(`Fila ID ${id} tiene datos incompletos`, "err");
+      setStatus("");
+      return;
+    }
+
+    updates.push({
+      id,
+      profesional: edit.profesional || null,
+      especialidad: edit.especialidad || null,
+      procedimiento,
+      valor,
+      costo,
+      codigo_cups: cups
+    });
+  }
+
+  const { error } = await supabase
+    .from("procedimientos_precios")
+    .upsert(updates, { onConflict: "id" });
+
+  setStatus("");
+
+  if(error){
+    console.error(error);
+    showToast("Error al guardar cambios", "err");
+    return;
+  }
+
+  showToast("Todos los cambios guardados ✅", "ok");
+
+  state.editing.clear();
+  await cargarProcedimientos();
+}
+
     async function eliminarFila(id, procedimiento){
       if(!confirm(`¿Eliminar "${procedimiento}"?`)) return;
 
@@ -591,6 +645,7 @@ document.addEventListener("click", async (e)=>{
       document.getElementById("filter-profesional")?.addEventListener("change", applyFilter);
      document.getElementById("filter-especialidad")?.addEventListener("change", applyFilter);
      document.getElementById("filter-costo")?.addEventListener("change", applyFilter);
+      document.getElementById("btn-save-all").addEventListener("click", guardarTodos);
 
       // Abrir modal
 document.getElementById("btn-open-modal").addEventListener("click", ()=>{
@@ -1068,6 +1123,7 @@ td.col-valor input {
 
         <button class="btn primary" type="button" id="btn-open-modal">Agregar nuevo procedimiento</button>
         <button class="btn" type="button" id="btn-rips">Clasificar procedimientos RIPS</button>
+      <button class="btn primary" type="button" id="btn-save-all">Guardar todos los cambios</button>
         <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
         <button class="btn" type="button" id="btn-back">Volver</button>
       
