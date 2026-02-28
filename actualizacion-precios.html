@@ -58,6 +58,23 @@
     function normalizeName(s){
       return String(s || "").trim();
     }
+    // ✅ Validar que CUPS exista en tabla CUPS
+async function validarCUPS(codigo){
+  const cups = String(codigo || "").trim();
+
+  if(!cups) return false;
+
+  const { data, error } = await supabase
+    .from("CUPS")
+    .select("codigo")
+    .eq("codigo", cups)
+    .single();
+
+  if(error || !data) return false;
+
+  return true;
+}
+    
 
     const state = {
       all: [],
@@ -390,9 +407,31 @@ function render(){
       const costo = money(edit.costo);
 
       if(!procedimiento){
-        showToast("El nombre del procedimiento es obligatorio", "err");
-        return;
-      }
+  showToast("El nombre del procedimiento es obligatorio", "err");
+  return;
+}
+
+if(!edit.especialidad){
+  showToast("La especialidad es obligatoria", "err");
+  return;
+}
+
+if(!edit.codigo_cups){
+  showToast("El código CUPS es obligatorio", "err");
+  return;
+}
+
+if(valor === null){
+  showToast("El precio es obligatorio", "err");
+  return;
+}
+
+// 🔎 Validar que el CUPS exista
+const cupsValido = await validarCUPS(edit.codigo_cups);
+if(!cupsValido){
+  showToast("El código CUPS no existe en la base de datos", "err");
+  return;
+}
 
       const payload = {
         profesional: edit.profesional || null,
@@ -446,38 +485,68 @@ function render(){
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
 
-    async function crearProcedimiento(){
-      const nombre = normalizeName(document.getElementById("new-nombre").value);
-      const valor = money(document.getElementById("new-valor").value);
-      const costo = money(document.getElementById("new-costo").value);
+   
 
-      if(!nombre){
-        showToast("Escribe un nombre", "err");
-        return;
-      }
+    // ===== Crear desde modal =====
+document.addEventListener("click", async (e)=>{
+  if(e.target?.id === "btn-guardar-modal"){
 
-      setStatus("Creando...");
-      const { error } = await supabase
-        .from("procedimientos_precios")
-        .insert([{ procedimiento: nombre, valor: valor === null ? null : valor, costo: costo === null ? null : costo, codigo_cups: document.getElementById("new-cups").value || null }]);
+    const profesional = document.getElementById("modal-profesional").value;
+    const especialidad = document.getElementById("modal-especialidad").value;
+    const procedimiento = normalizeName(document.getElementById("modal-procedimiento-nombre").value);
+    const cups = document.getElementById("modal-cups").value.trim();
+    const valor = money(document.getElementById("modal-valor").value);
+    const costo = money(document.getElementById("modal-costo").value);
 
-      setStatus("");
-      if(error){
-        console.error(error);
-        showToast("Error al crear: " + error.message, "err");
-        return;
-      }
-
-      document.getElementById("new-nombre").value = "";
-      document.getElementById("new-valor").value = "";
-      document.getElementById("new-costo").value = "";
-      document.getElementById("new-cups").value = "";
-
-      showToast("Creado ✅", "ok");
-      await cargarProfesionales();
-      await cargarProcedimientos();
-      applyFilter();
+    if(!especialidad){
+      showToast("La especialidad es obligatoria", "err");
+      return;
     }
+
+    if(!procedimiento){
+      showToast("El procedimiento es obligatorio", "err");
+      return;
+    }
+
+    if(!cups){
+      showToast("El CUPS es obligatorio", "err");
+      return;
+    }
+
+    if(valor === null){
+      showToast("El precio es obligatorio", "err");
+      return;
+    }
+
+    const cupsValido = await validarCUPS(cups);
+    if(!cupsValido){
+      showToast("El CUPS no existe en la base de datos", "err");
+      return;
+    }
+
+    const { error } = await supabase
+      .from("procedimientos_precios")
+      .insert([{
+        profesional,
+        especialidad,
+        procedimiento,
+        codigo_cups: cups,
+        valor,
+        costo
+      }]);
+
+    if(error){
+      showToast("Error al crear: " + error.message, "err");
+      return;
+    }
+
+    showToast("Creado correctamente ✅");
+
+    document.getElementById("modal-procedimiento").style.display = "none";
+
+    await cargarProcedimientos();
+  }
+});
 
     async function init(){
       // año
@@ -513,12 +582,33 @@ function render(){
       document.getElementById("search").addEventListener("input", applyFilter);
       document.getElementById("btn-refresh").addEventListener("click", cargarProcedimientos);
       document.getElementById("btn-rips").addEventListener("click", () => { window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/clasificacionprocedimientos.html";});
-      document.getElementById("btn-add").addEventListener("click", crearProcedimiento);
+      
       document.getElementById("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
 
       document.getElementById("filter-profesional")?.addEventListener("change", applyFilter);
      document.getElementById("filter-especialidad")?.addEventListener("change", applyFilter);
      document.getElementById("filter-costo")?.addEventListener("change", applyFilter);
+
+      // Abrir modal
+document.getElementById("btn-open-modal").addEventListener("click", ()=>{
+  const modal = document.getElementById("modal-procedimiento");
+  modal.style.display = "flex";
+
+  // llenar profesionales
+  const sel = document.getElementById("modal-profesional");
+  sel.innerHTML = `<option value="">— Seleccione —</option>`;
+  PROFESIONALES_CACHE.forEach(p=>{
+    const o = document.createElement("option");
+    o.value = p.nombre;
+    o.textContent = p.nombre;
+    sel.appendChild(o);
+  });
+});
+
+// Cerrar modal
+document.getElementById("btn-cerrar-modal").addEventListener("click", ()=>{
+  document.getElementById("modal-procedimiento").style.display = "none";
+});
 
 
       await cargarProfesionales();
@@ -527,9 +617,6 @@ function render(){
 
     }
 
-    // ===== Formato y color en fila "Agregar" =====
-const newCosto = document.getElementById("new-costo");
-const newValor = document.getElementById("new-valor");
 
 // COSTO (opcional)
 if (newCosto) {
@@ -906,7 +993,43 @@ td.col-valor input {
     max-width: 100%;
   }
 }
+/* ===== MODAL ===== */
+.modal{
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.4);
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
 
+.modal-content{
+  background:#fff;
+  padding:24px;
+  border-radius:14px;
+  width:420px;
+  max-width:95%;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.modal-content h3{
+  margin:0 0 10px;
+}
+
+.modal-content input,
+.modal-content select{
+  width:100%;
+}
+
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+  margin-top:10px;
+}
 </style>
 </head>
 
@@ -967,18 +1090,14 @@ td.col-valor input {
         <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
        <button class="btn" type="button" id="btn-rips">Clasificar procedimientos RIPS</button>
         <button class="btn" type="button" id="btn-back">Volver</button>
+      <button class="btn primary" type="button" id="btn-open-modal">
+      Agregar nuevo procedimiento
+      </button>
       </div>
     </div>
     
 
-    <div class="new-row">
-      <input id="new-costo" type="text" inputmode="numeric" placeholder="Costo (opcional)" />
-      <input id="new-nombre" type="text" placeholder="Nuevo procedimiento (nombre)" />
-      <input id="new-cups" type="text" placeholder="CUPS (opcional)" />
-      <input id="new-valor" type="text" inputmode="numeric" placeholder="Precio (opcional)" />
-      <button class="btn primary" type="button" id="btn-add">Agregar</button>
-      <span class="hint">Tip: deja el valor vacío si “no tiene precio”.</span>
-    </div>
+    
 
     <div style="max-height: 62vh; overflow-y:auto; overflow-x:hidden;">
       <table>
@@ -1004,6 +1123,47 @@ td.col-valor input {
   </div>
 
   <div id="toast"></div>
+  <!-- ===== MODAL NUEVO PROCEDIMIENTO ===== -->
+<div id="modal-procedimiento" class="modal">
+  <div class="modal-content">
+    <h3>Nuevo Procedimiento</h3>
+
+    <label>Profesional</label>
+    <select id="modal-profesional"></select>
+
+    <label>Especialidad *</label>
+    <select id="modal-especialidad">
+      <option value="">— Seleccione —</option>
+      <option>Odontología General</option>
+      <option>Rehabilitación Oral</option>
+      <option>Periodoncia</option>
+      <option>Endodoncia</option>
+      <option>Cirugía</option>
+      <option>Ortodoncia</option>
+      <option>Odontopediatría</option>
+      <option>Implantologia</option>
+    </select>
+
+    <label>Costo</label>
+    <input type="text" id="modal-costo" />
+
+    <label>Procedimiento *</label>
+    <input type="text" id="modal-procedimiento-nombre" />
+
+    <label>CUPS *</label>
+    <input type="text" id="modal-cups" />
+
+    <label>Precio *</label>
+    <input type="text" id="modal-valor" />
+
+    <div class="modal-actions">
+      <button class="btn" id="btn-cerrar-modal">Cancelar</button>
+      <button class="btn primary" id="btn-guardar-modal">Guardar</button>
+    </div>
+  </div>
+</div>
+
+  
 </body>
 </html>
 
