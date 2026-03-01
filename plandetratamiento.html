@@ -2666,7 +2666,14 @@ async function guardarAbono(){
       alert("⚠️ Primero debes guardar el plan de tratamiento");
       return;
     }
+   const planId = document.getElementById("plan_id_actual")?.value;
 
+console.log("PLAN ID que se enviará:", planId);  // 👈 AGRÉGALO AQUÍ
+
+if(!planId){
+  alert("⚠️ Primero debes guardar el plan de tratamiento");
+  return;
+}
     // ==============================
     // 🔎 2️⃣ Obtener datos del modal
     // ==============================
@@ -2697,10 +2704,10 @@ async function guardarAbono(){
       }]);
 
     if(error){
-      console.error("Error Supabase:", error);
-      alert("Error guardando abono");
-      return;
-    }
+  console.error("ERROR COMPLETO:", error);
+  alert(error.message);
+  return;
+}
 
     // ==============================
     // ✅ 4️⃣ Éxito
