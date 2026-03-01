@@ -1419,6 +1419,17 @@ if(planError){
     function loadFromWebhook(data){
       if(!data || !data.encontrado){ setHintHTML("✔️ Paciente nuevo.", "#1e8449"); return; }
 
+      // ==========================
+// ✅ GUARDAR PLAN ID DESDE CONSULTA
+// ==========================
+if(data.id){
+  PLAN_ID_ACTUAL = data.id;
+  document.getElementById("plan_id_actual").value = data.id;
+  document.getElementById("plan-id-display").textContent = data.id;
+  console.log("Plan ID cargado desde consulta:", data.id);
+}
+      
+
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
       if (data.correo)  document.getElementById('correo').value  = data.correo;
       if (data.celular) document.getElementById('celular').value = data.celular;
