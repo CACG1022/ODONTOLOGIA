@@ -740,6 +740,15 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     />
 
 
+    <!-- ✅ NUEVO CAMPO ESTADO -->
+<label for="estado">Estado del plan:</label>
+<select id="estado" name="estado" required>
+  <option value="activo">Activo</option>
+  <option value="finalizado">Finalizado</option>
+  <option value="cancelado">Cancelado</option>
+  <option value="suspendido">Suspendido</option>
+</select>
+
     <div class="totales">
       <span><strong>Subtotal:</strong> $<span id="subtotal">0</span></span>
       <span><strong>Descuento:</strong> $<span id="valor-descuento">0</span></span>
@@ -2384,6 +2393,30 @@ async function ejecutarFacturacion() {
 </div>
 
 <!-- ================= BOTÓN FACTURACIÓN (FLOTANTE) ================= -->
+
+<!-- ================= BOTÓN ABONOS (FLOTANTE) ================= -->
+<div style="position:fixed;bottom:200px;right:20px;z-index:9999;">
+  <button
+    type="button"
+    onclick="abrirModalAbonos()"
+    style="
+      padding:12px 16px;
+      border-radius:10px;
+      border:none;
+      background:#f59e0b;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    "
+  >
+    💰 Abonos
+  </button>
+</div>
+  
 <div style="position:fixed;bottom:140px;right:20px;z-index:9999;">
   <button
     type="button"
@@ -2562,6 +2595,53 @@ async function ejecutarFacturacion() {
   });
 
 })();
+
+  function abrirModalAbonos(){
+  document.getElementById("modal-abonos").classList.add("show");
+}
+
+function cerrarModalAbonos(){
+  document.getElementById("modal-abonos").classList.remove("show");
+}
+
+async function guardarAbono(){
+  try{
+    const cedula = document.getElementById("cedula").value;
+    const monto = parseFloat(document.getElementById("abono-monto").value);
+    const metodo = document.getElementById("abono-metodo").value;
+    const referencia = document.getElementById("abono-referencia").value;
+    const observacion = document.getElementById("abono-observacion").value;
+
+    if(!cedula || !monto){
+      alert("Debe ingresar cédula y monto");
+      return;
+    }
+
+    const { error } = await window.supabase
+      .from("abonos")
+      .insert([{
+        paciente_cedula: cedula,
+        monto: monto,
+        fecha: new Date().toISOString(),
+        metodo_pago: metodo,
+        referencia: referencia,
+        observacion: observacion
+      }]);
+
+    if(error){
+      console.error(error);
+      alert("Error guardando abono");
+      return;
+    }
+
+    alert("Abono registrado correctamente ✅");
+    cerrarModalAbonos();
+
+  }catch(e){
+    console.error(e);
+    alert("Error inesperado");
+  }
+}
 </script>
 
 
@@ -2614,6 +2694,60 @@ async function ejecutarFacturacion() {
   };
 })();
 </script>
+
+  <!-- ================= MODAL ABONOS ================= -->
+<style>
+#modal-abonos{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:20000;
+}
+#modal-abonos.show{ display:flex; }
+
+#modal-abonos .card{
+  width:400px;
+  max-width:95vw;
+  background:#fff;
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 20px 50px rgba(0,0,0,.25);
+}
+#modal-abonos h3{
+  margin-top:0;
+}
+#modal-abonos button{
+  margin-top:10px;
+}
+</style>
+
+<div id="modal-abonos">
+  <div class="card">
+    <h3>Registrar Abono</h3>
+
+    <label>Monto:</label>
+    <input type="number" id="abono-monto" min="0" />
+
+    <label>Método de pago:</label>
+    <select id="abono-metodo">
+      <option value="efectivo">Efectivo</option>
+      <option value="transferencia">Transferencia</option>
+      <option value="tarjeta">Tarjeta</option>
+    </select>
+
+    <label>Referencia:</label>
+    <input type="text" id="abono-referencia" />
+
+    <label>Observación:</label>
+    <textarea id="abono-observacion"></textarea>
+
+    <button onclick="guardarAbono()" style="background:#16a34a;">Guardar</button>
+    <button onclick="cerrarModalAbonos()" style="background:#dc2626;">Cancelar</button>
+  </div>
+</div>
 
 </body>
 </html>
