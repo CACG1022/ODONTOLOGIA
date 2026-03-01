@@ -2659,21 +2659,17 @@ async function guardarAbono(){
     // ==============================
     // 🔎 1️⃣ Obtener el plan_id
     // ==============================
-
+ // ==============================
+    // 🔎 1️⃣ Obtener el plan_id
+    // ==============================
     const planId = document.getElementById("plan_id_actual")?.value;
+
+    console.log("PLAN ID que se enviará:", planId);
 
     if(!planId){
       alert("⚠️ Primero debes guardar el plan de tratamiento");
       return;
     }
-   const planId = document.getElementById("plan_id_actual")?.value;
-
-console.log("PLAN ID que se enviará:", planId);  // 👈 AGRÉGALO AQUÍ
-
-if(!planId){
-  alert("⚠️ Primero debes guardar el plan de tratamiento");
-  return;
-}
     // ==============================
     // 🔎 2️⃣ Obtener datos del modal
     // ==============================
