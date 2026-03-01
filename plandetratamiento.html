@@ -1590,11 +1590,7 @@ async function cargarPlanAnterior() {
   }
 }
 
-// Conectar el botón
-document.addEventListener("DOMContentLoaded", () => {
-  const btn = document.getElementById("btn-cargar-plan-anterior");
-  if (btn) btn.addEventListener("click", cargarPlanAnterior);
-});
+
     
 
     let lastQuery = "";
@@ -2509,7 +2505,9 @@ async function ejecutarFacturacion() {
   </button>
 </div>
 
-<button type="button" id="btn-cargar-plan-anterior" style="background:#0ea5e9;">
+<button type="button"
+        onclick="cargarPlanAnterior()"
+        style="background:#0ea5e9;">
   📂 Cargar plan anterior
 </button>
 
