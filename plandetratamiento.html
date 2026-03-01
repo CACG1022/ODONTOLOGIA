@@ -1557,7 +1557,7 @@ setTimeout(() => {
     }
 
 const WEBHOOK_CARGAR_PLAN_ANTERIOR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/f04247bf-0715-4f12-bb31-aa3a1c74eb4a";
-
+                              
 async function cargarPlanAnterior() {
   try {
     const cedula = document.getElementById("cedula")?.value?.trim();
@@ -1568,10 +1568,9 @@ async function cargarPlanAnterior() {
 
     // Enviar cédula al webhook (POST con JSON)
     const resp = await fetch(WEBHOOK_CARGAR_PLAN_ANTERIOR, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cedula })
-    });
+  method: "POST",
+  body: new URLSearchParams({ cedula })
+});
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
 
