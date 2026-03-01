@@ -2690,7 +2690,7 @@ async function guardarAbono(){
       .insert([{
         plan_id: planId,                 // 🔥 RELACIÓN CORRECTA
         monto: monto,
-        fecha: new Date().toISOString(),
+        fecha: new Date().toISOString().split("T")[0],
         metodo_pago: metodo,
         referencia: referencia,
         observacion: observacion
