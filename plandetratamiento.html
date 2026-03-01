@@ -759,6 +759,32 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       <span><strong>Total a pagar:</strong> $<span id="total">0</span></span>
     </div>
 
+    <!-- ================= HISTORIAL DE ABONOS ================= -->
+<div id="historial-abonos" style="
+  margin-top:20px;
+  border:1px solid #e1eaf7;
+  border-radius:14px;
+  padding:14px;
+  background:#f9fbff;
+">
+  <h3 style="margin-top:0;">Historial de Abonos</h3>
+
+  <div id="lista-abonos">
+    <small>No hay abonos registrados.</small>
+  </div>
+
+  <hr style="margin:12px 0;">
+
+  <div style="font-weight:700;">
+    Total abonado: $<span id="total-abonado">0</span>
+  </div>
+
+  <div style="font-weight:900; margin-top:4px;">
+    Saldo pendiente: $<span id="saldo-pendiente">0</span>
+  </div>
+</div>
+    
+
     <input type="hidden" id="input-subtotal" name="subtotal_real">
     <input type="hidden" id="input-descuento" name="descuento_valor">
     <input type="hidden" id="input-total" name="total_real">
@@ -1359,17 +1385,17 @@ if(planError){
   console.error("No se pudo obtener plan:", planError);
 } else {
 
-  // Guardar en variable global
   PLAN_ID_ACTUAL = planData.id;
 
-  // Guardar en campo oculto
   document.getElementById("plan_id_actual").value = planData.id;
-
-  // Mostrar en pantalla (debug)
   document.getElementById("plan-id-display").textContent = planData.id;
 
   console.log("Plan ID obtenido:", planData.id);
+
+  // 🔥 MOVER AQUÍ
+  cargarHistorialAbonos(planData.id);
 }
+        
 
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         alert("Guardado ✅");
@@ -1427,6 +1453,7 @@ if(data.id){
   document.getElementById("plan_id_actual").value = data.id;
   document.getElementById("plan-id-display").textContent = data.id;
   console.log("Plan ID cargado desde consulta:", data.id);
+  cargarHistorialAbonos(data.id);
 }
       
 
@@ -2701,7 +2728,8 @@ const { error } = await window.supabase
     plan_id: planId,
     paciente_cedula: cedula,   // 👈 NUEVO CAMPO
     monto: monto,
-    fecha: new Date().toISOString().split("T")[0],
+   //fecha: new Date().toISOString().split("T")[0],
+    fecha: new Date().toISOString(),
     metodo_pago: metodo,
     referencia: referencia,
     observacion: observacion
@@ -2718,6 +2746,7 @@ const { error } = await window.supabase
     // ==============================
 
     alert("Abono registrado correctamente ✅");
+    cargarHistorialAbonos(planId);
 
     // Limpiar campos
     document.getElementById("abono-monto").value = "";
@@ -2782,6 +2811,8 @@ const { error } = await window.supabase
     }, 200);
   };
 })();
+
+
 </script>
 
   <!-- ================= MODAL ABONOS ================= -->
@@ -2838,6 +2869,73 @@ const { error } = await window.supabase
   </div>
 </div>
 
+<script>
+// ===============================
+// CARGAR HISTORIAL DE ABONOS
+// ===============================
+async function cargarHistorialAbonos(planId){
+
+  if(!planId) return;
+
+  const { data, error } = await window.supabase
+    .from("abonos")
+    .select("*")
+    .eq("plan_id", planId)
+    .order("fecha", { ascending: true });
+
+  if(error){
+    console.error("Error cargando abonos:", error);
+    return;
+  }
+
+  const lista = document.getElementById("lista-abonos");
+  const totalSpan = document.getElementById("total-abonado");
+  const saldoSpan = document.getElementById("saldo-pendiente");
+
+  if(!data || data.length === 0){
+    lista.innerHTML = "<small>No hay abonos registrados.</small>";
+    totalSpan.textContent = "0";
+    saldoSpan.textContent = "0";
+    return;
+  }
+
+  let totalAbonado = 0;
+
+  lista.innerHTML = `
+    <table style="width:100%; font-size:13px;">
+      <thead>
+        <tr style="text-align:left;">
+          <th>Fecha</th>
+          <th>Método</th>
+          <th>Monto</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${data.map(a => {
+          totalAbonado += Number(a.monto || 0);
+          return `
+            <tr>
+              <td>${a.fecha}</td>
+              <td>${a.metodo_pago || "-"}</td>
+              <td>$${Number(a.monto).toLocaleString("es-CO")}</td>
+            </tr>
+          `;
+        }).join("")}
+      </tbody>
+    </table>
+  `;
+
+  totalSpan.textContent = totalAbonado.toLocaleString("es-CO");
+
+  const totalPlan = Number(document.getElementById("input-total").value || 0);
+  const saldo = totalPlan - totalAbonado;
+
+  saldoSpan.textContent = saldo > 0
+    ? saldo.toLocaleString("es-CO")
+    : "0";
+}
+</script>
+  
 </body>
 </html>
 
