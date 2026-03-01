@@ -2901,8 +2901,7 @@ async function cargarHistorialAbonos(planId){
 
   let totalAbonado = 0;
 
-  lista.innerHTML = `
-    lista.innerHTML = `
+lista.innerHTML = `
   <table style="width:100%; font-size:13px;">
     <thead>
       <tr style="text-align:left;">
@@ -2918,7 +2917,7 @@ async function cargarHistorialAbonos(planId){
         totalAbonado += Number(a.monto || 0);
         return `
           <tr>
-            <td>${a.fecha}</td>
+            <td>${new Date(a.fecha).toLocaleDateString("es-CO")}</td>
             <td>${a.metodo_pago || "-"}</td>
             <td>${a.referencia || "-"}</td>
             <td>${a.observacion || "-"}</td>
