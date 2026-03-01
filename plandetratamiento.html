@@ -1556,6 +1556,48 @@ setTimeout(() => {
 
     }
 
+const WEBHOOK_CARGAR_PLAN_ANTERIOR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/f04247bf-0715-4f12-bb31-aa3a1c74eb4a";
+
+async function cargarPlanAnterior() {
+  try {
+    const cedula = document.getElementById("cedula")?.value?.trim();
+    if (!cedula) {
+      alert("⚠️ Debes ingresar la cédula primero.");
+      return;
+    }
+
+    // Enviar cédula al webhook (POST con JSON)
+    const resp = await fetch(WEBHOOK_CARGAR_PLAN_ANTERIOR, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cedula })
+    });
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    const data = await resp.json();
+
+    // Reutiliza tu misma función para pintar todo el plan en pantalla
+    if (typeof loadFromWebhook === "function") {
+      loadFromWebhook(data);
+    } else {
+      console.warn("loadFromWebhook no está definida");
+      alert("No se pudo cargar: falta loadFromWebhook()");
+    }
+
+  } catch (e) {
+    console.error("Error cargando plan anterior:", e);
+    alert("❌ No se pudo cargar el plan anterior.");
+  }
+}
+
+// Conectar el botón
+document.addEventListener("DOMContentLoaded", () => {
+  const btn = document.getElementById("btn-cargar-plan-anterior");
+  if (btn) btn.addEventListener("click", cargarPlanAnterior);
+});
+    
+
     let lastQuery = "";
     document.getElementById('cedula').addEventListener('blur', ()=>{
       const ced = cedulaInput.value.trim();
@@ -2468,7 +2510,9 @@ async function ejecutarFacturacion() {
   </button>
 </div>
 
-<!-- ================= BOTÓN FACTURACIÓN (FLOTANTE) ================= -->
+<button type="button" id="btn-cargar-plan-anterior" style="background:#0ea5e9;">
+  📂 Cargar plan anterior
+</button>
 
 <!-- ================= BOTÓN ABONOS (FLOTANTE) ================= -->
 <div style="position:fixed;bottom:200px;right:20px;z-index:9999;">
