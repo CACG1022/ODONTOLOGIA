@@ -647,6 +647,10 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 
   <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
     <div class="datetime">
+      <div style="font-size:12px; margin-top:4px; color:#64748b;">
+  <strong>ID Plan:</strong> 
+  <span id="plan-id-display">No guardado</span>
+</div>
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
       <input type="hidden" name="fecha" id="input-fecha" />
     </div>
@@ -758,6 +762,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <input type="hidden" id="input-subtotal" name="subtotal_real">
     <input type="hidden" id="input-descuento" name="descuento_valor">
     <input type="hidden" id="input-total" name="total_real">
+    <!-- ✅ ID DEL PLAN ACTUAL -->
+<input type="hidden" id="plan_id_actual">
 
     <label for="observaciones">Observaciones:</label>
     <textarea id="observaciones" name="observaciones" rows="4"></textarea>
@@ -1323,6 +1329,8 @@ row.appendChild(nameWrap);
        ========================== */
     const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
     const btnGuardar = document.getElementById("btn-guardar");
+    // ✅ ID GLOBAL DEL PLAN
+let PLAN_ID_ACTUAL = null;
     const form = document.getElementById("cotizacion-form");
 
     btnGuardar.addEventListener("click", async () => {
@@ -1332,6 +1340,36 @@ row.appendChild(nameWrap);
 
         const fd = new FormData(form);
         const resp = await fetch(WEBHOOK_GUARDAR, { method: "POST", body: fd });
+
+        // ==============================
+// 🔥 OBTENER EL PLAN GUARDADO
+// ==============================
+
+const cedulaActual = document.getElementById("cedula").value;
+
+const { data: planData, error: planError } = await window.supabase
+  .from("plandetratamientos")
+  .select("id")
+  .eq("cedula", cedulaActual)
+  .order("created_at", { ascending: false })
+  .limit(1)
+  .single();
+
+if(planError){
+  console.error("No se pudo obtener plan:", planError);
+} else {
+
+  // Guardar en variable global
+  PLAN_ID_ACTUAL = planData.id;
+
+  // Guardar en campo oculto
+  document.getElementById("plan_id_actual").value = planData.id;
+
+  // Mostrar en pantalla (debug)
+  document.getElementById("plan-id-display").textContent = planData.id;
+
+  console.log("Plan ID obtenido:", planData.id);
+}
 
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         alert("Guardado ✅");
@@ -2606,21 +2644,40 @@ function cerrarModalAbonos(){
 
 async function guardarAbono(){
   try{
-    const cedula = document.getElementById("cedula").value;
+
+    // ==============================
+    // 🔎 1️⃣ Obtener el plan_id
+    // ==============================
+
+    const planId = document.getElementById("plan_id_actual")?.value;
+
+    if(!planId){
+      alert("⚠️ Primero debes guardar el plan de tratamiento");
+      return;
+    }
+
+    // ==============================
+    // 🔎 2️⃣ Obtener datos del modal
+    // ==============================
+
     const monto = parseFloat(document.getElementById("abono-monto").value);
     const metodo = document.getElementById("abono-metodo").value;
     const referencia = document.getElementById("abono-referencia").value;
     const observacion = document.getElementById("abono-observacion").value;
 
-    if(!cedula || !monto){
-      alert("Debe ingresar cédula y monto");
+    if(!monto || monto <= 0){
+      alert("Debe ingresar un monto válido");
       return;
     }
+
+    // ==============================
+    // 💾 3️⃣ Insertar en Supabase
+    // ==============================
 
     const { error } = await window.supabase
       .from("abonos")
       .insert([{
-        paciente_cedula: cedula,
+        plan_id: planId,                 // 🔥 RELACIÓN CORRECTA
         monto: monto,
         fecha: new Date().toISOString(),
         metodo_pago: metodo,
@@ -2629,16 +2686,26 @@ async function guardarAbono(){
       }]);
 
     if(error){
-      console.error(error);
+      console.error("Error Supabase:", error);
       alert("Error guardando abono");
       return;
     }
 
+    // ==============================
+    // ✅ 4️⃣ Éxito
+    // ==============================
+
     alert("Abono registrado correctamente ✅");
+
+    // Limpiar campos
+    document.getElementById("abono-monto").value = "";
+    document.getElementById("abono-referencia").value = "";
+    document.getElementById("abono-observacion").value = "";
+
     cerrarModalAbonos();
 
   }catch(e){
-    console.error(e);
+    console.error("Error inesperado:", e);
     alert("Error inesperado");
   }
 }
