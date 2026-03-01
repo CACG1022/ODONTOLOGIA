@@ -2688,16 +2688,24 @@ async function guardarAbono(){
     // 💾 3️⃣ Insertar en Supabase
     // ==============================
 
-    const { error } = await window.supabase
-      .from("abonos")
-      .insert([{
-        plan_id: planId,                 // 🔥 RELACIÓN CORRECTA
-        monto: monto,
-        fecha: new Date().toISOString().split("T")[0],
-        metodo_pago: metodo,
-        referencia: referencia,
-        observacion: observacion
-      }]);
+    const cedula = document.getElementById("cedula")?.value?.trim();
+
+    if(!cedula){
+  alert("No se encontró la cédula del paciente");
+  return;
+}
+
+const { error } = await window.supabase
+  .from("abonos")
+  .insert([{
+    plan_id: planId,
+    paciente_cedula: cedula,   // 👈 NUEVO CAMPO
+    monto: monto,
+    fecha: new Date().toISOString().split("T")[0],
+    metodo_pago: metodo,
+    referencia: referencia,
+    observacion: observacion
+  }]);
 
     if(error){
   console.error("ERROR COMPLETO:", error);
