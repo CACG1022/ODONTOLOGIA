@@ -397,15 +397,15 @@ let mapaEspecialidades = {};
 
 if (codigosCups.length > 0) {
   const { data: infoProcedimientos, error: espErr } = await sb
-    .from("procedimientos_precios")
-    .select("codigo, especialidad")
-    .in("codigo", codigosCups);
+  .from("procedimientos_precios")
+  .select("codigo_cups, especialidad")
+  .in("codigo_cups", codigosCups);
 
-  if (espErr) throw espErr;
+if (espErr) throw espErr;
 
-  (infoProcedimientos || []).forEach(row => {
-    mapaEspecialidades[row.codigo] = row.especialidad;
-  });
+(infoProcedimientos || []).forEach(row => {
+  mapaEspecialidades[row.codigo_cups] = row.especialidad;
+});
 }
 
 // ==========================
