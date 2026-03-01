@@ -2902,28 +2902,33 @@ async function cargarHistorialAbonos(planId){
   let totalAbonado = 0;
 
   lista.innerHTML = `
-    <table style="width:100%; font-size:13px;">
-      <thead>
-        <tr style="text-align:left;">
-          <th>Fecha</th>
-          <th>Método</th>
-          <th>Monto</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${data.map(a => {
-          totalAbonado += Number(a.monto || 0);
-          return `
-            <tr>
-              <td>${a.fecha}</td>
-              <td>${a.metodo_pago || "-"}</td>
-              <td>$${Number(a.monto).toLocaleString("es-CO")}</td>
-            </tr>
-          `;
-        }).join("")}
-      </tbody>
-    </table>
-  `;
+    lista.innerHTML = `
+  <table style="width:100%; font-size:13px;">
+    <thead>
+      <tr style="text-align:left;">
+        <th>Fecha</th>
+        <th>Método</th>
+        <th>Referencia</th>
+        <th>Observación</th>
+        <th>Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${data.map(a => {
+        totalAbonado += Number(a.monto || 0);
+        return `
+          <tr>
+            <td>${a.fecha}</td>
+            <td>${a.metodo_pago || "-"}</td>
+            <td>${a.referencia || "-"}</td>
+            <td>${a.observacion || "-"}</td>
+            <td>$${Number(a.monto).toLocaleString("es-CO")}</td>
+          </tr>
+        `;
+      }).join("")}
+    </tbody>
+  </table>
+`;
 
   totalSpan.textContent = totalAbonado.toLocaleString("es-CO");
 
