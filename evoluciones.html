@@ -942,8 +942,8 @@ function cargarMotivosAtencion() {
     { codigo: "49", nombre: "IVE POR DECISION O MANIFESTACION DE VOLUNTAD..." }
   ];
 
-  const select = document.getElementById("evo_motivo_atencion");
-  if (!select) return;
+  const select = document.getElementById("proc_motivo_modal");
+if (!select) return;
 
   select.innerHTML = '<option value="">Seleccione motivo...</option>';
 
@@ -1548,6 +1548,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
 // ✅ DIAGNÓSTICOS CIE10 DESDE SUPABASE
 // ==============================
 async function cargarDiagnosticosCIE10() {
+  
   let tries = 0;
   while (!window.supabase && tries < 40) {
     await new Promise(r => setTimeout(r, 100));
@@ -1555,7 +1556,8 @@ async function cargarDiagnosticosCIE10() {
   }
   if (!window.supabase) return;
 
-  
+  const select = document.getElementById("proc_dx_principal_modal");
+if (!select) return;
 
   try {
     const { data, error } = await window.supabase
