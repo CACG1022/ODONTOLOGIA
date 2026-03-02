@@ -2575,82 +2575,84 @@ if (mensaje) mensaje.style.display = "none";
   // 🆕 OVERRIDE: agregarEvolucion() para enviar procedimientos[]
   //     - Si NO hay procedimientosEvo, usa el flujo original.
   // =========================================================
-  window._agregarEvolucion_original = window.agregarEvolucion;
-
+ 
   window.agregarEvolucion = async function agregarEvolucion() {
-    try {
-      if (!procedimientosEvo.length) {
-  alert("⚠️ Debes agregar al menos 1 procedimiento a la evolución.");
-  return;
-}
+  try {
 
-      const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
-      if (!cedula) { alert("⚠️ Primero busca el paciente por cédula."); return; }
-
-      const fecha = (document.getElementById("evo_fecha")?.value || _hoyISO()).trim();
-      const hora  = (document.getElementById("evo_hora")?.value || _horaHHMM()).trim();
-      const profesional = (document.getElementById("evo_profesional")?.value || "").trim();
-      const detalle = (document.getElementById("evo_detalle")?.value || "").trim();
-
-      if (!profesional) { alert("⚠️ Selecciona el profesional."); return; }
-
-      const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
-
-      const firmaPaciente = obtenerFirmaBase64("firma_paciente");
-      const firmaProfesional = obtenerFirmaBase64("firma_profesional");
-
-      const procedimientosLabel = procedimientosEvo.map(p => (p.procedimiento_nombre || "").trim()).filter(Boolean).join(" | ");
-
-      const item = {
-        id: generarEvolucionId(),
-        fecha,
-        hora,
-        profesional,
-        detalle,
-
-        // Para compatibilidad visual con tabla existente:
-        procedimiento: procedimientosLabel,
-
-        firma_paciente: firmaPaciente,
-        firma_profesional: firmaProfesional,
-
-        cedula_paciente: cedula,
-        usuario,
-        ts: new Date().toISOString(),
-
-        // 🆕 guardamos la lista también localmente (para render)
-        procedimientos: JSON.parse(JSON.stringify(procedimientosEvo))
-      };
-
-      evoluciones.unshift(item);
-      renderEvoluciones();
-
-      // Limpia formularios y la lista de procedimientos
-      limpiarProcedimientosEvo();
-      limpiarEvolucionForm();
-
-      const payload = {
-        evento: "agregar_evolucion",
-        cedula,
-        evolucion: item,
-        procedimientos: item.procedimientos, // 🆕 aquí viaja para EVOLUCION_PROCEDIMIENTOS
-        fecha_envio: new Date().toISOString(),
-        usuario_logueado: usuario
-      };
-
-      const resp = await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      if (!resp.ok) throw new Error("HTTP " + resp.status);
-
-    } catch (err) {
-      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
-      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
+    if (!procedimientosEvo.length) {
+      alert("⚠️ Debes agregar al menos 1 procedimiento a la evolución.");
+      return;
     }
-  };
+
+    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+    if (!cedula) { 
+      alert("⚠️ Primero busca el paciente por cédula."); 
+      return; 
+    }
+
+    const fecha = (document.getElementById("evo_fecha")?.value || _hoyISO()).trim();
+    const hora  = (document.getElementById("evo_hora")?.value || _horaHHMM()).trim();
+    const profesional = (document.getElementById("evo_profesional")?.value || "").trim();
+    const detalle = (document.getElementById("evo_detalle")?.value || "").trim();
+
+    if (!profesional) { 
+      alert("⚠️ Selecciona el profesional."); 
+      return; 
+    }
+
+    const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+
+    const firmaPaciente = obtenerFirmaBase64("firma_paciente");
+    const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
+    const procedimientosLabel = procedimientosEvo
+      .map(p => (p.procedimiento_nombre || "").trim())
+      .filter(Boolean)
+      .join(" | ");
+
+    const item = {
+      id: generarEvolucionId(),
+      fecha,
+      hora,
+      profesional,
+      detalle,
+      procedimiento: procedimientosLabel,
+      firma_paciente: firmaPaciente,
+      firma_profesional: firmaProfesional,
+      cedula_paciente: cedula,
+      usuario,
+      ts: new Date().toISOString(),
+      procedimientos: JSON.parse(JSON.stringify(procedimientosEvo))
+    };
+
+    evoluciones.unshift(item);
+    renderEvoluciones();
+
+    limpiarProcedimientosEvo();
+    limpiarEvolucionForm();
+
+    const payload = {
+      evento: "agregar_evolucion",
+      cedula,
+      evolucion: item,
+      procedimientos: item.procedimientos,
+      fecha_envio: new Date().toISOString(),
+      usuario_logueado: usuario
+    };
+
+    const resp = await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+  } catch (err) {
+    console.warn("⚠️ Evolución guardada pero NO enviada:", err);
+    alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
+  }
+};
 
   // =========================================================
   // 🆕 OVERRIDE: renderEvoluciones() para mostrar procedimientos[] si viene del webhook
