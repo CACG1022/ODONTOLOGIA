@@ -618,41 +618,7 @@
           placeholder="Buscar o escribir procedimiento..." autocomplete="off" />
       </div>
 
-      <div class="ctrl">
-  <label for="diag_principal_select">Diagnóstico principal</label>
-  <select id="diag_principal_select">
-    <option value="">Seleccione diagnóstico...</option>
-  </select>
-</div>
-
-<div class="ctrl">
-  <label for="evo_motivo_atencion">Motivo atención</label>
-  <select id="evo_motivo_atencion">
-    <option value="">Seleccione motivo...</option>
-  </select>
-</div>
-    
-<div class="ctrl">
-  <label for="evo_codservicio">Cod servicio</label>
-  <input id="evo_codservicio" type="text" readonly placeholder="Se carga automáticamente">
-</div>
-
-<div class="ctrl">
-  <label for="evo_finalidad">FinalidadTecnologiaSalud</label>
-  <input id="evo_finalidad" type="text" readonly placeholder="Se carga automáticamente">
-</div>
-
-<div class="ctrl">
-  <label>Diagnósticos secundarios</label>
-  <div id="diag_sec_container"></div>
-  <button type="button"
-          class="btn btn-buscar"
-          style="max-width:260px;"
-          onclick="agregarDiagnosticoSecundario()">
-    + Agregar diagnóstico secundario
-  </button>
-</div>
-
+     
       
 
       <div class="ctrl full">
@@ -1589,8 +1555,7 @@ async function cargarDiagnosticosCIE10() {
   }
   if (!window.supabase) return;
 
-  const select = document.getElementById("diag_principal_select");
-  if (!select) return;
+  
 
   try {
     const { data, error } = await window.supabase
@@ -1625,47 +1590,7 @@ async function cargarDiagnosticosCIE10() {
   }
 }
 
-  function agregarDiagnosticoSecundario() {
-  const container = document.getElementById("diag_sec_container");
-  const selectPrincipal = document.getElementById("diag_principal_select");
 
-  if (!container || !selectPrincipal) return;
-
-  // 🔥 Crear un nuevo select limpio
-  const newSelect = document.createElement("select");
-
-  // Copiar todas las opciones del principal
-  Array.from(selectPrincipal.options).forEach(opt => {
-    const option = document.createElement("option");
-    option.value = opt.value;
-    option.textContent = opt.textContent;
-    newSelect.appendChild(option);
-  });
-
-  const wrapper = document.createElement("div");
-  wrapper.style.display = "flex";
-  wrapper.style.gap = "8px";
-  wrapper.style.marginBottom = "8px";
-  wrapper.style.alignItems = "center";
-
-  const btnRemove = document.createElement("button");
-  btnRemove.type = "button";
-  btnRemove.textContent = "X";
-  btnRemove.style.padding = "6px 10px";
-  btnRemove.style.cursor = "pointer";
-  btnRemove.onclick = () => wrapper.remove();
-
-  wrapper.appendChild(newSelect);
-  wrapper.appendChild(btnRemove);
-  container.appendChild(wrapper);
-
-  // 🔥 Inicializar TomSelect correctamente
-  new TomSelect(newSelect, {
-    searchField: ['text'],
-    placeholder: "Buscar diagnóstico secundario...",
-    allowEmptyOption: true
-  });
-}
   
   // ==============================
   // ✅ EVOLUCIONES
@@ -1692,14 +1617,6 @@ async function cargarDiagnosticosCIE10() {
     if (d) d.value = "";
     
 
-    // 🔹 Limpiar diagnósticos
-const diagPrincipal = document.getElementById("diag_principal_select");
-if (diagPrincipal && diagPrincipal.tomselect) {
-  diagPrincipal.tomselect.clear();
-}
-
-const diagSecContainer = document.getElementById("diag_sec_container");
-if (diagSecContainer) diagSecContainer.innerHTML = "";
 
     limpiarFirma("firma_paciente");
     limpiarFirma("firma_profesional");
