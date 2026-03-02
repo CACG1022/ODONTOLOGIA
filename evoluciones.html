@@ -1507,15 +1507,14 @@ const dxSec = (evo.diagnosticos_secundarios || [])
 
     // 2) Buscar configuración RIPS
     const { data: conf, error: eConf } = await window.supabase
-      .from("procedimiento_configuracion_rips")
-      .select(`
-        servicio_habilitado_id,
-        cod_servicio,
-        finalidad_codigo,
-        finalidad_tecnologia:finalidad_codigo (descripcion)
-      `)
-      .eq("procedimiento_id", proc.id)
-      .maybeSingle();
+  .from("procedimiento_configuracion_rips")
+  .select(`
+    cod_servicio,
+    finalidad_codigo,
+    finalidad_tecnologia:finalidad_codigo (descripcion)
+  `)
+  .eq("procedimiento_id", proc.id)
+  .maybeSingle();
 
     if (eConf || !conf) return null;
 
@@ -1527,7 +1526,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
       procedimiento_nombre: proc.procedimiento,
       valor: proc.valor ?? null,
 
-      codservicio: conf.servicio_habilitado_id ?? conf.cod_servicio ?? null,
+      codservicio: conf.cod_servicio ?? null,
       finalidad_codigo: conf.finalidad_codigo ?? null,
       finalidad_desc: finTxt
     };
