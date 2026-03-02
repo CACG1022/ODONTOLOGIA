@@ -1465,7 +1465,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
     // 1) Buscar procedimiento
     const { data: proc, error: eProc } = await window.supabase
       .from("procedimientos_precios")
-      .select("id, procedimiento, valor")
+      .select("id, procedimiento, valor, codigo_cups")
       .eq("activo", true)
       .eq("procedimiento", nombre)
       .maybeSingle();
@@ -1488,15 +1488,16 @@ const dxSec = (evo.diagnosticos_secundarios || [])
     const finTxt = String(conf.finalidad_codigo ?? "") +
       (conf?.finalidad_tecnologia?.descripcion ? (" - " + conf.finalidad_tecnologia.descripcion) : "");
 
-    return {
-      procedimiento_id: proc.id,
-      procedimiento_nombre: proc.procedimiento,
-      valor: proc.valor ?? null,
+   return {
+  procedimiento_id: proc.id,
+  procedimiento_nombre: proc.procedimiento,
+  valor: proc.valor ?? null,
+  codigo_cups: proc.codigo_cups ?? null, // 🔥 NUEVO
 
-      codservicio: conf.cod_servicio ?? null,
-      finalidad_codigo: conf.finalidad_codigo ?? null,
-      finalidad_desc: finTxt
-    };
+  codservicio: conf.cod_servicio ?? null,
+  finalidad_codigo: conf.finalidad_codigo ?? null,
+  finalidad_desc: finTxt
+};
   }
 
   // ==============================
@@ -2312,10 +2313,13 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
         ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
         : "—";
 
-      const dxs = (p.diagnosticos_secundarios || [])
-        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
-        .join("<br>") || "—";
-
+      const dxs = [
+  p.diagnostico_secundario_1,
+  p.diagnostico_secundario_2
+]
+.filter(Boolean)
+.map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
+.join("<br>") || "—";
       return `
         <tr>
           <td>${i+1}</td>
@@ -2520,30 +2524,39 @@ if (mensaje) mensaje.style.display = "none";
     const dxPrincipal = _safeParseJSON(dxVal);
     if (!dxPrincipal) { alert("⚠️ Diagnóstico principal inválido."); return; }
 
-    const dxSec = [];
-    document.querySelectorAll("#proc_dx_sec_container_modal select").forEach(sel => {
-      const v = sel.value || "";
-      if (!v) return;
-      const obj = _safeParseJSON(v);
-      if (obj) dxSec.push(obj);
-    });
+    let diagnosticoSec1 = null;
+let diagnosticoSec2 = null;
+
+const dxSecTemp = [];
+
+document.querySelectorAll("#proc_dx_sec_container_modal select").forEach(sel => {
+  const v = sel.value || "";
+  if (!v) return;
+  const obj = _safeParseJSON(v);
+  if (obj) dxSecTemp.push(obj);
+});
+
+if (dxSecTemp[0]) diagnosticoSec1 = dxSecTemp[0];
+if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
 
     const procItem = {
-      procedimiento_id: _procModalSelected.procedimiento_id,
-      procedimiento_nombre: _procModalSelected.procedimiento_nombre,
-      valor: _procModalSelected.valor ?? null,
+  procedimiento_id: _procModalSelected.procedimiento_id,
+  procedimiento_nombre: _procModalSelected.procedimiento_nombre,
+  valor: _procModalSelected.valor ?? null,
+  codigo_cups: _procModalSelected.codigo_cups ?? null,
 
-      codservicio: _procModalSelected.codservicio ?? null,
-      finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
-      finalidad_desc: _procModalSelected.finalidad_desc ?? "",
+  codservicio: _procModalSelected.codservicio ?? null,
+  finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
+  finalidad_desc: _procModalSelected.finalidad_desc ?? "",
 
-      motivo_atencion: motivo,
-      diagnostico_principal: dxPrincipal,
-      diagnosticos_secundarios: dxSec,
-      detalle: detalle
-    };
+  motivo_atencion: motivo,
+  diagnostico_principal: dxPrincipal,
+  diagnostico_secundario_1: diagnosticoSec1,
+  diagnostico_secundario_2: diagnosticoSec2,
+  detalle: detalle
+};
 
     procedimientosEvo.push(procItem);
     renderProcedimientosEvo();
