@@ -457,7 +457,64 @@
       background:#fbfdff;
       text-align:center;
     }
-  </style>
+  
+
+    /* ==========================
+       🆕 MODAL (procedimientos múltiples por evolución)
+       ========================== */
+    .panel-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
+    .panel{ width: 560px; max-width: 95vw; background:#fff; border-radius:16px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.22); border:1px solid #e6eef8; }
+    .panel header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .panel h3{ margin:0; color: var(--ink); font-weight:900; letter-spacing:-.01em; }
+    .panel .procs{ display:grid; gap:8px; margin-top:12px; max-height: 52vh; overflow:auto; padding-right: 6px; }
+
+    .proc-toolbar{ margin-top:10px; display:flex; gap:10px; align-items:center; }
+    .proc-search{ flex:1; margin:0; }
+    .proc-toolbar small{ color:#64748b; font-weight:600; }
+
+    .proc-row{
+      display:grid;
+      grid-template-columns: 1fr 24px 120px;
+      gap: 6px 10px;
+      align-items:center;
+      padding: 6px 10px;
+      border:1px solid #e6eef8;
+      border-radius:12px;
+      background:#fbfdff;
+    }
+    .proc-row:hover{ background:#f4f9ff; }
+    .proc-row > label{
+      margin:0;
+      font-weight:700;
+      font-size: 12px;
+      line-height: 1.15;
+      color:#334155;
+      letter-spacing: .2px;
+    }
+    .panel .price{
+      width:100%;
+      border:1.6px solid var(--input);
+      border-radius:12px;
+      padding:8px 10px;
+      font-size: 13px;
+      margin:0;
+    }
+    .proc-check{
+      width: 16px;
+      height: 16px;
+      accent-color: var(--brand);
+      margin: 0 auto;
+    }
+    .panel footer{ display:flex; gap:10px; margin-top:14px; }
+    .btn-secondary{ background:#94a3b8; }
+    .btn-primary{ background: var(--brand); }
+
+    @media (max-width: 480px){
+      .panel{ width: 95vw; }
+      .proc-row{ grid-template-columns: 1fr 22px 110px; }
+    }
+
+</style>
 </head>
 
 <body>
@@ -515,6 +572,45 @@
           <option value="">Seleccione profesional...</option>
         </select>
       </div>
+
+      
+      <!-- 🆕 NUEVO: Procedimientos de esta evolución (múltiples) -->
+      <div class="ctrl full">
+        <label>Procedimientos de esta evolución</label>
+
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-buscar" style="max-width:260px;" onclick="abrirModalProcedimientosEvo()">
+            + Agregar procedimiento
+          </button>
+          <button type="button" class="btn btn-buscar" style="max-width:260px;" onclick="limpiarProcedimientosEvo()">
+            Limpiar procedimientos
+          </button>
+        </div>
+
+        <div style="overflow:auto; margin-top:10px;">
+          <table class="tabla-evo">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Procedimiento</th>
+                <th>Cod servicio</th>
+                <th>Finalidad</th>
+                <th>Motivo</th>
+                <th>Dx principal</th>
+                <th>Dx secundarios</th>
+                <th>Detalle</th>
+                <th>Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tbody_proc_evo"></tbody>
+          </table>
+        </div>
+
+        <div style="margin-top:8px; font-size:12px; color:#6b7a90;">
+          Nota: Aquí puedes agregar varios procedimientos para una sola evolución. Cada procedimiento lleva su propio diagnóstico.
+        </div>
+      </div>
+      <!-- /NUEVO -->
 
       <div class="ctrl">
         <label for="evo_tipo">Procedimiento</label>
@@ -687,6 +783,74 @@
     </div>
   </div>
 </div>
+
+<!-- 🆕 Modal: Agregar procedimiento a la evolución -->
+<div id="modalProcEvo" class="panel-backdrop" onclick="cerrarModalProcEvo(event)">
+  <div class="panel" onclick="event.stopPropagation()">
+    <header>
+      <h3>Agregar procedimiento a esta evolución</h3>
+      <button type="button" class="btn btn-secondary" style="width:auto; padding:10px 12px;" onclick="cerrarModalProcEvo()">
+        Cerrar
+      </button>
+    </header>
+
+    <div style="margin-top:12px;" class="grid">
+      <div class="ctrl">
+        <label>Procedimiento</label>
+        <input id="proc_nombre_modal" type="text" list="procedimientos_list_supabase" placeholder="Escribe y elige..." />
+        <small style="color:#64748b; font-weight:600;">Selecciona un procedimiento para cargar RIPS automáticamente.</small>
+      </div>
+
+      <div class="grid g-2">
+        <div class="ctrl">
+          <label>Cod servicio (auto)</label>
+          <input id="proc_codservicio_modal" type="text" readonly placeholder="Auto" />
+        </div>
+        <div class="ctrl">
+          <label>Finalidad (auto)</label>
+          <input id="proc_finalidad_modal" type="text" readonly placeholder="Auto" />
+        </div>
+      </div>
+
+      <div class="ctrl">
+        <label>Motivo atención</label>
+        <select id="proc_motivo_modal">
+          <option value="">Seleccione motivo...</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label>Diagnóstico principal</label>
+        <select id="proc_dx_principal_modal">
+          <option value="">Seleccione diagnóstico...</option>
+        </select>
+      </div>
+
+      <div class="ctrl">
+        <label>Diagnósticos secundarios</label>
+        <div id="proc_dx_sec_container_modal"></div>
+        <button type="button" class="btn btn-buscar" style="max-width:260px;" onclick="agregarDxSecModal()">
+          + Agregar diagnóstico secundario
+        </button>
+      </div>
+
+      <div class="ctrl">
+        <label>Detalle del procedimiento</label>
+        <textarea id="proc_detalle_modal" style="min-height:140px;" placeholder="Piezas, materiales, notas..."></textarea>
+      </div>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+        <button type="button" class="btn btn-secondary" style="max-width:200px;" onclick="limpiarModalProcEvo()">
+          Limpiar
+        </button>
+        <button type="button" class="btn btn-primary" style="max-width:240px;" onclick="confirmarAgregarProcEvo()">
+          Agregar a la evolución
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <script>
   // ==============================
@@ -2139,14 +2303,586 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     _idxEvolucionFirmas = null;
   }
 
+
+
+  // =========================================================
+  // 🆕 EVOLUCIÓN_PROCEDIMIENTOS: múltiples procedimientos por evolución
+  //    (NO elimina nada existente: solo agrega y sobreescribe funciones al final)
+  // =========================================================
+
+  // Lista temporal de procedimientos antes de guardar la evolución
+  let procedimientosEvo = [];
+
+  // TomSelects del modal (para evitar re-inicializaciones)
+  let _modalTomDxPrincipal = null;
+  let _modalTomMotivo = null;
+  let _modalTomDxSecList = [];
+  let _procModalSelected = null;
+
+  function _safeParseJSON(val){
+    try { return JSON.parse(val); } catch(e){ return null; }
+  }
+
+  function renderProcedimientosEvo(){
+    const tb = document.getElementById("tbody_proc_evo");
+    if(!tb) return;
+
+    if(!procedimientosEvo.length){
+      tb.innerHTML = `
+        <tr>
+          <td colspan="9" style="text-align:center; padding:12px; color:#6b7a90;">
+            No hay procedimientos agregados
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tb.innerHTML = procedimientosEvo.map((p, i) => {
+      const dxp = p.diagnostico_principal
+        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
+        : "—";
+
+      const dxs = (p.diagnosticos_secundarios || [])
+        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
+        .join("<br>") || "—";
+
+      return `
+        <tr>
+          <td>${i+1}</td>
+          <td>${escapeHtml(p.procedimiento_nombre || "")}</td>
+          <td>${escapeHtml(p.codservicio || "")}</td>
+          <td>${escapeHtml(p.finalidad_desc || "")}</td>
+          <td>${escapeHtml(p.motivo_atencion || "")}</td>
+          <td>${escapeHtml(dxp)}</td>
+          <td>${dxs}</td>
+          <td style="white-space:pre-wrap;">${escapeHtml(p.detalle || "")}</td>
+          <td>
+            <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+              onclick="eliminarProcedimientoEvo(${i})">Quitar</button>
+          </td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+  function eliminarProcedimientoEvo(idx){
+    procedimientosEvo.splice(idx, 1);
+    renderProcedimientosEvo();
+  }
+
+  function limpiarProcedimientosEvo(){
+    procedimientosEvo = [];
+    renderProcedimientosEvo();
+  }
+
+  // --- Modal ---
+  function abrirModalProcedimientosEvo(){
+    const modal = document.getElementById("modalProcEvo");
+    if (!modal) return;
+
+    // Reusar motivos del select principal si ya existe
+    const motivoSel = document.getElementById("proc_motivo_modal");
+    const mainMotivo = document.getElementById("evo_motivo_atencion");
+    if (motivoSel && mainMotivo && mainMotivo.options.length > 1 && motivoSel.options.length <= 1) {
+      motivoSel.innerHTML = mainMotivo.innerHTML;
+    }
+
+    // Reusar diagnósticos del select principal (ya cargado con cargarDiagnosticosCIE10)
+    const dxModal = document.getElementById("proc_dx_principal_modal");
+    const dxMain  = document.getElementById("diag_principal_select");
+    if (dxModal && dxMain && dxMain.options.length > 1 && dxModal.options.length <= 1) {
+      dxModal.innerHTML = dxMain.innerHTML;
+    }
+
+    // TomSelect DX principal
+    if (dxModal && !_modalTomDxPrincipal) {
+      _modalTomDxPrincipal = new TomSelect(dxModal, {
+        searchField: ["text"],
+        placeholder: "Escribe para buscar diagnóstico...",
+        allowEmptyOption: true
+      });
+    }
+
+    // TomSelect Motivo
+    if (motivoSel && !_modalTomMotivo) {
+      _modalTomMotivo = new TomSelect(motivoSel, {
+        searchField: ["text"],
+        placeholder: "Buscar motivo...",
+        allowEmptyOption: true
+      });
+    }
+
+    modal.style.display = "flex";
+    limpiarModalProcEvo();
+  }
+
+  function cerrarModalProcEvo(evt){
+    const modal = document.getElementById("modalProcEvo");
+    if (!modal) return;
+    modal.style.display = "none";
+  }
+
+  function limpiarModalProcEvo(){
+    _procModalSelected = null;
+
+    const procInp = document.getElementById("proc_nombre_modal");
+    const cs = document.getElementById("proc_codservicio_modal");
+    const fi = document.getElementById("proc_finalidad_modal");
+    const det = document.getElementById("proc_detalle_modal");
+
+    if (procInp) procInp.value = "";
+    if (cs) cs.value = "";
+    if (fi) fi.value = "";
+    if (det) det.value = "";
+
+    if (_modalTomMotivo) _modalTomMotivo.clear();
+    if (_modalTomDxPrincipal) _modalTomDxPrincipal.clear();
+
+    const cont = document.getElementById("proc_dx_sec_container_modal");
+    if (cont) cont.innerHTML = "";
+
+    _modalTomDxSecList.forEach(ts => { try { ts.destroy(); } catch(e){} });
+    _modalTomDxSecList = [];
+  }
+
+  function agregarDxSecModal(){
+    const cont = document.getElementById("proc_dx_sec_container_modal");
+    const dxModal = document.getElementById("proc_dx_principal_modal");
+    if (!cont || !dxModal) return;
+
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.gap = "8px";
+    row.style.marginBottom = "8px";
+    row.style.alignItems = "center";
+
+    const sel = document.createElement("select");
+    sel.innerHTML = dxModal.innerHTML;
+    row.appendChild(sel);
+
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.textContent = "X";
+    btn.style.padding = "6px 10px";
+    btn.style.cursor = "pointer";
+    btn.onclick = () => {
+      const idx = _modalTomDxSecList.findIndex(x => x.input === sel);
+      if (idx >= 0) {
+        try { _modalTomDxSecList[idx].destroy(); } catch(e){}
+        _modalTomDxSecList.splice(idx,1);
+      }
+      row.remove();
+    };
+    row.appendChild(btn);
+
+    cont.appendChild(row);
+
+    const ts = new TomSelect(sel, {
+      searchField: ["text"],
+      placeholder: "Buscar diagnóstico secundario...",
+      allowEmptyOption: true
+    });
+    _modalTomDxSecList.push(ts);
+  }
+
+  // Cargar RIPS al elegir procedimiento del modal
+  document.addEventListener("DOMContentLoaded", () => {
+    const procInp = document.getElementById("proc_nombre_modal");
+    if (!procInp) return;
+
+    async function handleProcChange(){
+      const nombre = (procInp.value || "").trim();
+      if (!nombre) return;
+
+      const conf = await obtenerConfigRipsPorProcedimientoNombre(nombre);
+      _procModalSelected = conf;
+
+      const cs = document.getElementById("proc_codservicio_modal");
+      const fi = document.getElementById("proc_finalidad_modal");
+
+      if (!conf) {
+        if (cs) cs.value = "";
+        if (fi) fi.value = "";
+        alert("⚠️ Ese procedimiento no tiene configuración RIPS (cod servicio/finalidad). Configúralo en Supabase.");
+        return;
+      }
+
+      if (cs) cs.value = conf.codservicio || "";
+      if (fi) fi.value = conf.finalidad_desc || "";
+    }
+
+    procInp.addEventListener("change", handleProcChange);
+    procInp.addEventListener("blur", handleProcChange);
+  });
+
+  function confirmarAgregarProcEvo(){
+    const procNombre = (document.getElementById("proc_nombre_modal")?.value || "").trim();
+    if (!procNombre) { alert("⚠️ Debes seleccionar un procedimiento."); return; }
+
+    if (!_procModalSelected || !_procModalSelected.procedimiento_id) {
+      alert("⛔ No se pudo cargar RIPS para este procedimiento. Revisa configuración.");
+      return;
+    }
+
+    const motivo = (document.getElementById("proc_motivo_modal")?.value || "").trim();
+    if (!motivo) { alert("⚠️ Debes seleccionar el motivo de atención."); return; }
+
+    const dxVal = document.getElementById("proc_dx_principal_modal")?.value || "";
+    if (!dxVal) { alert("⚠️ Debes seleccionar un diagnóstico principal."); return; }
+
+    const dxPrincipal = _safeParseJSON(dxVal);
+    if (!dxPrincipal) { alert("⚠️ Diagnóstico principal inválido."); return; }
+
+    const dxSec = [];
+    document.querySelectorAll("#proc_dx_sec_container_modal select").forEach(sel => {
+      const v = sel.value || "";
+      if (!v) return;
+      const obj = _safeParseJSON(v);
+      if (obj) dxSec.push(obj);
+    });
+
+    const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
+
+    const procItem = {
+      procedimiento_id: _procModalSelected.procedimiento_id,
+      procedimiento_nombre: _procModalSelected.procedimiento_nombre,
+      valor: _procModalSelected.valor ?? null,
+
+      codservicio: _procModalSelected.codservicio ?? null,
+      finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
+      finalidad_desc: _procModalSelected.finalidad_desc ?? "",
+
+      motivo_atencion: motivo,
+      diagnostico_principal: dxPrincipal,
+      diagnosticos_secundarios: dxSec,
+      detalle: detalle
+    };
+
+    procedimientosEvo.push(procItem);
+    renderProcedimientosEvo();
+    cerrarModalProcEvo();
+  }
+
+  // Exponer funciones nuevas
+  window.abrirModalProcedimientosEvo = abrirModalProcedimientosEvo;
+  window.cerrarModalProcEvo = cerrarModalProcEvo;
+  window.limpiarModalProcEvo = limpiarModalProcEvo;
+  window.agregarDxSecModal = agregarDxSecModal;
+  window.confirmarAgregarProcEvo = confirmarAgregarProcEvo;
+
+  window.eliminarProcedimientoEvo = eliminarProcedimientoEvo;
+  window.limpiarProcedimientosEvo = limpiarProcedimientosEvo;
+
+  // Inicializar tabla de procedimientos al cargar
+  document.addEventListener("DOMContentLoaded", () => {
+    try { renderProcedimientosEvo(); } catch(e){}
+  });
+
+  // =========================================================
+  // 🆕 OVERRIDE: agregarEvolucion() para enviar procedimientos[]
+  //     - Si NO hay procedimientosEvo, usa el flujo original.
+  // =========================================================
+  window._agregarEvolucion_original = window.agregarEvolucion;
+
+  window.agregarEvolucion = async function agregarEvolucion() {
+    try {
+      if (!procedimientosEvo.length) {
+        if (typeof window._agregarEvolucion_original === "function") {
+          return await window._agregarEvolucion_original();
+        }
+        alert("⚠️ Agrega al menos 1 procedimiento a la evolución.");
+        return;
+      }
+
+      const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+      if (!cedula) { alert("⚠️ Primero busca el paciente por cédula."); return; }
+
+      const fecha = (document.getElementById("evo_fecha")?.value || _hoyISO()).trim();
+      const hora  = (document.getElementById("evo_hora")?.value || _horaHHMM()).trim();
+      const profesional = (document.getElementById("evo_profesional")?.value || "").trim();
+      const detalle = (document.getElementById("evo_detalle")?.value || "").trim();
+
+      if (!profesional) { alert("⚠️ Selecciona el profesional."); return; }
+
+      const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+
+      const firmaPaciente = obtenerFirmaBase64("firma_paciente");
+      const firmaProfesional = obtenerFirmaBase64("firma_profesional");
+
+      const procedimientosLabel = procedimientosEvo.map(p => (p.procedimiento_nombre || "").trim()).filter(Boolean).join(" | ");
+
+      const item = {
+        id: generarEvolucionId(),
+        fecha,
+        hora,
+        profesional,
+        detalle,
+
+        // Para compatibilidad visual con tabla existente:
+        procedimiento: procedimientosLabel,
+
+        firma_paciente: firmaPaciente,
+        firma_profesional: firmaProfesional,
+
+        cedula_paciente: cedula,
+        usuario,
+        ts: new Date().toISOString(),
+
+        // 🆕 guardamos la lista también localmente (para render)
+        procedimientos: JSON.parse(JSON.stringify(procedimientosEvo))
+      };
+
+      evoluciones.unshift(item);
+      renderEvoluciones();
+
+      // Limpia formularios y la lista de procedimientos
+      limpiarProcedimientosEvo();
+      limpiarEvolucionForm();
+
+      const payload = {
+        evento: "agregar_evolucion",
+        cedula,
+        evolucion: item,
+        procedimientos: item.procedimientos, // 🆕 aquí viaja para EVOLUCION_PROCEDIMIENTOS
+        fecha_envio: new Date().toISOString(),
+        usuario_logueado: usuario
+      };
+
+      const resp = await fetch(WEBHOOK_GUARDAR_EVOLUCION, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      if (!resp.ok) throw new Error("HTTP " + resp.status);
+
+    } catch (err) {
+      console.warn("⚠️ Evolución guardada pero NO enviada:", err);
+      alert("⚠️ Evolución guardada, pero no se pudo enviar a n8n.");
+    }
+  };
+
+  // =========================================================
+  // 🆕 OVERRIDE: renderEvoluciones() para mostrar procedimientos[] si viene del webhook
+  // =========================================================
+  function _procedimientoCellFromEvo(evo){
+    const procs = evo?.procedimientos;
+    if (Array.isArray(procs) && procs.length) {
+      return procs
+        .map(p => escapeHtml((p.procedimiento_nombre || p.procedimiento || "").toUpperCase()))
+        .filter(Boolean)
+        .join("<br>");
+    }
+    const one = evo?.procedimiento ?? evo?.evo_tipo ?? "";
+    return escapeHtml(String(one).toUpperCase());
+  }
+
+  // Guardar referencia del render original si existe
+  window._renderEvoluciones_original = window.renderEvoluciones;
+
+  window.renderEvoluciones = function renderEvoluciones(){
+    const tbody = document.getElementById("tabla_evoluciones");
+    if (!tbody) return;
+
+    tbody.innerHTML = "";
+
+    if (!evoluciones || evoluciones.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
+            Paciente sin evoluciones
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    evoluciones.forEach((evo, idx) => {
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+      const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
+      const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
+      const profesional = evo.profesional ?? evo.evo_profesional ?? "";
+      const detalle = evo.detalle ?? evo.evo_detalle ?? "";
+
+      const fp = evo.firma_paciente || "";
+      const fpr = evo.firma_profesional || "";
+
+      const btnFirmas = `
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${
+            fp
+              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+                    onclick="openFirmaModal('Firma del paciente', '${fp}')">Ver firma paciente</button>`
+              : `<span style="font-size:12px; color:#6b7a90;">Sin firma paciente</span>`
+          }
+          ${
+            fpr
+              ? `<button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+                    onclick="openFirmaModal('Firma del profesional', '${fpr}')">Ver firma profesional</button>`
+              : `<span style="font-size:12px; color:#6b7a90;">Sin firma profesional</span>`
+          }
+        </div>
+      `;
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+          ${escapeHtml(idEvo)}
+        </td>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
+        <td>${_procedimientoCellFromEvo(evo)}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+        <td>${btnFirmas}</td>
+        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" disabled title="No permitido">
+            Eliminar
+          </button>
+
+          <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
+            onclick="verEvolucionDesdeWebhook('${idEvo}')" title="Ver evolución como documento">
+            Ver
+          </button>
+
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+            onclick="editarFirmas(${idx})"
+            title="${(fp && fpr) ? 'Evolución ya firmada' : 'Firmar evolución'}"
+            ${(fp && fpr) ? 'disabled' : ''}>
+            ${(fp && fpr) ? 'Firmado' : 'Firmar'}
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  };
+
+  // =========================================================
+  // 🆕 OVERRIDE: abrirModalConDatos(evo) para mostrar lista de procedimientos si llega del webhook
+  // =========================================================
+  window._abrirModalConDatos_original = window.abrirModalConDatos;
+
+  window.abrirModalConDatos = function abrirModalConDatos(evo){
+    // Si no viene procedimientos[], usa el original sin tocar nada
+    const procs = evo?.procedimientos || evo?.procedimientos_evo || evo?.evolucion_procedimientos;
+    if (!Array.isArray(procs) || !procs.length) {
+      if (typeof window._abrirModalConDatos_original === "function") return window._abrirModalConDatos_original(evo);
+    }
+
+    const modal = document.getElementById("modalEvoDoc");
+    const body = document.getElementById("modalEvoDocBody");
+    const title = document.getElementById("modalEvoDocTitulo");
+    if (!modal || !body || !title) return;
+
+    title.textContent = "Evolución (Documento)";
+
+    const paciente = (document.getElementById("pacienteNombre")?.textContent || "—").trim();
+    const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
+
+    const idEvo = evo.id_evolucion || evo["id-evolucion"] || evo.id || "—";
+    const fecha = evo.evo_fecha || evo.fecha || "—";
+    const hora = evo.evo_hora || evo.hora || "";
+    const profesional = evo.evo_profesional || evo.profesional || "—";
+    const detalle = evo.evo_detalle || evo.detalle || "—";
+
+    const firmaPaciente = evo.firma_paciente || "";
+    const firmaProfesional = evo.firma_profesional || "";
+
+    const procHtml = procs.map((p, i) => {
+      const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
+      const cod = p.codservicio || p.cod_servicio || "—";
+      const fin = p.finalidad_desc || p.finalidad || p.finalidadTecnologiaSalud || "—";
+      const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
+      const dxp = p.diagnostico_principal
+        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
+        : "—";
+      const dxs = (p.diagnosticos_secundarios || p.diagnostico_secundario || [])
+        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
+        .join("<br>") || "—";
+      const detp = p.detalle || "—";
+
+      return `
+        <div class="doc-box" style="margin-top:10px;">
+          <div class="k">Procedimiento ${i+1}</div>
+          <div class="v"><strong>${escapeHtml(String(pNombre).toUpperCase())}</strong></div>
+          <div class="v" style="margin-top:6px;"><strong>Cod servicio:</strong> ${escapeHtml(cod)}</div>
+          <div class="v"><strong>Finalidad:</strong> ${escapeHtml(fin)}</div>
+          <div class="v"><strong>Motivo:</strong> ${escapeHtml(motivo)}</div>
+          <div class="v"><strong>Dx principal:</strong> ${escapeHtml(dxp)}</div>
+          <div class="v"><strong>Dx secundarios:</strong><br>${dxs}</div>
+          <div class="v" style="white-space:pre-wrap; margin-top:6px;"><strong>Detalle:</strong><br>${escapeHtml(detp)}</div>
+        </div>
+      `;
+    }).join("");
+
+    body.innerHTML = `
+      <div class="doc-title">Evolución clínica odontológica</div>
+
+      <div class="doc-meta">
+        <div class="doc-box">
+          <div class="k">Paciente</div>
+          <div class="v">${escapeHtml(paciente)}</div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">Cédula</div>
+          <div class="v">${escapeHtml(cedula)}</div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">ID Evolución</div>
+          <div class="v" style="font-family:monospace;font-size:12px;">
+            ${escapeHtml(idEvo)}
+          </div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">Fecha / Hora</div>
+          <div class="v">${escapeHtml(fecha)} ${escapeHtml(hora)}</div>
+        </div>
+
+        <div class="doc-box">
+          <div class="k">Profesional</div>
+          <div class="v">${escapeHtml(profesional)}</div>
+        </div>
+      </div>
+
+      <div class="doc-box">
+        <div class="k">Detalle / Observaciones (general)</div>
+        <div class="v">${escapeHtml(detalle)}</div>
+      </div>
+
+      ${procHtml}
+
+      <div class="doc-firmas">
+        <div class="doc-firma">
+          <div class="k">Firma del paciente</div>
+          ${
+            firmaPaciente
+              ? `<img src="${firmaPaciente}" />`
+              : `<div class="doc-nofirma">Sin firma del paciente</div>`
+          }
+        </div>
+
+        <div class="doc-firma">
+          <div class="k">Firma del profesional</div>
+          ${
+            firmaProfesional
+              ? `<img src="${firmaProfesional}" />`
+              : `<div class="doc-nofirma">Sin firma del profesional</div>`
+          }
+        </div>
+      </div>
+    `;
+
+    modal.classList.add("show");
+  };
+
+
 </script>
 </body>
 </html>
-
-
-
-
-
 
 
 
