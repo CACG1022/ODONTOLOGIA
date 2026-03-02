@@ -1578,14 +1578,7 @@ if (!select) return;
       select.appendChild(option);
     });
 
-    // 🔥 ACTIVAR BUSCADOR
-    new TomSelect(select, {
-  searchField: ['text'],
-  placeholder: "Escribe para buscar diagnóstico...",
-  allowEmptyOption: true,
-  create: false,
-  preload: false
-});
+
 
   } catch (err) {
     console.warn("Error cargando CIE10:", err);
@@ -2360,6 +2353,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
   function abrirModalProcedimientosEvo(){
     const modal = document.getElementById("modalProcEvo");
     if (!modal) return;
+     modal.style.display = "flex";
 
     // Reusar motivos del select principal si ya existe
     const motivoSel = document.getElementById("proc_motivo_modal");
@@ -2375,14 +2369,18 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
       dxModal.innerHTML = dxMain.innerHTML;
     }
 
-    // TomSelect DX principal
-    if (dxModal && !_modalTomDxPrincipal) {
-      _modalTomDxPrincipal = new TomSelect(dxModal, {
-        searchField: ["text"],
-        placeholder: "Escribe para buscar diagnóstico...",
-        allowEmptyOption: true
-      });
-    }
+    // TomSelect DX principal (solo si NO está inicializado)
+if (dxModal) {
+  if (dxModal.tomselect) {
+    _modalTomDxPrincipal = dxModal.tomselect;
+  } else {
+    _modalTomDxPrincipal = new TomSelect(dxModal, {
+      searchField: ["text"],
+      placeholder: "Escribe para buscar diagnóstico...",
+      allowEmptyOption: true
+    });
+  }
+}
 
     // TomSelect Motivo
     if (motivoSel && !_modalTomMotivo) {
@@ -2393,7 +2391,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
       });
     }
 
-    modal.style.display = "flex";
+   
     limpiarModalProcEvo();
   }
 
