@@ -801,6 +801,11 @@
         <small style="color:#64748b; font-weight:600;">Selecciona un procedimiento para cargar RIPS automáticamente.</small>
       </div>
 
+      <div id="mensajeRipsInvalido"
+     style="display:none; margin-top:6px; color:#b91c1c; font-size:12px; font-weight:600;">
+  ⚠️ Este procedimiento no tiene configuración RIPS.
+</div>
+
       <div class="grid g-2">
         <div class="ctrl">
           <label>Cod servicio (auto)</label>
@@ -2548,6 +2553,10 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     if (!procInp) return;
 
     async function handleProcChange(){
+
+      const mensaje = document.getElementById("mensajeRipsInvalido");
+if (mensaje) mensaje.style.display = "none";
+      
       const nombre = (procInp.value || "").trim();
       if (!nombre) return;
 
@@ -2558,11 +2567,19 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
       const fi = document.getElementById("proc_finalidad_modal");
 
       if (!conf) {
-        if (cs) cs.value = "";
-        if (fi) fi.value = "";
-        alert("⚠️ Ese procedimiento no tiene configuración RIPS (cod servicio/finalidad). Configúralo en Supabase.");
-        return;
-      }
+  if (cs) cs.value = "";
+  if (fi) fi.value = "";
+
+  console.warn("Procedimiento sin configuración RIPS");
+
+  // 🔥 Mostrar mensaje visual sin bloquear
+  const mensaje = document.getElementById("mensajeRipsInvalido");
+  if (mensaje) {
+    mensaje.style.display = "block";
+  }
+
+  return;
+}
 
       if (cs) cs.value = conf.codservicio || "";
       if (fi) fi.value = conf.finalidad_desc || "";
