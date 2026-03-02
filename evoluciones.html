@@ -2580,12 +2580,9 @@ if (mensaje) mensaje.style.display = "none";
   window.agregarEvolucion = async function agregarEvolucion() {
     try {
       if (!procedimientosEvo.length) {
-        if (typeof window._agregarEvolucion_original === "function") {
-          return await window._agregarEvolucion_original();
-        }
-        alert("⚠️ Agrega al menos 1 procedimiento a la evolución.");
-        return;
-      }
+  alert("⚠️ Debes agregar al menos 1 procedimiento a la evolución.");
+  return;
+}
 
       const cedula = (_cedulaActual || document.getElementById("cedula_paciente")?.value || "").trim();
       if (!cedula) { alert("⚠️ Primero busca el paciente por cédula."); return; }
