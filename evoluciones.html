@@ -933,19 +933,28 @@ textarea{
         </button>
       </div>
 
-      <div class="ctrl">
+      <div class="ctrl full">
         <label>Detalle del procedimiento</label>
         <textarea id="proc_detalle_modal" style="min-height:140px;" placeholder="Piezas, materiales, notas..."></textarea>
       </div>
 
-      <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
-        <button type="button" class="btn btn-secondary" style="max-width:200px;" onclick="limpiarModalProcEvo()">
-          Limpiar
-        </button>
-        <button type="button" class="btn btn-primary" style="max-width:240px;" onclick="confirmarAgregarProcEvo()">
-          Agregar a la evolución
-        </button>
-      </div>
+      <div style="display:flex; gap:12px; justify-content:flex-end; margin-top:10px;">
+  
+  <button type="button"
+    class="btn btn-secondary"
+    style="width:180px;"
+    onclick="limpiarModalProcEvo()">
+    Limpiar
+  </button>
+
+  <button type="button"
+    class="btn"
+    style="width:220px; background:#3ED6AA; color:#0f172a; font-weight:600;"
+    onclick="confirmarAgregarProcEvo()">
+    Agregar a la evolución
+  </button>
+
+</div>
     </div>
   </div>
 </div>
@@ -1125,12 +1134,16 @@ function cargarClasificacionesRIPS() {
 
   window.MODALIDAD_MAP = modalidades;
   const selModalidad = document.getElementById("proc_modalidad_modal");
-  if (selModalidad) {
-    selModalidad.innerHTML = '<option value="">Seleccione...</option>';
-    Object.entries(modalidades).forEach(([c,n])=>{
-      selModalidad.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
-    });
-  }
+if (selModalidad) {
+  selModalidad.innerHTML = '<option value="">Seleccione...</option>';
+
+  Object.entries(modalidades).forEach(([c,n])=>{
+    selModalidad.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
+  });
+
+  // ✅ DEFAULT = 01 INTRAMURAL
+  selModalidad.value = "01";
+}
 
   // 🔹 Grupo servicio
   const grupos = {
