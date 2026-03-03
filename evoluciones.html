@@ -243,8 +243,10 @@
 
     .grid{ display:grid; gap:var(--gap); }
     #modalProcEvo .grid{
-     gap:10px;   /* antes era 18px */
-     }
+  display:grid;
+  grid-template-columns: repeat(2, 1fr); /* 🔥 columnas iguales */
+  gap:6px;
+}
     .g-2{ grid-template-columns:1fr 1fr; }
     .g-3{ grid-template-columns:repeat(3,1fr); }
     .full{ grid-column:1 / -1; }
