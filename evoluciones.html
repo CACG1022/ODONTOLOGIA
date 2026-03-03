@@ -2247,6 +2247,27 @@ if (inpProc) {
     await cargarConfigRipsPorProcedimientoNombre(inpProc.value);
   });
 }
+      // ==============================
+  // 🔥 DETECTAR CAMBIOS SIN GUARDAR
+  // ==============================
+
+  const detalleInput = document.getElementById("evo_detalle");
+  if (detalleInput) {
+    detalleInput.addEventListener("input", () => {
+      if (detalleInput.value.trim() !== "") {
+        _cambiosPendientesEvo = true;
+      }
+    });
+  }
+
+  const profesionalInput = document.getElementById("evo_profesional");
+  if (profesionalInput) {
+    profesionalInput.addEventListener("change", () => {
+      if (profesionalInput.value.trim() !== "") {
+        _cambiosPendientesEvo = true;
+      }
+    });
+  }
   });
 
   // Exponer
@@ -2559,6 +2580,8 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
   // Lista temporal de procedimientos antes de guardar la evolución
   let procedimientosEvo = [];
+ let _cambiosPendientesEvo = false;
+  
   let _editIndexProcEvo = null;
 
   // TomSelects del modal (para evitar re-inicializaciones)
@@ -2972,6 +2995,7 @@ if (!via) {
 }
     renderProcedimientosEvo();
     cerrarModalProcEvo();
+    _cambiosPendientesEvo = true;
   }
 
   // Exponer funciones nuevas
@@ -3065,6 +3089,7 @@ if (!via) {
     });
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
+    _cambiosPendientesEvo = false;
 
   } catch (err) {
     console.warn("⚠️ Evolución guardada pero NO enviada:", err);
@@ -3343,6 +3368,9 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
           <div class="v">${escapeHtml(fecha)} ${escapeHtml(hora)}</div>
         </div>
 
+
+        
+
         <div class="doc-box">
           <div class="k">Profesional</div>
           <div class="v">${escapeHtml(profesional)}</div>
@@ -3436,6 +3464,25 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
   ventana.focus();
   ventana.print();
 }
+
+  // ==============================
+// 🔒 BLOQUEAR RECARGA SI HAY CAMBIOS
+// ==============================
+
+window.addEventListener("beforeunload", function (e) {
+
+  const hayProcedimientos = procedimientosEvo.length > 0;
+  const hayDetalle = (document.getElementById("evo_detalle")?.value || "").trim() !== "";
+  const hayProfesional = (document.getElementById("evo_profesional")?.value || "").trim() !== "";
+
+  if (_cambiosPendientesEvo && (hayProcedimientos || hayDetalle || hayProfesional)) {
+
+    e.preventDefault();
+    e.returnValue = "";
+
+    return "";
+  }
+});
 
 </script>
 </body>
