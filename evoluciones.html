@@ -2758,6 +2758,7 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
   // 🔎 Obtener descripción de finalidad desde Supabase
 async function obtenerDescripcionFinalidad(codigo) {
+  
   if (!codigo || !window.supabase) return null;
 
   const { data, error } = await window.supabase
@@ -2769,6 +2770,21 @@ async function obtenerDescripcionFinalidad(codigo) {
   if (error || !data) return null;
 
   return data.descripcion;
+}
+
+// 🔎 Obtener nombre CIE10 desde Supabase
+async function obtenerNombreCIE10(codigo) {
+  if (!codigo || !window.supabase) return null;
+
+  const { data, error } = await window.supabase
+    .from("cie10_odontologia")
+    .select("nombre")
+    .eq("codigo", codigo)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return data.nombre;
 }
   
   // =========================================================
@@ -2824,35 +2840,42 @@ if (finCodigo) {
 }
       
       const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
-      const dxp = (() => {
-  const d = p.diagnostico_principal;
-  if (!d) return "—";
-  if (typeof d === "string") return d; // ej: "K010"
-  if (typeof d === "object") {
-    const cod = d.codigo ?? d.code ?? "—";
-    const nom = d.nombre ?? d.descripcion ?? d.name ?? "";
-    return nom ? `${cod} - ${nom}` : String(cod);
+
+    let dxp = "—";
+
+const d = p.diagnostico_principal;
+
+if (d) {
+  const cod = typeof d === "string"
+    ? d
+    : (d.codigo ?? d.code ?? null);
+
+  if (cod) {
+    const nombre = await obtenerNombreCIE10(cod);
+    dxp = nombre ? `${cod} - ${nombre}` : cod;
   }
-  return "—";
-})();
+}
       const dxsArr = [];
 
 const s1 = p.diagnostico_secundario_1;
 const s2 = p.diagnostico_secundario_2;
 
-function fmtDx(d){
+async function fmtDx(d){
   if (!d) return null;
-  if (typeof d === "string") return d;
-  if (typeof d === "object") {
-    const cod = d.codigo ?? d.code ?? "—";
-    const nom = d.nombre ?? d.descripcion ?? d.name ?? "";
-    return nom ? `${cod} - ${nom}` : String(cod);
-  }
-  return null;
+
+  const cod = typeof d === "string"
+    ? d
+    : (d.codigo ?? d.code ?? null);
+
+  if (!cod) return null;
+
+  const nombre = await obtenerNombreCIE10(cod);
+
+  return nombre ? `${cod} - ${nombre}` : cod;
 }
 
-const f1 = fmtDx(s1);
-const f2 = fmtDx(s2);
+const f1 = await fmtDx(s1);
+const f2 = await fmtDx(s2);
 
 if (f1) dxsArr.push(`Dx secundarios 1: ${f1}`);
 if (f2) dxsArr.push(`Dx secundarios 2: ${f2}`);
