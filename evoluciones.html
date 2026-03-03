@@ -682,12 +682,11 @@ textarea{
               <tr>
                 <th>#</th>
                 <th>Procedimiento</th>
-                <th>Cod servicio</th>
                 <th>Finalidad</th>
-                <th>Motivo</th>
+  
                 <th>Dx principal</th>
                 <th>Dx secundarios</th>
-                <th>Detalle</th>
+                
                 <th>Acción</th>
               </tr>
             </thead>
@@ -2574,60 +2573,67 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
  
   
-  function renderProcedimientosEvo(){
-    const tb = document.getElementById("tbody_proc_evo");
-    if(!tb) return;
+ function renderProcedimientosEvo(){
+  const tb = document.getElementById("tbody_proc_evo");
+  if(!tb) return;
 
-    if(!procedimientosEvo.length){
-      tb.innerHTML = `
-        <tr>
-          <td colspan="9" style="text-align:center; padding:12px; color:#6b7a90;">
-            No hay procedimientos agregados
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    tb.innerHTML = procedimientosEvo.map((p, i) => {
-      const dxp = p.diagnostico_principal
-        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
-        : "—";
-
-      const dxs = [
-  p.diagnostico_secundario_1,
-  p.diagnostico_secundario_2
-]
-.filter(Boolean)
-.map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
-.join("<br>") || "—";
-      return `
-        <tr>
-          <td>${i+1}</td>
-          <td>${escapeHtml(p.procedimiento_nombre || "")}</td>
-          <td>${escapeHtml(p.codservicio || "")}</td>
-          <td>${escapeHtml(p.finalidad_desc || "")}</td>
-          <td>${escapeHtml(p.motivo_atencion || "")}</td>
-          <td>${escapeHtml(dxp)}</td>
-          <td>${dxs}</td>
-          <td style="white-space:pre-wrap;">${escapeHtml(p.detalle || "")}</td>
-         <td style="display:flex; gap:6px;">
-  <button type="button" class="btn btn-agenda" 
-    style="padding:8px 10px; width:auto;"
-    onclick="editarProcedimientoEvo(${i})">
-    Editar
-  </button>
-
-  <button type="button" class="btn btn-buscar" 
-    style="padding:8px 10px; width:auto;"
-    onclick="eliminarProcedimientoEvo(${i})">
-    Quitar
-  </button>
-</td>
-        </tr>
-      `;
-    }).join("");
+  if(!procedimientosEvo.length){
+    tb.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align:center; padding:12px; color:#6b7a90;">
+          No hay procedimientos agregados
+        </td>
+      </tr>
+    `;
+    return;
   }
+
+  tb.innerHTML = procedimientosEvo.map((p, i) => `
+    <tr>
+      <td>${i+1}</td>
+
+      <td>${escapeHtml(p.procedimiento_nombre || "")}</td>
+
+      <td>${escapeHtml(p.finalidad_desc || "")}</td>
+
+      <td>
+        ${
+          p.diagnostico_principal
+            ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || ""}`
+            : "—"
+        }
+      </td>
+
+      <td>
+        ${
+          [
+            p.diagnostico_secundario_1,
+            p.diagnostico_secundario_2
+          ]
+          .filter(Boolean)
+          .map(d => `${d.codigo} - ${d.nombre || ""}`)
+          .join("<br>") || "—"
+        }
+      </td>
+
+      <td style="display:flex; gap:6px;">
+        <button type="button"
+          class="btn btn-agenda"
+          style="padding:8px 10px; width:auto;"
+          onclick="editarProcedimientoEvo(${i})">
+          Editar
+        </button>
+
+        <button type="button"
+          class="btn btn-buscar"
+          style="padding:8px 10px; width:auto;"
+          onclick="eliminarProcedimientoEvo(${i})">
+          Quitar
+        </button>
+      </td>
+    </tr>
+  `).join("");
+}
 
   function eliminarProcedimientoEvo(idx){
     procedimientosEvo.splice(idx, 1);
