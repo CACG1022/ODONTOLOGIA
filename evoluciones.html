@@ -349,12 +349,15 @@
     }
     .modal.show{ display:flex; }
     .modal-card{
-      width:min(720px, 100%);
-      background:#fff;
-      border-radius:14px;
-      box-shadow:0 16px 40px rgba(0,0,0,.25);
-      overflow:hidden;
-    }
+  width:min(900px, 95%);
+  max-height: 90vh;        /* 🔥 no más alto que la pantalla */
+  display:flex;
+  flex-direction:column;
+  background:#fff;
+  border-radius:14px;
+  box-shadow:0 16px 40px rgba(0,0,0,.25);
+  overflow:hidden;
+}
     .modal-head{
       display:flex;
       justify-content:space-between;
@@ -375,7 +378,11 @@
       font-size:13px;
       width:auto;
     }
-    .modal-body{ padding:14px; }
+    ..modal-body{
+  padding:14px;
+  overflow-y:auto;         /* 🔥 scroll interno */
+  flex:1;                  /* 🔥 ocupa espacio disponible */
+}
     .modal-body img{
       width:100%;
       height:auto;
