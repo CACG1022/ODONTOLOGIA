@@ -249,8 +249,8 @@
     .ctrl{
   display:flex;
   flex-direction:column;
-  gap:2px;              /* 🔥 más compacto */
-  margin-bottom:4px;    /* 🔥 menos espacio vertical */
+  gap:4px;           /* un poco más de aire */
+  margin-bottom:8px; /* mejor separación */
 }
     .ctrl label{
   font-size:12px;   /* 🔥 más pequeño */
@@ -258,26 +258,33 @@
   color:var(--muted);
 }
 
-    input[type="text"],
+  input[type="text"],
 input[type="date"],
 input[type="time"],
+select,
 textarea{
-  padding:6px 8px;      /* 🔥 menos alto */
-  font-size:13px;
-  border-radius:8px;
-    }
+  width:100%;
+  padding:8px 10px;
+  font-size:14px;
+  border-radius:10px;
+  border:1px solid var(--input);
+}
+
+    select{
+  width:100%;
+  border:1px solid var(--input);
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:14px;
+  background:#fff;
+  cursor:pointer;
+}
 
     
-    select{
-      width:100%;
-      border:1px solid var(--input);
-      border-radius:10px;
-      padding:12px;
-      font-size:15px;
-      background:#fff;
-      cursor:pointer;
-    }
-    textarea{ min-height:260px; resize:vertical; }
+    textarea{
+  min-height:180px;   /* menos alto */
+  resize:vertical;
+}
 
     .rowline{ height:1px; background:var(--line); margin:12px 0; }
 
@@ -485,7 +492,17 @@ textarea{
     /* ==========================
        🆕 MODAL (procedimientos múltiples por evolución)
        ========================== */
-    .panel-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
+    .panel-backdrop{ 
+  position:fixed; 
+  inset:0; 
+  background:rgba(15,23,42,.35); 
+  display:none; 
+  align-items:center; 
+  justify-content:center; 
+  padding:20px; 
+  z-index:9999;
+  overflow-y:auto;
+}
     .panel{
            width: 620px;
            max-width: 96vw;
@@ -493,11 +510,13 @@ textarea{
            overflow-y: auto;        /* 🔥 scroll interno */
            background:#fff;
            border-radius:14px;
-           padding: 8 px;           /* 🔥 menos padding */
+           padding: 16px;           /* 🔥 menos padding */
            box-shadow:0 20px 50px rgba(0,0,0,.22);
           border:1px solid #e6eef8;
           }
     .panel header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  
+    
     .panel h3{ margin:0; color: var(--ink); font-weight:900; letter-spacing:-.01em; }
     .panel .procs{ display:grid; gap:8px; margin-top:12px; max-height: 52vh; overflow:auto; padding-right: 6px; }
 
