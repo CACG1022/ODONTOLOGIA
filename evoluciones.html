@@ -829,18 +829,6 @@
   const WEBHOOK_GUARDAR_EVOLUCION =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
 
-// ==============================
-// ✅ CACHES (para mostrar "CODIGO - DESCRIPCIÓN")
-// ==============================
-const CIE10_MAP = {};
-const MOTIVO_MAP = {};
-const FINALIDAD_MAP = {};
-
-// Exponer (por si se usa en otros lados)
-window.CIE10_MAP = CIE10_MAP;
-window.MOTIVO_MAP = MOTIVO_MAP;
-window.FINALIDAD_MAP = FINALIDAD_MAP;
-
   // ==============================
   // ✅ UI: NOMBRE DEL PACIENTE
   // ==============================
@@ -964,36 +952,7 @@ if (!select) return;
 }
 
   
-  // ==============================
-// ✅ FINALIDAD TECNOLOGÍA (RIPS) DESDE SUPABASE
-// ==============================
-async async function cargarFinalidadesTecnologia() {
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  try {
-    const { data, error } = await window.supabase
-      .from("finalidad_tecnologia")
-      .select("codigo, descripcion")
-      .order("codigo", { ascending: true });
-
-    if (error) throw error;
-
-    (data || []).forEach(f => {
-      const c = String(f.codigo ?? "").trim();
-      if (!c) return;
-      FINALIDAD_MAP[c] = String(f.descripcion ?? "").trim();
-    });
-  } catch (e) {
-    console.warn("⚠️ Error cargando finalidades:", e);
-  }
-}
-
-function _uuidFallback() {
+  function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -1017,57 +976,6 @@ function _uuidFallback() {
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#039;");
   }
-
-
-  // ==============================
-  // ✅ HELPERS de etiquetas (para MODAL "Ver")
-  // ==============================
-  function isEmpty(v){
-    return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
-  }
-
-  // buildLabel("MOTIVO_MAP", 21) -> "21 - Dolor" / "21"
-  // buildLabel(MOTIVO_MAP, 21) -> idem
-  function buildLabel(mapOrName, code){
-    if (isEmpty(code)) return "—";
-    const c = String(code).trim();
-    const map = (typeof mapOrName === "string") ? window[mapOrName] : mapOrName;
-    const name = map ? map[c] : null;
-    return name ? `${c} - ${name}` : c;
-  }
-
-  // Carga catálogo de finalidades para mostrar descripción (si existe en Supabase)
-  async function cargarFinalidadesDesdeSupabase(){
-    let tries = 0;
-    while (!window.supabase && tries < 40) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.supabase) return;
-
-    const candidatos = ["finalidad_tecnologia", "finalidad_tecnologia_salud", "finalidades_tecnologia_salud"];
-    for (const tabla of candidatos){
-      try {
-        const { data, error } = await window.supabase
-          .from(tabla)
-          .select("codigo, descripcion")
-          .order("codigo", { ascending: true });
-
-        if (error) throw error;
-
-        (data || []).forEach(f => {
-          const c = String(f.codigo ?? "").trim();
-          if (!c) return;
-          FINALIDAD_MAP[c] = String(f.descripcion ?? "").trim();
-        });
-
-        if (Object.keys(FINALIDAD_MAP).length) return;
-      } catch(e){
-        // probar siguiente tabla
-      }
-    }
-  }
-
   function _soloFechaYYYYMMDD(valor) {
     if (!valor) return "";
     if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
@@ -2048,8 +1956,6 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
-    await cargarFinalidadesTecnologia();
-    await cargarFinalidadesDesdeSupabase();
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
@@ -2883,29 +2789,16 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
     const procHtml = procs.map((p, i) => {
       const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
-const cod = p.codservicio || p.cod_servicio || "—";
-
-// Finalidad: puede venir como finalidad_desc o como código (finalidad_codigo)
-const finCod = (p.finalidad_codigo ?? p.finalidadCodigo ?? p.finalidadtecnologiasalud ?? p.finalidadTecnologiaSalud ?? p.finalidad ?? "");
-const fin = p.finalidad_desc || buildLabel(FINALIDAD_MAP, finCod) || "—";
-
-// Motivo: mostrar código - nombre si está en el mapa
-const motCod = (p.motivo_atencion ?? p.causamotivoatencion ?? p.motivo ?? "");
-const motivo = buildLabel(MOTIVO_MAP, motCod) || (String(motCod || "").trim() || "—");
-
-// Diagnósticos: el webhook puede mandar strings (ej: "K000") o objetos
-const dxp = buildDxLabel(p.diagnostico_principal ?? p.diagnosticoPrincipal ?? p.diagnostico_principal_codigo ?? p.diagnostico_principal_id ?? p.diagnostico_principal);
-
-const dxsArr = Array.isArray(p.diagnosticos_secundarios) ? p.diagnosticos_secundarios
-  : Array.isArray(p.diagnostico_secundario) ? p.diagnostico_secundario
-  : [p.diagnostico_secundario_1, p.diagnostico_secundario_2].filter(Boolean);
-
-const dxs = (dxsArr || [])
-  .filter(Boolean)
-  .map(d => escapeHtml(buildDxLabel(d)))
-  .join("<br>") || "—";
-
-const detp = p.detalle || "—";
+      const cod = p.codservicio || p.cod_servicio || "—";
+      const fin = p.finalidad_desc || p.finalidad || p.finalidadTecnologiaSalud || "—";
+      const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
+      const dxp = p.diagnostico_principal
+        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
+        : "—";
+      const dxs = (p.diagnosticos_secundarios || p.diagnostico_secundario || [])
+        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
+        .join("<br>") || "—";
+      const detp = p.detalle || "—";
 
       return `
         <div class="doc-box" style="margin-top:10px;">
@@ -2986,80 +2879,7 @@ const detp = p.detalle || "—";
 
 
 </script>
-
-<!-- ========================= -->
-<!-- PATCH PROCEDIMIENTOS JSON NUEVO -->
-<!-- ========================= -->
-<script>
-(function(){
-
-function buildLabel(mapName, code){
-  if(!code) return "—";
-  if(window[mapName] && window[mapName][code]){
-    return code + " - " + window[mapName][code];
-  }
-  return code;
-}
-
-function buildDxLabel(code){
-  if(!code) return "—";
-  if(window.CIE10_MAP && window.CIE10_MAP[code]){
-    const obj = window.CIE10_MAP[code];
-    const nombre = obj.nombre || obj.descripcion || "";
-    return nombre ? code + " - " + nombre : code;
-  }
-  return code;
-}
-
-if(typeof window.renderProcedimientos === "function"){
-
-  const originalRender = window.renderProcedimientos;
-
-  window.renderProcedimientos = function(evo){
-
-    const result = originalRender(evo);
-
-    setTimeout(()=>{
-
-      const bloques = document.querySelectorAll("[data-procedimiento]");
-
-      bloques.forEach((bloque, index)=>{
-
-        const proc = evo.procedimientos?.[index];
-        if(!proc) return;
-
-        const motivo = buildLabel("MOTIVO_MAP", proc.motivo_atencion);
-        const finalidad = buildLabel("FINALIDAD_MAP", proc.finalidad_codigo);
-        const dxPrincipal = buildDxLabel(proc.diagnostico_principal);
-
-        const dxSec = [
-          proc.diagnostico_secundario_1,
-          proc.diagnostico_secundario_2
-        ]
-        .filter(Boolean)
-        .map(c => buildDxLabel(c))
-        .join("<br>") || "—";
-
-        bloque.innerHTML = bloque.innerHTML
-          .replace(/Motivo:.*?<br>/, "Motivo: " + motivo + "<br>")
-          .replace(/Finalidad:.*?<br>/, "Finalidad: " + finalidad + "<br>")
-          .replace(/Dx principal:.*?<br>/, "Dx principal: " + dxPrincipal + "<br>")
-          .replace(/Dx secundarios:[\s\S]*?<br>/, "Dx secundarios:<br>" + dxSec + "<br>");
-
-      });
-
-    }, 80);
-
-    return result;
-  };
-
-}
-
-})();
-</script>
-
 </body>
 </html>
-
 
 
