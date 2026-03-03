@@ -647,6 +647,18 @@ textarea{
   line-height:1.2 !important;
   margin:0 !important;
 }
+/* 🔥 Compactar bloques de procedimiento */
+#modalEvoDoc .doc-box .v{
+  display:grid;
+  grid-template-columns: 160px 1fr;
+  row-gap:4px;
+  column-gap:10px;
+}
+
+#modalEvoDoc .doc-box .v strong{
+  font-weight:600;
+}
+    
     
 </style>
 </head>
@@ -3372,59 +3384,62 @@ if (f2) dxsArr.push(`Dx secundarios 2: ${f2}`);
 const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 
       return `
-  <div class="doc-box" style="margin-top:10px;">
-    <div class="k">Procedimiento ${i+1}</div>
+<div class="doc-box" style="margin-top:10px;">
+  <div class="k">Procedimiento ${i+1}</div>
 
-    <div class="v"><strong>${escapeHtml(String(pNombre).toUpperCase())}</strong></div>
-
-    <div class="v" style="margin-top:6px;">
-      <strong>Cod servicio:</strong> ${escapeHtml(cod)}
-    </div>
-
-    <div class="v">
-      <strong>Finalidad:</strong> ${escapeHtml(fin)}
-    </div>
-
-    <div class="v">
-      <strong>Motivo:</strong> ${escapeHtml(motivo)}
-    </div>
-
-    <div class="v">
-      <strong>Tipo diagnóstico:</strong> 
-      ${escapeHtml(p.tipo_diagnostico || "—")} 
-      ${p.nombre_tipo_diagnostico ? " - " + escapeHtml(p.nombre_tipo_diagnostico) : ""}
-    </div>
-
-    <div class="v">
-      <strong>Modalidad atención:</strong> 
-      ${escapeHtml(p.modalidad_atencion || "—")} 
-      ${p.nombre_modalidad_atencion ? " - " + escapeHtml(p.nombre_modalidad_atencion) : ""}
-    </div>
-
-    <div class="v">
-      <strong>Grupo servicio:</strong> 
-      ${escapeHtml(p.grupo_servicio || "—")} 
-      ${p.nombre_grupo_servicio ? " - " + escapeHtml(p.nombre_grupo_servicio) : ""}
-    </div>
-
-    <div class="v">
-      <strong>Vía ingreso:</strong> 
-      ${escapeHtml(p.via_ingreso || "—")} 
-      ${p.nombre_via_ingreso ? " - " + escapeHtml(p.nombre_via_ingreso) : ""}
-    </div>
-
-    <div class="v">
-      <strong>Dx principal:</strong> ${escapeHtml(dxp)}
-    </div>
-
-    <div class="v">
-      <strong>Dx secundarios:</strong><br>${dxs}
-    </div>
-
-    <div class="v" style="white-space:pre-wrap; margin-top:6px;">
-      <strong>Detalle:</strong><br>${escapeHtml(p.detalle || "—")}
-    </div>
+  <div class="v proc-title">
+    <strong>${escapeHtml(String(pNombre).toUpperCase())}</strong>
   </div>
+
+  <div class="v proc-grid">
+
+    <span class="label">Cod servicio:</span>
+    <span>${escapeHtml(cod)}</span>
+
+    <span class="label">Finalidad:</span>
+    <span>${escapeHtml(fin)}</span>
+
+    <span class="label">Motivo:</span>
+    <span>${escapeHtml(motivo)}</span>
+
+    <span class="label">Tipo diagnóstico:</span>
+    <span>
+      ${escapeHtml(p.tipo_diagnostico || "—")}
+      ${p.nombre_tipo_diagnostico ? " - " + escapeHtml(p.nombre_tipo_diagnostico) : ""}
+    </span>
+
+    <span class="label">Modalidad atención:</span>
+    <span>
+      ${escapeHtml(p.modalidad_atencion || "—")}
+      ${p.nombre_modalidad_atencion ? " - " + escapeHtml(p.nombre_modalidad_atencion) : ""}
+    </span>
+
+    <span class="label">Grupo servicio:</span>
+    <span>
+      ${escapeHtml(p.grupo_servicio || "—")}
+      ${p.nombre_grupo_servicio ? " - " + escapeHtml(p.nombre_grupo_servicio) : ""}
+    </span>
+
+    <span class="label">Vía ingreso:</span>
+    <span>
+      ${escapeHtml(p.via_ingreso || "—")}
+      ${p.nombre_via_ingreso ? " - " + escapeHtml(p.nombre_via_ingreso) : ""}
+    </span>
+
+    <span class="label">Dx principal:</span>
+    <span>${escapeHtml(dxp)}</span>
+
+    <span class="label">Dx secundarios:</span>
+    <span>${dxs}</span>
+
+  </div>
+
+  <div class="v" style="margin-top:6px; white-space:pre-wrap;">
+    <strong>Detalle:</strong><br>
+    ${escapeHtml(p.detalle || "—")}
+  </div>
+
+</div>
 `;
       })
 )).join("");
@@ -3539,6 +3554,27 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
           img{
             max-width:100%;
           }
+
+/* 🔥 Procedimiento compacto profesional */
+#modalEvoDoc .proc-title{
+  margin-bottom:6px;
+  font-size:14px;
+}
+
+#modalEvoDoc .proc-grid{
+  display:grid;
+  grid-template-columns: 160px 1fr;
+  row-gap:4px;
+  column-gap:12px;
+  font-size:13px;
+  line-height:1.2;
+}
+
+#modalEvoDoc .proc-grid .label{
+  font-weight:600;
+  color:#334155;
+}
+          
         </style>
       </head>
       <body>
