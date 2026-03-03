@@ -2756,12 +2756,27 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
     });
   };
 
+  // 🔎 Obtener descripción de finalidad desde Supabase
+async function obtenerDescripcionFinalidad(codigo) {
+  if (!codigo || !window.supabase) return null;
+
+  const { data, error } = await window.supabase
+    .from("finalidad_tecnologia")
+    .select("descripcion")
+    .eq("codigo", codigo)
+    .maybeSingle();
+
+  if (error || !data) return null;
+
+  return data.descripcion;
+}
+  
   // =========================================================
   // 🆕 OVERRIDE: abrirModalConDatos(evo) para mostrar lista de procedimientos si llega del webhook
   // =========================================================
   window._abrirModalConDatos_original = window.abrirModalConDatos;
 
-  window.abrirModalConDatos = function abrirModalConDatos(evo){
+  window.abrirModalConDatos = async function abrirModalConDatos(evo){
     // Si no viene procedimientos[], usa el original sin tocar nada
     const procs = evo?.procedimientos || evo?.procedimientos_evo || evo?.evolucion_procedimientos;
     if (!Array.isArray(procs) || !procs.length) {
@@ -2790,17 +2805,22 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
     const procHtml = procs.map((p, i) => {
       const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
       const cod = p.codservicio || p.cod_servicio || "—";
-      let fin = "—";
 
-if (p.finalidad_codigo && p.finalidad_desc) {
-  fin = `${p.finalidad_codigo} - ${p.finalidad_desc}`;
-} else if (p.finalidad_desc) {
-  fin = p.finalidad_desc;
-} else if (p.finalidad_codigo) {
-  fin = p.finalidad_codigo;
-} else if (p.finalidadtecnologiasalud) {
-  fin = p.finalidadtecnologiasalud;
+     // 🔥 NUEVA LÓGICA FINALIDAD BONITA
+let finCodigo =
+  p.finalidad_codigo ||
+  p.finalidadtecnologiasalud ||
+  null;
+
+let fin = "—";
+
+if (finCodigo) {
+  const desc = await obtenerDescripcionFinalidad(finCodigo);
+  fin = desc
+    ? `${finCodigo} - ${desc}`
+    : String(finCodigo);
 }
+      
       const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
       const dxp = (() => {
   const d = p.diagnostico_principal;
