@@ -805,6 +805,37 @@
           <option value="">Seleccione motivo...</option>
         </select>
       </div>
+      <!-- 🆕 TIPO DIAGNÓSTICO -->
+<div class="ctrl">
+  <label>Tipo diagnóstico</label>
+  <select id="proc_tipo_diagnostico_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
+
+<!-- 🆕 MODALIDAD ATENCIÓN -->
+<div class="ctrl">
+  <label>Modalidad atención</label>
+  <select id="proc_modalidad_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
+
+<!-- 🆕 GRUPO SERVICIO -->
+<div class="ctrl">
+  <label>Grupo servicio</label>
+  <select id="proc_grupo_servicio_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
+
+<!-- 🆕 VÍA DE INGRESO -->
+<div class="ctrl">
+  <label>Vía de ingreso</label>
+  <select id="proc_via_ingreso_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
 
       <div class="ctrl">
         <label>Diagnóstico principal</label>
@@ -975,6 +1006,95 @@ if (!select) return;
     option.textContent = `${m.codigo} ${m.nombre}`; // 🔥 CODIGO + NOMBRE
     select.appendChild(option);
   });
+}
+
+  // ==============================
+// 🆕 NUEVOS MAPAS RIPS
+// ==============================
+
+function cargarClasificacionesRIPS() {
+
+  // 🔹 Tipo diagnóstico
+  const tipos = {
+    "01": "Impresión diagnóstica",
+    "02": "Confirmado nuevo",
+    "03": "Confirmado repetido"
+  };
+
+  window.TIPO_DX_MAP = tipos;
+  const selTipo = document.getElementById("proc_tipo_diagnostico_modal");
+  if (selTipo) {
+    selTipo.innerHTML = '<option value="">Seleccione...</option>';
+    Object.entries(tipos).forEach(([c,n])=>{
+      selTipo.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
+    });
+  }
+
+  // 🔹 Modalidad atención
+  const modalidades = {
+    "01":"Intramural",
+    "02":"Extramural unidad móvil",
+    "03":"Extramural domiciliaria",
+    "04":"Extramural jornada de salud",
+    "06":"Telemedicina interactiva",
+    "07":"Telemedicina no interactiva",
+    "08":"Telemedicina telexperticia",
+    "09":"Telemedicina telemonitoreo"
+  };
+
+  window.MODALIDAD_MAP = modalidades;
+  const selModalidad = document.getElementById("proc_modalidad_modal");
+  if (selModalidad) {
+    selModalidad.innerHTML = '<option value="">Seleccione...</option>';
+    Object.entries(modalidades).forEach(([c,n])=>{
+      selModalidad.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
+    });
+  }
+
+  // 🔹 Grupo servicio
+  const grupos = {
+    "01":"Consulta externa",
+    "02":"Apoyo diagnóstico y complementación terapéutica",
+    "03":"Internación",
+    "04":"Quirúrgico",
+    "05":"Atención inmediata"
+  };
+
+  window.GRUPO_MAP = grupos;
+  const selGrupo = document.getElementById("proc_grupo_servicio_modal");
+  if (selGrupo) {
+    selGrupo.innerHTML = '<option value="">Seleccione...</option>';
+    Object.entries(grupos).forEach(([c,n])=>{
+      selGrupo.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
+    });
+  }
+
+  // 🔹 Vía ingreso
+  const vias = {
+    "01":"DEMANDA ESPONTANEA",
+    "02":"DERIVADO DE CONSULTA EXTERNA",
+    "03":"DERIVADO DE URGENCIAS",
+    "04":"DERIVADO DE HOSPITALIZACION",
+    "05":"DERIVADO DE SALA DE CIRUGIA",
+    "06":"DERIVADO DE SALA DE PARTOS",
+    "07":"RECIEN NACIDO EN LA INSTITUCION",
+    "08":"RECIEN NACIDO EN OTRA INSTITUCION",
+    "09":"DERIVADO O REFERIDO DE HOSPITALIZACION DOMICILIARIA",
+    "10":"DERIVADO DE ATENCION DOMICILIARIA",
+    "11":"DERIVADO DE TELEMEDICINA",
+    "12":"DERIVADO DE JORNADA DE SALUD",
+    "13":"REFERIDO DE OTRA INSTITUCION",
+    "14":"CONTRAREFERIDO DE OTRA INSTITUCION"
+  };
+
+  window.VIA_MAP = vias;
+  const selVia = document.getElementById("proc_via_ingreso_modal");
+  if (selVia) {
+    selVia.innerHTML = '<option value="">Seleccione...</option>';
+    Object.entries(vias).forEach(([c,n])=>{
+      selVia.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
+    });
+  }
 }
 
   
@@ -1982,7 +2102,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
-
+    await cargarClasificacionesRIPS();
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
 
@@ -2567,6 +2687,11 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
 
+const tipoDx = document.getElementById("proc_tipo_diagnostico_modal")?.value || "";
+const modalidad = document.getElementById("proc_modalidad_modal")?.value || "";
+const grupo = document.getElementById("proc_grupo_servicio_modal")?.value || "";
+const via = document.getElementById("proc_via_ingreso_modal")?.value || "";
+    
     const procItem = {
   procedimiento_id: _procModalSelected.procedimiento_id,
   procedimiento_nombre: _procModalSelected.procedimiento_nombre,
@@ -2581,7 +2706,18 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
   diagnostico_principal: dxPrincipal,
   diagnostico_secundario_1: diagnosticoSec1,
   diagnostico_secundario_2: diagnosticoSec2,
-  detalle: detalle
+  detalle: detalle,
+  tipo_diagnostico: tipoDx,
+  nombre_tipo_diagnostico: window.TIPO_DX_MAP?.[tipoDx] || "",
+
+  modalidad_atencion: modalidad,
+  nombre_modalidad_atencion: window.MODALIDAD_MAP?.[modalidad] || "",
+
+  grupo_servicio: grupo,
+  nombre_grupo_servicio: window.GRUPO_MAP?.[grupo] || "",
+
+ via_ingreso: via,
+ nombre_via_ingreso: window.VIA_MAP?.[via] || "",
 };
 
     procedimientosEvo.push(procItem);
