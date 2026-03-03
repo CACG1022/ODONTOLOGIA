@@ -673,7 +673,15 @@ textarea{
   margin:0;
   line-height:1.25;
 }
-    
+
+    /* 🔥 FIX: NO preservar saltos/indentación dentro del grid */
+#modalEvoDoc .proc-grid{
+  white-space: normal !important;   /* rompe el pre-wrap heredado */
+}
+
+#modalEvoDoc .proc-grid span{
+  white-space: normal !important;   /* por si algún span hereda algo */
+}
     
 </style>
 </head>
