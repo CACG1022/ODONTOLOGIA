@@ -2970,26 +2970,35 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
       </div>
 
       ${procHtml}
+<div class="doc-firmas">
+  <div class="doc-firma">
+    <div class="k">Firma del paciente</div>
+    ${
+      firmaPaciente
+        ? `
+          <img src="${firmaPaciente}" />
+          <div style="margin-top:8px; font-weight:600; text-align:center;">
+            ${escapeHtml(paciente)}
+          </div>
+        `
+        : `<div class="doc-nofirma">Sin firma del paciente</div>`
+    }
+  </div>
 
-      <div class="doc-firmas">
-        <div class="doc-firma">
-          <div class="k">Firma del paciente</div>
-          ${
-            firmaPaciente
-              ? `<img src="${firmaPaciente}" />`
-              : `<div class="doc-nofirma">Sin firma del paciente</div>`
-          }
-        </div>
-
-        <div class="doc-firma">
-          <div class="k">Firma del profesional</div>
-          ${
-            firmaProfesional
-              ? `<img src="${firmaProfesional}" />`
-              : `<div class="doc-nofirma">Sin firma del profesional</div>`
-          }
-        </div>
-      </div>
+  <div class="doc-firma">
+    <div class="k">Firma del profesional</div>
+    ${
+      firmaProfesional
+        ? `
+          <img src="${firmaProfesional}" />
+          <div style="margin-top:8px; font-weight:600; text-align:center;">
+            ${escapeHtml(profesional)}
+          </div>
+        `
+        : `<div class="doc-nofirma">Sin firma del profesional</div>`
+    }
+  </div>
+</div>
     `;
 
     modal.classList.add("show");
