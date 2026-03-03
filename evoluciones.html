@@ -682,6 +682,24 @@ textarea{
 #modalEvoDoc .proc-grid span{
   white-space: normal !important;   /* por si algún span hereda algo */
 }
+
+@media print {
+
+  #modalEvoDoc .proc-grid,
+  #modalEvoDoc .proc-grid span {
+    white-space: normal !important;
+  }
+
+  #modalEvoDoc .doc-box {
+    padding: 6px 10px !important;
+    margin: 6px 0 !important;
+  }
+
+  #modalEvoDoc .v {
+    line-height: 1.25 !important;
+  }
+
+}
     
 </style>
 </head>
