@@ -2634,7 +2634,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     renderProcedimientosEvo();
   }
 
-  function editarProcedimientoEvo(idx){
+ function editarProcedimientoEvo(idx){
 
   const proc = procedimientosEvo[idx];
   if (!proc) return;
@@ -2643,42 +2643,67 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
   abrirModalProcedimientosEvo();
 
-  // Esperar a que el modal esté listo
-  setTimeout(() => {
+  setTimeout(async () => {
+
+    // 🔥 MUY IMPORTANTE
+    // reconstruir _procModalSelected para evitar error RIPS
+    _procModalSelected = {
+      procedimiento_id: proc.procedimiento_id,
+      procedimiento_nombre: proc.procedimiento_nombre,
+      valor: proc.valor,
+      codigo_cups: proc.codigo_cups,
+      codservicio: proc.codservicio,
+      finalidad_codigo: proc.finalidad_codigo,
+      finalidad_desc: proc.finalidad_desc
+    };
 
     document.getElementById("proc_nombre_modal").value = proc.procedimiento_nombre || "";
     document.getElementById("proc_detalle_modal").value = proc.detalle || "";
 
     document.getElementById("proc_codservicio_modal").value = proc.codservicio || "";
     document.getElementById("proc_finalidad_modal").value = proc.finalidad_codigo || "";
-    document.getElementById("proc_motivo_modal").value = proc.motivo_atencion || "";
+
+    // 🔥 MOTIVO (TomSelect)
+    if (_modalTomMotivo && proc.motivo_atencion) {
+      _modalTomMotivo.setValue(proc.motivo_atencion, true);
+    }
+
+    // 🔥 DX PRINCIPAL (TomSelect)
+    if (_modalTomDxPrincipal && proc.diagnostico_principal) {
+      _modalTomDxPrincipal.setValue(
+        JSON.stringify(proc.diagnostico_principal),
+        true
+      );
+    }
+
+    // 🔥 DX SECUNDARIOS
+    const cont = document.getElementById("proc_dx_sec_container_modal");
+    cont.innerHTML = "";
+    _modalTomDxSecList.forEach(ts => { try { ts.destroy(); } catch(e){} });
+    _modalTomDxSecList = [];
+
+    async function cargarDxSec(dx){
+      agregarDxSecModal();
+      const ultimo = _modalTomDxSecList[_modalTomDxSecList.length - 1];
+      if (ultimo) {
+        ultimo.setValue(JSON.stringify(dx), true);
+      }
+    }
+
+    if (proc.diagnostico_secundario_1) {
+      await cargarDxSec(proc.diagnostico_secundario_1);
+    }
+
+    if (proc.diagnostico_secundario_2) {
+      await cargarDxSec(proc.diagnostico_secundario_2);
+    }
+
     document.getElementById("proc_tipo_diagnostico_modal").value = proc.tipo_diagnostico || "";
     document.getElementById("proc_modalidad_modal").value = proc.modalidad_atencion || "";
     document.getElementById("proc_grupo_servicio_modal").value = proc.grupo_servicio || "";
     document.getElementById("proc_via_ingreso_modal").value = proc.via_ingreso || "";
 
-    if (proc.diagnostico_principal) {
-      document.getElementById("proc_dx_principal_modal").value =
-        JSON.stringify(proc.diagnostico_principal);
-    }
-
-    // Secundarios
-    const cont = document.getElementById("proc_dx_sec_container_modal");
-    cont.innerHTML = "";
-
-    if (proc.diagnostico_secundario_1) {
-      agregarDxSecModal();
-      cont.querySelector("select").value =
-        JSON.stringify(proc.diagnostico_secundario_1);
-    }
-
-    if (proc.diagnostico_secundario_2) {
-      agregarDxSecModal();
-      cont.querySelectorAll("select")[1].value =
-        JSON.stringify(proc.diagnostico_secundario_2);
-    }
-
-  }, 150);
+  }, 200);
 }
 
   function limpiarProcedimientosEvo(){
