@@ -2879,6 +2879,74 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
 
 </script>
+
+<!-- =============================== -->
+<!-- AJUSTES AUTOMÁTICOS PROCEDIMIENTOS -->
+<!-- =============================== -->
+<script>
+(function(){
+
+  // 🔹 Helper seguro para escapar HTML
+  function escapeHtml(str){
+    return String(str ?? "")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  // 🔹 Mostrar CODIGO - NOMBRE en motivo
+  const _labelMotivoOriginal = window.labelMotivo;
+  window.labelMotivo = function(cod){
+    if (typeof _labelMotivoOriginal === "function") {
+      return _labelMotivoOriginal(cod);
+    }
+    if (!cod) return "—";
+    if (window.MOTIVO_MAP && window.MOTIVO_MAP[cod]) {
+      return cod + " - " + window.MOTIVO_MAP[cod];
+    }
+    return cod;
+  };
+
+  // 🔹 Mostrar CODIGO - NOMBRE en diagnóstico
+  const _labelDxOriginal = window.labelDx;
+  window.labelDx = function(dx){
+    if (!dx) return "—";
+
+    if (typeof _labelDxOriginal === "function") {
+      return _labelDxOriginal(dx);
+    }
+
+    if (typeof dx === "object" && dx.codigo) {
+      const nom = dx.nombre || dx.descripcion || "";
+      return nom ? dx.codigo + " - " + nom : dx.codigo;
+    }
+
+    if (typeof dx === "string" && window.CIE10_MAP && window.CIE10_MAP[dx]) {
+      const obj = window.CIE10_MAP[dx];
+      const nom = obj.nombre || obj.descripcion || "";
+      return nom ? dx + " - " + nom : dx;
+    }
+
+    return dx;
+  };
+
+  // 🔹 Forzar que finalidad muestre código + descripción si existe
+  document.addEventListener("DOMContentLoaded", function(){
+    if (window.procedimientosEvo && Array.isArray(window.procedimientosEvo)) {
+      window.procedimientosEvo.forEach(p => {
+        if (p.finalidad_codigo && p.finalidad_desc && 
+            !String(p.finalidad_desc).includes(p.finalidad_codigo)) {
+          p.finalidad_desc = p.finalidad_codigo + " - " + p.finalidad_desc;
+        }
+      });
+    }
+  });
+
+})();
+</script>
+
 </body>
 </html>
 
