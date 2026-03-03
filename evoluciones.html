@@ -2802,7 +2802,9 @@ async function obtenerDescripcionFinalidad(codigo) {
     const firmaPaciente = evo.firma_paciente || "";
     const firmaProfesional = evo.firma_profesional || "";
 
-    const procHtml = procs.map((p, i) => {
+    const procHtml = (await Promise.all(
+  procs.map(async (p, i) => {
+    
       const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
       const cod = p.codservicio || p.cod_servicio || "—";
 
@@ -2870,7 +2872,8 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
           
         </div>
       `;
-    }).join("");
+      })
+)).join("");
 
     body.innerHTML = `
       <div class="doc-title">Evolución clínica odontológica</div>
