@@ -2790,15 +2790,42 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
     const procHtml = procs.map((p, i) => {
       const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
       const cod = p.codservicio || p.cod_servicio || "—";
-      const fin = p.finalidad_desc || p.finalidad || p.finalidadTecnologiaSalud || "—";
+      const fin = (p.finalidad_codigo ?? p.finalidadtecnologiasalud ?? p.finalidadTecnologiaSalud ?? p.finalidad_desc ?? p.finalidad ?? "—");
       const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
-      const dxp = p.diagnostico_principal
-        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
-        : "—";
-      const dxs = (p.diagnosticos_secundarios || p.diagnostico_secundario || [])
-        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
-        .join("<br>") || "—";
-      const detp = p.detalle || "—";
+      const dxp = (() => {
+  const d = p.diagnostico_principal;
+  if (!d) return "—";
+  if (typeof d === "string") return d; // ej: "K010"
+  if (typeof d === "object") {
+    const cod = d.codigo ?? d.code ?? "—";
+    const nom = d.nombre ?? d.descripcion ?? d.name ?? "";
+    return nom ? `${cod} - ${nom}` : String(cod);
+  }
+  return "—";
+})();
+      const dxsArr = [];
+
+const s1 = p.diagnostico_secundario_1;
+const s2 = p.diagnostico_secundario_2;
+
+function fmtDx(d){
+  if (!d) return null;
+  if (typeof d === "string") return d;
+  if (typeof d === "object") {
+    const cod = d.codigo ?? d.code ?? "—";
+    const nom = d.nombre ?? d.descripcion ?? d.name ?? "";
+    return nom ? `${cod} - ${nom}` : String(cod);
+  }
+  return null;
+}
+
+const f1 = fmtDx(s1);
+const f2 = fmtDx(s2);
+
+if (f1) dxsArr.push(`Dx secundarios 1: ${f1}`);
+if (f2) dxsArr.push(`Dx secundarios 2: ${f2}`);
+
+const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 
       return `
         <div class="doc-box" style="margin-top:10px;">
