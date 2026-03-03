@@ -829,6 +829,18 @@
   const WEBHOOK_GUARDAR_EVOLUCION =
     "https://ftth-n8n2.pzveh5.easypanel.host/webhook/569051e4-4bdf-44e9-b0d3-34694d6077e9";
 
+// ==============================
+// ✅ CACHES (para mostrar "CODIGO - DESCRIPCIÓN")
+// ==============================
+const CIE10_MAP = {};
+const MOTIVO_MAP = {};
+const FINALIDAD_MAP = {};
+
+// Exponer (por si se usa en otros lados)
+window.CIE10_MAP = CIE10_MAP;
+window.MOTIVO_MAP = MOTIVO_MAP;
+window.FINALIDAD_MAP = FINALIDAD_MAP;
+
   // ==============================
   // ✅ UI: NOMBRE DEL PACIENTE
   // ==============================
@@ -952,7 +964,36 @@ if (!select) return;
 }
 
   
-  function _uuidFallback() {
+  // ==============================
+// ✅ FINALIDAD TECNOLOGÍA (RIPS) DESDE SUPABASE
+// ==============================
+async function cargarFinalidadesTecnologia() {
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("finalidad_tecnologia")
+      .select("codigo, descripcion")
+      .order("codigo", { ascending: true });
+
+    if (error) throw error;
+
+    (data || []).forEach(f => {
+      const c = String(f.codigo ?? "").trim();
+      if (!c) return;
+      FINALIDAD_MAP[c] = String(f.descripcion ?? "").trim();
+    });
+  } catch (e) {
+    console.warn("⚠️ Error cargando finalidades:", e);
+  }
+}
+
+function _uuidFallback() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
       const r = Math.random() * 16 | 0;
       const v = c === 'x' ? r : (r & 0x3 | 0x8);
@@ -1956,6 +1997,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
+    await cargarFinalidadesTecnologia();
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
@@ -2789,16 +2831,29 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
     const procHtml = procs.map((p, i) => {
       const pNombre = p.procedimiento_nombre || p.procedimiento || "—";
-      const cod = p.codservicio || p.cod_servicio || "—";
-      const fin = p.finalidad_desc || p.finalidad || p.finalidadTecnologiaSalud || "—";
-      const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
-      const dxp = p.diagnostico_principal
-        ? `${p.diagnostico_principal.codigo} - ${p.diagnostico_principal.nombre || p.diagnostico_principal.descripcion || ""}`
-        : "—";
-      const dxs = (p.diagnosticos_secundarios || p.diagnostico_secundario || [])
-        .map(d => `${d.codigo} - ${d.nombre || d.descripcion || ""}`)
-        .join("<br>") || "—";
-      const detp = p.detalle || "—";
+const cod = p.codservicio || p.cod_servicio || "—";
+
+// Finalidad: puede venir como finalidad_desc o como código (finalidad_codigo)
+const finCod = (p.finalidad_codigo ?? p.finalidadCodigo ?? p.finalidadtecnologiasalud ?? p.finalidadTecnologiaSalud ?? p.finalidad ?? "");
+const fin = p.finalidad_desc || buildLabel(finCod, FINALIDAD_MAP) || "—";
+
+// Motivo: mostrar código - nombre si está en el mapa
+const motCod = (p.motivo_atencion ?? p.causamotivoatencion ?? p.motivo ?? "");
+const motivo = buildLabel(motCod, MOTIVO_MAP) || (String(motCod || "").trim() || "—");
+
+// Diagnósticos: el webhook puede mandar strings (ej: "K000") o objetos
+const dxp = buildDxLabel(p.diagnostico_principal ?? p.diagnosticoPrincipal ?? p.diagnostico_principal_codigo ?? p.diagnostico_principal_id ?? p.diagnostico_principal);
+
+const dxsArr = Array.isArray(p.diagnosticos_secundarios) ? p.diagnosticos_secundarios
+  : Array.isArray(p.diagnostico_secundario) ? p.diagnostico_secundario
+  : [p.diagnostico_secundario_1, p.diagnostico_secundario_2].filter(Boolean);
+
+const dxs = (dxsArr || [])
+  .filter(Boolean)
+  .map(d => escapeHtml(buildDxLabel(d)))
+  .join("<br>") || "—";
+
+const detp = p.detalle || "—";
 
       return `
         <div class="doc-box" style="margin-top:10px;">
@@ -2953,9 +3008,6 @@ if(typeof window.renderProcedimientos === "function"){
 
 </body>
 </html>
-
-
-
 
 
 
