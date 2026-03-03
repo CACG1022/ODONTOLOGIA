@@ -2836,7 +2836,8 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
           <div class="v"><strong>Motivo:</strong> ${escapeHtml(motivo)}</div>
           <div class="v"><strong>Dx principal:</strong> ${escapeHtml(dxp)}</div>
           <div class="v"><strong>Dx secundarios:</strong><br>${dxs}</div>
-          <div class="v" style="white-space:pre-wrap; margin-top:6px;"><strong>Detalle:</strong><br>${escapeHtml(detp)}</div>
+          <div class="v" style="white-space:pre-wrap; margin-top:6px;"><strong>Detalle:</strong><br>${escapeHtml(p.detalle || "—")}</div>
+          
         </div>
       `;
     }).join("");
