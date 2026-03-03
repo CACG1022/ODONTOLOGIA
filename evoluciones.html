@@ -938,6 +938,12 @@ function cargarMotivosAtencion() {
     { codigo: "49", nombre: "IVE POR DECISION O MANIFESTACION DE VOLUNTAD..." }
   ];
 
+  // 🔥 Guardar motivos en mapa global
+window.MOTIVOS_MAP = {};
+motivos.forEach(m => {
+  window.MOTIVOS_MAP[m.codigo] = m.nombre;
+});
+
   const select = document.getElementById("proc_motivo_modal");
 if (!select) return;
 
@@ -2839,7 +2845,15 @@ if (finCodigo) {
     : String(finCodigo);
 }
       
-      const motivo = p.motivo_atencion || p.causamotivoatencion || "—";
+      let motivoCodigo = p.motivo_atencion || p.causamotivoatencion || null;
+let motivo = "—";
+
+if (motivoCodigo) {
+  const nombreMotivo = window.MOTIVOS_MAP?.[motivoCodigo] || null;
+  motivo = nombreMotivo
+    ? `${motivoCodigo} - ${nombreMotivo}`
+    : String(motivoCodigo);
+}
 
     let dxp = "—";
 
