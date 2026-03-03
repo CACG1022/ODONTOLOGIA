@@ -3552,56 +3552,12 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
   ventana.document.write(`
     <html>
       <head>
-        <title>Evolución clínica</title>
-        <style>
-          body{
-            font-family: Arial, sans-serif;
-            padding: 30px;
-          }
-          .doc-box{
-            border:1px solid #ddd;
-            padding:12px;
-            margin-bottom:12px;
-            border-radius:8px;
-          }
-          .doc-title{
-            font-weight:bold;
-            font-size:20px;
-            margin-bottom:20px;
-          }
-          .doc-firmas{
-            display:flex;
-            gap:20px;
-            margin-top:20px;
-          }
-          img{
-            max-width:100%;
-          }
-
-/* 🔥 Procedimiento compacto profesional */
-#modalEvoDoc .proc-title{
-  margin-bottom:6px;
-  font-size:14px;
-}
-
-#modalEvoDoc .proc-grid{
-  display:grid;
-  grid-template-columns: 160px 1fr;
-  row-gap:4px;
-  column-gap:12px;
-  font-size:13px;
-  line-height:1.2;
-}
-
-#modalEvoDoc .proc-grid .label{
-  font-weight:600;
-  color:#334155;
-}
-          
-        </style>
+        ${document.head.innerHTML}
       </head>
       <body>
-        ${contenido.innerHTML}
+        <div style="padding:30px;">
+          ${contenido.innerHTML}
+        </div>
       </body>
     </html>
   `);
