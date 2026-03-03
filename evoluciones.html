@@ -2560,6 +2560,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
   // Lista temporal de procedimientos antes de guardar la evolución
   let procedimientosEvo = [];
+  let _editIndexProcEvo = null;
 
   // TomSelects del modal (para evitar re-inicializaciones)
   let _modalTomDxPrincipal = null;
@@ -2571,6 +2572,8 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     try { return JSON.parse(val); } catch(e){ return null; }
   }
 
+ 
+  
   function renderProcedimientosEvo(){
     const tb = document.getElementById("tbody_proc_evo");
     if(!tb) return;
@@ -2608,10 +2611,19 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
           <td>${escapeHtml(dxp)}</td>
           <td>${dxs}</td>
           <td style="white-space:pre-wrap;">${escapeHtml(p.detalle || "")}</td>
-          <td>
-            <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-              onclick="eliminarProcedimientoEvo(${i})">Quitar</button>
-          </td>
+         <td style="display:flex; gap:6px;">
+  <button type="button" class="btn btn-agenda" 
+    style="padding:8px 10px; width:auto;"
+    onclick="editarProcedimientoEvo(${i})">
+    Editar
+  </button>
+
+  <button type="button" class="btn btn-buscar" 
+    style="padding:8px 10px; width:auto;"
+    onclick="eliminarProcedimientoEvo(${i})">
+    Quitar
+  </button>
+</td>
         </tr>
       `;
     }).join("");
@@ -2621,6 +2633,53 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     procedimientosEvo.splice(idx, 1);
     renderProcedimientosEvo();
   }
+
+  function editarProcedimientoEvo(idx){
+
+  const proc = procedimientosEvo[idx];
+  if (!proc) return;
+
+  _editIndexProcEvo = idx;
+
+  abrirModalProcedimientosEvo();
+
+  // Esperar a que el modal esté listo
+  setTimeout(() => {
+
+    document.getElementById("proc_nombre_modal").value = proc.procedimiento_nombre || "";
+    document.getElementById("proc_detalle_modal").value = proc.detalle || "";
+
+    document.getElementById("proc_codservicio_modal").value = proc.codservicio || "";
+    document.getElementById("proc_finalidad_modal").value = proc.finalidad_codigo || "";
+    document.getElementById("proc_motivo_modal").value = proc.motivo_atencion || "";
+    document.getElementById("proc_tipo_diagnostico_modal").value = proc.tipo_diagnostico || "";
+    document.getElementById("proc_modalidad_modal").value = proc.modalidad_atencion || "";
+    document.getElementById("proc_grupo_servicio_modal").value = proc.grupo_servicio || "";
+    document.getElementById("proc_via_ingreso_modal").value = proc.via_ingreso || "";
+
+    if (proc.diagnostico_principal) {
+      document.getElementById("proc_dx_principal_modal").value =
+        JSON.stringify(proc.diagnostico_principal);
+    }
+
+    // Secundarios
+    const cont = document.getElementById("proc_dx_sec_container_modal");
+    cont.innerHTML = "";
+
+    if (proc.diagnostico_secundario_1) {
+      agregarDxSecModal();
+      cont.querySelector("select").value =
+        JSON.stringify(proc.diagnostico_secundario_1);
+    }
+
+    if (proc.diagnostico_secundario_2) {
+      agregarDxSecModal();
+      cont.querySelectorAll("select")[1].value =
+        JSON.stringify(proc.diagnostico_secundario_2);
+    }
+
+  }, 150);
+}
 
   function limpiarProcedimientosEvo(){
     procedimientosEvo = [];
@@ -2874,7 +2933,12 @@ if (!via) {
  nombre_via_ingreso: window.VIA_MAP?.[via] || "",
 };
 
-    procedimientosEvo.push(procItem);
+    if (_editIndexProcEvo !== null) {
+  procedimientosEvo[_editIndexProcEvo] = procItem;
+  _editIndexProcEvo = null;
+} else {
+  procedimientosEvo.push(procItem);
+}
     renderProcedimientosEvo();
     cerrarModalProcEvo();
   }
