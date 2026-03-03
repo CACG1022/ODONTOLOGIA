@@ -967,7 +967,7 @@ if (!select) return;
   // ==============================
 // ✅ FINALIDAD TECNOLOGÍA (RIPS) DESDE SUPABASE
 // ==============================
-async function cargarFinalidadesTecnologia() {
+async async function cargarFinalidadesTecnologia() {
   let tries = 0;
   while (!window.supabase && tries < 40) {
     await new Promise(r => setTimeout(r, 100));
@@ -1017,6 +1017,57 @@ function _uuidFallback() {
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#039;");
   }
+
+
+  // ==============================
+  // ✅ HELPERS de etiquetas (para MODAL "Ver")
+  // ==============================
+  function isEmpty(v){
+    return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+  }
+
+  // buildLabel("MOTIVO_MAP", 21) -> "21 - Dolor" / "21"
+  // buildLabel(MOTIVO_MAP, 21) -> idem
+  function buildLabel(mapOrName, code){
+    if (isEmpty(code)) return "—";
+    const c = String(code).trim();
+    const map = (typeof mapOrName === "string") ? window[mapOrName] : mapOrName;
+    const name = map ? map[c] : null;
+    return name ? `${c} - ${name}` : c;
+  }
+
+  // Carga catálogo de finalidades para mostrar descripción (si existe en Supabase)
+  async function cargarFinalidadesDesdeSupabase(){
+    let tries = 0;
+    while (!window.supabase && tries < 40) {
+      await new Promise(r => setTimeout(r, 100));
+      tries++;
+    }
+    if (!window.supabase) return;
+
+    const candidatos = ["finalidad_tecnologia", "finalidad_tecnologia_salud", "finalidades_tecnologia_salud"];
+    for (const tabla of candidatos){
+      try {
+        const { data, error } = await window.supabase
+          .from(tabla)
+          .select("codigo, descripcion")
+          .order("codigo", { ascending: true });
+
+        if (error) throw error;
+
+        (data || []).forEach(f => {
+          const c = String(f.codigo ?? "").trim();
+          if (!c) return;
+          FINALIDAD_MAP[c] = String(f.descripcion ?? "").trim();
+        });
+
+        if (Object.keys(FINALIDAD_MAP).length) return;
+      } catch(e){
+        // probar siguiente tabla
+      }
+    }
+  }
+
   function _soloFechaYYYYMMDD(valor) {
     if (!valor) return "";
     if (typeof valor === "string" && valor.includes("T")) return valor.split("T")[0];
@@ -1998,6 +2049,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
     await cargarFinalidadesTecnologia();
+    await cargarFinalidadesDesdeSupabase();
 
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
@@ -2835,11 +2887,11 @@ const cod = p.codservicio || p.cod_servicio || "—";
 
 // Finalidad: puede venir como finalidad_desc o como código (finalidad_codigo)
 const finCod = (p.finalidad_codigo ?? p.finalidadCodigo ?? p.finalidadtecnologiasalud ?? p.finalidadTecnologiaSalud ?? p.finalidad ?? "");
-const fin = p.finalidad_desc || buildLabel(finCod, FINALIDAD_MAP) || "—";
+const fin = p.finalidad_desc || buildLabel(FINALIDAD_MAP, finCod) || "—";
 
 // Motivo: mostrar código - nombre si está en el mapa
 const motCod = (p.motivo_atencion ?? p.causamotivoatencion ?? p.motivo ?? "");
-const motivo = buildLabel(motCod, MOTIVO_MAP) || (String(motCod || "").trim() || "—");
+const motivo = buildLabel(MOTIVO_MAP, motCod) || (String(motCod || "").trim() || "—");
 
 // Diagnósticos: el webhook puede mandar strings (ej: "K000") o objetos
 const dxp = buildDxLabel(p.diagnostico_principal ?? p.diagnosticoPrincipal ?? p.diagnostico_principal_codigo ?? p.diagnostico_principal_id ?? p.diagnostico_principal);
@@ -3008,6 +3060,7 @@ if(typeof window.renderProcedimientos === "function"){
 
 </body>
 </html>
+
 
 
 
