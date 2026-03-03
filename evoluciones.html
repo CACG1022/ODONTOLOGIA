@@ -2880,75 +2880,81 @@ if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
 
 </script>
 
-<!-- =============================== -->
-<!-- AJUSTES AUTOMÁTICOS PROCEDIMIENTOS -->
-<!-- =============================== -->
+<!-- ========================= -->
+<!-- PATCH PROCEDIMIENTOS JSON NUEVO -->
+<!-- ========================= -->
 <script>
 (function(){
 
-  // 🔹 Helper seguro para escapar HTML
-  function escapeHtml(str){
-    return String(str ?? "")
-      .replaceAll("&","&amp;")
-      .replaceAll("<","&lt;")
-      .replaceAll(">","&gt;")
-      .replaceAll('"',"&quot;")
-      .replaceAll("'","&#039;");
+function buildLabel(mapName, code){
+  if(!code) return "—";
+  if(window[mapName] && window[mapName][code]){
+    return code + " - " + window[mapName][code];
   }
+  return code;
+}
 
-  // 🔹 Mostrar CODIGO - NOMBRE en motivo
-  const _labelMotivoOriginal = window.labelMotivo;
-  window.labelMotivo = function(cod){
-    if (typeof _labelMotivoOriginal === "function") {
-      return _labelMotivoOriginal(cod);
-    }
-    if (!cod) return "—";
-    if (window.MOTIVO_MAP && window.MOTIVO_MAP[cod]) {
-      return cod + " - " + window.MOTIVO_MAP[cod];
-    }
-    return cod;
-  };
+function buildDxLabel(code){
+  if(!code) return "—";
+  if(window.CIE10_MAP && window.CIE10_MAP[code]){
+    const obj = window.CIE10_MAP[code];
+    const nombre = obj.nombre || obj.descripcion || "";
+    return nombre ? code + " - " + nombre : code;
+  }
+  return code;
+}
 
-  // 🔹 Mostrar CODIGO - NOMBRE en diagnóstico
-  const _labelDxOriginal = window.labelDx;
-  window.labelDx = function(dx){
-    if (!dx) return "—";
+if(typeof window.renderProcedimientos === "function"){
 
-    if (typeof _labelDxOriginal === "function") {
-      return _labelDxOriginal(dx);
-    }
+  const originalRender = window.renderProcedimientos;
 
-    if (typeof dx === "object" && dx.codigo) {
-      const nom = dx.nombre || dx.descripcion || "";
-      return nom ? dx.codigo + " - " + nom : dx.codigo;
-    }
+  window.renderProcedimientos = function(evo){
 
-    if (typeof dx === "string" && window.CIE10_MAP && window.CIE10_MAP[dx]) {
-      const obj = window.CIE10_MAP[dx];
-      const nom = obj.nombre || obj.descripcion || "";
-      return nom ? dx + " - " + nom : dx;
-    }
+    const result = originalRender(evo);
 
-    return dx;
-  };
+    setTimeout(()=>{
 
-  // 🔹 Forzar que finalidad muestre código + descripción si existe
-  document.addEventListener("DOMContentLoaded", function(){
-    if (window.procedimientosEvo && Array.isArray(window.procedimientosEvo)) {
-      window.procedimientosEvo.forEach(p => {
-        if (p.finalidad_codigo && p.finalidad_desc && 
-            !String(p.finalidad_desc).includes(p.finalidad_codigo)) {
-          p.finalidad_desc = p.finalidad_codigo + " - " + p.finalidad_desc;
-        }
+      const bloques = document.querySelectorAll("[data-procedimiento]");
+
+      bloques.forEach((bloque, index)=>{
+
+        const proc = evo.procedimientos?.[index];
+        if(!proc) return;
+
+        const motivo = buildLabel("MOTIVO_MAP", proc.motivo_atencion);
+        const finalidad = buildLabel("FINALIDAD_MAP", proc.finalidad_codigo);
+        const dxPrincipal = buildDxLabel(proc.diagnostico_principal);
+
+        const dxSec = [
+          proc.diagnostico_secundario_1,
+          proc.diagnostico_secundario_2
+        ]
+        .filter(Boolean)
+        .map(c => buildDxLabel(c))
+        .join("<br>") || "—";
+
+        bloque.innerHTML = bloque.innerHTML
+          .replace(/Motivo:.*?<br>/, "Motivo: " + motivo + "<br>")
+          .replace(/Finalidad:.*?<br>/, "Finalidad: " + finalidad + "<br>")
+          .replace(/Dx principal:.*?<br>/, "Dx principal: " + dxPrincipal + "<br>")
+          .replace(/Dx secundarios:[\s\S]*?<br>/, "Dx secundarios:<br>" + dxSec + "<br>");
+
       });
-    }
-  });
+
+    }, 80);
+
+    return result;
+  };
+
+}
 
 })();
 </script>
 
 </body>
 </html>
+
+
 
 
 
