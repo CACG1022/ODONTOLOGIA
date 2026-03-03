@@ -246,12 +246,17 @@
     .g-3{ grid-template-columns:repeat(3,1fr); }
     .full{ grid-column:1 / -1; }
 
-    .ctrl{ display:flex; flex-direction:column; gap:8px; }
+    .ctrl{
+  display:flex;
+  flex-direction:column;
+  gap:4px;              /* 🔥 más compacto */
+  margin-bottom:6px;    /* 🔥 menos espacio vertical */
+}
     .ctrl label{ font-size:13px; color:var(--muted); }
 
     input[type="text"], input[type="date"], input[type="time"], textarea{
-      width:100%; border:1px solid var(--input); border-radius:10px; padding:12px;
-      font-size:15px; background:#fff;
+      width:100%; border:1px solid var(--input); border-radius:10px; padding:8px;
+      font-size:14px; background:#fff;
     }
     select{
       width:100%;
@@ -471,7 +476,17 @@
        🆕 MODAL (procedimientos múltiples por evolución)
        ========================== */
     .panel-backdrop{ position:fixed; inset:0; background:rgba(15,23,42,.35); display:none; align-items:center; justify-content:center; padding:18px; z-index: 999; }
-    .panel{ width: 560px; max-width: 95vw; background:#fff; border-radius:16px; padding: 16px; box-shadow:0 20px 50px rgba(0,0,0,.22); border:1px solid #e6eef8; }
+    .panel{
+           width: 620px;
+           max-width: 96vw;
+           max-height: 88vh;        /* 🔥 controla altura */
+           overflow-y: auto;        /* 🔥 scroll interno */
+           background:#fff;
+           border-radius:14px;
+           padding: 12px;           /* 🔥 menos padding */
+           box-shadow:0 20px 50px rgba(0,0,0,.22);
+          border:1px solid #e6eef8;
+          }
     .panel header{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
     .panel h3{ margin:0; color: var(--ink); font-weight:900; letter-spacing:-.01em; }
     .panel .procs{ display:grid; gap:8px; margin-top:12px; max-height: 52vh; overflow:auto; padding-right: 6px; }
@@ -2691,6 +2706,26 @@ const tipoDx = document.getElementById("proc_tipo_diagnostico_modal")?.value || 
 const modalidad = document.getElementById("proc_modalidad_modal")?.value || "";
 const grupo = document.getElementById("proc_grupo_servicio_modal")?.value || "";
 const via = document.getElementById("proc_via_ingreso_modal")?.value || "";
+
+if (!tipoDx) {
+  alert("⚠️ Debes seleccionar el tipo de diagnóstico.");
+  return;
+}
+
+if (!modalidad) {
+  alert("⚠️ Debes seleccionar la modalidad de atención.");
+  return;
+}
+
+if (!grupo) {
+  alert("⚠️ Debes seleccionar el grupo de servicio.");
+  return;
+}
+
+if (!via) {
+  alert("⚠️ Debes seleccionar la vía de ingreso.");
+  return;
+}
     
     const procItem = {
   procedimiento_id: _procModalSelected.procedimiento_id,
