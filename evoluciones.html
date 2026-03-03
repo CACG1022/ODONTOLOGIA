@@ -603,26 +603,49 @@ textarea{
       .proc-row{ grid-template-columns: 1fr 22px 110px; }
     }
 
-    /* ==============================
-   🔥 Compactar documento evolución
-   ============================== */
 
+/* 🔥 Documento evolución ultra compacto */
 #modalEvoDoc .doc-box{
-  padding:10px 12px;
-  margin-bottom:8px;
+  padding:6px 10px;
+  margin-bottom:6px;
+}
+
+#modalEvoDoc .doc-box .k{
+  margin-bottom:2px;
+  font-size:11px;
 }
 
 #modalEvoDoc .doc-box .v{
-  margin:2px 0;
-  line-height:1.35;
+  margin:0;
+  line-height:1.2;
+  font-size:13px;
 }
 
 #modalEvoDoc .doc-title{
-  margin-bottom:14px;
+  margin-bottom:10px;
 }
 
 #modalEvoDoc .doc-meta{
-  gap:8px 10px;
+  gap:6px 8px;
+}
+
+/* 🔥 Compactar SOLO visualización del modal (no impresión) */
+#modalEvoDoc .modal-body{
+  padding:8px !important;
+}
+
+#modalEvoDoc .doc-wrap{
+  padding:8px !important;
+}
+
+#modalEvoDoc .doc-box{
+  padding:6px 8px !important;
+  margin-bottom:6px !important;
+}
+
+#modalEvoDoc .doc-box .v{
+  line-height:1.2 !important;
+  margin:0 !important;
 }
     
 </style>
