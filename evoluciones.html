@@ -872,11 +872,13 @@ textarea{
           <label>Cod servicio (auto)</label>
           <input id="proc_codservicio_modal" type="text" readonly placeholder="Auto" />
         </div>
+
         <div class="ctrl">
-          <label>Finalidad (auto)</label>
-          <input id="proc_finalidad_modal" type="text" readonly placeholder="Auto" />
-        </div>
-      </div>
+  <label>Finalidad tecnología salud</label>
+  <select id="proc_finalidad_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
 
       <div class="ctrl">
         <label>Motivo atención</label>
@@ -1173,6 +1175,43 @@ function cargarClasificacionesRIPS() {
     Object.entries(vias).forEach(([c,n])=>{
       selVia.innerHTML += `<option value="${c}">${c} - ${n}</option>`;
     });
+  }
+}
+
+  // ==============================
+// 🔹 FINALIDAD TECNOLOGÍA (DESDE SUPABASE)
+// ==============================
+async function cargarFinalidadesDesdeSupabase(){
+
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  const select = document.getElementById("proc_finalidad_modal");
+  if (!select) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("finalidad_tecnologia")
+      .select("codigo, descripcion")
+      .order("codigo", { ascending: true });
+
+    if (error) throw error;
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    (data || []).forEach(f => {
+      const option = document.createElement("option");
+      option.value = f.codigo; // 🔥 SOLO CÓDIGO
+      option.textContent = `${f.codigo} - ${f.descripcion}`;
+      select.appendChild(option);
+    });
+
+  } catch (err) {
+    console.warn("Error cargando finalidades:", err);
   }
 }
 
@@ -2176,7 +2215,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     _ensureFirmasInit();
     limpiarEvolucionForm();
     mostrarNombrePaciente("");
-
+    await cargarFinalidadesDesdeSupabase();
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
@@ -2724,7 +2763,9 @@ if (mensaje) mensaje.style.display = "none";
 }
 
       if (cs) cs.value = conf.codservicio || "";
-      if (fi) fi.value = conf.finalidad_desc || "";
+      if (fi && conf.finalidad_codigo){
+  fi.value = conf.finalidad_codigo; // 🔥 selecciona el código en el select
+}
     }
 
     procInp.addEventListener("change", handleProcChange);
