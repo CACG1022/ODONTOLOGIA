@@ -647,16 +647,25 @@ textarea{
   line-height:1.2 !important;
   margin:0 !important;
 }
-/* 🔥 Compactar bloques de procedimiento */
-#modalEvoDoc .doc-box .v{
+
+/* 🔥 Grid SOLO para los campos del procedimiento */
+#modalEvoDoc .proc-grid{
   display:grid;
-  grid-template-columns: 160px 1fr;
-  row-gap:4px;
-  column-gap:10px;
+  grid-template-columns: 150px 1fr;
+  row-gap:3px;
+  column-gap:12px;
+  font-size:13px;
+  line-height:1.25;
 }
 
-#modalEvoDoc .doc-box .v strong{
+#modalEvoDoc .proc-grid .label{
   font-weight:600;
+}
+
+/* Mantener .v normal */
+#modalEvoDoc .doc-box .v{
+  margin:0;
+  line-height:1.25;
 }
     
     
