@@ -605,9 +605,15 @@ textarea{
 
 
 /* 🔥 Documento evolución ultra compacto */
+/* 🔥 Compactar bloques de procedimientos */
 #modalEvoDoc .doc-box{
-  padding:6px 10px;
-  margin-bottom:6px;
+  padding:4px 8px !important;
+  margin:4px 0 !important;
+}
+
+/* quitar espacio extra arriba del procedimiento */
+#modalEvoDoc .doc-box[style]{
+  margin-top:4px !important;
 }
 
 #modalEvoDoc .doc-box .k{
@@ -3393,7 +3399,7 @@ if (f2) dxsArr.push(`Dx secundarios 2: ${f2}`);
 const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 
       return `
-<div class="doc-box" style="margin-top:10px;">
+<div class="doc-box">
   <div class="k">Procedimiento ${i+1}</div>
 
   <div class="v proc-title">
