@@ -249,15 +249,25 @@
     .ctrl{
   display:flex;
   flex-direction:column;
-  gap:4px;              /* 🔥 más compacto */
-  margin-bottom:6px;    /* 🔥 menos espacio vertical */
+  gap:2px;              /* 🔥 más compacto */
+  margin-bottom:4px;    /* 🔥 menos espacio vertical */
 }
-    .ctrl label{ font-size:13px; color:var(--muted); }
+    .ctrl label{
+  font-size:12px;   /* 🔥 más pequeño */
+  margin-bottom:2px;
+  color:var(--muted);
+}
 
-    input[type="text"], input[type="date"], input[type="time"], textarea{
-      width:100%; border:1px solid var(--input); border-radius:10px; padding:8px;
-      font-size:14px; background:#fff;
+    input[type="text"],
+input[type="date"],
+input[type="time"],
+textarea{
+  padding:6px 8px;      /* 🔥 menos alto */
+  font-size:13px;
+  border-radius:8px;
     }
+
+    
     select{
       width:100%;
       border:1px solid var(--input);
@@ -483,7 +493,7 @@
            overflow-y: auto;        /* 🔥 scroll interno */
            background:#fff;
            border-radius:14px;
-           padding: 12px;           /* 🔥 menos padding */
+           padding: 8 px;           /* 🔥 menos padding */
            box-shadow:0 20px 50px rgba(0,0,0,.22);
           border:1px solid #e6eef8;
           }
