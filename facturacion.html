@@ -3708,27 +3708,7 @@ document
       };
     })();
 
-    function hookInputsCosto(){
-  document.querySelectorAll('input[data-role="costo"], input.costo, input[name="costo"]').forEach(inp => {
-    inp.addEventListener('input', () => {
-      // recalcula solo lo necesario
-      renderResumenPorProfesional();
-      renderMargenGanancia();
-    });
-  });
-}
-
-  const _recalc = recalcularTotales;
-  recalcularTotales = function(){
-    const r = _recalc.apply(this, arguments);
-    renderResumenPorProfesional();
-    renderMargenGanancia(); 
-    return r;
-  };
-})();
-
-
-
+    
 </script>
 </body>
 </html>
