@@ -645,16 +645,26 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     </div>
   </div>
 
-  <form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
-    <div class="datetime">
-      <div style="font-size:12px; margin-top:4px; color:#64748b;">
-  <strong>ID Plan:</strong> 
-  <span id="plan-id-display">No guardado</span>
+  
+<form id="cotizacion-form" method="POST" action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/dff23e62-359c-439e-a141-950e7542c6c2">
+  <div class="datetime" style="position:relative;">
+
+  <div style="font-size:12px; margin-top:4px; color:#64748b;">
+    <strong>ID Plan:</strong> 
+    <span id="plan-id-display">No guardado</span>
+  </div>
+
+  <div style="position:absolute; top:-2px; right:0; font-weight:700; color:#1f3a5f;">
+  <strong>ID IIU:</strong> <span id="plan-iiu-display">—</span>
 </div>
+</div>
+  
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
       <input type="hidden" name="fecha" id="input-fecha" />
     </div>
 
+
+  
     <label for="nombre">Nombre del paciente:</label>
     <input type="text" id="nombre" name="nombre" required />
 
@@ -1375,7 +1385,7 @@ const cedulaActual = document.getElementById("cedula").value;
 
 const { data: planData, error: planError } = await window.supabase
   .from("plandetratamientos")
-  .select("id")
+  .select("id, id_iiu")
   .eq("cedula", cedulaActual)
   .order("created_at", { ascending: false })
   .limit(1)
@@ -1389,6 +1399,9 @@ if(planError){
 
   document.getElementById("plan_id_actual").value = planData.id;
   document.getElementById("plan-id-display").textContent = planData.id;
+  // ✅ mostrar ID IIU
+const planIiu = planData.id_iiu || "—";
+document.getElementById("plan-iiu-display").textContent = planIiu;
 
   console.log("Plan ID obtenido:", planData.id);
 
