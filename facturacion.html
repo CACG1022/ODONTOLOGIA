@@ -3605,20 +3605,24 @@ async function cargarProcedimientosDeEvolucion(){
 
     // 5) Insertar en state.items con precio desde ODONTOGRAMA del plan relacionado
     for (const row of evoProcs){
-      const procId = Number(row.procedimiento_id);
-      if (!Number.isFinite(procId)) continue;
+      const procKey = String(row.procedimiento_id || "").trim();
+if (!procKey) continue;
 
-      const p = procsPrecio.find(x => Number(x.id) === procId);
+const procId = Number(procKey);
 
-      const cantidad = Math.max(1, Number(row.cantidad || 1));
-      const descripcion = (row.procedimiento_nombre || p?.procedimiento || "").toString().trim();
-      const cups = (row.codigo_cups || p?.codigo_cups || "").toString().trim();
+const p = procsPrecio.find(x => String(x.id) === procKey);
 
-      // ✅ procId es el "procedimiento_id" que viene en evolucion_procedimientos
-const procKey = String(procId); 
+const cantidad = Math.max(1, Number(row.cantidad || 1));
+const descripcion = (row.procedimiento_nombre || p?.procedimiento || "").toString().trim();
+const cups = (row.codigo_cups || p?.codigo_cups || "").toString().trim();
 
 // ✅ Buscar precio en odontograma por key
 let valorU = (preciosPlanMap[procKey] !== undefined) ? Number(preciosPlanMap[procKey]) : null;
+      console.log("DEBUG CRUCE PRECIO", {
+  procKey,
+  precioPlan: preciosPlanMap[procKey],
+  fallbackPrecio: p?.valor
+});
 
 // 🔎 DEBUG para saber si está cruzando bien
 if (valorU === null){
