@@ -718,6 +718,14 @@ textarea{
           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
       </div>
 
+    <div class="ctrl">
+  <label for="plan_tratamiento">Plan de tratamiento</label>
+  <select id="plan_tratamiento">
+    <option value="">Seleccione un plan</option>
+  </select>
+</div>
+      
+      
       <div class="ctrl">
         <label>&nbsp;</label>
         <button type="button" class="btn btn-buscar" onclick="buscarEvolucionesPorCedula()">
@@ -2241,11 +2249,12 @@ if (!codServicio || !finalidadTecnologiaSalud) {
   }
 
   async function buscarEvolucionesPorCedula() {
+    
     const cedula = (document.getElementById("cedula_paciente")?.value || "").trim();
     if (!cedula) { alert("Ingrese una cédula"); return; }
 
     _cedulaActual = cedula;
-
+    await cargarPlanesTratamiento(cedula);
     mostrarNombrePaciente("");
     evoluciones = [];
     renderEvoluciones();
@@ -2286,6 +2295,55 @@ if (!codServicio || !finalidadTecnologiaSalud) {
       alert("Error consultando N8N: " + (err?.message || err));
     }
   }
+
+  async function cargarPlanesTratamiento(cedula){
+
+  const select = document.getElementById("plan_tratamiento");
+  if(!select) return;
+
+  select.innerHTML = '<option value="">Cargando planes...</option>';
+
+  const { data, error } = await supabase
+    .from("plandetratamientos")
+    .select("id_iiu, fecha")
+    .eq("cedula", cedula)
+    .order("fecha", { ascending: false });
+
+  if(error){
+    console.error(error);
+    select.innerHTML = '<option value="">Error cargando planes</option>';
+    return;
+  }
+
+  select.innerHTML = "";
+
+  if(!data || data.length === 0){
+    select.innerHTML = '<option value="">No hay planes registrados</option>';
+    return;
+  }
+
+  data.forEach((plan, index)=>{
+
+    const fecha = new Date(plan.fecha);
+
+    const fechaFormateada =
+      fecha.getDate().toString().padStart(2,"0") + "/" +
+      (fecha.getMonth()+1).toString().padStart(2,"0") + "/" +
+      fecha.getFullYear();
+
+    const option = document.createElement("option");
+    option.value = plan.id_iiu;
+    option.textContent = plan.id_iiu + "  Fecha: " + fechaFormateada;
+
+    select.appendChild(option);
+
+    if(index === 0){
+      select.value = plan.id_iiu;
+    }
+
+  });
+
+}
 
   // ==============================
   // ✅ AUTOLOAD CONTROLADO (NUEVO)
