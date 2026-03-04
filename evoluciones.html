@@ -3570,12 +3570,77 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
   ventana.document.write(`
     <html>
       <head>
-        ${document.head.innerHTML}
+        <title>Evolución</title>
+
+        <style>
+          body{
+            font-family: Arial, sans-serif;
+            padding:30px;
+            color:#19324d;
+          }
+
+          .doc-title{
+            font-weight:900;
+            font-size:18px;
+            margin-bottom:14px;
+          }
+
+          .doc-meta{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:8px 12px;
+            margin-bottom:12px;
+          }
+
+          .doc-box{
+            border:1px solid #e7edf5;
+            border-radius:10px;
+            padding:6px 10px;
+            margin-bottom:6px;
+          }
+
+          .doc-box .k{
+            font-size:11px;
+            color:#6b7a90;
+            margin-bottom:2px;
+          }
+
+          .doc-box .v{
+            font-size:13px;
+            line-height:1.25;
+            white-space:normal;   /* 🔥 clave */
+          }
+
+          .proc-grid{
+            display:grid;
+            grid-template-columns:150px 1fr;
+            row-gap:3px;
+            column-gap:12px;
+            font-size:13px;
+            line-height:1.25;
+            white-space:normal;   /* 🔥 clave */
+          }
+
+          .label{
+            font-weight:600;
+          }
+
+          .doc-firmas{
+            display:grid;
+            grid-template-columns:1fr 1fr;
+            gap:12px;
+            margin-top:12px;
+          }
+
+          img{
+            max-width:100%;
+          }
+
+        </style>
       </head>
+
       <body>
-        <div style="padding:30px;">
-          ${contenido.innerHTML}
-        </div>
+        ${contenido.innerHTML}
       </body>
     </html>
   `);
