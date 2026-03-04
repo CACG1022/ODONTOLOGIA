@@ -1468,7 +1468,15 @@ if(data.id){
   console.log("Plan ID cargado desde consulta:", data.id);
   cargarHistorialAbonos(data.id);
 }
-      
+  // ==========================
+// ✅ MOSTRAR ID_IIU DEL WEBHOOK
+// ==========================
+if(data.id_iiu){
+  const el = document.getElementById("plan-iiu-display");
+  if(el){
+    el.textContent = data.id_iiu;
+  }
+}
 
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
       if (data.correo)  document.getElementById('correo').value  = data.correo;
