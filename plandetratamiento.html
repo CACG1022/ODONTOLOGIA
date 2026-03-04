@@ -811,6 +811,9 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <!-- ✅ ID DEL PLAN ACTUAL -->
 <input type="hidden" id="plan_id_actual">
 
+  <!-- ✅ ID IIU ACTUAL (SE ENVÍA A N8N) -->
+<input type="hidden" id="plan_iiu_actual" name="id_iiu" value="">
+
     <label for="observaciones">Observaciones:</label>
     <textarea id="observaciones" name="observaciones" rows="4"></textarea>
 
@@ -819,6 +822,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <input type="hidden" name="firma" id="firmaInput" />
 
     <button type="button" onclick="limpiarFirma()">Limpiar Firma</button>
+  <button type="button" id="btn-nuevo-plan" style="background:#0ea5e9;"> Nuevo plan</button>
     <button type="button" id="btn-guardar" style="background:#2a5d84;">Guardar</button>
     <!-- <button type="submit">Enviar a paciente</button>-->
   </form>
@@ -1328,6 +1332,10 @@ row.appendChild(nameWrap);
       renderOdontograma();
       syncProcedimientoDisplay();
       calcularTotal();
+        // ✅ Si no hay plan cargado, crear un ID IIU nuevo para el próximo guardado
+  if(!PLAN_IIU_ACTUAL){
+    setPlanIIU(generarNuevoIdIIU());
+  }
     });
 
     // si el select cambia por código, mantenemos el display sincronizado
@@ -1375,14 +1383,63 @@ row.appendChild(nameWrap);
        ========================== */
     const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
     const btnGuardar = document.getElementById("btn-guardar");
+
+ const btnNuevoPlan = document.getElementById("btn-nuevo-plan");
+
+btnNuevoPlan?.addEventListener("click", ()=>{
+  const ok = confirm("¿Crear un nuevo plan? Se generará un nuevo ID IIU.");
+  if(!ok) return;
+
+  // 🔥 marcar como NUEVO plan (sin id de BD)
+  PLAN_ID_ACTUAL = null;
+  document.getElementById("plan_id_actual").value = "";
+  document.getElementById("plan-id-display").textContent = "No guardado";
+
+  // 🔥 generar nuevo ID IIU
+  setPlanIIU(generarNuevoIdIIU());
+
+  // (opcional) si quieres limpiar abonos en UI
+  const lista = document.getElementById("lista-abonos");
+  const totalSpan = document.getElementById("total-abonado");
+  const saldoSpan = document.getElementById("saldo-pendiente");
+  if(lista) lista.innerHTML = "<small>No hay abonos registrados.</small>";
+  if(totalSpan) totalSpan.textContent = "0";
+  if(saldoSpan) saldoSpan.textContent = "0";
+});
+    
     // ✅ ID GLOBAL DEL PLAN
 let PLAN_ID_ACTUAL = null;
+
+// ✅ ID IIU GLOBAL DEL PLAN
+let PLAN_IIU_ACTUAL = null;
+
+function generarNuevoIdIIU(){
+  return "PLAN-" + Date.now();
+}
+
+function setPlanIIU(iiu){
+  PLAN_IIU_ACTUAL = iiu || null;
+
+  const hidden = document.getElementById("plan_iiu_actual");
+  if(hidden) hidden.value = PLAN_IIU_ACTUAL || "";
+
+  const span = document.getElementById("plan-iiu-display");
+  if(span) span.textContent = PLAN_IIU_ACTUAL || "—";
+}
+    
     const form = document.getElementById("cotizacion-form");
+
+    
 
     btnGuardar.addEventListener("click", async () => {
       try {
         calcularTotal();
         document.getElementById('firmaInput').value = canvas.toDataURL();
+
+            // ✅ Asegurar que siempre se envíe ID IIU
+    if(!PLAN_IIU_ACTUAL){
+      setPlanIIU(generarNuevoIdIIU());
+    }
 
         const fd = new FormData(form);
         const resp = await fetch(WEBHOOK_GUARDAR, { method: "POST", body: fd });
@@ -1409,9 +1466,8 @@ if(planError){
 
   document.getElementById("plan_id_actual").value = planData.id;
   document.getElementById("plan-id-display").textContent = planData.id;
-  // ✅ mostrar ID IIU
-const planIiu = planData.id_iiu || "—";
-document.getElementById("plan-iiu-display").textContent = planIiu;
+ // ✅ mostrar y fijar ID IIU
+setPlanIIU(planData.id_iiu || "—");
 
   console.log("Plan ID obtenido:", planData.id);
 
@@ -1482,10 +1538,7 @@ if(data.id){
 // ✅ MOSTRAR ID_IIU DEL WEBHOOK
 // ==========================
 if(data.id_iiu){
-  const el = document.getElementById("plan-iiu-display");
-  if(el){
-    el.textContent = data.id_iiu;
-  }
+  setPlanIIU(data.id_iiu);
 }
 
       if (data.nombre)  document.getElementById('nombre').value  = data.nombre;
