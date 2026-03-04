@@ -668,6 +668,18 @@ input[type="number"] {
         <button class="btn primary" id="btn-guardar" type="button">💾 Guardar factura</button>
         <button class="btn" id="btn-imprimir" type="button" disabled>🖨 Imprimir</button>
         <button type="button" id="btn-cargar-plan" style=" background:#0ea5e9; color:#fff; font-weight:800;
+          <button type="button" id="btn-cargar-evolucion" style="
+  background:#22c55e; color:#fff; font-weight:800;
+  padding:10px 14px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  box-shadow:0 6px 14px rgba(0,0,0,.18);
+  margin-bottom:10px;
+">
+  📥 Cargar procedimientos de evolución
+</button>
+        
         padding:10px 14px;
         border-radius:10px;
         border:none;
@@ -3418,13 +3430,165 @@ if (procDrop) procDrop.style.display = "none";
 
   console.log("✅ Plan cargado y tabla temporal limpiada");
 }
+
+  // =====================================================
+// ✅ TOMAR PRECIO DESDE EL ODONTOGRAMA (jsonb) DEL PLAN
+// =====================================================
+function obtenerPrecioDesdeOdontograma(odontograma, procedimientoId){
+  if (!odontograma) return null;
+
+  // jsonb puede venir como objeto o como string
+  let obj = odontograma;
+  if (typeof obj === "string"){
+    try { obj = JSON.parse(obj); } catch(e){ return null; }
+  }
+  if (typeof obj !== "object" || Array.isArray(obj)) return null;
+
+  const pid = String(procedimientoId);
+
+  // { "11":[{key:"171",label:"...",price:85000}], "14":[...] }
+  for (const diente of Object.keys(obj)){
+    const arr = obj[diente];
+    if (!Array.isArray(arr)) continue;
+
+    for (const item of arr){
+      if (!item) continue;
+      if (String(item.key) === pid){
+        const price = Number(item.price);
+        if (Number.isFinite(price)) return price;
+      }
+    }
+  }
+  return null;
+}
+
+// =====================================================
+// ✅ CARGAR PROCEDIMIENTOS DE EVOLUCIÓN A FACTURA
+// - lee EVOLUCIONES.plan_de_tratamiento (id_iiu)
+// - lee plandetratamientos.odontograma con ese id_iiu
+// - lee evolucion_procedimientos por id_evolucion
+// - asigna precios desde odontograma
+// =====================================================
+async function cargarProcedimientosDeEvolucion(){
+  try{
+    const evoId = (document.getElementById("evolucion_id")?.value || "").trim();
+    if (!evoId){
+      toast("Selecciona una evolución primero.", "warn");
+      return;
+    }
+
+    setStatus("Cargando evolución...");
+
+    // 1) Traer la evolución para obtener el plan_de_tratamiento (id_iiu)
+    const { data: evo, error: evoErr } = await supabase
+      .from("EVOLUCIONES")
+      .select("id, plan_de_tratamiento, paciente_numdoc")
+      .eq("id", evoId)
+      .single();
+
+    if (evoErr) throw evoErr;
+
+    const idIIU = (evo?.plan_de_tratamiento || "").toString().trim();
+    if (!idIIU){
+      setStatus("");
+      toast("Esta evolución NO tiene plan_de_tratamiento relacionado.", "warn");
+      return;
+    }
+
+    // 2) Traer el plan EXACTO relacionado (por id_iiu)
+    setStatus("Cargando plan relacionado...");
+
+    const { data: plan, error: planErr } = await supabase
+      .from("plandetratamientos")
+      .select("id, id_iiu, odontograma, fecha, created_at")
+      .eq("id_iiu", idIIU)
+      .single();
+
+    if (planErr) throw planErr;
+
+    const odontograma = plan?.odontograma || null;
+
+    // 3) Traer procedimientos relacionados a la evolución
+    setStatus("Cargando procedimientos de la evolución...");
+
+    const { data: evoProcs, error: errEvo } = await supabase
+      .from("evolucion_procedimientos")
+      .select("id, id_evolucion, procedimiento_id, procedimiento_nombre, codigo_cups, cantidad")
+      .eq("id_evolucion", String(evoId));
+
+    if (errEvo) throw errEvo;
+
+    if (!evoProcs || evoProcs.length === 0){
+      setStatus("");
+      toast("Esa evolución no tiene procedimientos relacionados.", "warn");
+      return;
+    }
+
+    // 4) (Opcional) Traer datos de procedimientos_precios para fallback (cups/valor si no está en plan)
+    const ids = Array.from(new Set((evoProcs || [])
+      .map(x => x.procedimiento_id)
+      .filter(v => v !== null && v !== undefined)
+      .map(v => Number(v))
+      .filter(v => Number.isFinite(v))
+    ));
+
+    let procsPrecio = [];
+    if (ids.length){
+      const { data: pData } = await supabase
+        .from("procedimientos_precios")
+        .select("id, procedimiento, valor, codigo_cups, costo")
+        .in("id", ids);
+
+      procsPrecio = pData || [];
+    }
+
+    // 5) Insertar en state.items con precio desde ODONTOGRAMA del plan relacionado
+    for (const row of evoProcs){
+      const procId = Number(row.procedimiento_id);
+      if (!Number.isFinite(procId)) continue;
+
+      const p = procsPrecio.find(x => Number(x.id) === procId);
+
+      const cantidad = Math.max(1, Number(row.cantidad || 1));
+      const descripcion = (row.procedimiento_nombre || p?.procedimiento || "").toString().trim();
+      const cups = (row.codigo_cups || p?.codigo_cups || "").toString().trim();
+
+      // ✅ PRECIO: primero del plan relacionado (odontograma), si no existe, usar procedimientos_precios.valor
+      const precioPlan = obtenerPrecioDesdeOdontograma(odontograma, procId);
+      const valorU = Number.isFinite(Number(precioPlan)) ? Number(precioPlan) : Number(p?.valor || 0);
+
+      state.items.push({
+        id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
+        procedimiento_id: procId,
+        codigo_cups: cups,
+        descripcion: descripcion || "—",
+        cantidad,
+        valor_unitario: Math.max(0, Number(valorU || 0)),
+        valor_total: Math.max(0, Number(valorU || 0)) * cantidad,
+        costo: Number(p?.costo || 0)
+      });
+    }
+
+    renderItems();
+    recalcularTotales();
+    setStatus("");
+    toast(`✅ Procedimientos cargados (Plan: ${idIIU})`, "ok");
+
+  }catch(err){
+    console.error("cargarProcedimientosDeEvolucion error:", err);
+    setStatus("");
+    toast("No se pudo cargar procedimientos de la evolución:\n" + (err?.message || "Error"), "err");
+  }
+}
  // ===============================
 // 📥 BOTÓN CARGAR PLAN DE TRATAMIENTO
 // ===============================
 document
   .getElementById("btn-cargar-plan")
   ?.addEventListener("click", cargarPlanDesdeSupabase);
-
+document
+  .getElementById("btn-cargar-evolucion")
+  ?.addEventListener("click", cargarProcedimientosDeEvolucion);
   
 
     /* =====================================================
