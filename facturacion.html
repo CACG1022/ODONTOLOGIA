@@ -958,11 +958,11 @@ async function cargarEvolucionesPaciente(numdoc){
 
   const { data, error } = await supabase
     .from("EVOLUCIONES")
-    .select('"id", evo_fecha, evo_hora')
+    .select('id, evo_fecha, evo_hora')
     .eq("paciente_numdoc", numdoc)
     .is("factura", null)
     .order("evo_fecha", { ascending:false })
-.order("evo_hora", { ascending:false });
+    .order("evo_hora", { ascending:false });
 
   if(error){
     console.error("Error cargando evoluciones:", error);
@@ -977,8 +977,8 @@ async function cargarEvolucionesPaciente(numdoc){
     const hora = e.evo_hora || "";
 
     const option = document.createElement("option");
-    option.value = e["id-evolucion"];
-    option.textContent = `${e["id-evolucion"]}  |  ${fecha} ${hora}`;
+    option.value = e.id;
+    option.textContent = `${e.id} | ${fecha} ${hora}`;
 
     select.appendChild(option);
 
