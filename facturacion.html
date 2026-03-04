@@ -948,8 +948,8 @@ input[type="number"] {
 // CARGAR EVOLUCIONES DEL PACIENTE
 // ===============================
 async function cargarEvolucionesPaciente(numdoc){
+
   console.log("📌 cargarEvolucionesPaciente() numdoc =", numdoc);
-console.log("📌 query a tabla: EVOLUCIONES, paciente_numdoc =", parseInt(String(numdoc).trim()));
 
   const select = document.getElementById("evolucion_id");
 
@@ -959,15 +959,15 @@ console.log("📌 query a tabla: EVOLUCIONES, paciente_numdoc =", parseInt(Strin
   }
 
   const { data, error } = await supabase
-    console.log("Resultado evoluciones:", data);
-console.log("Error evoluciones:", error);
-  
     .from("EVOLUCIONES")
     .select('id, evo_fecha, evo_hora')
     .eq("paciente_numdoc", parseInt(numdoc.trim()))
     .is("factura", null)
     .order("evo_fecha", { ascending:false })
     .order("evo_hora", { ascending:false });
+
+  console.log("Resultado evoluciones:", data);
+  console.log("Error evoluciones:", error);
 
   if(error){
     console.error("Error cargando evoluciones:", error);
