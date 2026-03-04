@@ -959,7 +959,7 @@ async function cargarEvolucionesPaciente(numdoc){
   const { data, error } = await supabase
     .from("EVOLUCIONES")
     .select('id, evo_fecha, evo_hora')
-    .eq("paciente_numdoc", numdoc)
+    .eq("paciente_numdoc", Number(numdoc))
     .is("factura", null)
     .order("evo_fecha", { ascending:false })
     .order("evo_hora", { ascending:false });
@@ -2042,7 +2042,7 @@ if(evoSeleccionada){
     .update({
       factura: numero_factura
     })
-    .eq("id-evolucion", evoSeleccionada);
+    .eq("id", evoSeleccionada);
 
 }
       } catch(err){
