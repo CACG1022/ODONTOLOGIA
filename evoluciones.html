@@ -3202,6 +3202,8 @@ if (!via) {
     }
 
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+    // 🔹 obtener plan de tratamiento seleccionado
+const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "").trim();
 
     const firmaPaciente = obtenerFirmaBase64("firma_paciente");
     const firmaProfesional = obtenerFirmaBase64("firma_profesional");
