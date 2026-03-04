@@ -3471,10 +3471,35 @@ function construirMapaPreciosOdontograma(odontograma){
   if (!odontograma) return {};
 
   let obj = odontograma;
-  if (typeof obj === "string"){
-    try { obj = JSON.parse(obj); } catch(e){ return {}; }
+
+  // ✅ Caso: Supabase a veces devuelve jsonb como string,
+  // o incluso como string que contiene OTRO string JSON (doble serializado).
+  // Vamos a intentar parsear hasta 2 veces.
+  for (let i = 0; i < 2; i++){
+    if (typeof obj === "string"){
+      let s = obj.trim();
+
+      // Si viene con comillas externas tipo:  "{ \"15\": [...] }"
+      // JSON.parse lo resuelve, pero a veces queda otro string.
+      try{
+        obj = JSON.parse(s);
+      }catch(e){
+        // Si falla, intentamos quitar comillas externas manualmente
+        if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))){
+          s = s.slice(1, -1);
+          try{
+            obj = JSON.parse(s);
+          }catch(_e2){
+            return {};
+          }
+        }else{
+          return {};
+        }
+      }
+    }
   }
-  if (typeof obj !== "object" || Array.isArray(obj) || obj === null) return {};
+
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return {};
 
   const map = {}; // { "163": 200, ... }
 
@@ -3484,11 +3509,12 @@ function construirMapaPreciosOdontograma(odontograma){
 
     for (const item of arr){
       if (!item) continue;
-      const k = String(item.key ?? "").trim();
-      const p = Number(item.price ?? 0);
-      if (k) map[k] = Number.isFinite(p) ? p : 0;
+      const k = String(item.key ?? "").trim();       // "163"
+      const p = Number(item.price ?? 0);             // 200
+      if (k) map[k] = Number.isFinite(p) ? p : 0;    // map["163"]=200
     }
   }
+
   return map;
 }
 // =====================================================
@@ -3540,6 +3566,7 @@ async function cargarProcedimientosDeEvolucion(){
     const odontograma = plan?.odontograma || null;
     const preciosPlanMap = construirMapaPreciosOdontograma(odontograma);
 console.log("🧩 preciosPlanMap (odontograma):", preciosPlanMap);
+    console.log("🧪 odontograma raw:", odontograma);
 
     // 3) Traer procedimientos relacionados a la evolución
     setStatus("Cargando procedimientos de la evolución...");
