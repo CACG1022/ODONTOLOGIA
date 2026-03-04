@@ -958,7 +958,7 @@ async function cargarEvolucionesPaciente(numdoc){
 
   const { data, error } = await supabase
     .from("EVOLUCIONES")
-    .select('"id-evolucion", evo_fecha, evo_hora')
+    .select('"id", evo_fecha, evo_hora')
     .eq("paciente_numdoc", numdoc)
     .is("factura", null)
     .order("evo_fecha", { ascending:false })
