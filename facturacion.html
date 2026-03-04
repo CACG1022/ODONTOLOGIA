@@ -3557,7 +3557,7 @@ async function cargarProcedimientosDeEvolucion(){
 
     const { data: plan, error: planErr } = await supabase
       .from("plandetratamientos")
-      .select("id, id_iiu, odontograma, fecha, created_at")
+      .select("id_iiu, created_at, odontograma")
       .eq("id_iiu", idIIU)
       .single();
 
@@ -3565,7 +3565,8 @@ async function cargarProcedimientosDeEvolucion(){
 
     const odontograma = plan?.odontograma || null;
     const preciosPlanMap = construirMapaPreciosOdontograma(odontograma);
-console.log("🧩 preciosPlanMap (odontograma):", preciosPlanMap);
+    console.log("🧪 PLAN seleccionado:", plan?.id_iiu);
+    console.log("🧩 preciosPlanMap (odontograma):", preciosPlanMap);
     console.log("🧪 odontograma raw:", odontograma);
 
     // 3) Traer procedimientos relacionados a la evolución
