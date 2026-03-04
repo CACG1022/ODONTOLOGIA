@@ -2158,6 +2158,8 @@ if (!motivoAtencion) {
     if (!cedula) { alert("⚠️ Primero debes buscar/ingresar la cédula del paciente."); return; }
 
     const usuario = localStorage.getItem("usuario_logueado") || "desconocido";
+    // 🔹 Obtener plan de tratamiento seleccionado
+const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "").trim();
 
     const firmaPaciente = obtenerFirmaBase64("firma_paciente");
     const firmaProfesional = obtenerFirmaBase64("firma_profesional");
@@ -2212,7 +2214,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
       firma_profesional: firmaProfesional,
       cedula_paciente: cedula,
       usuario,
-
+      plan_tratamiento: planTratamiento,
       diagnostico_principal: diagnosticoPrincipal,
       diagnosticos_secundarios: diagnosticosSecundarios,
 
@@ -2232,6 +2234,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
         diagnostico_principal: diagnosticoPrincipal,
         diagnosticos_secundarios: diagnosticosSecundarios,
         fecha_envio: new Date().toISOString(),
+        plan_tratamiento: planTratamiento,
         usuario_logueado: usuario
       };
 
@@ -3235,6 +3238,7 @@ if (!via) {
       evolucion: item,
       procedimientos: item.procedimientos,
       fecha_envio: new Date().toISOString(),
+      plan_tratamiento: planTratamiento,
       usuario_logueado: usuario
     };
 
