@@ -507,10 +507,19 @@ input[type="number"] {
           <label>Nombre paciente</label>
           <input id="paciente_nombre" type="text" placeholder="Nombres y apellidos">
         </div>
+        
         <div class="ctrl">
           <label>Profesional</label>
           <select id="profesional"></select>
         </div>
+
+        <div class="ctrl">
+  <label>ID evolución</label>
+  <select id="evolucion_id">
+    <option value="">Seleccione evolución...</option>
+  </select>
+</div>
+        
         <div class="ctrl">
           <label>&nbsp;</label>
           <button class="btn" id="btn-buscar" type="button">🔎 Autocompletar (si existe)</button>
@@ -935,6 +944,50 @@ input[type="number"] {
       return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
     }
 
+// ===============================
+// CARGAR EVOLUCIONES DEL PACIENTE
+// ===============================
+async function cargarEvolucionesPaciente(numdoc){
+
+  const select = document.getElementById("evolucion_id");
+
+  if(!numdoc){
+    select.innerHTML = '<option value="">Seleccione evolución...</option>';
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("EVOLUCIONES")
+    .select('"id-evolucion", evo_fecha, evo_hora')
+    .eq("paciente_numdoc", numdoc)
+    .is("factura", null)
+    .order("evo_fecha", { ascending:false })
+.order("evo_hora", { ascending:false });
+
+  if(error){
+    console.error("Error cargando evoluciones:", error);
+    return;
+  }
+
+  select.innerHTML = '<option value="">Seleccione evolución...</option>';
+
+  (data || []).forEach(e => {
+
+    const fecha = e.evo_fecha || "";
+    const hora = e.evo_hora || "";
+
+    const option = document.createElement("option");
+    option.value = e["id-evolucion"];
+    option.textContent = `${e["id-evolucion"]}  |  ${fecha} ${hora}`;
+
+    select.appendChild(option);
+
+  });
+
+}
+
+
+    
    function renderMargenGanancia(){
   const cont = document.getElementById("margen-ganancia");
   if (!cont) return;
@@ -1885,6 +1938,7 @@ function obtenerCostoDeItem(it){
           tipo_usuario,
           eps,
           numero_factura,
+          evolucion_id: document.getElementById("evolucion_id").value || null,
           valor_total: totals.total,
           copago: totals.copago,
           cuota_moderadora: totals.cuota_moderadora,
@@ -1920,6 +1974,7 @@ function obtenerCostoDeItem(it){
             tipo_usuario,
             eps,
             numero_factura,
+            evolucion_id: document.getElementById("evolucion_id").value || null,
             subtotal: totals.subtotal,
             descuento_pct: totals.descuento_pct,
             descuento_valor: totals.descuento_valor,
@@ -1975,6 +2030,21 @@ function obtenerCostoDeItem(it){
         if ($("btn-abonos")) $("btn-abonos").disabled = false;
         setStatus("");
         toast("Factura guardada ✅", "ok");
+        // =============================
+// MARCAR EVOLUCION COMO FACTURADA
+// =============================
+const evoSeleccionada = document.getElementById("evolucion_id").value;
+
+if(evoSeleccionada){
+
+  await supabase
+    .from("EVOLUCIONES")
+    .update({
+      factura: numero_factura
+    })
+    .eq("id-evolucion", evoSeleccionada);
+
+}
       } catch(err){
         console.error(err);
         setStatus("");
@@ -3121,7 +3191,14 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if ($("pagada")) $("pagada").value = "si";
         if ($("referencia_pago")) $("referencia_pago").value = "";
         $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
-        $("btn-buscar").addEventListener("click", ()=> buscarPacienteEnHistoria(true));
+        $("btn-buscar").addEventListener("click", async ()=>{
+
+  await buscarPacienteEnHistoria(true);
+
+  const cedula = document.getElementById("paciente_cedula").value;
+  await cargarEvolucionesPaciente(cedula);
+
+});
         $("btn-add").addEventListener("click", agregarProcedimiento);
         if ($("sel-proc-input")){
           $("sel-proc-input").addEventListener("input", (e) => {
