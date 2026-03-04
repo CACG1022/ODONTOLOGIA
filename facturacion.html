@@ -3487,11 +3487,13 @@ async function cargarProcedimientosDeEvolucion(){
 
     // 1) Traer la evolución para obtener el plan_de_tratamiento (id_iiu)
     const { data: evo, error: evoErr } = await supabase
-      .from("EVOLUCIONES")
-      .select("id, plan_de_tratamiento, paciente_numdoc")
-      .eq("id", evoId)
-      .single();
+  .from("EVOLUCIONES")
+  .select('id, "id-evolucion", plan_de_tratamiento, paciente_numdoc')
+  .eq("id", evoId)
+  .single();
 
+  const idEvolucionUUID = evo["id-evolucion"];
+    
     if (evoErr) throw evoErr;
 
     const idIIU = (evo?.plan_de_tratamiento || "").toString().trim();
@@ -3520,7 +3522,7 @@ async function cargarProcedimientosDeEvolucion(){
     const { data: evoProcs, error: errEvo } = await supabase
       .from("evolucion_procedimientos")
       .select("id, id_evolucion, procedimiento_id, procedimiento_nombre, codigo_cups, cantidad")
-      .eq("id_evolucion", String(evoId));
+      .eq("id_evolucion", idEvolucionUUID);
 
     if (errEvo) throw errEvo;
 
