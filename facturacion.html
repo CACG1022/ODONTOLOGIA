@@ -3467,7 +3467,30 @@ function obtenerPrecioDesdeOdontograma(odontograma, procedimientoId){
   }
   return null;
 }
+function construirMapaPreciosOdontograma(odontograma){
+  if (!odontograma) return {};
 
+  let obj = odontograma;
+  if (typeof obj === "string"){
+    try { obj = JSON.parse(obj); } catch(e){ return {}; }
+  }
+  if (typeof obj !== "object" || Array.isArray(obj) || obj === null) return {};
+
+  const map = {}; // { "163": 200, ... }
+
+  for (const diente of Object.keys(obj)){
+    const arr = obj[diente];
+    if (!Array.isArray(arr)) continue;
+
+    for (const item of arr){
+      if (!item) continue;
+      const k = String(item.key ?? "").trim();
+      const p = Number(item.price ?? 0);
+      if (k) map[k] = Number.isFinite(p) ? p : 0;
+    }
+  }
+  return map;
+}
 // =====================================================
 // ✅ CARGAR PROCEDIMIENTOS DE EVOLUCIÓN A FACTURA
 // - lee EVOLUCIONES.plan_de_tratamiento (id_iiu)
@@ -3515,6 +3538,8 @@ async function cargarProcedimientosDeEvolucion(){
     if (planErr) throw planErr;
 
     const odontograma = plan?.odontograma || null;
+    const preciosPlanMap = construirMapaPreciosOdontograma(odontograma);
+console.log("🧩 preciosPlanMap (odontograma):", preciosPlanMap);
 
     // 3) Traer procedimientos relacionados a la evolución
     setStatus("Cargando procedimientos de la evolución...");
@@ -3561,9 +3586,22 @@ async function cargarProcedimientosDeEvolucion(){
       const descripcion = (row.procedimiento_nombre || p?.procedimiento || "").toString().trim();
       const cups = (row.codigo_cups || p?.codigo_cups || "").toString().trim();
 
-      // ✅ PRECIO: primero del plan relacionado (odontograma), si no existe, usar procedimientos_precios.valor
-      const precioPlan = obtenerPrecioDesdeOdontograma(odontograma, procId);
-      const valorU = Number.isFinite(Number(precioPlan)) ? Number(precioPlan) : Number(p?.valor || 0);
+      // ✅ procId es el "procedimiento_id" que viene en evolucion_procedimientos
+const procKey = String(procId); 
+
+// ✅ Buscar precio en odontograma por key
+let valorU = (preciosPlanMap[procKey] !== undefined) ? Number(preciosPlanMap[procKey]) : null;
+
+// 🔎 DEBUG para saber si está cruzando bien
+if (valorU === null){
+  console.warn("⚠️ No encontré price en odontograma para procId =", procId,
+               "=> usando fallback procedimientos_precios.valor =", p?.valor);
+}
+
+// ✅ fallback si no está en odontograma
+if (valorU === null || !Number.isFinite(valorU)) {
+  valorU = Number(p?.valor || 0);
+}
 
       state.items.push({
         id_local: crypto?.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random(),
@@ -3679,15 +3717,6 @@ document
     });
   });
 }
-
-   (function(){
-  const _renderItems = renderItems;
-  renderItems = function(){
-    const r = _renderItems.apply(this, arguments);
-    renderResumenPorProfesional();
-    renderMargenGanancia(); 
-    return r;
-  };
 
   const _recalc = recalcularTotales;
   recalcularTotales = function(){
