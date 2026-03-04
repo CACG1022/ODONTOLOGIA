@@ -1874,7 +1874,27 @@ async function ejecutarFacturacion() {
     `facturacion.html?paciente_cedula=${encodeURIComponent(cedula)}`;
 }
 
+function irHistoriaClinica(){
 
+  const cedulaInput = document.querySelector('input[name="cedula"]') 
+                      || document.getElementById("cedula");
+
+  if(!cedulaInput){
+    alert("No se encontró el campo de cédula.");
+    return;
+  }
+
+  const cedula = cedulaInput.value.trim();
+
+  if(!cedula){
+    alert("La cédula está vacía.");
+    return;
+  }
+
+  const url = "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html?buscar_cedula=" + cedula;
+
+  window.location.href = url;
+}
   
 </script>
 
@@ -2584,6 +2604,29 @@ async function ejecutarFacturacion() {
     "
   >
     💰 Abonos
+  </button>
+</div>
+
+  <div style="position:fixed;bottom:80px;right:20px;z-index:9999;">
+  <button
+    class="boton-flotante-unificado"
+    type="button"
+    onclick="irHistoriaClinica()"
+    style="
+      padding:12px 16px;
+      border-radius:10px;
+      border:none;
+      background:#009688;
+      color:#fff;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:0 8px 18px rgba(0,0,0,.18);
+      display:flex;
+      align-items:center;
+      gap:8px;
+    "
+  >
+    📋 Historia Clínica
   </button>
 </div>
   
