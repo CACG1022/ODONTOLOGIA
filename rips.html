@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Facturas pendientes RIPS</title>
+<title>RIPS por Evolución</title>
 
 <!-- Supabase JS v2 (UMD) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -16,7 +16,7 @@
 }
 *{box-sizing:border-box}
 body{margin:0;padding:20px;background:var(--bg);font-family:Arial;color:var(--text);}
-.container{max-width:1200px;margin:0 auto;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--line);}
+.container{max-width:1400px;margin:0 auto;background:var(--card);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow);border:1px solid var(--line);}
 .topbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
 h1{margin:0;font-size:18px}
 .meta{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:13px;font-weight:700;}
@@ -27,16 +27,29 @@ h1{margin:0;font-size:18px}
 .btn-export{background:var(--ok);color:#fff;border-color:var(--ok);}
 .btn-export:hover{filter:brightness(.95)}
 .btn:disabled{opacity:.6;cursor:not-allowed}
-table{width:100%;border-collapse:collapse;}
+
+.table-wrap{overflow:auto; max-height:72vh; border:1px solid var(--line); border-radius:12px;}
+
+table{width:100%;border-collapse:collapse; min-width:1200px;}
 th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
-th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position:sticky;top:0}
+th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position:sticky;top:0; z-index: 2;}
+
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid var(--line);background:#fff;white-space:nowrap;}
 .pill.warn{color:var(--warn);border-color:rgba(245,158,11,.25)}
 .pill.ok{color:var(--ok);border-color:rgba(22,163,74,.25)}
 .pill.bad{color:var(--bad);border-color:rgba(220,38,38,.25)}
+
 .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace;font-size:12px}
 .row-actions{display:flex;gap:8px;flex-wrap:wrap}
 .empty{color:var(--muted);text-align:center;padding:18px}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 14px;}
+.ctrl{display:flex;flex-direction:column;gap:6px;min-width: 220px;}
+.ctrl label{font-size:12px;color:var(--muted);font-weight:800;}
+input, select{
+  border:1px solid var(--line); border-radius:10px; padding:10px 12px; outline:none; background:#fff; font-size: 14px;
+}
+
 #toast{
   position:fixed;right:16px;bottom:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
   background:#fff;box-shadow:var(--shadow);font-weight:900;opacity:0;transform:translateY(8px);
@@ -52,27 +65,68 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
 <body>
 <div class="container">
   <div class="topbar">
-    <h1>Facturas pendientes de RIPS</h1>
+    <h1>RIPS por Evolución</h1>
     <div class="meta">
       <span id="count">—</span>
       <button class="btn" id="btn-reload" type="button">🔄 Recargar</button>
     </div>
   </div>
 
-  <div style="overflow:auto; max-height:72vh; border:1px solid var(--line); border-radius:12px;">
+  <div class="filters">
+    <div class="ctrl">
+      <label for="f-text">Buscar (paciente / doc / factura / cufe / id evolución)</label>
+      <input id="f-text" type="text" placeholder="Ej: 1022, 34ab..., FEV-001, CUFE..." />
+    </div>
+
+    <div class="ctrl" style="min-width:180px;">
+      <label for="f-fact">Factura</label>
+      <select id="f-fact">
+        <option value="all">Todas</option>
+        <option value="with">Con factura</option>
+        <option value="without">Sin factura</option>
+      </select>
+    </div>
+
+    <div class="ctrl" style="min-width:180px;">
+      <label for="f-cufe">CUFE</label>
+      <select id="f-cufe">
+        <option value="all">Todos</option>
+        <option value="with">Con CUFE</option>
+        <option value="without">Sin CUFE</option>
+      </select>
+    </div>
+
+    <div class="ctrl" style="min-width:200px;">
+      <label for="f-rips">RIPS Generado</label>
+      <select id="f-rips">
+        <option value="all">Todos</option>
+        <option value="with">Con RIPS (en tabla rips_generados)</option>
+        <option value="without">Sin RIPS</option>
+      </select>
+    </div>
+
+    <div class="ctrl" style="min-width:150px;">
+      <label>&nbsp;</label>
+      <button class="btn" id="btn-clear" type="button">🧹 Limpiar</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
     <table>
       <thead>
         <tr>
-          <th style="width:220px;">Factura</th>
-          <th style="width:120px;">Fecha</th>
+          <th style="width:160px;">Evolución</th>
+          <th style="width:140px;">Fecha/Hora</th>
           <th>Paciente</th>
-          <th style="width:140px;">Total</th>
-          <th style="width:130px;">Estado</th>
+          <th style="width:160px;">Profesional</th>
+          <th style="width:160px;">Factura</th>
+          <th style="width:200px;">CUFE</th>
+          <th style="width:170px;">Estado</th>
           <th style="width:340px;">Acción</th>
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="6" class="empty">Cargando...</td></tr>
+        <tr><td colspan="8" class="empty">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
@@ -86,11 +140,11 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
   // =======================
   const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
+
+  // ✅ Reutilizamos el webhook actual (ajústalo si tienes otro flujo para “por evolución”)
   const WEBHOOK_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bb200fb9-3acf-4995-9c42-af837e328432";
 
-  // UMD expone window.supabase
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
   const $ = (id)=>document.getElementById(id);
 
   function toast(msg, type="ok"){
@@ -102,11 +156,6 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
     window.__toastT = setTimeout(()=> el.classList.remove("show"), 2600);
   }
 
-  function money(v){
-    const n = Number(v || 0);
-    try{ return n.toLocaleString("es-CO"); }catch{ return String(n); }
-  }
-
   function esc(s){
     return String(s ?? "")
       .replaceAll("&","&amp;")
@@ -116,160 +165,521 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
       .replaceAll("'","&#039;");
   }
 
+  function ymd(d){
+    const s = String(d || "");
+    return s ? s.slice(0,10) : "";
+  }
+
+  function hhmm(t){
+    const s = String(t || "");
+    return s ? s.slice(0,5) : "";
+  }
+
+  function asText(v){ return String(v ?? ""); }
+
+  // Estado en memoria
+  let __rows = []; // rows renderables
+
   // =======================
-  // CARGAR FACTURAS PENDIENTES
+  // CARGAR EVOLUCIONES + RELACIONES
   // =======================
-  async function cargarFacturas(){
+  async function cargarEvoluciones(){
     const tbody = $("tbody");
-    tbody.innerHTML = `<tr><td colspan="6" class="empty">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
     $("count").textContent = "—";
 
     try{
-      // 1) traer facturas + rips en paralelo
-      const [facRes, ripsRes] = await Promise.all([
-        sb.from("facturas").select("*").order("fecha", { ascending:false }),
-        sb.from("rips_generados").select("factura_id")
-      ]);
+      // 1) evoluciones recientes
+      const evoRes = await sb
+        .from("EVOLUCIONES")
+        .select("*")
+        .order("created_at", { ascending:false })
+        .limit(500);
+      if (evoRes.error) throw evoRes.error;
 
-      if (facRes.error) throw facRes.error;
-      if (ripsRes.error) throw ripsRes.error;
-
-      const facturas = facRes.data || [];
-      const rips = ripsRes.data || [];
-
-      // 2) map de facturas con rips (maneja uuid/número como string)
-      const facturasConRips = new Set(rips.map(r => String(r.factura_id)));
-
-      // 3) filtrar pendientes
-      const pendientes = facturas.filter(f => !facturasConRips.has(String(f.id)));
-
-      $("count").textContent = `Pendientes: ${pendientes.length}`;
-
-      if (pendientes.length === 0){
-        tbody.innerHTML = `<tr><td colspan="6" class="empty">No hay facturas pendientes.</td></tr>`;
+      const evos = evoRes.data || [];
+      if (!evos.length){
+        __rows = [];
+        render();
         return;
       }
 
-      // 4) render
-      tbody.innerHTML = "";
-      pendientes.forEach(f=>{
-        const idStr = String(f.id); // ✅ importante para uuid
-        const tr = document.createElement("tr");
+      // 2) ids de evolución
+      const evoIds = evos.map(e => String(e["id-evolucion"] || "")).filter(Boolean);
 
-        tr.innerHTML = `
-          <td class="mono">${esc(f.numero_factura || "")}</td>
-          <td>${esc(String(f.fecha || "").slice(0,10))}</td>
-          <td>${esc(f.paciente_nombre || "")}</td>
-          <td class="mono">$ ${money(f.valor_total)}</td>
-          <td><span class="pill warn">Pendiente</span></td>
-          <td>
-            <div class="row-actions">
-              <button class="btn btn-primary" type="button" data-gen="${esc(idStr)}">Generar RIPS</button>
-              <button class="btn btn-export" type="button" data-exp="${esc(idStr)}">Exportar datos</button>
-            </div>
-          </td>
-        `;
-        tbody.appendChild(tr);
+      // 3) cargar facturas relacionadas por evolucion_id
+      const facByEvoRes = evoIds.length
+        ? await sb
+            .from("facturas")
+            .select("id, numero_factura, cufe, fechafacturaelectronica, evolucion_id, paciente_cedula, paciente_nombre, fecha, valor_total, tipoNota, numNota")
+            .in("evolucion_id", evoIds)
+        : { data: [], error: null };
+      if (facByEvoRes.error) throw facByEvoRes.error;
+
+      // 4) cargar facturas relacionadas por numero_factura (si EVOLUCIONES.factura trae el número)
+      const evoFacturaNums = evos
+        .map(e => String(e.factura || "").trim())
+        .filter(Boolean);
+
+      let facByNumRes = { data: [], error: null };
+      if (evoFacturaNums.length){
+        facByNumRes = await sb
+          .from("facturas")
+          .select("id, numero_factura, cufe, fechafacturaelectronica, evolucion_id, paciente_cedula, paciente_nombre, fecha, valor_total, tipoNota, numNota")
+          .in("numero_factura", Array.from(new Set(evoFacturaNums)));
+        if (facByNumRes.error) throw facByNumRes.error;
+      }
+
+      const allFacturas = [...(facByEvoRes.data || []), ...(facByNumRes.data || [])];
+
+      // 5) indexar facturas
+      const facByEvo = new Map();
+      const facByNum = new Map();
+      allFacturas.forEach(f => {
+        if (f?.evolucion_id) facByEvo.set(String(f.evolucion_id), f);
+        if (f?.numero_factura) facByNum.set(String(f.numero_factura), f);
       });
 
-      // 5) wire events (sin onclick inline)
-      tbody.querySelectorAll("[data-gen]").forEach(btn=>{
-        btn.addEventListener("click", ()=> generarRips(btn.getAttribute("data-gen"), btn));
+      // 6) cargar pacientes (HISTORIAS CLINICAS)
+      const cedulas = Array.from(new Set(
+        evos
+          .map(e => e.paciente_numdoc)
+          .filter(v => v !== null && v !== undefined)
+          .map(v => Number(v))
+          .filter(v => !Number.isNaN(v))
+      ));
+
+      let pacientes = [];
+      if (cedulas.length){
+        const pacRes = await sb
+          .from("HISTORIAS CLINICAS")
+          .select('"Numero de Identificacion", "Nombre y apellido", "Tipo identificacion", "Fecha de nacimiento", sexo, tipo_paciente, pais_residencia, paciente_ciudad, zonaresidencial, incapacidad, pais_origen')
+          .in('Numero de Identificacion', cedulas)
+          .limit(2000);
+        if (pacRes.error) throw pacRes.error;
+        pacientes = pacRes.data || [];
+      }
+
+      const pacByDoc = new Map();
+      pacientes.forEach(p => {
+        pacByDoc.set(String(p["Numero de Identificacion"]), p);
       });
-      tbody.querySelectorAll("[data-exp]").forEach(btn=>{
-        btn.addEventListener("click", ()=> exportarDatos(btn.getAttribute("data-exp"), btn));
+
+      // 7) diagnosticos por evolución (historia_diagnosticos.id_evolucion)
+      let diagRows = [];
+      if (evoIds.length){
+        const diagRes = await sb
+          .from("historia_diagnosticos")
+          .select("id_evolucion, codigo_cie10, tipo")
+          .in("id_evolucion", evoIds)
+          .limit(5000);
+        if (diagRes.error) throw diagRes.error;
+        diagRows = diagRes.data || [];
+      }
+
+      const diagByEvo = new Map();
+      diagRows.forEach(d => {
+        const k = String(d.id_evolucion || "");
+        if (!k) return;
+        if (!diagByEvo.has(k)) diagByEvo.set(k, []);
+        diagByEvo.get(k).push(d);
       });
+
+      // 8) rips_generados (solo aplica si hay factura)
+      const facturaIds = Array.from(new Set(allFacturas.map(f => String(f.id)).filter(Boolean)));
+      let ripsSet = new Set();
+      if (facturaIds.length){
+        const ripsRes = await sb
+          .from("rips_generados")
+          .select("factura_id")
+          .in("factura_id", facturaIds);
+        if (ripsRes.error) throw ripsRes.error;
+        ripsSet = new Set((ripsRes.data || []).map(r => String(r.factura_id)));
+      }
+
+      // 9) construir filas
+      __rows = evos.map(e => {
+        const evoId = String(e["id-evolucion"] || "");
+        const doc = String(e.paciente_numdoc ?? "");
+        const p = pacByDoc.get(doc) || null;
+
+        const f1 = facByEvo.get(evoId) || null;
+        const f2 = (e.factura ? facByNum.get(String(e.factura).trim()) : null) || null;
+        const fac = f1 || f2;
+
+        const hasFactura = !!fac;
+        const hasCufe = !!(fac && String(fac.cufe || "").trim());
+        const hasRips = !!(fac && ripsSet.has(String(fac.id)));
+
+        const nombre = p?.["Nombre y apellido"] || fac?.paciente_nombre || "";
+        const numFactura = fac?.numero_factura || (String(e.factura || "").trim() || "");
+
+        const diags = diagByEvo.get(evoId) || [];
+        const diagPrincipal = (diags.find(d => String(d.tipo||"").toLowerCase() === "principal") || diags[0] || null)?.codigo_cie10 || null;
+
+        return {
+          evo,
+          evoId,
+          doc,
+          paciente: p,
+          paciente_nombre: nombre,
+          profesional: e.evo_profesional || "",
+          fecha_hora: `${ymd(e.evo_fecha || e.created_at)} ${hhmm(e.evo_hora)}`.trim(),
+          factura: fac,
+          numFactura,
+          cufe: fac?.cufe || "",
+          hasFactura,
+          hasCufe,
+          hasRips,
+          diagPrincipal,
+        };
+      });
+
+      render();
 
     } catch (err){
-      console.error("Error cargando:", err);
-      tbody.innerHTML = `<tr><td colspan="6" class="empty">❌ Error cargando datos: ${esc(err.message || err)}</td></tr>`;
-      toast("❌ Error cargando facturas (mira consola)", "err");
+      console.error(err);
+      $("tbody").innerHTML = `<tr><td colspan="8" class="empty">❌ Error cargando datos: ${esc(err?.message || err)}</td></tr>`;
+      toast("❌ Error cargando evoluciones (mira consola)", "err");
     }
   }
 
   // =======================
-  // ARMAR PAYLOAD COMPLETO
+  // RENDER + FILTROS
   // =======================
-  async function construirPayload(facturaId){
-    // facturaId es string (uuid o número)
+  function applyFilters(rows){
+    const q = String($("f-text").value || "").trim().toLowerCase();
+    const fact = $("f-fact").value;
+    const cufe = $("f-cufe").value;
+    const rips = $("f-rips").value;
+
+    return rows.filter(r => {
+      if (fact === "with" && !r.hasFactura) return false;
+      if (fact === "without" && r.hasFactura) return false;
+
+      if (cufe === "with" && !r.hasCufe) return false;
+      if (cufe === "without" && r.hasCufe) return false;
+
+      if (rips === "with" && !r.hasRips) return false;
+      if (rips === "without" && r.hasRips) return false;
+
+      if (q){
+        const hay = [
+          r.evoId,
+          r.doc,
+          r.paciente_nombre,
+          r.numFactura,
+          r.cufe,
+          r.profesional,
+        ].join(" ").toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function render(){
+    const tbody = $("tbody");
+    const rows = applyFilters(__rows);
+
+    $("count").textContent = `Evoluciones: ${rows.length} / ${__rows.length}`;
+
+    if (!rows.length){
+      tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay resultados con los filtros actuales.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    rows.forEach(r => {
+      const tr = document.createElement("tr");
+
+      const pFactura = r.hasFactura
+        ? `<span class="pill ok">Con factura</span>`
+        : `<span class="pill warn">Sin factura</span>`;
+
+      const pCufe = r.hasFactura
+        ? (r.hasCufe ? `<span class="pill ok">CUFE</span>` : `<span class="pill warn">Sin CUFE</span>`)
+        : `<span class="pill bad">No aplica</span>`;
+
+      const pRips = r.hasFactura
+        ? (r.hasRips ? `<span class="pill ok">RIPS generado</span>` : `<span class="pill warn">RIPS pendiente</span>`)
+        : `<span class="pill warn">Sin factura</span>`;
+
+      tr.innerHTML = `
+        <td class="mono">${esc(r.evoId)}</td>
+        <td class="mono">${esc(r.fecha_hora)}</td>
+        <td>
+          <div style="font-weight:900;">${esc(r.paciente_nombre || "")}</div>
+          <div class="mono" style="color:var(--muted);">Doc: ${esc(r.doc || "")}</div>
+        </td>
+        <td>${esc(r.profesional || "")}</td>
+        <td class="mono">${esc(r.numFactura || "—")}</td>
+        <td class="mono">${esc(String(r.cufe || "").slice(0, 22))}${r.cufe && String(r.cufe).length>22 ? "…" : ""}</td>
+        <td>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            ${pFactura}
+            ${pCufe}
+            ${pRips}
+          </div>
+        </td>
+        <td>
+          <div class="row-actions">
+            <button class="btn btn-primary" type="button" data-gen="${esc(r.evoId)}">Enviar a n8n</button>
+            <button class="btn btn-export" type="button" data-exp="${esc(r.evoId)}">Exportar JSON</button>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll("[data-gen]").forEach(btn=>{
+      btn.addEventListener("click", ()=> enviarAN8N(btn.getAttribute("data-gen"), btn));
+    });
+    tbody.querySelectorAll("[data-exp]").forEach(btn=>{
+      btn.addEventListener("click", ()=> exportarJSON(btn.getAttribute("data-exp"), btn));
+    });
+  }
+
+  // =======================
+  // ARMAR PAYLOAD (por evolución)
+  // - Incluye evolución + factura (si existe) + detalle (si existe) + paciente + diagnosticos
+  // =======================
+  async function construirPayloadPorEvolucion(evoId){
     // 1) emisor activo
     const emRes = await sb.from("emisor_dian").select("*").eq("activo", true).limit(1).maybeSingle();
     if (emRes.error) throw emRes.error;
 
-    // 2) factura
-    const facRes = await sb.from("facturas").select("*").eq("id", facturaId).maybeSingle();
-    if (facRes.error) throw facRes.error;
-    if (!facRes.data) throw new Error("No se encontró la factura con id: " + facturaId);
+    // 2) evolución
+    const evoRes = await sb.from("EVOLUCIONES").select("*").eq("id-evolucion", evoId).maybeSingle();
+    if (evoRes.error) throw evoRes.error;
+    if (!evoRes.data) throw new Error("No se encontró la evolución con id: " + evoId);
 
-    const factura = facRes.data;
+    const evo = evoRes.data;
 
-    // 3) detalle
-    const detRes = await sb.from("factura_detalle").select("*").eq("factura_id", facturaId);
-    if (detRes.error) throw detRes.error;
+    // 3) factura (por evolucion_id) o por numero_factura
+    let fac = null;
 
-    // 4) paciente (si tu campo en facturas se llama distinto, ajusta aquí)
-    const ced = String(
-  factura.paciente_cedula ||
-  factura.cedula ||
-  factura.numero_identificacion ||
-  ""
-).replace(/\./g,"").trim();
+    const fac1 = await sb
+      .from("facturas")
+      .select("*")
+      .eq("evolucion_id", evoId)
+      .order("created_at", { ascending:false })
+      .limit(1)
+      .maybeSingle();
+    if (fac1.error) throw fac1.error;
+    fac = fac1.data || null;
 
-    let pac = null, diags = [], evos = [];
-
-    if (ced){
-      const pacRes = await sb.from("HISTORIAS CLINICAS")
+    if (!fac && evo.factura){
+      const fac2 = await sb
+        .from("facturas")
         .select("*")
-        .eq("Numero de Identificacion", Number(ced))
+        .eq("numero_factura", String(evo.factura).trim())
+        .order("created_at", { ascending:false })
+        .limit(1)
         .maybeSingle();
-      if (pacRes.error) throw pacRes.error;
-      pac = pacRes.data || null;
-
-      const diagRes = await sb.from("historia_diagnosticos")
-        .select("*")
-        .eq("numero_identificacion", ced);
-      if (diagRes.error) throw diagRes.error;
-      diags = diagRes.data || [];
-
-      const evoRes = await sb.from("EVOLUCIONES")
-        .select("*")
-        .eq("paciente_numdoc", ced);
-      if (evoRes.error) throw evoRes.error;
-      evos = evoRes.data || [];
+      if (fac2.error) throw fac2.error;
+      fac = fac2.data || null;
     }
 
-    // 5) abonos
-    const abRes = await sb.from("abonos").select("*").eq("factura_id", facturaId);
-    if (abRes.error) throw abRes.error;
+    // 4) detalle (si hay factura)
+    let detalle = [];
+    if (fac?.id){
+      const detRes = await sb.from("factura_detalle").select("*").eq("factura_id", fac.id);
+      if (detRes.error) throw detRes.error;
+      detalle = detRes.data || [];
+    }
+
+    // 5) paciente
+    const doc = String(evo.paciente_numdoc ?? "");
+    let paciente = null;
+    if (doc){
+      const pacRes = await sb
+        .from("HISTORIAS CLINICAS")
+        .select('*')
+        .eq('Numero de Identificacion', Number(doc))
+        .maybeSingle();
+      if (pacRes.error) throw pacRes.error;
+      paciente = pacRes.data || null;
+    }
+
+    // 6) diagnósticos por evolución
+    let diagnosticos = [];
+    if (evoId){
+      const diagRes = await sb
+        .from("historia_diagnosticos")
+        .select("*")
+        .eq("id_evolucion", evoId);
+      if (diagRes.error) throw diagRes.error;
+      diagnosticos = diagRes.data || [];
+    }
 
     return {
       meta: {
         generated_at: new Date().toISOString(),
-        source: "html_rips_pendientes",
+        source: "html_rips_por_evolucion",
         webhook: WEBHOOK_URL
       },
       emisor: emRes.data || null,
-      factura,
-      detalle: detRes.data || [],
-      paciente: pac,
-      diagnosticos: diags,
-      evoluciones: evos,
-      abonos: abRes.data || []
+      evolucion: evo,
+      factura: fac,
+      detalle,
+      paciente,
+      diagnosticos
     };
   }
 
   // =======================
-  // ENVIAR A N8N
+  // EXPORTAR JSON RIPS (estructura esperada para el convertidor)
+  // NOTA:
+  // - Si existe factura, usa numFactura y (tipoNota/numNota) de la factura.
+  // - Si NO existe factura, pone numFactura=null y tipoNota="RS" y numNota=evoId (para RIPS sin FEV).
+  // - Los servicios se construyen desde factura_detalle (si existe). Si no existe, queda servicios vacío.
   // =======================
-  async function generarRips(facturaId, btn){
-    if (!confirm("¿Enviar datos a n8n para generar el RIPS?")) return;
+  async function exportarJSON(evoId, btn){
+    const oldText = btn?.textContent;
+    try{
+      if(btn){ btn.disabled = true; btn.textContent = "Exportando..."; }
+
+      const payload = await construirPayloadPorEvolucion(evoId);
+      const evo = payload.evolucion;
+      const fac = payload.factura;
+      const paciente = payload.paciente;
+      const emisor = payload.emisor;
+      const diagnosticos = payload.diagnosticos || [];
+      const detalle = payload.detalle || [];
+
+      if (!paciente){
+        alert("⚠ No se encontró el paciente para esta evolución. (Revisa EVOLUCIONES.paciente_numdoc)");
+        return;
+      }
+
+      // diagnostico principal
+      const diagPrincipal = (diagnosticos.find(d => String(d.tipo||"").toLowerCase() === "principal") || diagnosticos[0] || null)?.codigo_cie10 || null;
+
+      // fecha/hora atencion
+      const fechaAtencion = (evo?.evo_fecha)
+        ? `${String(evo.evo_fecha).slice(0,10)} ${String(evo.evo_hora||"00:00").slice(0,5)}`
+        : (fac?.fecha ? `${String(fac.fecha).slice(0,10)} 00:00` : `${String(evo.created_at||"").slice(0,10)} 00:00`);
+
+      // Si no hay factura: RS
+      const tipoNota = fac ? (fac.tipoNota || null) : "RS";
+      const numNota  = fac ? (fac.numNota || null) : String(evoId);
+
+      const rips = {
+        numDocumentoIdObligado: emisor?.nit || null,
+        numFactura: fac ? (fac.numero_factura || null) : null,
+        tipoNota,
+        numNota,
+        usuarios: [
+          {
+            tipoDocumentoIdentificacion: paciente["Tipo identificacion"] || null,
+            numDocumentoIdentificacion: paciente["Numero de Identificacion"] || null,
+            tipoUsuario: paciente.tipo_paciente || null,
+            fechaNacimiento: paciente["Fecha de nacimiento"] || null,
+            codSexo: paciente.sexo || null,
+            codPaisResidencia: paciente.pais_residencia || null,
+            codMunicipioResidencia: paciente.paciente_ciudad || null,
+            codZonaTerritorialResidencia: paciente.zonaresidencial || null,
+            incapacidad: paciente.incapacidad || null,
+            codPaisOrigen: paciente.pais_origen || null,
+            consecutivo: 1,
+            servicios: {}
+          }
+        ]
+      };
+
+      // Construir procedimientos / consultas desde factura_detalle
+      // (mantiene tu lógica de especialidad; si no hay detalle -> vacío)
+      if (detalle.length){
+        const codigosCups = detalle.map(d => d.codigo_cups).filter(Boolean);
+        let mapaEspecialidades = {};
+
+        if (codigosCups.length){
+          const espRes = await sb
+            .from("procedimientos_precios")
+            .select("codigo_cups, especialidad")
+            .in("codigo_cups", Array.from(new Set(codigosCups)));
+          if (espRes.error) throw espRes.error;
+          (espRes.data || []).forEach(row => { mapaEspecialidades[row.codigo_cups] = row.especialidad; });
+        }
+
+        const listaConsultas = [];
+        const listaProcedimientos = [];
+
+        detalle.forEach((d, idx) => {
+          const cups = d.codigo_cups;
+          if (!cups) return;
+
+          const especialidad = String(mapaEspecialidades[cups] || "").trim();
+
+          const base = {
+            codPrestador: emisor?.codigo_municipio || null,
+            fechaInicioAtencion: fechaAtencion,
+            idMIPRES: null,
+            numAutorizacion: null,
+            codProcedimiento: cups,
+            viaIngresoServicioSalud: "01",
+            modalidadGrupoServicioTecSal: "01",
+            grupoServicios: "334",
+            codServicio: Number(evo?.codservicio ?? 25) || 25,
+            finalidadTecnologiaSalud: String(evo?.finalidadtecnologiasalud ?? "38"),
+            tipoDocumentoIdentificacion: null,
+            numDocumentoIdentificacion: null,
+            codDiagnosticoPrincipal: diagPrincipal,
+            codDiagnosticoRelacionado: null,
+            codComplicacion: null,
+            vrServicio: Number(d.valor_unitario || 0),
+            conceptoRecaudo: "02",
+            valorPagoModerador: 0,
+            numFEVPagoModerador: null,
+            consecutivo: idx + 1
+          };
+
+          if (especialidad === "Consultas y valoraciones") listaConsultas.push(base);
+          else listaProcedimientos.push(base);
+        });
+
+        if (listaConsultas.length) rips.usuarios[0].servicios.consultas = listaConsultas;
+        if (listaProcedimientos.length) rips.usuarios[0].servicios.procedimientos = listaProcedimientos;
+      }
+
+      const blob = new Blob([JSON.stringify(rips, null, 2)], { type:"application/json" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `RIPS_EVO_${String(evoId).slice(0,16)}${fac?.numero_factura ? "_FAC_"+fac.numero_factura : ""}.json`;
+      a.click();
+
+      URL.revokeObjectURL(url);
+
+      if (!payload.factura){
+        toast("⚠ Exportado sin factura (tipoNota=RS). Servicios quedarán vacíos si no hay factura_detalle.", "warn");
+      } else {
+        toast("✅ JSON exportado", "ok");
+      }
+
+    } catch(e){
+      console.error(e);
+      toast("❌ Error exportando (mira consola)", "err");
+      alert("Error exportando: " + (e?.message || e));
+    } finally{
+      if(btn){ btn.disabled = false; btn.textContent = oldText || "Exportar JSON"; }
+    }
+  }
+
+  // =======================
+  // ENVIAR A N8N (misma información)
+  // =======================
+  async function enviarAN8N(evoId, btn){
+    if (!confirm("¿Enviar esta evolución a n8n para generar/validar el RIPS?")) return;
 
     const oldText = btn?.textContent;
     try{
       if (btn){ btn.disabled = true; btn.textContent = "Enviando…"; }
       toast("Enviando a n8n…", "warn");
 
-      const payload = await construirPayload(facturaId);
+      const payload = await construirPayloadPorEvolucion(evoId);
 
       const res = await fetch(WEBHOOK_URL, {
         method:"POST",
@@ -282,226 +692,45 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
         throw new Error(`Webhook respondió ${res.status}. ${t}`.trim());
       }
 
-      toast("✅ Enviado a n8n correctamente", "ok");
-      alert("✅ Datos enviados a n8n correctamente.");
+      toast("✅ Enviado a n8n", "ok");
+      alert("✅ Evolución enviada a n8n.");
 
-      // opcional: recargar para que desaparezca si n8n guarda en rips_generados
-      // (si n8n aún no marca rips_generados, seguirá apareciendo)
-      await cargarFacturas();
+      // Recargar para reflejar cambios si n8n registra rips_generados
+      await cargarEvoluciones();
 
-    } catch (e){
+    } catch(e){
       console.error(e);
-      toast("❌ Error enviando a n8n (mira consola)", "err");
-      alert("❌ Error enviando a n8n:\n" + (e.message || e));
+      toast("❌ Error enviando a n8n", "err");
+      alert("❌ Error enviando a n8n:\n" + (e?.message || e));
     } finally{
-      if (btn){ btn.disabled = false; btn.textContent = oldText || "Generar RIPS"; }
+      if (btn){ btn.disabled = false; btn.textContent = oldText || "Enviar a n8n"; }
     }
   }
 
   // =======================
-  // EXPORTAR JSON COMPLETO
+  // UI Events
   // =======================
-  async function exportarDatos(facturaId, btn){
+  function wireFilters(){
+    const rer = ()=> render();
+    ["f-text","f-fact","f-cufe","f-rips"].forEach(id => {
+      const el = $(id);
+      if (!el) return;
+      el.addEventListener("input", rer);
+      el.addEventListener("change", rer);
+    });
 
-  try{
-
-    if(btn){ btn.disabled = true; btn.textContent = "Exportando..."; }
-
-    const { data: factura } = await sb
-      .from("facturas")
-      .select("id, numero_factura, fecha, valor_total, paciente_cedula, tipoNota, numNota")
-      .eq("id", facturaId)
-      .single();
-
-    if(!factura){
-      alert("No se encontró la factura.");
-      return;
-    }
-
-   // ==========================
-// 🔹 Normalizar cédula
-// ==========================
-const cedula = String(factura.paciente_cedula || "")
-  .replace(/\./g,"")
-  .trim();
-
-// ==========================
-// 🔹 Buscar paciente
-// ==========================
-
-const cedulaLimpia = String(factura.paciente_cedula || "")
-  .replace(/\./g,"")
-  .trim();
-
-const cedulaNumero = parseInt(cedulaLimpia, 10);
-
-console.log("CEDULA NUMERICA:", cedulaNumero, typeof cedulaNumero);
-
-const pacRes = await sb
-  .from("HISTORIAS CLINICAS")
-  .select(`
-  "Tipo identificacion",
-  "Numero de Identificacion",
-  "Fecha de nacimiento",
-  sexo,
-  tipo_paciente,
-  pais_residencia,
-  paciente_ciudad,
-  zonaresidencial,
-  incapacidad,
-  pais_origen
-`)
-  .eq("Numero de Identificacion", cedulaNumero)
-  .limit(1);
-
-if (pacRes.error) throw pacRes.error;
-
-const paciente = pacRes.data?.[0] || null;
-
-console.log("PACIENTE ENCONTRADO:", paciente);
-
-if (!paciente) {
-  alert("⚠ No se encontró el paciente con documento: " + cedulaNumero);
-  return;
-}
-    
-
-    const { data: emisor } = await sb
-      .from("emisor_dian")
-      .select("nit, codigo_municipio")
-      .eq("activo", true)
-      .single();
-
-    const { data: diagnosticos } = await sb
-      .from("historia_diagnosticos")
-      .select("codigo_cie10")
-      .eq("numero_identificacion", cedula);
-
-    const { data: procedimientos } = await sb
-      .from("factura_detalle")
-      .select("codigo_cups, valor_unitario")
-      .eq("factura_id", facturaId);
-
-// ==========================
-// 🔹 Fecha formato "YYYY-MM-DD HH:mm"
-// ==========================
-const fechaAtencion = String(factura.fecha || "").includes("T")
-  ? String(factura.fecha).slice(0, 16).replace("T", " ")
-  : String(factura.fecha || "").slice(0, 10) + " 00:00";
-
-// ==========================
-// 🔹 Consultar especialidad de cada procedimiento (procedimientos_precios)
-// ==========================
-const codigosCups = (procedimientos || []).map(p => p.codigo_cups);
-let mapaEspecialidades = {};
-
-if (codigosCups.length > 0) {
-  const { data: infoProcedimientos, error: espErr } = await sb
-  .from("procedimientos_precios")
-  .select("codigo_cups, especialidad")
-  .in("codigo_cups", codigosCups);
-
-if (espErr) throw espErr;
-
-(infoProcedimientos || []).forEach(row => {
-  mapaEspecialidades[row.codigo_cups] = row.especialidad;
-});
-}
-
-// ==========================
-// 🔹 Construcción JSON final (ESTRUCTURA NUEVA)
-// ==========================
-const rips = {
-  numDocumentoIdObligado: emisor?.nit || null,
-  numFactura: factura.numero_factura,
-  tipoNota: factura.tipoNota || null,
-  numNota: factura.numNota || null,
-  usuarios: [
-    {
-      tipoDocumentoIdentificacion: paciente["Tipo identificacion"] || null,
-      numDocumentoIdentificacion: paciente["Numero de Identificacion"] || null,
-      tipoUsuario: paciente.tipo_paciente || null,
-      fechaNacimiento: paciente["Fecha de nacimiento"] || null,
-      codSexo: paciente.sexo || null,
-      codPaisResidencia: paciente.pais_residencia || null,
-      codMunicipioResidencia: paciente.paciente_ciudad || null,
-      codZonaTerritorialResidencia: paciente.zonaresidencial || null,
-      incapacidad: paciente.incapacidad || null,
-      codPaisOrigen: paciente.pais_origen || null,
-      consecutivo: 1,
-      servicios: {}
-    }
-  ]
-};
-
-// ==========================
-// 🔹 Separar CONSULTAS vs PROCEDIMIENTOS según especialidad
-// ==========================
-const listaConsultas = [];
-const listaProcedimientos = [];
-
-(procedimientos || []).forEach((p, idx) => {
-  const especialidad = (mapaEspecialidades[p.codigo_cups] || "").trim();
-
-  const base = {
-    codPrestador: emisor?.codigo_municipio || null,
-    fechaInicioAtencion: fechaAtencion,
-    idMIPRES: null,
-    numAutorizacion: null,
-    codProcedimiento: p.codigo_cups, // ✅ SIEMPRE VA
-    viaIngresoServicioSalud: "01",
-    modalidadGrupoServicioTecSal: "01",
-    grupoServicios: "334",
-    codServicio: 25,
-    finalidadTecnologiaSalud: "38",
-    tipoDocumentoIdentificacion: null,
-    numDocumentoIdentificacion: null,
-    codDiagnosticoPrincipal: diagnosticos?.[0]?.codigo_cie10 || null,
-    codDiagnosticoRelacionado: null,
-    codComplicacion: null,
-    vrServicio: Number(p.valor_unitario || 0),
-    conceptoRecaudo: "02",
-    valorPagoModerador: 0,
-    numFEVPagoModerador: null,
-    consecutivo: idx + 1
-  };
-
-  if (especialidad === "Consultas y valoraciones") {
-    listaConsultas.push(base);
-  } else {
-    listaProcedimientos.push(base);
+    $("btn-clear").addEventListener("click", ()=>{
+      $("f-text").value = "";
+      $("f-fact").value = "all";
+      $("f-cufe").value = "all";
+      $("f-rips").value = "all";
+      render();
+    });
   }
-});
-
-if (listaConsultas.length > 0) {
-  rips.usuarios[0].servicios.consultas = listaConsultas;
-}
-
-if (listaProcedimientos.length > 0) {
-  rips.usuarios[0].servicios.procedimientos = listaProcedimientos;
-}
-
-    const blob = new Blob([JSON.stringify(rips, null, 2)], { type:"application/json" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "RIPS_FACTURA_" + factura.numero_factura + ".json";
-    a.click();
-
-    URL.revokeObjectURL(url);
-
-  } catch(e){
-    console.error(e);
-    alert("Error exportando: " + e.message);
-  } finally{
-    if(btn){ btn.disabled = false; btn.textContent = "Exportar datos"; }
-  }
-}
 
   // init
-  $("btn-reload").addEventListener("click", cargarFacturas);
-  window.addEventListener("DOMContentLoaded", cargarFacturas);
+  $("btn-reload").addEventListener("click", cargarEvoluciones);
+  window.addEventListener("DOMContentLoaded", ()=>{ wireFilters(); cargarEvoluciones(); });
 </script>
 
 </body>
