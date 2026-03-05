@@ -482,12 +482,17 @@ input, select{
     }
 
     // 4) detalle (si hay factura)
-    let detalle = [];
-    if (fac?.id){
-      const detRes = await sb.from("factura_detalle").select("*").eq("factura_id", fac.id);
-      if (detRes.error) throw detRes.error;
-      detalle = detRes.data || [];
-    }
+   // 4) procedimientos de la evolución
+let detalle = [];
+
+const procRes = await sb
+  .from("evolucion_procedimientos")
+  .select("*")
+  .eq("id_evolucion", evoId);
+
+if (procRes.error) throw procRes.error;
+
+detalle = procRes.data || [];
 
     // 5) paciente
     const doc = String(evo.paciente_numdoc ?? "");
@@ -607,7 +612,7 @@ input, select{
         const listaProcedimientos = [];
 
         detalle.forEach((d, idx) => {
-          const cups = d.codigo_cups;
+          const cups = d.codservicio;
           if (!cups) return;
 
           const especialidad = String(mapaEspecialidades[cups] || "").trim();
@@ -628,7 +633,7 @@ input, select{
             codDiagnosticoPrincipal: diagPrincipal,
             codDiagnosticoRelacionado: null,
             codComplicacion: null,
-            vrServicio: Number(d.valor_unitario || 0),
+            vrServicio: Number(d.valor || 0)
             conceptoRecaudo: "02",
             valorPagoModerador: 0,
             numFEVPagoModerador: null,
