@@ -1657,7 +1657,7 @@ setTimeout(() => {
 
   const { data, error } = await window.supabase
     .from("plandetratamientos")
-    .select("id_iiu, created_at")
+    .select("id_iiu, created_at, total_a_pagar")
     .eq("cedula", cedula)
     .order("created_at", { ascending: false });
 
@@ -1673,7 +1673,9 @@ setTimeout(() => {
     const option = document.createElement("option");
 
     option.value = plan.id_iiu;
-    option.textContent = `${plan.id_iiu} - ${fecha}`;
+    const valor = new Intl.NumberFormat("es-CO").format(plan.total_a_pagar || 0);
+
+option.textContent = `${plan.id_iiu} | ${fecha} | $${valor}`;
 
     select.appendChild(option);
 
@@ -1748,6 +1750,43 @@ async function cargarPlanAnterior() {
       }
     }
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
+
+    document.getElementById("select-plan-iiu").addEventListener("change", async function(){
+
+  const id_iiu = this.value;
+  const cedula = document.getElementById("cedula")?.value;
+
+  if(!id_iiu || !cedula) return;
+
+  try{
+
+    const resp = await fetch(
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/cargar-plan-tratamiento",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body: JSON.stringify({
+          cedula: cedula,
+          id_iiu: id_iiu
+        })
+      }
+    );
+
+    if(!resp.ok) throw new Error("Webhook error");
+
+    const data = await resp.json();
+
+    // Cargar información del plan en el formulario
+    loadFromWebhook(data);
+
+  }catch(err){
+    console.error("Error cargando plan:", err);
+  }
+
+});
+    
     document.getElementById("select-plan-iiu").addEventListener("change", async function(){
 
   const id_iiu = this.value;
