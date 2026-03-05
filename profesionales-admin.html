@@ -211,7 +211,7 @@
 
       let query = supabase
         .from("profesionales")
-        .select("id, tipo_id, cedula, nombre, correo, activo, creado_en, profesion, especialidad, celular")
+        .select("id, cedula, tipo_identificacion, nombre, correo, activo, creado_en, profesion, especialidad, celular")
         .order("creado_en", { ascending: false });
 
       if (onlyActive) query = query.eq("activo", true);
@@ -265,7 +265,7 @@
         } else {
           const { error } = await supabase
             .from("profesionales")
-            .insert([{ cedula, tipo_id, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
+            .insert([{ cedula, tipo_identificacion, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
 
           if (error) throw error;
           toast("✅ Profesional agregado");
