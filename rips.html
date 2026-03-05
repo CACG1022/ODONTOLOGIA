@@ -30,9 +30,9 @@ h1{margin:0;font-size:18px}
 
 .table-wrap{overflow:auto; max-height:72vh; border:1px solid var(--line); border-radius:12px;}
 
-table{width:100%;border-collapse:collapse; min-width:1200px;}
+table{width:100%;border-collapse:collapse; min-width:1250px;}
 th,td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;vertical-align:middle;}
-th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position:sticky;top:0; z-index: 2;}
+th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position:sticky;top:0; z-index:2;}
 
 .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:900;border:1px solid var(--line);background:#fff;white-space:nowrap;}
 .pill.warn{color:var(--warn);border-color:rgba(245,158,11,.25)}
@@ -44,11 +44,9 @@ th{background:#fafafa;text-align:left;font-size:12px;color:var(--muted);position
 .empty{color:var(--muted);text-align:center;padding:18px}
 
 .filters{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin:10px 0 14px;}
-.ctrl{display:flex;flex-direction:column;gap:6px;min-width: 220px;}
+.ctrl{display:flex;flex-direction:column;gap:6px;min-width:220px;}
 .ctrl label{font-size:12px;color:var(--muted);font-weight:800;}
-input, select{
-  border:1px solid var(--line); border-radius:10px; padding:10px 12px; outline:none; background:#fff; font-size: 14px;
-}
+input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;background:#fff;font-size:14px;}
 
 #toast{
   position:fixed;right:16px;bottom:16px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);
@@ -105,6 +103,15 @@ input, select{
       </select>
     </div>
 
+    <div class="ctrl" style="min-width:200px;">
+      <label for="f-procs">Procedimientos</label>
+      <select id="f-procs">
+        <option value="all">Todos</option>
+        <option value="with">Con procedimientos</option>
+        <option value="without">Sin procedimientos</option>
+      </select>
+    </div>
+
     <div class="ctrl" style="min-width:150px;">
       <label>&nbsp;</label>
       <button class="btn" id="btn-clear" type="button">🧹 Limpiar</button>
@@ -119,6 +126,7 @@ input, select{
           <th style="width:140px;">Fecha/Hora</th>
           <th>Paciente</th>
           <th style="width:160px;">Profesional</th>
+          <th style="width:110px;"># Procs</th>
           <th style="width:160px;">Factura</th>
           <th style="width:200px;">CUFE</th>
           <th style="width:170px;">Estado</th>
@@ -126,7 +134,7 @@ input, select{
         </tr>
       </thead>
       <tbody id="tbody">
-        <tr><td colspan="8" class="empty">Cargando...</td></tr>
+        <tr><td colspan="9" class="empty">Cargando...</td></tr>
       </tbody>
     </table>
   </div>
@@ -141,7 +149,7 @@ input, select{
   const SUPABASE_URL = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
 
-  // ✅ Reutilizamos el webhook actual (ajústalo si tienes otro flujo para “por evolución”)
+  // Webhook n8n
   const WEBHOOK_URL = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/bb200fb9-3acf-4995-9c42-af837e328432";
 
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -175,17 +183,30 @@ input, select{
     return s ? s.slice(0,5) : "";
   }
 
-  function asText(v){ return String(v ?? ""); }
+  function trimStr(v){ return String(v ?? "").trim(); }
+
+  function asNum(v){
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  function firstNonEmpty(...vals){
+    for (const v of vals){
+      const s = String(v ?? "").trim();
+      if (s) return s;
+    }
+    return "";
+  }
 
   // Estado en memoria
-  let __rows = []; // rows renderables
+  let __rows = [];
 
   // =======================
   // CARGAR EVOLUCIONES + RELACIONES
   // =======================
   async function cargarEvoluciones(){
     const tbody = $("tbody");
-    tbody.innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="9" class="empty">Cargando...</td></tr>`;
     $("count").textContent = "—";
 
     try{
@@ -207,7 +228,24 @@ input, select{
       // 2) ids de evolución
       const evoIds = evos.map(e => String(e["id-evolucion"] || "")).filter(Boolean);
 
-      // 3) cargar facturas relacionadas por evolucion_id
+      // 3) procedimientos (conteo por evolución)
+      let procCounts = new Map();
+      if (evoIds.length){
+        // Traemos id_evolucion (y contamos en memoria)
+        const procRes = await sb
+          .from("evolucion_procedimientos")
+          .select("id_evolucion")
+          .in("id_evolucion", evoIds)
+          .limit(10000);
+        if (procRes.error) throw procRes.error;
+        (procRes.data || []).forEach(p => {
+          const k = String(p.id_evolucion || "");
+          if (!k) return;
+          procCounts.set(k, (procCounts.get(k) || 0) + 1);
+        });
+      }
+
+      // 4) cargar facturas relacionadas por evolucion_id
       const facByEvoRes = evoIds.length
         ? await sb
             .from("facturas")
@@ -216,7 +254,7 @@ input, select{
         : { data: [], error: null };
       if (facByEvoRes.error) throw facByEvoRes.error;
 
-      // 4) cargar facturas relacionadas por numero_factura (si EVOLUCIONES.factura trae el número)
+      // 5) cargar facturas relacionadas por numero_factura (si EVOLUCIONES.factura trae el número)
       const evoFacturaNums = evos
         .map(e => String(e.factura || "").trim())
         .filter(Boolean);
@@ -232,7 +270,7 @@ input, select{
 
       const allFacturas = [...(facByEvoRes.data || []), ...(facByNumRes.data || [])];
 
-      // 5) indexar facturas
+      // 6) indexar facturas
       const facByEvo = new Map();
       const facByNum = new Map();
       allFacturas.forEach(f => {
@@ -240,7 +278,7 @@ input, select{
         if (f?.numero_factura) facByNum.set(String(f.numero_factura), f);
       });
 
-      // 6) cargar pacientes (HISTORIAS CLINICAS)
+      // 7) cargar pacientes (HISTORIAS CLINICAS)
       const cedulas = Array.from(new Set(
         evos
           .map(e => e.paciente_numdoc)
@@ -261,11 +299,9 @@ input, select{
       }
 
       const pacByDoc = new Map();
-      pacientes.forEach(p => {
-        pacByDoc.set(String(p["Numero de Identificacion"]), p);
-      });
+      pacientes.forEach(p => pacByDoc.set(String(p["Numero de Identificacion"]), p));
 
-      // 7) diagnosticos por evolución (historia_diagnosticos.id_evolucion)
+      // 8) diagnosticos por evolución
       let diagRows = [];
       if (evoIds.length){
         const diagRes = await sb
@@ -285,7 +321,7 @@ input, select{
         diagByEvo.get(k).push(d);
       });
 
-      // 8) rips_generados (solo aplica si hay factura)
+      // 9) rips_generados (solo aplica si hay factura)
       const facturaIds = Array.from(new Set(allFacturas.map(f => String(f.id)).filter(Boolean)));
       let ripsSet = new Set();
       if (facturaIds.length){
@@ -297,7 +333,7 @@ input, select{
         ripsSet = new Set((ripsRes.data || []).map(r => String(r.factura_id)));
       }
 
-      // 9) construir filas
+      // 10) construir filas
       __rows = evos.map(e => {
         const evoId = String(e["id-evolucion"] || "");
         const doc = String(e.paciente_numdoc ?? "");
@@ -317,6 +353,8 @@ input, select{
         const diags = diagByEvo.get(evoId) || [];
         const diagPrincipal = (diags.find(d => String(d.tipo||"").toLowerCase() === "principal") || diags[0] || null)?.codigo_cie10 || null;
 
+        const procCount = procCounts.get(evoId) || 0;
+
         return {
           evo: e,
           evoId,
@@ -332,6 +370,7 @@ input, select{
           hasCufe,
           hasRips,
           diagPrincipal,
+          procCount,
         };
       });
 
@@ -339,7 +378,7 @@ input, select{
 
     } catch (err){
       console.error(err);
-      $("tbody").innerHTML = `<tr><td colspan="8" class="empty">❌ Error cargando datos: ${esc(err?.message || err)}</td></tr>`;
+      $("tbody").innerHTML = `<tr><td colspan="9" class="empty">❌ Error cargando datos: ${esc(err?.message || err)}</td></tr>`;
       toast("❌ Error cargando evoluciones (mira consola)", "err");
     }
   }
@@ -352,6 +391,7 @@ input, select{
     const fact = $("f-fact").value;
     const cufe = $("f-cufe").value;
     const rips = $("f-rips").value;
+    const procs = $("f-procs").value;
 
     return rows.filter(r => {
       if (fact === "with" && !r.hasFactura) return false;
@@ -362,6 +402,9 @@ input, select{
 
       if (rips === "with" && !r.hasRips) return false;
       if (rips === "without" && r.hasRips) return false;
+
+      if (procs === "with" && !(r.procCount > 0)) return false;
+      if (procs === "without" && (r.procCount > 0)) return false;
 
       if (q){
         const hay = [
@@ -385,7 +428,7 @@ input, select{
     $("count").textContent = `Evoluciones: ${rows.length} / ${__rows.length}`;
 
     if (!rows.length){
-      tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay resultados con los filtros actuales.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="9" class="empty">No hay resultados con los filtros actuales.</td></tr>`;
       return;
     }
 
@@ -405,6 +448,10 @@ input, select{
         ? (r.hasRips ? `<span class="pill ok">RIPS generado</span>` : `<span class="pill warn">RIPS pendiente</span>`)
         : `<span class="pill warn">Sin factura</span>`;
 
+      const pProcs = (r.procCount > 0)
+        ? `<span class="pill ok">Procs OK</span>`
+        : `<span class="pill bad">Sin procs</span>`;
+
       tr.innerHTML = `
         <td class="mono">${esc(r.evoId)}</td>
         <td class="mono">${esc(r.fecha_hora)}</td>
@@ -413,6 +460,7 @@ input, select{
           <div class="mono" style="color:var(--muted);">Doc: ${esc(r.doc || "")}</div>
         </td>
         <td>${esc(r.profesional || "")}</td>
+        <td class="mono">${esc(String(r.procCount))}</td>
         <td class="mono">${esc(r.numFactura || "—")}</td>
         <td class="mono">${esc(String(r.cufe || "").slice(0, 22))}${r.cufe && String(r.cufe).length>22 ? "…" : ""}</td>
         <td>
@@ -420,6 +468,7 @@ input, select{
             ${pFactura}
             ${pCufe}
             ${pRips}
+            ${pProcs}
           </div>
         </td>
         <td>
@@ -442,7 +491,7 @@ input, select{
 
   // =======================
   // ARMAR PAYLOAD (por evolución)
-  // - Incluye evolución + factura (si existe) + detalle (si existe) + paciente + diagnosticos
+  // - Incluye evolución + factura (si existe) + procedimientos (evolucion_procedimientos) + paciente + diagnosticos
   // =======================
   async function construirPayloadPorEvolucion(evoId){
     // 1) emisor activo
@@ -453,7 +502,6 @@ input, select{
     const evoRes = await sb.from("EVOLUCIONES").select("*").eq("id-evolucion", evoId).maybeSingle();
     if (evoRes.error) throw evoRes.error;
     if (!evoRes.data) throw new Error("No se encontró la evolución con id: " + evoId);
-
     const evo = evoRes.data;
 
     // 3) factura (por evolucion_id) o por numero_factura
@@ -481,18 +529,15 @@ input, select{
       fac = fac2.data || null;
     }
 
-    // 4) detalle (si hay factura)
-   // 4) procedimientos de la evolución
-let detalle = [];
-
-const procRes = await sb
-  .from("evolucion_procedimientos")
-  .select("*")
-  .eq("id_evolucion", evoId);
-
-if (procRes.error) throw procRes.error;
-
-detalle = procRes.data || [];
+    // 4) procedimientos de la evolución (FUENTE PRINCIPAL)
+    const procRes = await sb
+      .from("evolucion_procedimientos")
+      .select("*")
+      .eq("id_evolucion", evoId)
+      .order("orden", { ascending:true })
+      .limit(5000);
+    if (procRes.error) throw procRes.error;
+    const procedimientos = procRes.data || [];
 
     // 5) paciente
     const doc = String(evo.paciente_numdoc ?? "");
@@ -508,38 +553,51 @@ detalle = procRes.data || [];
     }
 
     // 6) diagnósticos por evolución
-    let diagnosticos = [];
-    if (evoId){
-      const diagRes = await sb
-        .from("historia_diagnosticos")
-        .select("*")
-        .eq("id_evolucion", evoId);
-      if (diagRes.error) throw diagRes.error;
-      diagnosticos = diagRes.data || [];
-    }
+    const diagRes = await sb
+      .from("historia_diagnosticos")
+      .select("*")
+      .eq("id_evolucion", evoId)
+      .limit(5000);
+    if (diagRes.error) throw diagRes.error;
+    const diagnosticos = diagRes.data || [];
 
     return {
       meta: {
         generated_at: new Date().toISOString(),
         source: "html_rips_por_evolucion",
-        webhook: WEBHOOK_URL
+        webhook: WEBHOOK_URL,
       },
       emisor: emRes.data || null,
       evolucion: evo,
       factura: fac,
-      detalle,
+      procedimientos,
       paciente,
-      diagnosticos
+      diagnosticos,
     };
   }
 
   // =======================
-  // EXPORTAR JSON RIPS (estructura esperada para el convertidor)
-  // NOTA:
-  // - Si existe factura, usa numFactura y (tipoNota/numNota) de la factura.
-  // - Si NO existe factura, pone numFactura=null y tipoNota="RS" y numNota=evoId (para RIPS sin FEV).
-  // - Los servicios se construyen desde factura_detalle (si existe). Si no existe, queda servicios vacío.
+  // EXPORTAR JSON RIPS
+  // - Construye servicios desde evolucion_procedimientos
   // =======================
+  function guessConceptoRecaudo(hasFactura){
+    // Si es RIPS sin factura (RS), normalmente no hay recaudo; dejamos "05" como en ejemplo.
+    return hasFactura ? "02" : "05";
+  }
+
+  function normalizeMunicipio(v){
+    return String(v ?? "").trim();
+  }
+
+  function detectIsConsulta(p){
+    // reglas heurísticas: si el grupo servicio es "01" o el nombre del grupo contiene "consulta"
+    const gs = String(p.grupo_servicio ?? "").trim();
+    const ng = String(p.nombre_grupo_servicio ?? "").toLowerCase();
+    if (gs === "01") return true;
+    if (ng.includes("consulta") || ng.includes("valoracion") || ng.includes("valoración")) return true;
+    return false;
+  }
+
   async function exportarJSON(evoId, btn){
     const oldText = btn?.textContent;
     try{
@@ -551,17 +609,22 @@ detalle = procRes.data || [];
       const paciente = payload.paciente;
       const emisor = payload.emisor;
       const diagnosticos = payload.diagnosticos || [];
-      const detalle = payload.detalle || [];
+      const procs = payload.procedimientos || [];
 
       if (!paciente){
         alert("⚠ No se encontró el paciente para esta evolución. (Revisa EVOLUCIONES.paciente_numdoc)");
         return;
       }
 
-      // diagnostico principal
+      if (!procs.length){
+        alert("⚠ Esta evolución NO tiene procedimientos en evolucion_procedimientos. No se puede generar RIPS.");
+        return;
+      }
+
+      // Diagnóstico principal
       const diagPrincipal = (diagnosticos.find(d => String(d.tipo||"").toLowerCase() === "principal") || diagnosticos[0] || null)?.codigo_cie10 || null;
 
-      // fecha/hora atencion
+      // Fecha/hora atención
       const fechaAtencion = (evo?.evo_fecha)
         ? `${String(evo.evo_fecha).slice(0,10)} ${String(evo.evo_hora||"00:00").slice(0,5)}`
         : (fac?.fecha ? `${String(fac.fecha).slice(0,10)} 00:00` : `${String(evo.created_at||"").slice(0,10)} 00:00`);
@@ -570,83 +633,113 @@ detalle = procRes.data || [];
       const tipoNota = fac ? (fac.tipoNota || null) : "RS";
       const numNota  = fac ? (fac.numNota || null) : String(evoId);
 
-      const rips = {
-        numDocumentoIdObligado: emisor?.nit || null,
-        numFactura: fac ? (fac.numero_factura || null) : null,
-        tipoNota,
-        numNota,
-        usuarios: [
-          {
-            tipoDocumentoIdentificacion: paciente["Tipo identificacion"] || null,
-            numDocumentoIdentificacion: paciente["Numero de Identificacion"] || null,
-            tipoUsuario: paciente.tipo_paciente || null,
-            fechaNacimiento: paciente["Fecha de nacimiento"] || null,
-            codSexo: paciente.sexo || null,
-            codPaisResidencia: paciente.pais_residencia || null,
-            codMunicipioResidencia: paciente.paciente_ciudad || null,
-            codZonaTerritorialResidencia: paciente.zonaresidencial || null,
-            incapacidad: paciente.incapacidad || null,
-            codPaisOrigen: paciente.pais_origen || null,
-            consecutivo: 1,
-            servicios: {}
-          }
-        ]
+      // codPrestador: intenta varios campos del emisor
+      const codPrestador = firstNonEmpty(
+        emisor?.cod_prestador,
+        emisor?.codPrestador,
+        emisor?.codigo_prestador,
+        emisor?.codigo_habilitacion,
+        emisor?.codigo_municipio,
+        emisor?.codmunicipio,
+        emisor?.nit // ultimo recurso (no ideal)
+      );
+
+      const usuario = {
+        tipoDocumentoIdentificacion: trimStr(paciente["Tipo identificacion"] || paciente.tipo_documento),
+        numDocumentoIdentificacion: String(paciente["Numero de Identificacion"] ?? paciente.num_documento ?? ""),
+        tipoUsuario: trimStr(paciente.tipo_paciente),
+        fechaNacimiento: trimStr(paciente["Fecha de nacimiento"]),
+        codSexo: trimStr(paciente.sexo),
+        codPaisResidencia: trimStr(paciente.pais_residencia),
+        codMunicipioResidencia: normalizeMunicipio(paciente.paciente_ciudad),
+        codZonaTerritorialResidencia: trimStr(paciente.zonaresidencial),
+        incapacidad: trimStr(paciente.incapacidad),
+        codPaisOrigen: trimStr(paciente.pais_origen),
+        consecutivo: 1,
+        servicios: {}
       };
 
-      // Construir procedimientos / consultas desde factura_detalle
-      // (mantiene tu lógica de especialidad; si no hay detalle -> vacío)
-      if (detalle.length){
-        const codigosCups = detalle.map(d => d.codigo_cups).filter(Boolean);
-        let mapaEspecialidades = {};
+      // Construir listas
+      const consultas = [];
+      const procedimientos = [];
 
-        if (codigosCups.length){
-          const espRes = await sb
-            .from("procedimientos_precios")
-            .select("codigo_cups, especialidad")
-            .in("codigo_cups", Array.from(new Set(codigosCups)));
-          if (espRes.error) throw espRes.error;
-          (espRes.data || []).forEach(row => { mapaEspecialidades[row.codigo_cups] = row.especialidad; });
-        }
+      let cCons = 1;
+      let cProc = 1;
 
-        const listaConsultas = [];
-        const listaProcedimientos = [];
+      procs.forEach((p) => {
+        const codigo = trimStr(p.codigo_cups || p.codservicio || p.codigo || p.codigo_procedimiento);
+        if (!codigo) return;
 
-        detalle.forEach((d, idx) => {
-          const cups = d.codservicio;
-          if (!cups) return;
+        const isConsulta = detectIsConsulta(p);
 
-          const especialidad = String(mapaEspecialidades[cups] || "").trim();
+        const codServicio = asNum(p.codservicio) ?? asNum(p.codigo_cups) ?? 25;
+        const finalidad = trimStr(p.finalidadtecnologiasalud) || "38";
+        const causa = trimStr(p.causamotivoatencion) || "38";
+        const dxP = trimStr(p.diagnostico_principal) || (diagPrincipal || null);
+        const tipoDx = trimStr(p.tipo_diagnostico) || "02";
 
-          const base = {
-            codPrestador: emisor?.codigo_municipio || null,
+        const vr = Number(p.valor || 0);
+
+        if (isConsulta){
+          consultas.push({
+            codPrestador,
+            fechaInicioAtencion: fechaAtencion,
+            numAutorizacion: null,
+            codConsulta: codigo,
+            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion) || "01",
+            grupoServicios: trimStr(p.grupo_servicio) || "01",
+            codServicio: asNum(p.codigo_cups) ?? 334,
+            finalidadTecnologiaSalud: finalidad,
+            causaMotivoAtencion: causa,
+            codDiagnosticoPrincipal: dxP,
+            codDiagnosticoRelacionado1: null,
+            codDiagnosticoRelacionado2: null,
+            codDiagnosticoRelacionado3: null,
+            tipoDiagnosticoPrincipal: tipoDx,
+            tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
+            numDocumentoIdentificacion: usuario.numDocumentoIdentificacion,
+            vrServicio: vr,
+            conceptoRecaudo: guessConceptoRecaudo(!!fac),
+            valorPagoModerador: 0,
+            numFEVPagoModerador: null,
+            consecutivo: cCons++
+          });
+        } else {
+          procedimientos.push({
+            codPrestador,
             fechaInicioAtencion: fechaAtencion,
             idMIPRES: null,
             numAutorizacion: null,
-            codProcedimiento: cups,
-            viaIngresoServicioSalud: "01",
-            modalidadGrupoServicioTecSal: "01",
-            grupoServicios: "334",
-            codServicio: Number(evo?.codservicio ?? 25) || 25,
-            finalidadTecnologiaSalud: String(evo?.finalidadtecnologiasalud ?? "38"),
-            tipoDocumentoIdentificacion: null,
-            numDocumentoIdentificacion: null,
-            codDiagnosticoPrincipal: diagPrincipal,
+            codProcedimiento: codigo,
+            viaIngresoServicioSalud: trimStr(p.via_ingreso) || "01",
+            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion) || "01",
+            grupoServicios: trimStr(p.grupo_servicio) || "334",
+            codServicio: codServicio,
+            finalidadTecnologiaSalud: finalidad,
+            tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
+            numDocumentoIdentificacion: usuario.numDocumentoIdentificacion,
+            codDiagnosticoPrincipal: dxP,
             codDiagnosticoRelacionado: null,
             codComplicacion: null,
-            vrServicio: Number(d.valor || 0)
-            conceptoRecaudo: "02",
+            vrServicio: vr,
+            conceptoRecaudo: guessConceptoRecaudo(!!fac),
             valorPagoModerador: 0,
             numFEVPagoModerador: null,
-            consecutivo: idx + 1
-          };
+            consecutivo: cProc++
+          });
+        }
+      });
 
-          if (especialidad === "Consultas y valoraciones") listaConsultas.push(base);
-          else listaProcedimientos.push(base);
-        });
+      if (consultas.length) usuario.servicios.consultas = consultas;
+      if (procedimientos.length) usuario.servicios.procedimientos = procedimientos;
 
-        if (listaConsultas.length) rips.usuarios[0].servicios.consultas = listaConsultas;
-        if (listaProcedimientos.length) rips.usuarios[0].servicios.procedimientos = listaProcedimientos;
-      }
+      const rips = {
+        numDocumentoIdObligado: trimStr(emisor?.nit) || null,
+        numFactura: fac ? (trimStr(fac.numero_factura) || null) : null,
+        tipoNota,
+        numNota,
+        usuarios: [usuario]
+      };
 
       const blob = new Blob([JSON.stringify(rips, null, 2)], { type:"application/json" });
       const url = URL.createObjectURL(blob);
@@ -658,11 +751,7 @@ detalle = procRes.data || [];
 
       URL.revokeObjectURL(url);
 
-      if (!payload.factura){
-        toast("⚠ Exportado sin factura (tipoNota=RS). Servicios quedarán vacíos si no hay factura_detalle.", "warn");
-      } else {
-        toast("✅ JSON exportado", "ok");
-      }
+      toast("✅ JSON exportado", "ok");
 
     } catch(e){
       console.error(e);
@@ -674,7 +763,7 @@ detalle = procRes.data || [];
   }
 
   // =======================
-  // ENVIAR A N8N (misma información)
+  // ENVIAR A N8N
   // =======================
   async function enviarAN8N(evoId, btn){
     if (!confirm("¿Enviar esta evolución a n8n para generar/validar el RIPS?")) return;
@@ -700,7 +789,6 @@ detalle = procRes.data || [];
       toast("✅ Enviado a n8n", "ok");
       alert("✅ Evolución enviada a n8n.");
 
-      // Recargar para reflejar cambios si n8n registra rips_generados
       await cargarEvoluciones();
 
     } catch(e){
@@ -717,7 +805,7 @@ detalle = procRes.data || [];
   // =======================
   function wireFilters(){
     const rer = ()=> render();
-    ["f-text","f-fact","f-cufe","f-rips"].forEach(id => {
+    ["f-text","f-fact","f-cufe","f-rips","f-procs"].forEach(id => {
       const el = $(id);
       if (!el) return;
       el.addEventListener("input", rer);
@@ -729,6 +817,7 @@ detalle = procRes.data || [];
       $("f-fact").value = "all";
       $("f-cufe").value = "all";
       $("f-rips").value = "all";
+      $("f-procs").value = "all";
       render();
     });
   }
@@ -740,4 +829,5 @@ detalle = procRes.data || [];
 
 </body>
 </html>
+
 
