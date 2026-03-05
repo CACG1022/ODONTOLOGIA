@@ -116,6 +116,7 @@
       // Referencias seguras
       const nit = document.getElementById("nit");
       const dv = document.getElementById("dv");
+      const codPrestador = document.getElementById("codPrestador");
       const razon_social = document.getElementById("razon_social");
       const nombre_comercial = document.getElementById("nombre_comercial");
       const direccion = document.getElementById("direccion");
@@ -136,6 +137,7 @@
       const payload = {
         nit: nit?.value || "",
         dv: dv?.value || "",
+        codPrestador: codPrestador?.value || "",
         razon_social: razon_social?.value || "",
         nombre_comercial: nombre_comercial?.value || "",
         direccion: direccion?.value || "",
@@ -343,6 +345,11 @@
           <div class="full"><label>Nombre comercial</label><input id="nombre_comercial"></div>
         </div>
       </div>
+
+      <div>
+  <label>Código Prestador</label>
+  <input id="codPrestador" placeholder="Ej: 1500101234">
+</div>
 
       <div class="section">
         <h3>Ubicación</h3>
