@@ -125,6 +125,7 @@
       $("btn-cancelar").style.display = "none";
 
       $("cedula").value = "";
+      $("tipo_identificacion").value = "";
       $("nombre").value = "";
       $("correo").value = "";
       $("profesion").value = "";
@@ -140,6 +141,7 @@
       $("btn-cancelar").style.display = "inline-flex";
 
       $("cedula").value = row.cedula ?? "";
+      $("tipo_identificacion").value = row.tipo_identificacion ?? "";
       $("nombre").value = row.nombre ?? "";
       $("correo").value = row.correo ?? "";
       $("profesion").value = row.profesion ?? "";
@@ -209,7 +211,7 @@
 
       let query = supabase
         .from("profesionales")
-        .select("id, cedula, nombre, correo, activo, creado_en, profesion, especialidad, celular")
+        .select("id, tipo_id, cedula, nombre, correo, activo, creado_en, profesion, especialidad, celular")
         .order("creado_en", { ascending: false });
 
       if (onlyActive) query = query.eq("activo", true);
@@ -231,6 +233,7 @@
 
     async function guardarProfesional(){
       const cedula = ($("cedula").value || "").trim();
+      const tipo_identificacion = ($("tipo_identificacion").value || "").trim();
       const nombre = ($("nombre").value || "").trim();
       const correo = ($("correo").value || "").trim();
       const profesion = ($("profesion").value || "").trim();
@@ -253,7 +256,8 @@
         if (editingId){
           const { error } = await supabase
             .from("profesionales")
-            .update({ cedula, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo })
+      
+            .update({ cedula, tipo_identificacion, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo })
             .eq("id", editingId);
 
           if (error) throw error;
@@ -261,7 +265,7 @@
         } else {
           const { error } = await supabase
             .from("profesionales")
-            .insert([{ cedula, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
+            .insert([{ cedula, tipo_id, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
 
           if (error) throw error;
           toast("✅ Profesional agregado");
@@ -766,8 +770,30 @@
         <form id="form" autocomplete="off">
           <label>
             Cédula (obligatoria-)
-            <input type="text" id="cedula" placeholder="Ej: 1022956631" />
+            <input type="text" id="cedula" placeholder="Ej: 1032956331" />
           </label>
+
+          <label>
+  Tipo de identificación
+  <select id="tipo_identificacion">
+    <option value="">Seleccione una opción</option>
+    <option value="RC">Registro civil (RC)</option>
+    <option value="TI">Tarjeta de Identidad (TI)</option>
+    <option value="CC">Cédula de Ciudadanía (CC)</option>
+    <option value="CE">Cédula de Extranjería (CE)</option>
+    <option value="PA">Pasaporte (PA)</option>
+    <option value="SC">Salvoconducto (SC)</option>
+    <option value="PEP">Permiso Especial de Permanencia (PEP)</option>
+    <option value="CD">Carné Diplomático (CD)</option>
+    <option value="PPT">Permiso por protección temporal (PPT)</option>
+    <option value="DE">Documento extranjero (DE)</option>
+    <option value="MS">Menor sin identificación (MS)</option>
+    <option value="AS">Adulto sin identificación (AS)</option>
+    <option value="CN">Certificado de nacido vivo (CN)</option>
+    <option value="NIT">Número de identificación tributaria (NIT)</option>
+    <option value="SI">Sin identificación (SI)</option>
+  </select>
+</label>
 
           <label>
             Nombre (obligatorio)
