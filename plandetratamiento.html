@@ -668,6 +668,26 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   <strong>ID IIU:</strong> <span id="plan-iiu-display">—</span>
 </div>
 </div>
+
+  <!-- ================= PLANES DEL PACIENTE ================= -->
+<div style="margin-top:6px; display:flex; justify-content:flex-end;">
+
+<select id="select-plan-iiu"
+style="
+  width:260px;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #cbd5e1;
+  font-weight:600;
+  font-size:13px;
+  color:#334155;
+  background:#ffffff;
+">
+<option value="">Seleccionar plan...</option>
+</select>
+
+</div>
+  
   
       <strong>Fecha y hora:</strong> <span id="fecha-hora"></span>
       <input type="hidden" name="fecha" id="input-fecha" />
@@ -681,10 +701,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <label for="cedula">Número de cédula:</label>
     <input type="number" id="cedula" name="cedula" required />
     <small id="cedula-hint"></small>
-  <label for="select-plan-iiu">Planes de tratamiento del paciente:</label>
-<select id="select-plan-iiu">
-  <option value="">Seleccionar plan...</option>
-</select>
+  
 
     <label for="celular">Número de celular:</label>
     <input type="text" id="celular" name="celular" required />
@@ -3346,6 +3363,7 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
+
 
 
 
