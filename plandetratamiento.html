@@ -1779,7 +1779,8 @@ async function cargarPlanAnterior() {
     const data = await resp.json();
 
     // Cargar información del plan en el formulario
-    loadFromWebhook(data);
+    const plan = Array.isArray(data) ? data[0] : data;
+loadFromWebhook(plan);
 
   }catch(err){
     console.error("Error cargando plan:", err);
