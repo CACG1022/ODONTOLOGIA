@@ -681,6 +681,10 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <label for="cedula">Número de cédula:</label>
     <input type="number" id="cedula" name="cedula" required />
     <small id="cedula-hint"></small>
+  <label for="select-plan-iiu">Planes de tratamiento del paciente:</label>
+<select id="select-plan-iiu">
+  <option value="">Seleccionar plan...</option>
+</select>
 
     <label for="celular">Número de celular:</label>
     <input type="text" id="celular" name="celular" required />
@@ -1382,6 +1386,7 @@ row.appendChild(nameWrap);
        Guardar silencioso
        ========================== */
     const WEBHOOK_GUARDAR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/248f724f-7598-4fba-831c-433662969810";
+    const WEBHOOK_SELECCION_PLAN = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/da692a8d-3bf5-4bb6-b4e9-ac797b822331";
     const btnGuardar = document.getElementById("btn-guardar");
 
  const btnNuevoPlan = document.getElementById("btn-nuevo-plan");
@@ -1640,6 +1645,41 @@ setTimeout(() => {
 
     }
 
+  async function cargarPlanesPaciente(cedula){
+
+  if(!cedula) return;
+
+  const select = document.getElementById("select-plan-iiu");
+  if(!select) return;
+
+  select.innerHTML = '<option value="">Seleccionar plan...</option>';
+
+  const { data, error } = await window.supabase
+    .from("plandetratamientos")
+    .select("id_iiu, created_at")
+    .eq("cedula", cedula)
+    .order("created_at", { ascending: false });
+
+  if(error){
+    console.error("Error cargando planes:", error);
+    return;
+  }
+
+  (data || []).forEach(plan => {
+
+    const fecha = new Date(plan.created_at).toLocaleDateString("es-CO");
+
+    const option = document.createElement("option");
+
+    option.value = plan.id_iiu;
+    option.textContent = `${plan.id_iiu} - ${fecha}`;
+
+    select.appendChild(option);
+
+  });
+
+}
+
 const WEBHOOK_CARGAR_PLAN_ANTERIOR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/f04247bf-0715-4f12-bb31-aa3a1c74eb4a";
                               
 async function cargarPlanAnterior() {
@@ -1684,7 +1724,10 @@ async function cargarPlanAnterior() {
       setHintHTML("Buscando historial del paciente...");
       fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/db28876e-aa9c-4015-a0b0-8f6411989681?cedula="+encodeURIComponent(ced))
         .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
-        .then(loadFromWebhook)
+        .then(data=>{
+  loadFromWebhook(data);
+  cargarPlanesPaciente(cedula);
+})
         .catch(()=> setHintHTML("No fue posible verificar. Intenta de nuevo.", "#c0392b"));
     });
 
@@ -1704,6 +1747,33 @@ async function cargarPlanAnterior() {
       }
     }
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
+    document.getElementById("select-plan-iiu").addEventListener("change", async function(){
+
+  const id_iiu = this.value;
+  const cedula = document.getElementById("cedula")?.value;
+
+  if(!id_iiu || !cedula) return;
+
+  try{
+
+    await fetch(WEBHOOK_SELECCION_PLAN,{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json"
+      },
+      body: JSON.stringify({
+        cedula: cedula,
+        id_iiu: id_iiu
+      })
+    });
+
+    console.log("Plan enviado al webhook:", id_iiu);
+
+  }catch(e){
+    console.error("Error enviando plan:", e);
+  }
+
+});
   
     /* ======================================================
        🔁 AUTOLLENADO DESDE HISTORIA CLÍNICA (LOCALSTORAGE)
