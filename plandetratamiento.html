@@ -1751,7 +1751,7 @@ async function cargarPlanAnterior() {
     }
     document.addEventListener("DOMContentLoaded", initCedulaFromQuery);
 
-    document.getElementById("select-plan-iiu").addEventListener("change", async function(){
+  document.getElementById("select-plan-iiu").addEventListener("change", async function(){
 
   const id_iiu = this.value;
   const cedula = document.getElementById("cedula")?.value;
@@ -1760,27 +1760,20 @@ async function cargarPlanAnterior() {
 
   try{
 
-    const resp = await fetch(
-      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/cargar-plan-tratamiento",
-      {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body: JSON.stringify({
-          cedula: cedula,
-          id_iiu: id_iiu
-        })
-      }
-    );
+    const url =
+      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/da692a8d-3bf5-4bb6-b4e9-ac797b822331"
+      + "?cedula=" + encodeURIComponent(cedula)
+      + "&id_iiu=" + encodeURIComponent(id_iiu);
+
+    const resp = await fetch(url);
 
     if(!resp.ok) throw new Error("Webhook error");
 
     const data = await resp.json();
 
-    // Cargar información del plan en el formulario
     const plan = Array.isArray(data) ? data[0] : data;
-loadFromWebhook(plan);
+
+    loadFromWebhook(plan);
 
   }catch(err){
     console.error("Error cargando plan:", err);
