@@ -318,7 +318,7 @@ input, select{
         const diagPrincipal = (diags.find(d => String(d.tipo||"").toLowerCase() === "principal") || diags[0] || null)?.codigo_cie10 || null;
 
         return {
-          evo,
+          evo: e,
           evoId,
           doc,
           paciente: p,
