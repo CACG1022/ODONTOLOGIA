@@ -588,15 +588,34 @@ input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
   function normalizeMunicipio(v){
     return String(v ?? "").trim();
   }
+// =======================
+// CLASIFICAR CONSULTA O PROCEDIMIENTO
+// usando tabla procedimientos_precios
+// =======================
+async function detectarConsultasDesdeBD(procs){
 
-  function detectIsConsulta(p){
-    // reglas heurísticas: si el grupo servicio es "01" o el nombre del grupo contiene "consulta"
-    const gs = String(p.grupo_servicio ?? "").trim();
-    const ng = String(p.nombre_grupo_servicio ?? "").toLowerCase();
-    if (gs === "01") return true;
-    if (ng.includes("consulta") || ng.includes("valoracion") || ng.includes("valoración")) return true;
-    return false;
-  }
+  const cupsList = procs
+    .map(p => trimStr(p.codigo_cups || p.codservicio))
+    .filter(Boolean);
+
+  if(!cupsList.length) return {};
+
+  const res = await sb
+    .from("procedimientos_precios")
+    .select("codigo_cups, especialidad")
+    .in("codigo_cups", Array.from(new Set(cupsList)));
+
+  if(res.error) throw res.error;
+
+  const mapa = {};
+
+  (res.data || []).forEach(r=>{
+    mapa[r.codigo_cups] = r.especialidad;
+  });
+
+  return mapa;
+}
+  
 
   async function exportarJSON(evoId, btn){
     const oldText = btn?.textContent;
@@ -663,6 +682,9 @@ input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
       const consultas = [];
       const procedimientos = [];
 
+      // consultar especialidad de cada CUPS
+const mapaEspecialidades = await detectarConsultasDesdeBD(procs);
+
       let cCons = 1;
       let cProc = 1;
 
@@ -670,7 +692,8 @@ input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
         const codigo = trimStr(p.codigo_cups || p.codservicio || p.codigo || p.codigo_procedimiento);
         if (!codigo) return;
 
-        const isConsulta = detectIsConsulta(p);
+        const especialidad = mapaEspecialidades[codigo] || "";
+const isConsulta = especialidad === "Consulta y valoraciones";
 
         const codServicio = asNum(p.codservicio) ?? asNum(p.codigo_cups) ?? 25;
         const finalidad = trimStr(p.finalidadtecnologiasalud) || "38";
