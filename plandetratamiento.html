@@ -664,13 +664,16 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     <span id="plan-id-display">No guardado</span>
   </div>
 
-  <div style="position:absolute; top:-2px; right:0; display:flex; align-items:center; gap:10px; font-weight:700; color:#1f3a5f;">
+<div style="position:absolute; top:-2px; right:0; display:flex; flex-direction:column; align-items:flex-end; gap:4px; font-weight:700; color:#1f3a5f;">
 
+<div>
 <strong>ID IIU:</strong>
 <span id="plan-iiu-display">—</span>
+</div>
 
 <select id="select-plan-iiu"
 style="
+width:260px;
 padding:6px 10px;
 border-radius:8px;
 border:1px solid #cbd5e1;
