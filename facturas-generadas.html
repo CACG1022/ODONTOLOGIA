@@ -508,7 +508,7 @@
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
       if (!rows || rows.length === 0){
-        tbody.innerHTML = \`<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>`;
         updateResumenFacturas([]);
         return;
       }
@@ -524,22 +524,22 @@
         const saldoPend = money(saldoPendCalc || 0);
         const estadoPago = pagoLabel(f.pagada);
         const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
-        tr.innerHTML = \`
-          <td class="mono">\${escapeHtml(fecha)}</td>
-          <td class="mono">\${escapeHtml(numf)}</td>
-          <td>\${escapeHtml(nom)}</td>
-          <td class="mono">\${escapeHtml(ced)}</td>
-          <td class="mono">\${escapeHtml(estadoPago)}</td>
-          <td class="mono">$ \${escapeHtml(total)}</td>
-          <td class="mono">$ \${escapeHtml(saldoPend)}</td>
-          <td style="white-space:nowrap;">
-            <button class="btn small" data-act="cargar">↩ Cargar</button>
-            <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
-            <button class="btn small" data-act="toggle">\${escapeHtml(btnAccionPagoText)}</button>
-            <button class="btn small" data-act="verfactura">👁 Ver factura</button>
-            <button class="btn small" data-act="abonos">💰 Abonos</button>
-          </td>
-        \`;
+        tr.innerHTML = `
+  <td class="mono">${escapeHtml(fecha)}</td>
+  <td class="mono">${escapeHtml(numf)}</td>
+  <td>${escapeHtml(nom)}</td>
+  <td class="mono">${escapeHtml(ced)}</td>
+  <td class="mono">${escapeHtml(estadoPago)}</td>
+  <td class="mono">$ ${escapeHtml(total)}</td>
+  <td class="mono">$ ${escapeHtml(saldoPend)}</td>
+  <td style="white-space:nowrap;">
+    <button class="btn small" data-act="cargar">↩ Cargar</button>
+    <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
+    <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
+    <button class="btn small" data-act="verfactura">👁 Ver factura</button>
+    <button class="btn small" data-act="abonos">💰 Abonos</button>
+  </td>
+`;
         tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
           await cargarFacturaEnFormulario(f.id);
           closeModal();
@@ -561,8 +561,8 @@
       updateResumenFacturas(rows);
     }
 
-    function dateStartISO(d){ return d ? \`\${d}T00:00:00.000\` : null; }
-    function dateEndISO(d){ return d ? \`\${d}T23:59:59.999\` : null; }
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
     async function listarFacturas(){
       const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
@@ -571,7 +571,7 @@
       const hasta = ($("fecha_hasta")?.value || "").trim();
       const estado = ($("estado_facturas")?.value || "todos").trim();
       try{
-        $("tbody-facturas").innerHTML = \`<tr><td colspan="8" class="empty">Cargando...</td></tr>\`;
+        $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
         let query = supabase
           .from("facturas")
           .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
@@ -592,7 +592,7 @@
         if (q){
           const isNum = /^[0-9]+$/.test(q);
           if (isNum){
-            query = query.ilike("paciente_cedula", \`%\${q}%\`);
+            query = query.ilike("paciente_cedula", `%${q}%`);
           } else {
             query = query.ilike("numero_factura", \`%\${q}%\`);
           }
@@ -640,7 +640,7 @@
         XLSX.utils.sheet_add_aoa(ws, [
           [],
           ["TOTAL FACTURADO", totalFacturado]
-        ], { origin: \`A\${lastRow}\` });
+        ], { origin: `A${lastRow}` });
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
           ["Generado:", new Date().toLocaleString("es-CO")],
@@ -655,7 +655,7 @@
         XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
         const slugDesde = desde || "NA";
         const slugHasta = hasta || "NA";
-        const filename = \`reporte_facturas_\${slugDesde}_a_\${slugHasta}.xlsx\`;
+        const filename = `reporte_facturas_${slugDesde}_a_${slugHasta}.xlsx`;
         XLSX.writeFile(wb, filename);
         toast("Excel descargado ✅", "ok");
       } catch(err){
