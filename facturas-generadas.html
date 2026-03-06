@@ -168,10 +168,17 @@
           <label>Profesional</label>
           <select id="filtro-profesional"><option value="">Todos</option></select>
         </div>
+        
         <div class="ctrl">
-          <label>EPS</label>
-          <input id="filtro-eps" type="text" placeholder="Filtrar por EPS">
-        </div>
+  <label>CUFE</label>
+  <select id="filtro-cufe">
+    <option value="">Todos</option>
+    <option value="con">Con CUFE</option>
+    <option value="sin">Sin CUFE</option>
+  </select>
+</div>
+
+        
         <div class="ctrl" style="display:flex; justify-content:flex-end; align-items:flex-end;">
           <button class="btn primary" id="btn-aplicar" type="button" style="width:100%;">🔎 Aplicar filtros</button>
         </div>
@@ -399,7 +406,7 @@
     const pagada = $("filtro-pagada").value;
     const metodo = normalizeText($("filtro-metodo").value);
     const profesional = normalizeText($("filtro-profesional").value);
-    const eps = normalizeText($("filtro-eps").value);
+    const cufeFiltro = $("filtro-cufe").value;
 
     state.filtered = state.all.filter(row => {
       const rowDate = String(row.fecha || "");
@@ -411,7 +418,8 @@
       if(pagada && rowPagada !== pagada) return false;
       if(metodo && normalizeText(row.metodo_pago) !== metodo) return false;
       if(profesional && normalizeText(row.profesional) !== profesional) return false;
-      if(eps && !normalizeText(row.eps).includes(eps)) return false;
+      if(cufeFiltro === "con" && !row.cufe) return false;
+      if(cufeFiltro === "sin" && row.cufe) return false;
       return true;
     });
 
@@ -774,7 +782,7 @@ function descargarFactura(index){
     $("btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); window.location.href = LOGIN_URL; });
 
     ["filtro-buscar","filtro-eps"].forEach(id => { $(id).addEventListener("input", debounce(aplicarFiltros, 250)); });
-    ["filtro-desde","filtro-hasta","filtro-pagada","filtro-metodo","filtro-profesional"].forEach(id => { $(id).addEventListener("change", aplicarFiltros); });
+    ["filtro-desde","filtro-hasta","filtro-pagada","filtro-metodo","filtro-profesional","filtro-cufe"].forEach(id => { $(id).addEventListener("change", aplicarFiltros); });
     ["modal-detalle","modal-info-notas"].forEach(id => { $(id).addEventListener("click", (e) => { if(e.target.id === id) closeModal(id); }); });
 
     document.addEventListener("click", (e) => {
