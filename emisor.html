@@ -359,7 +359,7 @@ await cargarEmisor();
 </div>
 
   <!-- SERVICIOS HABILITADOS -->
-<div class="card" id="boxServiciosHabilitados">
+<div class="card" id="boxServiciosHabilitados" style="margin-top:18px;margin-bottom:18px;">
 
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
     <div style="font-weight:800;font-size:14px;color:#475569;">
@@ -379,6 +379,7 @@ await cargarEmisor();
         <tr>
           <th style="text-align:left;padding:10px 14px;border-bottom:1px solid #e2e8f0;width:120px;">Código</th>
           <th style="text-align:left;padding:10px 14px;border-bottom:1px solid #e2e8f0;">Servicio</th>
+          <th style="text-align:center;padding:10px 14px;border-bottom:1px solid #e2e8f0;width:120px;">Acción</th>
         </tr>
       </thead>
 
@@ -656,6 +657,29 @@ async function guardarServicioHabilitado(){
   await cargarServiciosHabilitados();
 
 }
+    async function eliminarServicio(codigo){
+
+  const confirmar = confirm(
+    "⚠️ ¿Seguro que deseas eliminar este servicio habilitado?\n\nCódigo: " + codigo
+  );
+
+  if(!confirmar) return;
+
+  const { error } = await supabaseClient
+    .from("servicios_habilitados_sede")
+    .delete()
+    .eq("cod_servicio", codigo);
+
+  if(error){
+    console.error(error);
+    alert("❌ Error eliminando servicio");
+    return;
+  }
+
+  alert("✅ Servicio eliminado");
+
+  await cargarServiciosHabilitados();
+}
     // =========================
 // =========================
 // 📋 CARGAR SERVICIOS HABILITADOS
@@ -699,18 +723,25 @@ async function cargarServiciosHabilitados(){
 
     data.forEach(s => {
 
-      tbody.insertAdjacentHTML("beforeend", `
-        <tr>
-          <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:800;">
-            ${s.cod_servicio}
-          </td>
-          <td style="padding:10px;border-bottom:1px solid #e2e8f0;">
-            ${s.nombre_servicio}
-          </td>
-        </tr>
-      `);
+     tbody.insertAdjacentHTML("beforeend", `
+<tr>
+  <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:800;">
+    ${s.cod_servicio}
+  </td>
 
-    });
+  <td style="padding:10px;border-bottom:1px solid #e2e8f0;">
+    ${s.nombre_servicio}
+  </td>
+
+  <td style="padding:10px;border-bottom:1px solid #e2e8f0;text-align:center;">
+    <button 
+      onclick="eliminarServicio('${s.cod_servicio}')"
+      style="background:#ef4444;border:none;color:white;padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;">
+      Eliminar
+    </button>
+  </td>
+</tr>
+`);
 
   }catch(e){
 
