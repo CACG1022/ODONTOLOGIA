@@ -653,15 +653,7 @@ async function detectarConsultasDesdeBD(procs){
       const numNota  = fac ? (fac.numNota || null) : String(evoId);
 
       // codPrestador: intenta varios campos del emisor
-      const codPrestador = firstNonEmpty(
-        emisor?.cod_prestador,
-        emisor?.codPrestador,
-        emisor?.codigo_prestador,
-        emisor?.codigo_habilitacion,
-        emisor?.codigo_municipio,
-        emisor?.codmunicipio,
-        emisor?.nit // ultimo recurso (no ideal)
-      );
+      const codPrestador = trimStr(emisor?.codPrestador);
 
       const usuario = {
         tipoDocumentoIdentificacion: trimStr(paciente["Tipo identificacion"] || paciente.tipo_documento),
