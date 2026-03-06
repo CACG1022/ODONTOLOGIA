@@ -192,12 +192,12 @@
         <table>
           <thead>
             <tr>
-              <th>Factura</th><th>Fecha</th><th>Paciente</th><th>Cédula</th><th>Profesional</th><th>EPS</th>
-              <th>Método</th><th>Total</th><th>Saldo</th><th>Pagada</th><th>Tipo nota</th><th>No. nota</th><th>CUFE</th><th>Acciones</th>
+              <th>Factura</th><th>Fecha</th><th>Paciente</th><th>Cédula</th><th>Profesional</th>
+              <th>Método</th><th>Total</th><th>Pagada</th><th>Tipo nota</th><th>No. nota</th><th>CUFE</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbody-facturas">
-            <tr><td colspan="14" class="empty">Cargando facturas...</td></tr>
+            <tr><td colspan="12" class="empty">Cargando facturas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -435,10 +435,9 @@
         <td>${escapeHtml(f.paciente_nombre || "—")}</td>
         <td class="mono">${escapeHtml(f.paciente_cedula || "—")}</td>
         <td>${escapeHtml(f.profesional || "—")}</td>
-        <td>${escapeHtml(f.eps || "—")}</td>
         <td>${escapeHtml(f.metodo_pago || "—")}</td>
         <td><b>${escapeHtml(formatMoney(f.valor_total))}</b></td>
-        <td>${escapeHtml(formatMoney(f.saldo_pendiente))}</td>
+      
         <td>${f.pagada ? '<span class="pill ok">Pagada</span>' : '<span class="pill warn">Pendiente</span>'}</td>
         <td>${getTipoNotaValue(f) ? `<span class="pill info">${escapeHtml(getTipoNotaValue(f))}</span>` : "—"}</td>
         <td>${escapeHtml(f.numNota || "—")}</td>
