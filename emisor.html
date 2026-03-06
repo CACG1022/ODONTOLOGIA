@@ -156,9 +156,21 @@
         activo: !!activo?.checked
       };
 
+      // 👇 AGREGAR ESTO AQUÍ
+console.log("Valor codPrestador:", codPrestador?.value);
+console.log("Payload enviado:", payload);
+
       const res = EMISOR_ID
-        ? await supabaseClient.from("emisor_dian").update(payload).eq("id", EMISOR_ID)
-        : await supabaseClient.from("emisor_dian").insert([payload]);
+        const { data, error } = EMISOR_ID
+  ? await supabaseClient
+      .from("emisor_dian")
+      .update(payload)
+      .eq("id", EMISOR_ID)
+      .select()
+  : await supabaseClient
+      .from("emisor_dian")
+      .insert(payload)
+      .select();
 
       if (res.error) {
         console.error("❌ Error guardando:", res.error);
