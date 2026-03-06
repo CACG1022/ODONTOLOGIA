@@ -781,7 +781,7 @@ function descargarFactura(index){
     $("btn-back").addEventListener("click", () => { window.location.href = HOME_URL; });
     $("btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); window.location.href = LOGIN_URL; });
 
-    ["filtro-buscar","filtro-eps"].forEach(id => { $(id).addEventListener("input", debounce(aplicarFiltros, 250)); });
+    ["filtro-buscar"].forEach(id => {  $(id).addEventListener("input", debounce(aplicarFiltros, 250)); });
     ["filtro-desde","filtro-hasta","filtro-pagada","filtro-metodo","filtro-profesional","filtro-cufe"].forEach(id => { $(id).addEventListener("change", aplicarFiltros); });
     ["modal-detalle","modal-info-notas"].forEach(id => { $(id).addEventListener("click", (e) => { if(e.target.id === id) closeModal(id); }); });
 
