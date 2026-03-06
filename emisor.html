@@ -135,6 +135,7 @@
       const activo = document.getElementById("activo");
 
       const payload = {
+        id: EMISOR_ID || undefined,
         nit: nit?.value || "",
         dv: dv?.value || "",
         codPrestador: codPrestador?.value || "",
@@ -162,7 +163,7 @@ console.log("Payload enviado:", payload);
 
 const { data, error } = await supabaseClient
   .from("emisor_dian")
-  .upsert(payload)
+  .upsert(payload, { onConflict: "id" })
   .select();
 if (error) {
   console.error("❌ Error guardando:", error);
