@@ -313,7 +313,7 @@
   const HOME_URL = "index.html";
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const state = { all: [], filtered: [], selected: null, role: "—", userEmail: "—" };
+  const state = { all: [], filtered: [], selected: null, detalles: [], role: "—", userEmail: "—" };
   const $ = (id) => document.getElementById(id);
 
   function showToast(msg, type="ok"){
@@ -348,9 +348,33 @@
   async function cargarFacturas(){
     setLoadingTable("Cargando facturas...");
     try{
-      const { data, error } = await sb.from("facturas").select("*").order("created_at", { ascending:false });
-      if(error) throw error;
-      state.all = data || [];
+      const [respFacturas, respDetalles] = await Promise.all([
+        sb.from("facturas").select("*").order("created_at", { ascending:false }),
+        sb.from("factura_detalle").select("*")
+      ]);
+
+      const facturas = respFacturas.data || [];
+      const detalles = respDetalles.data || [];
+
+      if(respFacturas.error) throw respFacturas.error;
+      if(respDetalles.error) throw respDetalles.error;
+
+      state.all = facturas.map(f => ({ ...f }));
+      state.detalles = detalles;
+
+      const detalleMap = {};
+      detalles.forEach(d => {
+        const key = String(d.factura_id || "");
+        if(!key) return;
+        if(!detalleMap[key]) detalleMap[key] = [];
+        detalleMap[key].push(d);
+      });
+
+      state.all.forEach(f => {
+        const key = String(f.id || "");
+        f.detalle_factura = detalleMap[key] || [];
+      });
+
       llenarFiltrosDinamicos();
       aplicarFiltros();
       showToast("Facturas cargadas");
@@ -452,6 +476,9 @@
   function renderProcedimientosFactura(f){
     const tbody = $("detalle-procedimientos");
     const items = [];
+
+    if (Array.isArray(f.detalle_factura)) items.push(...f.detalle_factura);
+    if (Array.isArray(f.factura_detalle)) items.push(...f.factura_detalle);
     if (Array.isArray(f.items)) items.push(...f.items);
     if (Array.isArray(f.detalle_items)) items.push(...f.detalle_items);
     if (Array.isArray(f.procedimientos)) items.push(...f.procedimientos);
@@ -460,7 +487,7 @@
       tbody.innerHTML = `
         <tr>
           <td>${escapeHtml(f.codigo_cups || "—")}</td>
-          <td>${escapeHtml(f.procedimiento || f.observacion || "Sin detalle estructurado")}</td>
+          <td>${escapeHtml(f.procedimiento || "Sin procedimientos relacionados en factura_detalle")}</td>
           <td>1</td>
           <td>${escapeHtml(formatMoney(f.subtotal || f.valor_total || 0))}</td>
           <td>${escapeHtml(formatMoney(f.subtotal || f.valor_total || 0))}</td>
@@ -469,15 +496,20 @@
       return;
     }
 
-    tbody.innerHTML = items.map(it => `
-      <tr>
-        <td>${escapeHtml(it.codigo_cups || it.cups || it.codigo || "—")}</td>
-        <td>${escapeHtml(it.procedimiento || it.nombre || it.descripcion || "—")}</td>
-        <td>${escapeHtml(it.cantidad || it.cant || 1)}</td>
-        <td>${escapeHtml(formatMoney(it.valor_unitario || it.vunit || it.valor || 0))}</td>
-        <td>${escapeHtml(formatMoney(it.total || it.valor_total || it.subtotal || 0))}</td>
-      </tr>
-    `).join("");
+    tbody.innerHTML = items.map(it => {
+      const cantidad = Number(it.cantidad || 0) || 1;
+      const valorUnit = Number(it.valor_unitario || it.vunit || it.valor || 0);
+      const total = Number(it.valor_total || 0) || (cantidad * valorUnit);
+      return `
+        <tr>
+          <td>${escapeHtml(it.codigo_cups || it.cups || it.codigo || "—")}</td>
+          <td>${escapeHtml(it.descripcion || it.procedimiento || it.nombre || it.detalle || "—")}</td>
+          <td>${escapeHtml(cantidad)}</td>
+          <td>${escapeHtml(formatMoney(valorUnit))}</td>
+          <td>${escapeHtml(formatMoney(total))}</td>
+        </tr>
+      `;
+    }).join("");
   }
 
   function verDetalle(index){
@@ -709,4 +741,5 @@
 </script>
 </body>
 </html>
+
 
