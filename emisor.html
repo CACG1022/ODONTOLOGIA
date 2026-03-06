@@ -357,8 +357,32 @@ await cargarEmisor();
   <div class="full"><label>Razón social</label><input id="razon_social"></div>
   <div class="full"><label>Nombre comercial</label><input id="nombre_comercial"></div>
 </div>
+
+  <!-- SERVICIOS HABILITADOS -->
+<div class="card" id="boxServiciosHabilitados">
+  <div class="legend">Servicios habilitados</div>
+
+  <div style="overflow:auto;">
+    <table class="tabla-evo" id="tablaServiciosHabilitados">
+      <thead>
+        <tr>
+          <th style="width:120px;">Código</th>
+          <th>Servicio</th>
+        </tr>
+      </thead>
+      <tbody id="tbodyServiciosHabilitados">
+        <tr>
+          <td colspan="2" style="text-align:center;color:#6b7280;">
+            Cargando servicios...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
       </div>
 
+      
    
 
       <div class="section">
@@ -495,6 +519,74 @@ await cargarEmisor();
     // =========================
     // 🏥 SEDES · UI + CRUD básico
     // =========================
+// =========================
+// 📋 CARGAR SERVICIOS HABILITADOS
+// =========================
+async function cargarServiciosHabilitados(){
+
+  const tbody = document.getElementById("tbodyServiciosHabilitados");
+
+  if(!tbody) return;
+
+  try{
+
+    const { data, error } = await supabaseClient
+      .from("servicios_habilitados_sede")
+      .select("cod_servicio, nombre_servicio")
+      .eq("activo", true)
+      .order("cod_servicio", { ascending:true });
+
+    if(error){
+      console.error("Error cargando servicios:", error);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="2" style="padding:14px;color:#64748b;">
+            Error cargando servicios
+          </td>
+        </tr>`;
+      return;
+    }
+
+    if(!data || data.length === 0){
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="2" style="padding:14px;color:#64748b;">
+            No hay servicios habilitados
+          </td>
+        </tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+
+    data.forEach(s => {
+
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td style="padding:10px;border-bottom:1px solid #e2e8f0;font-weight:800;">
+            ${s.cod_servicio}
+          </td>
+          <td style="padding:10px;border-bottom:1px solid #e2e8f0;">
+            ${s.nombre_servicio}
+          </td>
+        </tr>
+      `);
+
+    });
+
+  }catch(e){
+
+    console.error(e);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="2" style="padding:14px;color:#64748b;">
+          Error cargando servicios
+        </td>
+      </tr>`;
+  }
+}
+    
     function abrirModalSede(){
       const ov = document.getElementById("modalSedeOverlay");
       if (!ov) return;
@@ -590,6 +682,9 @@ await cargarEmisor();
           if (!ok) return;
         }
         await cargarSedesTabla();
+
+        await cargarServiciosHabilitados();
+        
       } catch (e) {
         console.error("❌ Error inicializando sedes:", e);
       }
