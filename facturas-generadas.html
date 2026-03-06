@@ -315,7 +315,7 @@
       const yyyy = d.getFullYear();
       const mm = String(d.getMonth()+1).padStart(2,"0");
       const dd = String(d.getDate()).padStart(2,"0");
-      return \`\${yyyy}-\${mm}-\${dd}\`;
+      return `${yyyy}-${mm}-${dd}`;
     }
     // ✅ NUEVO: validación de fecha en formato YYYY-MM-DD (para prompts)
     function parseDateYYYYMMDD(s){
@@ -334,7 +334,7 @@
         const d = new Date(iso);
         if (Number.isNaN(d.getTime())){
           const [y,m,dd] = String(iso).split("-");
-          if (y && m && dd) return \`\${dd}/\${m}/\${y}\`;
+          if (y && m && dd) return `${dd}/${m}/${y}`;
           return String(iso);
         }
         return d.toLocaleDateString("es-CO", { year:"numeric", month:"2-digit", day:"2-digit" });
@@ -476,39 +476,44 @@
       }
     }
 
+    
     async function cargarFacturaEnFormulario(facturaId){
-      // Esta función existe en el archivo original y se llama desde la tabla.
-      // Aquí se deja sin implementación porque corresponde al formulario principal "Nueva factura".
-      console.warn("cargarFacturaEnFormulario no está incluido en este archivo. facturaId:", facturaId);
-      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+      if (!facturaId){
+        toast("No se encontró el ID de la factura.", "warn");
+        return;
+      }
+      window.location.href = `facturacion.html?factura_id=${encodeURIComponent(facturaId)}`;
     }
 
     async function imprimirFacturaPorId(facturaId){
-      // Esta función existe en el archivo original y se llama desde la tabla.
-      // Aquí se deja sin implementación porque corresponde al flujo completo de impresión.
-      console.warn("imprimirFacturaPorId no está incluido en este archivo. facturaId:", facturaId);
-      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+      if (!facturaId){
+        toast("No se encontró el ID de la factura.", "warn");
+        return;
+      }
+      window.open(`facturacion.html?factura_id=${encodeURIComponent(facturaId)}&print=1`, "_blank", "noopener");
     }
 
     async function abrirVerFactura(facturaId){
-      // Esta función existe en el archivo original y se llama desde la tabla.
-      // Aquí se deja sin implementación porque corresponde al modal 'Ver factura'.
-      console.warn("abrirVerFactura no está incluido en este archivo. facturaId:", facturaId);
-      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+      if (!facturaId){
+        toast("No se encontró el ID de la factura.", "warn");
+        return;
+      }
+      window.open(`facturacion.html?factura_id=${encodeURIComponent(facturaId)}&ver=1`, "_blank", "noopener");
     }
 
     async function abrirAbonosFactura(facturaId){
-      // Esta función existe en el archivo original y se llama desde la tabla.
-      // Aquí se deja sin implementación porque corresponde al modal 'Abonos'.
-      console.warn("abrirAbonosFactura no está incluido en este archivo. facturaId:", facturaId);
-      toast("Esta acción requiere el módulo completo de facturación.", "warn");
+      if (!facturaId){
+        toast("No se encontró el ID de la factura.", "warn");
+        return;
+      }
+      window.open(`facturacion.html?factura_id=${encodeURIComponent(facturaId)}&abonos=1`, "_blank", "noopener");
     }
 
     function renderFacturasTabla(rows){
       const tbody = $("tbody-facturas");
       tbody.innerHTML = "";
       if (!rows || rows.length === 0){
-        tbody.innerHTML = \`<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>\`;
+        tbody.innerHTML = `<tr><td colspan="8" class="empty">No hay facturas para mostrar.</td></tr>`;
         updateResumenFacturas([]);
         return;
       }
@@ -524,22 +529,22 @@
         const saldoPend = money(saldoPendCalc || 0);
         const estadoPago = pagoLabel(f.pagada);
         const btnAccionPagoText = (f.pagada === true) ? "↘ Marcar pendiente" : "✅ Marcar pagada";
-        tr.innerHTML = \`
-          <td class="mono">\${escapeHtml(fecha)}</td>
-          <td class="mono">\${escapeHtml(numf)}</td>
-          <td>\${escapeHtml(nom)}</td>
-          <td class="mono">\${escapeHtml(ced)}</td>
-          <td class="mono">\${escapeHtml(estadoPago)}</td>
-          <td class="mono">$ \${escapeHtml(total)}</td>
-          <td class="mono">$ \${escapeHtml(saldoPend)}</td>
+        tr.innerHTML = `
+          <td class="mono">${escapeHtml(fecha)}</td>
+          <td class="mono">${escapeHtml(numf)}</td>
+          <td>${escapeHtml(nom)}</td>
+          <td class="mono">${escapeHtml(ced)}</td>
+          <td class="mono">${escapeHtml(estadoPago)}</td>
+          <td class="mono">$ ${escapeHtml(total)}</td>
+          <td class="mono">$ ${escapeHtml(saldoPend)}</td>
           <td style="white-space:nowrap;">
             <button class="btn small" data-act="cargar">↩ Cargar</button>
             <button class="btn small primary" data-act="imprimir">🖨 Imprimir</button>
-            <button class="btn small" data-act="toggle">\${escapeHtml(btnAccionPagoText)}</button>
+            <button class="btn small" data-act="toggle">${escapeHtml(btnAccionPagoText)}</button>
             <button class="btn small" data-act="verfactura">👁 Ver factura</button>
             <button class="btn small" data-act="abonos">💰 Abonos</button>
           </td>
-        \`;
+        `;
         tr.querySelector('[data-act="cargar"]').addEventListener("click", async () => {
           await cargarFacturaEnFormulario(f.id);
           closeModal();
@@ -561,8 +566,8 @@
       updateResumenFacturas(rows);
     }
 
-    function dateStartISO(d){ return d ? \`\${d}T00:00:00.000\` : null; }
-    function dateEndISO(d){ return d ? \`\${d}T23:59:59.999\` : null; }
+    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
+    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
 
     async function listarFacturas(){
       const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
@@ -571,7 +576,7 @@
       const hasta = ($("fecha_hasta")?.value || "").trim();
       const estado = ($("estado_facturas")?.value || "todos").trim();
       try{
-        $("tbody-facturas").innerHTML = \`<tr><td colspan="8" class="empty">Cargando...</td></tr>\`;
+        $("tbody-facturas").innerHTML = `<tr><td colspan="8" class="empty">Cargando...</td></tr>`;
         let query = supabase
           .from("facturas")
           .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
@@ -592,9 +597,9 @@
         if (q){
           const isNum = /^[0-9]+$/.test(q);
           if (isNum){
-            query = query.ilike("paciente_cedula", \`%\${q}%\`);
+            query = query.eq("paciente_cedula", q);
           } else {
-            query = query.ilike("numero_factura", \`%\${q}%\`);
+            query = query.ilike("numero_factura", `%${q}%`);
           }
         }
         const { data, error } = await query;
@@ -640,7 +645,7 @@
         XLSX.utils.sheet_add_aoa(ws, [
           [],
           ["TOTAL FACTURADO", totalFacturado]
-        ], { origin: \`A\${lastRow}\` });
+        ], { origin: `A${lastRow}` });
         const ws2 = XLSX.utils.aoa_to_sheet([
           ["Reporte de Facturas"],
           ["Generado:", new Date().toLocaleString("es-CO")],
@@ -655,7 +660,7 @@
         XLSX.utils.book_append_sheet(wb, ws2, "Filtros");
         const slugDesde = desde || "NA";
         const slugHasta = hasta || "NA";
-        const filename = \`reporte_facturas_\${slugDesde}_a_\${slugHasta}.xlsx\`;
+        const filename = `reporte_facturas_${slugDesde}_a_${slugHasta}.xlsx`;
         XLSX.writeFile(wb, filename);
         toast("Excel descargado ✅", "ok");
       } catch(err){
@@ -679,7 +684,7 @@
         // Abrimos directamente el modal de "Facturas generadas"
         openModal();
 
-        $("btn-cerrar-modal").addEventListener("click", closeModal);
+        $("btn-cerrar-modal").addEventListener("click", () => { closeModal(); window.location.href = INDEX_URL; });
         $("modal-facturas").addEventListener("click", (e) => {
           if (e.target === $("modal-facturas")) closeModal();
         });
@@ -724,27 +729,5 @@
       init();
     }
   </script>
-
-<script>
-if (typeof abrirVerFactura !== "function") {
-  function abrirVerFactura(id){
-    window.open("facturacion.html?factura_id=" + id, "_blank");
-  }
-}
-
-if (typeof imprimirFacturaPorId !== "function") {
-  function imprimirFacturaPorId(id){
-    window.open("facturacion.html?factura_id=" + id + "&print=1", "_blank");
-  }
-}
-
-if (typeof abrirAbonosFactura !== "function") {
-  function abrirAbonosFactura(id){
-    window.open("facturacion.html?factura_id=" + id + "&abonos=1", "_blank");
-  }
-}
-</script>
-
 </body>
 </html>
-
