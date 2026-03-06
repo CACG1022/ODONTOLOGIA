@@ -360,27 +360,39 @@ await cargarEmisor();
 
   <!-- SERVICIOS HABILITADOS -->
 <div class="card" id="boxServiciosHabilitados">
-  <div class="legend">Servicios habilitados</div>
 
-  <div style="overflow:auto;">
-    <table class="tabla-evo" id="tablaServiciosHabilitados">
-      <thead>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+    <div style="font-weight:800;font-size:14px;color:#475569;">
+      Servicios habilitados
+    </div>
+
+    <button type="button"
+      onclick="abrirModalServicio()"
+      style="padding:8px 14px;border-radius:10px;border:none;background:#2563eb;color:white;font-weight:700;font-size:12px;cursor:pointer;">
+      + Agregar servicio
+    </button>
+  </div>
+
+  <div style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;">
+      <thead style="background:#f8fafc;">
         <tr>
-          <th style="width:120px;">Código</th>
-          <th>Servicio</th>
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid #e2e8f0;width:120px;">Código</th>
+          <th style="text-align:left;padding:10px 14px;border-bottom:1px solid #e2e8f0;">Servicio</th>
         </tr>
       </thead>
+
       <tbody id="tbodyServiciosHabilitados">
         <tr>
-          <td colspan="2" style="text-align:center;color:#6b7280;">
+          <td colspan="2" style="padding:14px;color:#64748b;">
             Cargando servicios...
           </td>
         </tr>
       </tbody>
     </table>
   </div>
+
 </div>
-      </div>
 
       
    
@@ -469,6 +481,43 @@ await cargarEmisor();
 
     <!-- ========================= -->
     <!-- 🪟 NUEVO: Modal crear sede -->
+      <!-- ========================= -->
+<!-- 🪟 Modal agregar servicio habilitado -->
+<!-- ========================= -->
+<div id="modalServicioOverlay" class="modal-overlay">
+
+  <div class="modal">
+
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Agregar servicio habilitado</div>
+        <div class="modal-subtitle">Selecciona un servicio del catálogo</div>
+      </div>
+
+      <button class="modal-close" onclick="cerrarModalServicio()">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="grid" style="grid-template-columns:1fr;">
+
+        <div>
+          <label>Servicio</label>
+          <select id="selectServicioHabilitacion"></select>
+        </div>
+
+      </div>
+
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="cerrarModalServicio()">Cancelar</button>
+      <button onclick="guardarServicioHabilitado()">Guardar servicio</button>
+    </div>
+
+  </div>
+
+</div>
     <!-- ========================= -->
     <div id="modalSedeOverlay" class="modal-overlay" aria-hidden="true">
       <div class="modal">
@@ -518,6 +567,84 @@ await cargarEmisor();
   <script>
     // =========================
     // 🏥 SEDES · UI + CRUD básico
+    // =========================
+// SERVICIOS HABILITADOS
+// =========================
+
+function abrirModalServicio(){
+  const ov = document.getElementById("modalServicioOverlay");
+  if(!ov) return;
+
+  ov.style.display="flex";
+
+  cargarServiciosCatalogo();
+}
+
+function cerrarModalServicio(){
+  const ov = document.getElementById("modalServicioOverlay");
+  if(!ov) return;
+
+  ov.style.display="none";
+}
+
+async function cargarServiciosCatalogo(){
+
+  const select = document.getElementById("selectServicioHabilitacion");
+  if(!select) return;
+
+  const { data, error } = await supabaseClient
+    .from("servicios_de_habilitacion")
+    .select("codigo_servicio,nombre_servicio")
+    .order("nombre_servicio",{ascending:true});
+
+  if(error){
+    console.error(error);
+    return;
+  }
+
+  select.innerHTML="";
+
+  data.forEach(s=>{
+
+    const opt=document.createElement("option");
+
+    opt.value=s.codigo_servicio;
+    opt.textContent=`${s.codigo_servicio} - ${s.nombre_servicio}`;
+
+    opt.dataset.nombre=s.nombre_servicio;
+
+    select.appendChild(opt);
+
+  });
+
+}
+
+async function guardarServicioHabilitado(){
+
+  const select=document.getElementById("selectServicioHabilitacion");
+
+  const codigo=select.value;
+  const nombre=select.options[select.selectedIndex].dataset.nombre;
+
+  const { error } = await supabaseClient
+    .from("servicios_habilitados_sede")
+    .insert([{
+      cod_servicio:codigo,
+      nombre_servicio:nombre,
+      activo:true
+    }]);
+
+  if(error){
+    console.error(error);
+    alert("Error guardando servicio");
+    return;
+  }
+
+  cerrarModalServicio();
+
+  await cargarServiciosHabilitados();
+
+}
     // =========================
 // =========================
 // 📋 CARGAR SERVICIOS HABILITADOS
@@ -665,6 +792,7 @@ async function cargarServiciosHabilitados(){
 
       cerrarModalSede();
       await cargarSedesTabla();
+      await cargarServiciosHabilitados();
       alert("✅ Sede guardada");
     }
 
