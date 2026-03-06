@@ -5,488 +5,108 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Facturas Generadas · DENTOVA</title>
 
-  <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-
-  <!-- Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
-  <!-- PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
 
   <style>
     :root{
-      --bg:#f3f5f7;
-      --card:#ffffff;
-      --text:#1f2a37;
-      --muted:#6b7280;
-      --line:#e5e7eb;
-      --brand:#1f6aa5;
-      --brand2:#114a75;
-      --ok:#16a34a;
-      --warn:#f59e0b;
-      --danger:#dc2626;
-      --info:#2563eb;
-      --shadow:0 10px 30px rgba(16,24,40,.08);
-      --radius:14px;
+      --bg:#f3f5f7; --card:#ffffff; --text:#1f2a37; --muted:#6b7280; --line:#e5e7eb;
+      --brand:#1f6aa5; --brand2:#114a75; --ok:#16a34a; --warn:#f59e0b; --danger:#dc2626; --info:#2563eb;
+      --shadow:0 10px 30px rgba(16,24,40,.08); --radius:14px;
     }
-
     *{ box-sizing:border-box; }
-
-    body{
-      margin:0;
-      font-family: Arial, sans-serif;
-      background:var(--bg);
-      color:var(--text);
-      padding:18px;
-    }
-
-    .topbar{
-      max-width:1400px;
-      margin:0 auto 14px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-
-    .brand h1{
-      margin:0;
-      font-size:20px;
-      font-weight:900;
-    }
-
-    .brand p{
-      margin:4px 0 0;
-      color:var(--muted);
-      font-size:12px;
-      font-weight:700;
-    }
-
-    .meta{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .chip{
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:999px;
-      padding:8px 12px;
-      font-size:12px;
-      color:var(--muted);
-      box-shadow:0 3px 10px rgba(0,0,0,.03);
-      display:flex;
-      flex-direction:column;
-      gap:4px;
-      line-height:1.2;
-    }
-
-    .chip .line{
-      display:flex;
-      gap:6px;
-      align-items:baseline;
-    }
-
+    body{ margin:0; font-family:Arial,sans-serif; background:var(--bg); color:var(--text); padding:18px; }
+    .topbar{ max-width:1400px; margin:0 auto 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+    .brand h1{ margin:0; font-size:20px; font-weight:900; }
+    .brand p{ margin:4px 0 0; color:var(--muted); font-size:12px; font-weight:700; }
+    .meta{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .chip{ background:#fff; border:1px solid var(--line); border-radius:999px; padding:8px 12px; font-size:12px; color:var(--muted); box-shadow:0 3px 10px rgba(0,0,0,.03); display:flex; flex-direction:column; gap:4px; line-height:1.2; }
+    .chip .line{ display:flex; gap:6px; align-items:baseline; }
     .chip b{ color:var(--text); }
-
-    .container{
-      max-width:1400px;
-      margin:0 auto;
-      background:var(--card);
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      box-shadow:var(--shadow);
-      overflow:hidden;
-    }
-
-    .header{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      flex-wrap:wrap;
-      background:#fff;
-    }
-
-    .header .title{
-      font-weight:900;
-      font-size:15px;
-    }
-
-    .section{
-      padding:14px 16px;
-      border-bottom:1px solid var(--line);
-      background:#fff;
-    }
-
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(12, 1fr);
-      gap:10px;
-    }
-
-    .ctrl label{
-      display:block;
-      font-size:12px;
-      color:var(--muted);
-      margin-bottom:6px;
-      font-weight:700;
-    }
-
-    .hint-inline{
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-
-    input, select{
-      width:100%;
-      border:1px solid var(--line);
-      border-radius:10px;
-      padding:10px 12px;
-      outline:none;
-      font-size:14px;
-      background:#fff;
-    }
-
-    input:focus, select:focus{
-      border-color:#bfd3e4;
-      box-shadow:0 0 0 3px rgba(31,106,165,.08);
-    }
-
-    .row-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-
-    .btn{
-      border:1px solid var(--line);
-      background:#fff;
-      padding:10px 12px;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:800;
-      color:var(--text);
-    }
-
+    .container{ max-width:1400px; margin:0 auto; background:var(--card); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); overflow:hidden; }
+    .header{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; background:#fff; }
+    .header .title{ font-weight:900; font-size:15px; }
+    .section{ padding:14px 16px; border-bottom:1px solid var(--line); background:#fff; }
+    .grid{ display:grid; grid-template-columns:repeat(12, 1fr); gap:10px; }
+    .ctrl label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; font-weight:700; }
+    input, select{ width:100%; border:1px solid var(--line); border-radius:10px; padding:10px 12px; outline:none; font-size:14px; background:#fff; }
+    input:focus, select:focus{ border-color:#bfd3e4; box-shadow:0 0 0 3px rgba(31,106,165,.08); }
+    .row-actions{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+    .btn{ border:1px solid var(--line); background:#fff; padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:800; color:var(--text); }
     .btn:hover{ filter:brightness(.98); }
-
-    .btn.primary{
-      background:var(--brand);
-      color:#fff;
-      border-color:var(--brand);
-    }
-
-    .btn.primary:hover{
-      background:var(--brand2);
-      border-color:var(--brand2);
-    }
-
-    .btn.good{
-      background:var(--ok);
-      color:#fff;
-      border-color:var(--ok);
-    }
-
-    .btn.warn{
-      background:var(--warn);
-      color:#fff;
-      border-color:var(--warn);
-    }
-
-    .btn.danger{
-      color:var(--danger);
-      border-color:#f2c6c6;
-    }
-
-    .btn.small{
-      padding:8px 10px;
-      font-size:12px;
-    }
-
-    .btn:disabled{
-      opacity:.6;
-      cursor:not-allowed;
-    }
-
-    .icon-info{
-      width:20px;
-      height:20px;
-      border-radius:999px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      background:#eef5ff;
-      color:var(--info);
-      border:1px solid #cfe0ff;
-      font-size:12px;
-      font-weight:900;
-      cursor:pointer;
-      user-select:none;
-    }
-
-    .kpis{
-      display:grid;
-      grid-template-columns:repeat(4,1fr);
-      gap:10px;
-    }
-
-    .kpi{
-      border:1px solid var(--line);
-      border-radius:14px;
-      background:#fff;
-      box-shadow:0 3px 10px rgba(0,0,0,.03);
-      padding:12px;
-      min-height:88px;
-    }
-
-    .kpi .k{
-      color:var(--muted);
-      font-size:12px;
-      font-weight:800;
-    }
-
-    .kpi .v{
-      margin-top:8px;
-      font-size:22px;
-      font-weight:900;
-    }
-
-    .kpi .s{
-      margin-top:6px;
-      color:var(--muted);
-      font-size:12px;
-    }
-
-    .table-wrap{
-      border:1px solid var(--line);
-      border-radius:12px;
-      overflow:auto;
-      max-height:68vh;
-      background:#fff;
-    }
-
-    table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:1800px;
-    }
-
-    th, td{
-      padding:10px 10px;
-      border-bottom:1px solid var(--line);
-      text-align:left;
-      vertical-align:middle;
-      font-size:12.5px;
-    }
-
-    th{
-      position:sticky;
-      top:0;
-      z-index:1;
-      background:#fafafa;
-      color:var(--muted);
-      font-size:12px;
-      font-weight:800;
-    }
-
+    .btn.primary{ background:var(--brand); color:#fff; border-color:var(--brand); }
+    .btn.primary:hover{ background:var(--brand2); border-color:var(--brand2); }
+    .btn.good{ background:var(--ok); color:#fff; border-color:var(--ok); }
+    .btn.warn{ background:var(--warn); color:#fff; border-color:var(--warn); }
+    .btn.danger{ color:var(--danger); border-color:#f2c6c6; }
+    .btn.small{ padding:8px 10px; font-size:12px; }
+    .btn:disabled{ opacity:.6; cursor:not-allowed; }
+    .icon-info{ width:20px; height:20px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; background:#eef5ff; color:var(--info); border:1px solid #cfe0ff; font-size:12px; font-weight:900; cursor:pointer; user-select:none; margin-left:6px; vertical-align:middle; }
+    .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+    .kpi{ border:1px solid var(--line); border-radius:14px; background:#fff; box-shadow:0 3px 10px rgba(0,0,0,.03); padding:12px; min-height:88px; }
+    .kpi .k{ color:var(--muted); font-size:12px; font-weight:800; }
+    .kpi .v{ margin-top:8px; font-size:22px; font-weight:900; }
+    .kpi .s{ margin-top:6px; color:var(--muted); font-size:12px; }
+    .table-wrap{ border:1px solid var(--line); border-radius:12px; overflow:auto; max-height:68vh; background:#fff; }
+    table{ width:100%; border-collapse:collapse; min-width:1400px; }
+    th, td{ padding:10px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:middle; font-size:12.5px; }
+    th{ position:sticky; top:0; z-index:1; background:#fafafa; color:var(--muted); font-size:12px; font-weight:800; }
     tr:hover td{ background:#fcfdff; }
-
-    .mono{
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-      font-size:12px;
-    }
-
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:6px;
-      padding:4px 10px;
-      border-radius:999px;
-      font-size:12px;
-      font-weight:900;
-      border:1px solid var(--line);
-      background:#fff;
-      white-space:nowrap;
-    }
-
-    .pill.ok{
-      border-color:rgba(22,163,74,.25);
-      color:var(--ok);
-    }
-
-    .pill.warn{
-      border-color:rgba(245,158,11,.25);
-      color:var(--warn);
-    }
-
-    .pill.info{
-      border-color:rgba(37,99,235,.25);
-      color:var(--info);
-    }
-
-    .empty{
-      color:var(--muted);
-      text-align:center;
-      padding:20px;
-      font-weight:700;
-    }
-
-    .footer{
-      padding:12px 16px;
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:12px;
-      color:var(--muted);
-      font-size:12px;
-      border-top:1px solid var(--line);
-      background:#fff;
-      flex-wrap:wrap;
-    }
-
-    #toast{
-      position:fixed;
-      right:16px;
-      bottom:16px;
-      padding:10px 12px;
-      border-radius:12px;
-      border:1px solid var(--line);
-      background:#fff;
-      box-shadow:var(--shadow);
-      font-weight:800;
-      opacity:0;
-      transform:translateY(8px);
-      transition:opacity .15s ease, transform .15s ease;
-      pointer-events:none;
-      max-width:380px;
-      white-space:pre-wrap;
-      z-index:1200;
-    }
-
-    #toast.show{
-      opacity:1;
-      transform:translateY(0);
-    }
-
+    .mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono",monospace; font-size:12px; }
+    .pill{ display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:900; border:1px solid var(--line); background:#fff; white-space:nowrap; }
+    .pill.ok{ border-color:rgba(22,163,74,.25); color:var(--ok); }
+    .pill.warn{ border-color:rgba(245,158,11,.25); color:var(--warn); }
+    .pill.info{ border-color:rgba(37,99,235,.25); color:var(--info); }
+    .empty{ color:var(--muted); text-align:center; padding:20px; font-weight:700; }
+    .footer{ padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:12px; color:var(--muted); font-size:12px; border-top:1px solid var(--line); background:#fff; flex-wrap:wrap; }
+    #toast{ position:fixed; right:16px; bottom:16px; padding:10px 12px; border-radius:12px; border:1px solid var(--line); background:#fff; box-shadow:var(--shadow); font-weight:800; opacity:0; transform:translateY(8px); transition:opacity .15s ease, transform .15s ease; pointer-events:none; max-width:420px; white-space:pre-wrap; z-index:1200; }
+    #toast.show{ opacity:1; transform:translateY(0); }
     #toast[data-type="ok"]{ border-color:#b7e4c7; }
     #toast[data-type="err"]{ border-color:#f2c6c6; }
     #toast[data-type="warn"]{ border-color:#ffe7b3; }
-
-    .modal{
-      position:fixed;
-      inset:0;
-      background:rgba(15,23,42,.45);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-      z-index:999;
-    }
-
+    .modal{ position:fixed; inset:0; background:rgba(15,23,42,.45); display:none; align-items:center; justify-content:center; padding:18px; z-index:999; }
     .modal.show{ display:flex; }
-
-    .modal-card{
-      width:min(1100px, 100%);
-      max-height:92vh;
-      background:#fff;
-      border:1px solid var(--line);
-      border-radius:16px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-    }
-
-    .modal-card.small{
-      width:min(760px, 100%);
-    }
-
-    .modal-head{
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      background:#fff;
-    }
-
-    .modal-title{
-      font-weight:900;
-    }
-
-    .modal-body{
-      padding:14px;
-      overflow:auto;
-      background:#fff;
-    }
-
-    .detail-grid{
-      display:grid;
-      grid-template-columns:repeat(3,1fr);
-      gap:12px;
-    }
-
-    .detail-card{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px;
-      background:#fff;
-    }
-
-    .detail-card .k{
-      color:var(--muted);
-      font-size:12px;
-      font-weight:800;
-      margin-bottom:6px;
-    }
-
-    .detail-card .v{
-      font-size:14px;
-      font-weight:800;
-      word-break:break-word;
-    }
-
-    .help-table{
-      width:100%;
-      border-collapse:collapse;
-      min-width:0;
-    }
-
-    .help-table th,
-    .help-table td{
-      border:1px solid var(--line);
-      padding:10px;
-      text-align:left;
-      vertical-align:top;
-    }
-
-    .help-table th{
-      background:#f8fafc;
-      position:static;
-    }
-
+    .modal-card{ width:min(1200px, 100%); max-height:94vh; background:#fff; border:1px solid var(--line); border-radius:16px; box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; }
+    .modal-card.small{ width:min(760px, 100%); }
+    .modal-head{ padding:12px 14px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:10px; background:#fff; flex-wrap:wrap; }
+    .modal-title{ font-weight:900; }
+    .modal-body{ padding:14px; overflow:auto; background:#fff; }
+    .invoice{ border:1px solid var(--line); border-radius:16px; overflow:hidden; background:#fff; }
+    .invoice-top{ padding:14px 16px; border-bottom:1px solid var(--line); display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap; }
+    .invoice-title{ font-size:14px; font-weight:900; letter-spacing:.02em; }
+    .invoice-sub{ color:var(--muted); font-size:12px; font-weight:700; margin-top:4px; line-height:1.5; }
+    .invoice-meta{ text-align:right; color:var(--muted); font-size:12px; font-weight:700; line-height:1.4; }
+    .invoice-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; padding:14px 16px; }
+    .box{ border:1px solid var(--line); border-radius:14px; padding:10px 12px; background:#fff; min-height:64px; }
+    .box .label{ color:var(--muted); font-size:12px; font-weight:700; margin-bottom:6px; }
+    .box .value{ font-size:14px; font-weight:900; line-height:1.3; word-break:break-word; }
+    .invoice-table-wrap{ padding:0 16px 14px; overflow:auto; }
+    .invoice-table{ width:100%; min-width:0; }
+    .invoice-table th{ position:static; }
+    .invoice-bottom{ display:grid; grid-template-columns:1.2fr .8fr; gap:12px; padding:0 16px 16px; }
+    .summary{ border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; }
+    .summary-row{ display:flex; justify-content:space-between; gap:10px; padding:7px 0; border-bottom:1px dashed var(--line); font-size:14px; }
+    .summary-row:last-child{ border-bottom:none; font-weight:900; font-size:16px; }
+    .note-grid{ display:grid; grid-template-columns:1fr 1fr; gap:12px; padding:0 16px 16px; }
+    .help-table{ width:100%; border-collapse:collapse; min-width:0; }
+    .help-table th, .help-table td{ border:1px solid var(--line); padding:10px; text-align:left; vertical-align:top; }
+    .help-table th{ background:#f8fafc; position:static; }
     @media (max-width:1100px){
       .grid{ grid-template-columns:repeat(6,1fr); }
       .kpis{ grid-template-columns:repeat(2,1fr); }
-      .detail-grid{ grid-template-columns:repeat(2,1fr); }
+      .invoice-grid{ grid-template-columns:repeat(2,1fr); }
+      .invoice-bottom{ grid-template-columns:1fr; }
+      .note-grid{ grid-template-columns:1fr; }
     }
-
     @media (max-width:700px){
       body{ padding:12px; }
       .grid{ grid-template-columns:1fr; }
       .kpis{ grid-template-columns:1fr; }
-      .detail-grid{ grid-template-columns:1fr; }
+      .invoice-grid{ grid-template-columns:1fr; }
+      .invoice-top{ flex-direction:column; }
+      .invoice-meta{ text-align:left; }
     }
   </style>
 </head>
@@ -495,7 +115,7 @@
   <div class="topbar">
     <div class="brand">
       <h1>Facturas Generadas</h1>
-      <p>Consulta avanzada · exportación · descarga PDF · notas DIAN/RIPS</p>
+      <p>Consulta avanzada · exportación · descarga PDF · edición de tipoNota y numNota sobre la factura</p>
     </div>
 
     <div class="meta">
@@ -510,7 +130,6 @@
   <div class="container">
     <div class="header">
       <div class="title">Panel de facturas</div>
-
       <div class="row-actions">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
         <button class="btn" id="btn-reload" type="button">🔄 Recargar</button>
@@ -525,17 +144,14 @@
           <label>Buscar</label>
           <input id="filtro-buscar" type="text" placeholder="Factura, paciente, cédula, profesional, correo, referencia de pago...">
         </div>
-
         <div class="ctrl">
           <label>Desde</label>
           <input id="filtro-desde" type="date">
         </div>
-
         <div class="ctrl">
           <label>Hasta</label>
           <input id="filtro-hasta" type="date">
         </div>
-
         <div class="ctrl">
           <label>Estado</label>
           <select id="filtro-pagada">
@@ -544,45 +160,18 @@
             <option value="false">Pendientes</option>
           </select>
         </div>
-
-        <div class="ctrl">
-          <label>Tipo nota</label>
-          <div class="hint-inline">
-            <select id="filtro-tipo-nota">
-              <option value="">Todos</option>
-              <option value="NC">NC</option>
-              <option value="ND">ND</option>
-              <option value="NA">NA</option>
-              <option value="RS">RS</option>
-            </select>
-            <span class="icon-info" id="btn-info-notas" title="Ayuda tipo nota">i</span>
-          </div>
-        </div>
-
-        <div class="ctrl">
-          <label>No. nota</label>
-          <input id="filtro-num-nota" type="text" maxlength="20" placeholder="Ej: NC-001">
-        </div>
-
         <div class="ctrl">
           <label>Método de pago</label>
-          <select id="filtro-metodo">
-            <option value="">Todos</option>
-          </select>
+          <select id="filtro-metodo"><option value="">Todos</option></select>
         </div>
-
         <div class="ctrl">
           <label>Profesional</label>
-          <select id="filtro-profesional">
-            <option value="">Todos</option>
-          </select>
+          <select id="filtro-profesional"><option value="">Todos</option></select>
         </div>
-
         <div class="ctrl">
           <label>EPS</label>
           <input id="filtro-eps" type="text" placeholder="Filtrar por EPS">
         </div>
-
         <div class="ctrl" style="display:flex; justify-content:flex-end; align-items:flex-end;">
           <button class="btn primary" id="btn-aplicar" type="button" style="width:100%;">🔎 Aplicar filtros</button>
         </div>
@@ -591,29 +180,10 @@
 
     <div class="section">
       <div class="kpis">
-        <div class="kpi">
-          <div class="k">Total facturado</div>
-          <div class="v" id="kpi-total-facturado">$0</div>
-          <div class="s" id="kpi-total-facturado-sub">0 registros</div>
-        </div>
-
-        <div class="kpi">
-          <div class="k">Total pagado</div>
-          <div class="v" id="kpi-total-pagado">$0</div>
-          <div class="s" id="kpi-total-pagado-sub">0 facturas pagadas</div>
-        </div>
-
-        <div class="kpi">
-          <div class="k">Saldo pendiente</div>
-          <div class="v" id="kpi-saldo-pendiente">$0</div>
-          <div class="s" id="kpi-saldo-pendiente-sub">0 pendientes</div>
-        </div>
-
-        <div class="kpi">
-          <div class="k">Promedio por factura</div>
-          <div class="v" id="kpi-promedio">$0</div>
-          <div class="s" id="kpi-promedio-sub">Promedio del filtro actual</div>
-        </div>
+        <div class="kpi"><div class="k">Total facturado</div><div class="v" id="kpi-total-facturado">$0</div><div class="s" id="kpi-total-facturado-sub">0 registros</div></div>
+        <div class="kpi"><div class="k">Total pagado</div><div class="v" id="kpi-total-pagado">$0</div><div class="s" id="kpi-total-pagado-sub">0 facturas pagadas</div></div>
+        <div class="kpi"><div class="k">Saldo pendiente</div><div class="v" id="kpi-saldo-pendiente">$0</div><div class="s" id="kpi-saldo-pendiente-sub">0 pendientes</div></div>
+        <div class="kpi"><div class="k">Promedio por factura</div><div class="v" id="kpi-promedio">$0</div><div class="s" id="kpi-promedio-sub">Promedio del filtro actual</div></div>
       </div>
     </div>
 
@@ -622,26 +192,12 @@
         <table>
           <thead>
             <tr>
-              <th>Factura</th>
-              <th>Fecha</th>
-              <th>Paciente</th>
-              <th>Cédula</th>
-              <th>Profesional</th>
-              <th>EPS</th>
-              <th>Método</th>
-              <th>Subtotal</th>
-              <th>IVA</th>
-              <th>Total</th>
-              <th>Saldo</th>
-              <th>Pagada</th>
-              <th>Tipo nota</th>
-              <th>No. nota</th>
-              <th>CUFE</th>
-              <th>Acciones</th>
+              <th>Factura</th><th>Fecha</th><th>Paciente</th><th>Cédula</th><th>Profesional</th><th>EPS</th>
+              <th>Método</th><th>Total</th><th>Saldo</th><th>Pagada</th><th>Tipo nota</th><th>No. nota</th><th>CUFE</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody id="tbody-facturas">
-            <tr><td colspan="16" class="empty">Cargando facturas...</td></tr>
+            <tr><td colspan="14" class="empty">Cargando facturas...</td></tr>
           </tbody>
         </table>
       </div>
@@ -656,14 +212,68 @@
   <div class="modal" id="modal-detalle">
     <div class="modal-card">
       <div class="modal-head">
-        <div class="modal-title">Detalle de factura</div>
+        <div class="modal-title">Factura</div>
         <div class="row-actions">
-          <button class="btn small good" id="btn-modal-descargar-pdf" type="button">📄 Descargar PDF</button>
+          <button class="btn small good" id="btn-modal-guardar-nota" type="button">💾 Guardar tipoNota / numNota</button>
+          <button class="btn small warn" id="btn-modal-descargar-pdf" type="button">📄 Descargar factura</button>
           <button class="btn small" id="btn-cerrar-detalle" type="button">Cerrar</button>
         </div>
       </div>
       <div class="modal-body">
-        <div class="detail-grid" id="detalle-grid"></div>
+        <div class="invoice">
+          <div class="invoice-top">
+            <div>
+              <div class="invoice-title">CLÍNICA ODONTOLÓGICA — FACTURA</div>
+              <div class="invoice-sub" id="detalle-encabezado-izq">N° Factura: —<br>Fecha: —</div>
+            </div>
+            <div class="invoice-meta" id="detalle-encabezado-der">Impreso: —<br>Usuario: —</div>
+          </div>
+
+          <div class="invoice-grid" id="detalle-cajas"></div>
+
+          <div class="invoice-table-wrap">
+            <table class="invoice-table">
+              <thead>
+                <tr><th>CUPS</th><th>Procedimiento</th><th>Cant</th><th>V/Unit</th><th>Total</th></tr>
+              </thead>
+              <tbody id="detalle-procedimientos">
+                <tr><td colspan="5" class="empty">No hay detalle de procedimientos en esta fila de factura.</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="invoice-bottom">
+            <div class="box">
+              <div class="label">Observación</div>
+              <div class="value" id="detalle-observacion">—</div>
+            </div>
+            <div class="summary">
+              <div class="summary-row"><span>Subtotal</span><b id="detalle-subtotal">$0</b></div>
+              <div class="summary-row"><span>Descuento</span><b id="detalle-descuento">$0</b></div>
+              <div class="summary-row"><span>IVA</span><b id="detalle-iva">$0</b></div>
+              <div class="summary-row"><span>Copago</span><b id="detalle-copago">$0</b></div>
+              <div class="summary-row"><span>Cuota moderadora</span><b id="detalle-cuota">$0</b></div>
+              <div class="summary-row"><span>TOTAL</span><b id="detalle-total">$0</b></div>
+            </div>
+          </div>
+
+          <div class="note-grid">
+            <div class="box">
+              <div class="label">tipoNota <span class="icon-info" id="btn-info-notas" title="Ayuda tipoNota">i</span></div>
+              <select id="detalle-tipo-nota">
+                <option value="">Sin valor</option>
+                <option value="NC">NC - Nota crédito</option>
+                <option value="ND">ND - Nota débito</option>
+                <option value="NA">NA - Nota de ajuste</option>
+                <option value="RS">RS - RIPS sin factura</option>
+              </select>
+            </div>
+            <div class="box">
+              <div class="label">numNota</div>
+              <input id="detalle-num-nota" type="text" maxlength="20" placeholder="Cadena 0-20 caracteres">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -671,7 +281,7 @@
   <div class="modal" id="modal-info-notas">
     <div class="modal-card small">
       <div class="modal-head">
-        <div class="modal-title">Ayuda · Tipo de nota</div>
+        <div class="modal-title">Ayuda · tipoNota</div>
         <button class="btn small" id="btn-cerrar-info" type="button">Cerrar</button>
       </div>
       <div class="modal-body">
@@ -679,36 +289,15 @@
           Aquí solo debes guardar la <b>sigla</b> en el campo <b>tipoNota</b>.
           El campo <b>numNota</b> debe ser una cadena de texto entre 0 y 20 caracteres.
         </p>
-
         <table class="help-table">
           <thead>
-            <tr>
-              <th style="width:90px;">Código</th>
-              <th style="width:180px;">Significado</th>
-              <th>Cuándo usarlo</th>
-            </tr>
+            <tr><th style="width:90px;">Código</th><th style="width:180px;">Significado</th><th>Cuándo usarlo</th></tr>
           </thead>
           <tbody>
-            <tr>
-              <td><b>NC</b></td>
-              <td>Nota crédito</td>
-              <td>Cuando reduces el valor de la factura.</td>
-            </tr>
-            <tr>
-              <td><b>ND</b></td>
-              <td>Nota débito</td>
-              <td>Cuando aumentas el valor de la factura.</td>
-            </tr>
-            <tr>
-              <td><b>NA</b></td>
-              <td>Nota de ajuste de RIPS</td>
-              <td>Corrige datos del RIPS sin afectar valor.</td>
-            </tr>
-            <tr>
-              <td><b>RS</b></td>
-              <td>RIPS sin factura</td>
-              <td>Cuando el prestador envía RIPS pero no está obligado a emitir factura electrónica.</td>
-            </tr>
+            <tr><td><b>NC</b></td><td>Nota crédito</td><td>Cuando reduces el valor de la factura.</td></tr>
+            <tr><td><b>ND</b></td><td>Nota débito</td><td>Cuando aumentas el valor de la factura.</td></tr>
+            <tr><td><b>NA</b></td><td>Nota de ajuste de RIPS</td><td>Corrige datos del RIPS sin afectar valor.</td></tr>
+            <tr><td><b>RS</b></td><td>RIPS sin factura</td><td>Cuando el prestador envía RIPS pero no está obligado a emitir factura electrónica.</td></tr>
           </tbody>
         </table>
       </div>
@@ -722,18 +311,9 @@
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
   const LOGIN_URL = "login.html";
   const HOME_URL = "index.html";
-  const MODULO = "facturas-generadas";
-
   const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-  const state = {
-    all: [],
-    filtered: [],
-    selected: null,
-    role: "—",
-    userEmail: "—"
-  };
-
+  const state = { all: [], filtered: [], selected: null, role: "—", userEmail: "—" };
   const $ = (id) => document.getElementById(id);
 
   function showToast(msg, type="ok"){
@@ -744,55 +324,22 @@
     clearTimeout(window.__toastT);
     window.__toastT = setTimeout(() => el.classList.remove("show"), 2200);
   }
-
-  function formatMoney(v){
-    const n = Number(v || 0);
-    return "$" + n.toLocaleString("es-CO");
-  }
-
-  function escapeHtml(value){
-    return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-
-  function fmtDate(v){
-    if(!v) return "—";
-    const d = new Date(v + "T00:00:00");
-    if(Number.isNaN(d.getTime())) return String(v);
-    return d.toLocaleDateString("es-CO");
-  }
-
-  function normalizeText(v){
-    return String(v || "").trim().toLowerCase();
-  }
-
-  function setLoadingTable(msg="Cargando..."){
-    $("tbody-facturas").innerHTML = `<tr><td colspan="16" class="empty">${escapeHtml(msg)}</td></tr>`;
-  }
-
+  function formatMoney(v){ const n = Number(v || 0); return "$ " + n.toLocaleString("es-CO"); }
+  function escapeHtml(value){ return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+  function fmtDate(v){ if(!v) return "—"; const d = new Date(v + "T00:00:00"); if(Number.isNaN(d.getTime())) return String(v); return d.toLocaleDateString("es-CO"); }
+  function normalizeText(v){ return String(v || "").trim().toLowerCase(); }
+  function setLoadingTable(msg="Cargando..."){ $("tbody-facturas").innerHTML = `<tr><td colspan="14" class="empty">${escapeHtml(msg)}</td></tr>`; }
   function openModal(id){ $(id).classList.add("show"); }
   function closeModal(id){ $(id).classList.remove("show"); }
+  function getTipoNotaFieldName(row){ if (row && Object.prototype.hasOwnProperty.call(row, "ipoNota")) return "ipoNota"; return "tipoNota"; }
+  function getTipoNotaValue(row){ if (!row) return ""; return row.ipoNota ?? row.tipoNota ?? ""; }
 
   async function verificarSesionYRol(){
     const { data: { session } } = await sb.auth.getSession();
-    if(!session){
-      window.location.href = LOGIN_URL;
-      return null;
-    }
-
+    if(!session){ window.location.href = LOGIN_URL; return null; }
     state.userEmail = session.user?.email || "—";
     $("user-email").textContent = state.userEmail;
-
-    const { data: perfil } = await sb
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
+    const { data: perfil } = await sb.from("profiles").select("role").eq("id", session.user.id).maybeSingle();
     state.role = perfil?.role || "paciente";
     $("user-role").textContent = state.role;
     return session;
@@ -801,13 +348,8 @@
   async function cargarFacturas(){
     setLoadingTable("Cargando facturas...");
     try{
-      const { data, error } = await sb
-        .from("facturas")
-        .select("*")
-        .order("created_at", { ascending:false });
-
+      const { data, error } = await sb.from("facturas").select("*").order("created_at", { ascending:false });
       if(error) throw error;
-
       state.all = data || [];
       llenarFiltrosDinamicos();
       aplicarFiltros();
@@ -822,12 +364,8 @@
   function llenarFiltrosDinamicos(){
     const metodos = [...new Set(state.all.map(x => String(x.metodo_pago || "").trim()).filter(Boolean))].sort();
     const profesionales = [...new Set(state.all.map(x => String(x.profesional || "").trim()).filter(Boolean))].sort();
-
-    $("filtro-metodo").innerHTML = `<option value="">Todos</option>` +
-      metodos.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
-
-    $("filtro-profesional").innerHTML = `<option value="">Todos</option>` +
-      profesionales.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    $("filtro-metodo").innerHTML = `<option value="">Todos</option>` + metodos.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    $("filtro-profesional").innerHTML = `<option value="">Todos</option>` + profesionales.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
   }
 
   function aplicarFiltros(){
@@ -835,8 +373,6 @@
     const desde = $("filtro-desde").value;
     const hasta = $("filtro-hasta").value;
     const pagada = $("filtro-pagada").value;
-    const tipoNota = normalizeText($("filtro-tipo-nota").value);
-    const numNota = normalizeText($("filtro-num-nota").value);
     const metodo = normalizeText($("filtro-metodo").value);
     const profesional = normalizeText($("filtro-profesional").value);
     const eps = normalizeText($("filtro-eps").value);
@@ -844,29 +380,14 @@
     state.filtered = state.all.filter(row => {
       const rowDate = String(row.fecha || "");
       const rowPagada = String(!!row.pagada);
-      const haystack = [
-        row.numero_factura,
-        row.paciente_nombre,
-        row.paciente_cedula,
-        row.profesional,
-        row.paciente_correo,
-        row.referencia_pago,
-        row.cufe,
-        row.numNota,
-        row.tipoNota,
-        row.eps
-      ].map(v => normalizeText(v)).join(" | ");
-
+      const haystack = [row.numero_factura,row.paciente_nombre,row.paciente_cedula,row.profesional,row.paciente_correo,row.referencia_pago,row.cufe,row.eps,row.numNota,getTipoNotaValue(row)].map(v => normalizeText(v)).join(" | ");
       if(buscar && !haystack.includes(buscar)) return false;
       if(desde && rowDate && rowDate < desde) return false;
       if(hasta && rowDate && rowDate > hasta) return false;
       if(pagada && rowPagada !== pagada) return false;
-      if(tipoNota && normalizeText(row.tipoNota) !== tipoNota) return false;
-      if(numNota && !normalizeText(row.numNota).includes(numNota)) return false;
       if(metodo && normalizeText(row.metodo_pago) !== metodo) return false;
       if(profesional && normalizeText(row.profesional) !== profesional) return false;
       if(eps && !normalizeText(row.eps).includes(eps)) return false;
-
       return true;
     });
 
@@ -877,9 +398,8 @@
   function renderFacturas(){
     const tbody = $("tbody-facturas");
     const rows = state.filtered;
-
     if(!rows.length){
-      tbody.innerHTML = `<tr><td colspan="16" class="empty">No se encontraron facturas con los filtros actuales.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="14" class="empty">No se encontraron facturas con los filtros actuales.</td></tr>`;
       $("footer-count").textContent = "0 facturas";
       return;
     }
@@ -893,23 +413,20 @@
         <td>${escapeHtml(f.profesional || "—")}</td>
         <td>${escapeHtml(f.eps || "—")}</td>
         <td>${escapeHtml(f.metodo_pago || "—")}</td>
-        <td>${escapeHtml(formatMoney(f.subtotal))}</td>
-        <td>${escapeHtml(formatMoney(f.iva_valor))}</td>
         <td><b>${escapeHtml(formatMoney(f.valor_total))}</b></td>
         <td>${escapeHtml(formatMoney(f.saldo_pendiente))}</td>
         <td>${f.pagada ? '<span class="pill ok">Pagada</span>' : '<span class="pill warn">Pendiente</span>'}</td>
-        <td>${f.tipoNota ? `<span class="pill info">${escapeHtml(f.tipoNota)}</span>` : "—"}</td>
+        <td>${getTipoNotaValue(f) ? `<span class="pill info">${escapeHtml(getTipoNotaValue(f))}</span>` : "—"}</td>
         <td>${escapeHtml(f.numNota || "—")}</td>
         <td class="mono">${escapeHtml(f.cufe || "—")}</td>
         <td>
           <div class="row-actions">
-            <button class="btn small" type="button" onclick="verDetalle(${idx})">👁 Ver</button>
-            <button class="btn small good" type="button" onclick="descargarFactura(${idx})">📄 PDF</button>
+            <button class="btn small" type="button" onclick="verDetalle(${idx})">👁 Ver factura</button>
+            <button class="btn small warn" type="button" onclick="descargarFactura(${idx})">📄 Descargar</button>
           </div>
         </td>
       </tr>
     `).join("");
-
     $("footer-count").textContent = `${rows.length} factura${rows.length === 1 ? "" : "s"}`;
   }
 
@@ -924,107 +441,141 @@
 
     $("kpi-total-facturado").textContent = formatMoney(totalFacturado);
     $("kpi-total-facturado-sub").textContent = `${list.length} registro${list.length === 1 ? "" : "s"}`;
-
     $("kpi-total-pagado").textContent = formatMoney(totalPagado);
     $("kpi-total-pagado-sub").textContent = `${pagadas} factura${pagadas === 1 ? "" : "s"} pagadas`;
-
     $("kpi-saldo-pendiente").textContent = formatMoney(saldoPendiente);
     $("kpi-saldo-pendiente-sub").textContent = `${pendientes} pendiente${pendientes === 1 ? "" : "s"}`;
-
     $("kpi-promedio").textContent = formatMoney(promedio);
     $("kpi-promedio-sub").textContent = "Promedio del filtro actual";
+  }
+
+  function renderProcedimientosFactura(f){
+    const tbody = $("detalle-procedimientos");
+    const items = [];
+    if (Array.isArray(f.items)) items.push(...f.items);
+    if (Array.isArray(f.detalle_items)) items.push(...f.detalle_items);
+    if (Array.isArray(f.procedimientos)) items.push(...f.procedimientos);
+
+    if (!items.length){
+      tbody.innerHTML = `
+        <tr>
+          <td>${escapeHtml(f.codigo_cups || "—")}</td>
+          <td>${escapeHtml(f.procedimiento || f.observacion || "Sin detalle estructurado")}</td>
+          <td>1</td>
+          <td>${escapeHtml(formatMoney(f.subtotal || f.valor_total || 0))}</td>
+          <td>${escapeHtml(formatMoney(f.subtotal || f.valor_total || 0))}</td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = items.map(it => `
+      <tr>
+        <td>${escapeHtml(it.codigo_cups || it.cups || it.codigo || "—")}</td>
+        <td>${escapeHtml(it.procedimiento || it.nombre || it.descripcion || "—")}</td>
+        <td>${escapeHtml(it.cantidad || it.cant || 1)}</td>
+        <td>${escapeHtml(formatMoney(it.valor_unitario || it.vunit || it.valor || 0))}</td>
+        <td>${escapeHtml(formatMoney(it.total || it.valor_total || it.subtotal || 0))}</td>
+      </tr>
+    `).join("");
   }
 
   function verDetalle(index){
     const f = state.filtered[index];
     if(!f) return;
-
     state.selected = f;
 
-    const campos = [
-      ["ID", f.id],
-      ["Fecha", fmtDate(f.fecha)],
-      ["Paciente", f.paciente_nombre],
-      ["Cédula", f.paciente_cedula],
-      ["Tipo usuario", f.tipo_usuario],
-      ["EPS", f.eps],
-      ["Número factura", f.numero_factura],
-      ["Valor total", formatMoney(f.valor_total)],
-      ["Copago", formatMoney(f.copago)],
-      ["Cuota moderadora", formatMoney(f.cuota_moderadora)],
-      ["Profesional", f.profesional],
-      ["Creada el", f.created_at ? new Date(f.created_at).toLocaleString("es-CO") : "—"],
-      ["Método de pago", f.metodo_pago],
-      ["Observación", f.observacion],
-      ["IVA aplica", f.iva_aplica ? "Sí" : "No"],
-      ["IVA %", f.iva_porcentaje ?? "—"],
-      ["IVA valor", formatMoney(f.iva_valor)],
-      ["Subtotal", formatMoney(f.subtotal)],
-      ["Correo paciente", f.paciente_correo],
-      ["Pagada", f.pagada ? "Sí" : "No"],
-      ["Fecha pago", f.fecha_pago ? new Date(f.fecha_pago).toLocaleString("es-CO") : "—"],
-      ["Referencia pago", f.referencia_pago],
-      ["Saldo pendiente", formatMoney(f.saldo_pendiente)],
-      ["Descuento %", f.descuento_pct ?? "—"],
-      ["Descuento valor", formatMoney(f.descuento_valor)],
-      ["Costo total", formatMoney(f.costo_total)],
-      ["Tipo nota", f.tipoNota || "—"],
-      ["Número nota", f.numNota || "—"],
-      ["CUFE", f.cufe || "—"],
-      ["Fecha factura electrónica", f.fechafacturaelectroni ? fmtDate(f.fechafacturaelectroni) : "—"],
-      ["Evolución ID", f.evolucion_id || "—"]
+    $("detalle-encabezado-izq").innerHTML = `N° Factura: ${escapeHtml(f.numero_factura || "—")}<br>Fecha: ${escapeHtml(fmtDate(f.fecha))}`;
+    $("detalle-encabezado-der").innerHTML = `Impreso: ${escapeHtml(new Date().toLocaleString("es-CO"))}<br>Usuario: ${escapeHtml(state.userEmail)}`;
+
+    const cajas = [
+      ["Paciente", f.paciente_nombre || "—"],
+      ["Cédula", f.paciente_cedula || "—"],
+      ["Correo", f.paciente_correo || "—"],
+      ["Profesional", f.profesional || "—"],
+      ["Tipo usuario", f.tipo_usuario || "—"],
+      ["EPS", f.eps || "—"],
+      ["Método de pago", f.metodo_pago || "—"],
+      ["Estado de pago", f.pagada ? "PAGADA" : "PENDIENTE"],
+      ["Referencia", f.referencia_pago || "—"],
+      ["¿Aplica IVA?", f.iva_aplica ? "Sí" : "No"],
+      ["IVA %", (f.iva_porcentaje ?? "—")],
+      ["CUFE", f.cufe || "—"]
     ];
 
-    $("detalle-grid").innerHTML = campos.map(([k,v]) => `
-      <div class="detail-card">
-        <div class="k">${escapeHtml(k)}</div>
-        <div class="v">${escapeHtml(v ?? "—")}</div>
+    $("detalle-cajas").innerHTML = cajas.map(([label, value]) => `
+      <div class="box">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="value">${escapeHtml(value)}</div>
       </div>
     `).join("");
 
+    $("detalle-observacion").textContent = f.observacion || "—";
+    $("detalle-subtotal").textContent = formatMoney(f.subtotal);
+    $("detalle-descuento").textContent = formatMoney(f.descuento_valor);
+    $("detalle-iva").textContent = formatMoney(f.iva_valor);
+    $("detalle-copago").textContent = formatMoney(f.copago);
+    $("detalle-cuota").textContent = formatMoney(f.cuota_moderadora);
+    $("detalle-total").textContent = formatMoney(f.valor_total);
+    $("detalle-tipo-nota").value = getTipoNotaValue(f) || "";
+    $("detalle-num-nota").value = f.numNota || "";
+
+    renderProcedimientosFactura(f);
     openModal("modal-detalle");
   }
 
-  function exportarExcel(){
-    if(!state.filtered.length){
-      showToast("No hay datos para exportar", "warn");
-      return;
+  async function guardarNotaFactura(){
+    const f = state.selected;
+    if(!f){ showToast("No hay factura seleccionada", "warn"); return; }
+
+    const tipoNota = String($("detalle-tipo-nota").value || "").trim();
+    const numNota = String($("detalle-num-nota").value || "").trim();
+    const tiposValidos = ["", "NC", "ND", "NA", "RS"];
+
+    if(!tiposValidos.includes(tipoNota)){ showToast("tipoNota no es válido", "warn"); return; }
+    if(numNota.length > 20){ showToast("numNota no puede superar 20 caracteres", "warn"); return; }
+
+    const tipoField = getTipoNotaFieldName(f);
+    const payload = { numNota: numNota };
+    payload[tipoField] = tipoNota;
+
+    const btn = $("btn-modal-guardar-nota");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+
+    try{
+      const { error } = await sb.from("facturas").update(payload).eq("id", f.id);
+      if(error) throw error;
+
+      f[tipoField] = tipoNota;
+      f.numNota = numNota;
+      const original = state.all.find(x => x.id === f.id);
+      if(original){ original[tipoField] = tipoNota; original.numNota = numNota; }
+
+      aplicarFiltros();
+      showToast("tipoNota y numNota guardados correctamente");
+    }catch(err){
+      console.error(err);
+      showToast(err.message || "Error guardando datos de nota", "err");
+    }finally{
+      btn.disabled = false;
+      btn.textContent = "💾 Guardar tipoNota / numNota";
     }
+  }
 
+  function exportarExcel(){
+    if(!state.filtered.length){ showToast("No hay datos para exportar", "warn"); return; }
     const rows = state.filtered.map(f => ({
-      id: f.id || "",
-      fecha: f.fecha || "",
-      paciente_cedula: f.paciente_cedula || "",
-      paciente_nombre: f.paciente_nombre || "",
-      tipo_usuario: f.tipo_usuario || "",
-      eps: f.eps || "",
-      numero_factura: f.numero_factura || "",
-      valor_total: Number(f.valor_total || 0),
-      copago: Number(f.copago || 0),
-      cuota_moderadora: Number(f.cuota_moderadora || 0),
-      profesional: f.profesional || "",
-      created_at: f.created_at || "",
-      metodo_pago: f.metodo_pago || "",
-      observacion: f.observacion || "",
-      iva_aplica: !!f.iva_aplica,
-      iva_porcentaje: f.iva_porcentaje ?? "",
-      iva_valor: Number(f.iva_valor || 0),
-      subtotal: Number(f.subtotal || 0),
-      paciente_correo: f.paciente_correo || "",
-      pagada: !!f.pagada,
-      fecha_pago: f.fecha_pago || "",
-      referencia_pago: f.referencia_pago || "",
-      saldo_pendiente: Number(f.saldo_pendiente || 0),
-      descuento_pct: f.descuento_pct ?? "",
-      descuento_valor: Number(f.descuento_valor || 0),
-      costo_total: Number(f.costo_total || 0),
-      tipoNota: f.tipoNota || "",
-      numNota: f.numNota || "",
-      cufe: f.cufe || "",
-      fechafacturaelectroni: f.fechafacturaelectroni || "",
-      evolucion_id: f.evolucion_id || ""
+      id: f.id || "", fecha: f.fecha || "", paciente_cedula: f.paciente_cedula || "", paciente_nombre: f.paciente_nombre || "",
+      tipo_usuario: f.tipo_usuario || "", eps: f.eps || "", numero_factura: f.numero_factura || "", valor_total: Number(f.valor_total || 0),
+      copago: Number(f.copago || 0), cuota_moderadora: Number(f.cuota_moderadora || 0), profesional: f.profesional || "",
+      created_at: f.created_at || "", metodo_pago: f.metodo_pago || "", observacion: f.observacion || "", iva_aplica: !!f.iva_aplica,
+      iva_porcentaje: f.iva_porcentaje ?? "", iva_valor: Number(f.iva_valor || 0), subtotal: Number(f.subtotal || 0),
+      paciente_correo: f.paciente_correo || "", pagada: !!f.pagada, fecha_pago: f.fecha_pago || "", referencia_pago: f.referencia_pago || "",
+      saldo_pendiente: Number(f.saldo_pendiente || 0), descuento_pct: f.descuento_pct ?? "", descuento_valor: Number(f.descuento_valor || 0),
+      costo_total: Number(f.costo_total || 0), tipoNota: getTipoNotaValue(f), numNota: f.numNota || "", cufe: f.cufe || "",
+      fechafacturaelectroni: f.fechafacturaelectroni || "", evolucion_id: f.evolucion_id || ""
     }));
-
     const ws = XLSX.utils.json_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Facturas");
@@ -1033,17 +584,11 @@
   }
 
   function exportarPDFListado(){
-    if(!state.filtered.length){
-      showToast("No hay datos para exportar", "warn");
-      return;
-    }
-
+    if(!state.filtered.length){ showToast("No hay datos para exportar", "warn"); return; }
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ orientation:"landscape", unit:"pt", format:"a4" });
-
     doc.setFontSize(16);
     doc.text("Facturas generadas", 40, 36);
-
     doc.setFontSize(10);
     doc.text(`Registros: ${state.filtered.length}`, 40, 54);
     doc.text(`Fecha exportación: ${new Date().toLocaleString("es-CO")}`, 40, 68);
@@ -1051,21 +596,11 @@
     doc.autoTable({
       startY: 84,
       styles: { fontSize:8, cellPadding:5 },
-      head: [[
-        "Factura","Fecha","Paciente","Cédula","Profesional","Método","Total","Saldo","Pagada","Tipo nota","No. nota"
-      ]],
+      head: [["Factura","Fecha","Paciente","Cédula","Profesional","Método","Total","Saldo","Pagada","tipoNota","numNota"]],
       body: state.filtered.map(f => [
-        f.numero_factura || "",
-        f.fecha || "",
-        f.paciente_nombre || "",
-        f.paciente_cedula || "",
-        f.profesional || "",
-        f.metodo_pago || "",
-        Number(f.valor_total || 0).toLocaleString("es-CO"),
-        Number(f.saldo_pendiente || 0).toLocaleString("es-CO"),
-        f.pagada ? "Sí" : "No",
-        f.tipoNota || "",
-        f.numNota || ""
+        f.numero_factura || "", f.fecha || "", f.paciente_nombre || "", f.paciente_cedula || "", f.profesional || "", f.metodo_pago || "",
+        Number(f.valor_total || 0).toLocaleString("es-CO"), Number(f.saldo_pendiente || 0).toLocaleString("es-CO"),
+        f.pagada ? "Sí" : "No", getTipoNotaValue(f) || "", f.numNota || ""
       ]),
       margin:{ left:40, right:40 }
     });
@@ -1081,84 +616,39 @@
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF({ unit:"pt", format:"a4" });
 
-    let y = 48;
+    let y = 42;
+    doc.setFontSize(16);
+    doc.text("CLÍNICA ODONTOLÓGICA — FACTURA", 40, y);
 
-    doc.setFontSize(18);
-    doc.text("Factura", 40, y);
+    doc.setFontSize(10);
+    y += 22;
+    doc.text(`N° Factura: ${f.numero_factura || "—"}`, 40, y);
+    doc.text(`Fecha: ${fmtDate(f.fecha)}`, 340, y);
+    y += 16;
+    doc.text(`Paciente: ${f.paciente_nombre || "—"}`, 40, y);
+    doc.text(`Cédula: ${f.paciente_cedula || "—"}`, 340, y);
+    y += 16;
+    doc.text(`Profesional: ${f.profesional || "—"}`, 40, y);
+    doc.text(`Método pago: ${f.metodo_pago || "—"}`, 340, y);
+    y += 16;
+    doc.text(`EPS: ${f.eps || "—"}`, 40, y);
+    doc.text(`Estado: ${f.pagada ? "PAGADA" : "PENDIENTE"}`, 340, y);
+    y += 16;
+    doc.text(`tipoNota: ${getTipoNotaValue(f) || "—"}`, 40, y);
+    doc.text(`numNota: ${f.numNota || "—"}`, 340, y);
 
     y += 22;
-    doc.setFontSize(10);
-    doc.text(`Generado por DENTOVA`, 40, y);
-
-    y += 24;
-    doc.setLineWidth(1);
-    doc.line(40, y, 555, y);
-
-    y += 24;
-    doc.setFontSize(12);
-    doc.text(`Número factura: ${f.numero_factura || "—"}`, 40, y);
-    y += 18;
-    doc.text(`Fecha: ${fmtDate(f.fecha)}`, 40, y);
-    y += 18;
-    doc.text(`Paciente: ${f.paciente_nombre || "—"}`, 40, y);
-    y += 18;
-    doc.text(`Cédula: ${f.paciente_cedula || "—"}`, 40, y);
-    y += 18;
-    doc.text(`Profesional: ${f.profesional || "—"}`, 40, y);
-    y += 18;
-    doc.text(`EPS: ${f.eps || "—"}`, 40, y);
-    y += 18;
-    doc.text(`Método de pago: ${f.metodo_pago || "—"}`, 40, y);
-
-    y += 28;
-    doc.setFontSize(13);
-    doc.text("Resumen financiero", 40, y);
-
-    y += 16;
     doc.autoTable({
       startY: y,
       theme: "grid",
       styles: { fontSize:10, cellPadding:6 },
       head: [["Concepto", "Valor"]],
       body: [
-        ["Subtotal", formatMoney(f.subtotal)],
-        ["IVA", formatMoney(f.iva_valor)],
-        ["Descuento", formatMoney(f.descuento_valor)],
-        ["Copago", formatMoney(f.copago)],
-        ["Cuota moderadora", formatMoney(f.cuota_moderadora)],
-        ["Valor total", formatMoney(f.valor_total)],
-        ["Saldo pendiente", formatMoney(f.saldo_pendiente)]
+        ["Subtotal", formatMoney(f.subtotal)], ["Descuento", formatMoney(f.descuento_valor)], ["IVA", formatMoney(f.iva_valor)],
+        ["Copago", formatMoney(f.copago)], ["Cuota moderadora", formatMoney(f.cuota_moderadora)], ["Valor total", formatMoney(f.valor_total)],
+        ["Saldo pendiente", formatMoney(f.saldo_pendiente)], ["CUFE", f.cufe || "—"], ["Observación", f.observacion || "—"]
       ],
       margin: { left:40, right:40 }
-    });
-
-    let after = doc.lastAutoTable.finalY + 24;
-
-    doc.setFontSize(13);
-    doc.text("Información adicional", 40, after);
-
-    after += 16;
-    doc.autoTable({
-      startY: after,
-      theme: "grid",
-      styles: { fontSize:10, cellPadding:6 },
-      head: [["Campo", "Valor"]],
-      body: [
-        ["Pagada", f.pagada ? "Sí" : "No"],
-        ["Fecha de pago", f.fecha_pago ? new Date(f.fecha_pago).toLocaleString("es-CO") : "—"],
-        ["Referencia pago", f.referencia_pago || "—"],
-        ["Tipo nota", f.tipoNota || "—"],
-        ["Número nota", f.numNota || "—"],
-        ["CUFE", f.cufe || "—"],
-        ["Correo paciente", f.paciente_correo || "—"],
-        ["Observación", f.observacion || "—"],
-        ["Evolución ID", f.evolucion_id || "—"]
-      ],
-      margin: { left:40, right:40 },
-      columnStyles: {
-        0: { cellWidth:140 },
-        1: { cellWidth:335 }
-      }
     });
 
     const fileName = `factura_${String(f.numero_factura || "sin_numero").replace(/[^\w\-]+/g, "_")}.pdf`;
@@ -1167,10 +657,7 @@
   }
 
   function descargarFacturaSeleccionada(){
-    if(!state.selected){
-      showToast("No hay factura seleccionada", "warn");
-      return;
-    }
+    if(!state.selected){ showToast("No hay factura seleccionada", "warn"); return; }
     const index = state.filtered.findIndex(x => x.id === state.selected.id);
     if(index >= 0) descargarFactura(index);
   }
@@ -1188,32 +675,19 @@
     $("btn-reload").addEventListener("click", cargarFacturas);
     $("btn-export-excel").addEventListener("click", exportarExcel);
     $("btn-export-pdf").addEventListener("click", exportarPDFListado);
-    $("btn-info-notas").addEventListener("click", () => openModal("modal-info-notas"));
     $("btn-cerrar-info").addEventListener("click", () => closeModal("modal-info-notas"));
     $("btn-cerrar-detalle").addEventListener("click", () => closeModal("modal-detalle"));
     $("btn-modal-descargar-pdf").addEventListener("click", descargarFacturaSeleccionada);
+    $("btn-modal-guardar-nota").addEventListener("click", guardarNotaFactura);
+    $("btn-back").addEventListener("click", () => { window.location.href = HOME_URL; });
+    $("btn-logout").addEventListener("click", async () => { await sb.auth.signOut(); window.location.href = LOGIN_URL; });
 
-    $("btn-back").addEventListener("click", () => {
-      window.location.href = HOME_URL;
-    });
+    ["filtro-buscar","filtro-eps"].forEach(id => { $(id).addEventListener("input", debounce(aplicarFiltros, 250)); });
+    ["filtro-desde","filtro-hasta","filtro-pagada","filtro-metodo","filtro-profesional"].forEach(id => { $(id).addEventListener("change", aplicarFiltros); });
+    ["modal-detalle","modal-info-notas"].forEach(id => { $(id).addEventListener("click", (e) => { if(e.target.id === id) closeModal(id); }); });
 
-    $("btn-logout").addEventListener("click", async () => {
-      await sb.auth.signOut();
-      window.location.href = LOGIN_URL;
-    });
-
-    ["filtro-buscar","filtro-num-nota","filtro-eps"].forEach(id => {
-      $(id).addEventListener("input", debounce(aplicarFiltros, 250));
-    });
-
-    ["filtro-desde","filtro-hasta","filtro-pagada","filtro-tipo-nota","filtro-metodo","filtro-profesional"].forEach(id => {
-      $(id).addEventListener("change", aplicarFiltros);
-    });
-
-    ["modal-detalle","modal-info-notas"].forEach(id => {
-      $(id).addEventListener("click", (e) => {
-        if(e.target.id === id) closeModal(id);
-      });
+    document.addEventListener("click", (e) => {
+      if(e.target && e.target.id === "btn-info-notas"){ openModal("modal-info-notas"); }
     });
   }
 
@@ -1235,3 +709,4 @@
 </script>
 </body>
 </html>
+
