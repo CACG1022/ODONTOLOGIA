@@ -592,13 +592,23 @@ async function cargarServiciosCatalogo(){
   const select = document.getElementById("selectServicioHabilitacion");
   if(!select) return;
 
+  select.innerHTML = `<option>Cargando servicios...</option>`;
+
   const { data, error } = await supabaseClient
     .from("servicios_de_habilitacion")
     .select("codigo_servicio,nombre_servicio")
     .order("nombre_servicio",{ascending:true});
 
+  console.log("Servicios catálogo:", data, error);
+
   if(error){
-    console.error(error);
+    console.error("Error cargando catálogo:", error);
+    select.innerHTML = `<option>Error cargando servicios</option>`;
+    return;
+  }
+
+  if(!data || data.length === 0){
+    select.innerHTML = `<option>No hay servicios disponibles</option>`;
     return;
   }
 
@@ -609,6 +619,7 @@ async function cargarServiciosCatalogo(){
     const opt=document.createElement("option");
 
     opt.value=s.codigo_servicio;
+
     opt.textContent=`${s.codigo_servicio} - ${s.nombre_servicio}`;
 
     opt.dataset.nombre=s.nombre_servicio;
