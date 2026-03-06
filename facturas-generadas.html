@@ -594,7 +594,7 @@
           if (isNum){
             query = query.ilike("paciente_cedula", `%${q}%`);
           } else {
-            query = query.ilike("numero_factura", \`%\${q}%\`);
+            query = query.ilike("numero_factura", `%${q}%`);
           }
         }
         const { data, error } = await query;
