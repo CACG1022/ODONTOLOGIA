@@ -640,52 +640,109 @@
     showToast("PDF exportado");
   }
 
-  function descargarFactura(index){
-    const f = state.filtered[index];
-    if(!f) return;
+function descargarFactura(index){
+  const f = state.filtered[index];
+  if(!f) return;
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({ unit:"pt", format:"a4" });
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:"pt", format:"a4" });
 
-    let y = 42;
-    doc.setFontSize(16);
-    doc.text("CLÍNICA ODONTOLÓGICA — FACTURA", 40, y);
+  let y = 42;
 
-    doc.setFontSize(10);
-    y += 22;
-    doc.text(`N° Factura: ${f.numero_factura || "—"}`, 40, y);
-    doc.text(`Fecha: ${fmtDate(f.fecha)}`, 340, y);
-    y += 16;
-    doc.text(`Paciente: ${f.paciente_nombre || "—"}`, 40, y);
-    doc.text(`Cédula: ${f.paciente_cedula || "—"}`, 340, y);
-    y += 16;
-    doc.text(`Profesional: ${f.profesional || "—"}`, 40, y);
-    doc.text(`Método pago: ${f.metodo_pago || "—"}`, 340, y);
-    y += 16;
-    doc.text(`EPS: ${f.eps || "—"}`, 40, y);
-    doc.text(`Estado: ${f.pagada ? "PAGADA" : "PENDIENTE"}`, 340, y);
-    y += 16;
-    doc.text(`tipoNota: ${getTipoNotaValue(f) || "—"}`, 40, y);
-    doc.text(`numNota: ${f.numNota || "—"}`, 340, y);
+  doc.setFontSize(16);
+  doc.text("CLÍNICA ODONTOLÓGICA — FACTURA", 40, y);
 
-    y += 22;
+  doc.setFontSize(10);
+
+  y += 22;
+  doc.text(`N° Factura: ${f.numero_factura || "—"}`, 40, y);
+  doc.text(`Fecha: ${fmtDate(f.fecha)}`, 340, y);
+
+  y += 16;
+  doc.text(`Paciente: ${f.paciente_nombre || "—"}`, 40, y);
+  doc.text(`Cédula: ${f.paciente_cedula || "—"}`, 340, y);
+
+  y += 16;
+  doc.text(`Profesional: ${f.profesional || "—"}`, 40, y);
+  doc.text(`Método pago: ${f.metodo_pago || "—"}`, 340, y);
+
+  y += 16;
+  doc.text(`EPS: ${f.eps || "—"}`, 40, y);
+  doc.text(`Estado: ${f.pagada ? "PAGADA" : "PENDIENTE"}`, 340, y);
+
+  y += 16;
+  doc.text(`tipoNota: ${getTipoNotaValue(f) || "—"}`, 40, y);
+  doc.text(`numNota: ${f.numNota || "—"}`, 340, y);
+
+  // ==============================
+  // TABLA DE PROCEDIMIENTOS
+  // ==============================
+
+  const procedimientos = f.detalle_factura || [];
+
+  y += 20;
+
+  if(procedimientos.length){
+
     doc.autoTable({
       startY: y,
       theme: "grid",
       styles: { fontSize:10, cellPadding:6 },
-      head: [["Concepto", "Valor"]],
-      body: [
-        ["Subtotal", formatMoney(f.subtotal)], ["Descuento", formatMoney(f.descuento_valor)], ["IVA", formatMoney(f.iva_valor)],
-        ["Copago", formatMoney(f.copago)], ["Cuota moderadora", formatMoney(f.cuota_moderadora)], ["Valor total", formatMoney(f.valor_total)],
-        ["Saldo pendiente", formatMoney(f.saldo_pendiente)], ["CUFE", f.cufe || "—"], ["Observación", f.observacion || "—"]
-      ],
-      margin: { left:40, right:40 }
+
+      head: [["CUPS","Procedimiento","Cant","V/Unit","Total"]],
+
+      body: procedimientos.map(p => [
+        p.codigo_cups || "",
+        p.descripcion || "",
+        p.cantidad || 1,
+        formatMoney(p.valor_unitario || 0),
+        formatMoney(p.valor_total || 0)
+      ]),
+
+      margin:{ left:40, right:40 }
     });
 
-    const fileName = `factura_${String(f.numero_factura || "sin_numero").replace(/[^\w\-]+/g, "_")}.pdf`;
-    doc.save(fileName);
-    showToast("Factura descargada");
+    y = doc.lastAutoTable.finalY + 20;
+
+  } else {
+
+    doc.text("Sin procedimientos registrados", 40, y);
+    y += 20;
+
   }
+
+  // ==============================
+  // RESUMEN FACTURA
+  // ==============================
+
+  doc.autoTable({
+    startY: y,
+    theme: "grid",
+    styles: { fontSize:10, cellPadding:6 },
+
+    head: [["Concepto", "Valor"]],
+
+    body: [
+      ["Subtotal", formatMoney(f.subtotal)],
+      ["Descuento", formatMoney(f.descuento_valor)],
+      ["IVA", formatMoney(f.iva_valor)],
+      ["Copago", formatMoney(f.copago)],
+      ["Cuota moderadora", formatMoney(f.cuota_moderadora)],
+      ["Valor total", formatMoney(f.valor_total)],
+      ["Saldo pendiente", formatMoney(f.saldo_pendiente)],
+      ["CUFE", f.cufe || "—"],
+      ["Observación", f.observacion || "—"]
+    ],
+
+    margin: { left:40, right:40 }
+  });
+
+  const fileName = `factura_${String(f.numero_factura || "sin_numero").replace(/[^\w\-]+/g, "_")}.pdf`;
+
+  doc.save(fileName);
+
+  showToast("Factura descargada");
+}
 
   function descargarFacturaSeleccionada(){
     if(!state.selected){ showToast("No hay factura seleccionada", "warn"); return; }
