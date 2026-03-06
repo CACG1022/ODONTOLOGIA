@@ -160,26 +160,20 @@
 console.log("Valor codPrestador:", codPrestador?.value);
 console.log("Payload enviado:", payload);
 
-      const res = EMISOR_ID
-        const { data, error } = EMISOR_ID
-  ? await supabaseClient
-      .from("emisor_dian")
-      .update(payload)
-      .eq("id", EMISOR_ID)
-      .select()
-  : await supabaseClient
-      .from("emisor_dian")
-      .insert(payload)
-      .select();
+const { data, error } = await supabaseClient
+  .from("emisor_dian")
+  .upsert(payload)
+  .select();
+if (error) {
+  console.error("❌ Error guardando:", error);
+  alert("❌ Error guardando información (revisa consola)");
+  return;
+}
 
-      if (res.error) {
-        console.error("❌ Error guardando:", res.error);
-        alert("❌ Error guardando información (revisa consola)");
-        return;
-      }
+console.log("Resultado guardado:", data);
 
-      alert("✅ Emisor guardado correctamente");
-      await cargarEmisor();
+alert("✅ Emisor guardado correctamente");
+await cargarEmisor();
     }
 
     // ✅ Para que funcione onclick="guardarEmisor()"
