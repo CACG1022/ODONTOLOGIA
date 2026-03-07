@@ -895,7 +895,6 @@ textarea{
       <table class="tabla-evo">
         <thead>
           <tr>
-            <th>ID</th>
             <th>ID Evolución</th>
             <th>Fecha</th>
             <th>Hora</th>
@@ -1615,9 +1614,8 @@ async function cargarFinalidadesDesdeSupabase(){
 
     const evo = evoluciones?.[idx];
     if (!evo) return;
-    const id = evo.id ?? "";
-    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
-    
+
+    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
     const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
     const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
     const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -2029,10 +2027,8 @@ if (selectComp) {
     }
     if (!Array.isArray(evol)) evol = [];
 
-  return evol.map((e) => ({
-  id: e.id ?? null,   // 🔥 NUEVO campo
-  id_evolucion: e.id_evolucion ?? e["id-evolucion"] ?? generarEvolucionId(),
-
+    return evol.map((e) => ({
+  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
   fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
   hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
   profesional: e.profesional ?? e.evo_profesional ?? "",
@@ -2063,7 +2059,7 @@ if (selectComp) {
     if (!evoluciones || evoluciones.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="9" style="text-align:center; padding:14px; color:#6b7a90;">
+          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
             Paciente sin evoluciones
           </td>
         </tr>
@@ -3349,7 +3345,6 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
   window._renderEvoluciones_original = window.renderEvoluciones;
 
   window.renderEvoluciones = function renderEvoluciones(){
-    
     const tbody = document.getElementById("tabla_evoluciones");
     if (!tbody) return;
 
@@ -3358,7 +3353,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     if (!evoluciones || evoluciones.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="9" style="text-align:center; padding:14px; color:#6b7a90;">
+          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
             Paciente sin evoluciones
           </td>
         </tr>
@@ -3367,9 +3362,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     }
 
     evoluciones.forEach((evo, idx) => {
-      const id = evo.id ?? "";
-    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
-    
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3395,36 +3388,35 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
         </div>
       `;
 
-   const tr = document.createElement("tr");
-tr.innerHTML = `
-  <td>${escapeHtml(id)}</td>
-  <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-    ${escapeHtml(idEvo)}
-  </td>
-  <td>${escapeHtml(fecha)}</td>
-  <td>${escapeHtml(hora)}</td>
-  <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-  <td>${_procedimientoCellFromEvo(evo)}</td>
-  <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-  <td>${btnFirmas}</td>
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+          ${escapeHtml(idEvo)}
+        </td>
+        <td>${escapeHtml(fecha)}</td>
+        <td>${escapeHtml(hora)}</td>
+        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
+        <td>${_procedimientoCellFromEvo(evo)}</td>
+        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+        <td>${btnFirmas}</td>
+        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" disabled title="No permitido">
+            Eliminar
+          </button>
 
-  <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
-    <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" disabled>
-      Eliminar
-    </button>
+          <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
+            onclick="verEvolucionDesdeWebhook('${idEvo}')" title="Ver evolución como documento">
+            Ver
+          </button>
 
-    <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-      onclick="verEvolucionDesdeWebhook('${idEvo}')">
-      Ver
-    </button>
-
-    <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
-      onclick="editarFirmas(${idx})"
-      ${(fp && fpr) ? 'disabled' : ''}>
-      ${(fp && fpr) ? 'Firmado' : 'Firmar'}
-    </button>
-  </td>
-`;
+          <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
+            onclick="editarFirmas(${idx})"
+            title="${(fp && fpr) ? 'Evolución ya firmada' : 'Firmar evolución'}"
+            ${(fp && fpr) ? 'disabled' : ''}>
+            ${(fp && fpr) ? 'Firmado' : 'Firmar'}
+          </button>
+        </td>
+      `;
       tbody.appendChild(tr);
     });
   };
@@ -3819,12 +3811,6 @@ window.addEventListener("beforeunload", function (e) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
 
 
 
