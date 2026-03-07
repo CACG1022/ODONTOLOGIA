@@ -1964,6 +1964,14 @@ function obtenerCostoDeItem(it){
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
       const concepto_recaudo = ($("concepto_recaudo")?.value || "").trim();
 
+      const evolucion_id = ($("evolucion_id")?.value || "").trim();
+
+if (!evolucion_id){
+  toast("Debe seleccionar una evolución para generar la factura", "err");
+  $("evolucion_id")?.focus();
+  return;
+}
+
 if (!concepto_recaudo){
   toast("El concepto de recaudo es obligatorio", "err");
   $("concepto_recaudo")?.focus();
@@ -1985,7 +1993,7 @@ if (!concepto_recaudo){
           tipo_usuario,
           eps,
           numero_factura,
-          evolucion_id: document.getElementById("evolucion_id").value || null,
+          evolucion_id: evolucion_id,
           valor_total: totals.total,
           copago: totals.copago,
           cuota_moderadora: totals.cuota_moderadora,
@@ -2022,7 +2030,7 @@ if (!concepto_recaudo){
             tipo_usuario,
             eps,
             numero_factura,
-            evolucion_id: document.getElementById("evolucion_id").value || null,
+            evolucion_id: evolucion_id,
             subtotal: totals.subtotal,
             descuento_pct: totals.descuento_pct,
             descuento_valor: totals.descuento_valor,
