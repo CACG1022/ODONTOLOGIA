@@ -630,6 +630,32 @@ async function detectarConsultasDesdeBD(procs){
       const diagnosticos = payload.diagnosticos || [];
       const procs = payload.procedimientos || [];
 
+      // =======================
+// OBTENER PROFESIONAL
+// =======================
+
+const nombreProfesional = trimStr(evo.evo_profesional);
+
+let profesional = null;
+
+if (nombreProfesional) {
+
+  const profRes = await sb
+    .from("profesionales")
+    .select("tipo_identificacion, cedula")
+    .ilike("nombre", nombreProfesional)
+    .limit(1)
+    .maybeSingle();
+
+  if (profRes.error) throw profRes.error;
+
+  profesional = profRes.data || null;
+}
+
+if (!profesional) {
+  throw new Error("No se encontró el profesional en la tabla profesionales: " + nombreProfesional);
+}
+
       if (!paciente){
         alert("⚠ No se encontró el paciente para esta evolución. (Revisa EVOLUCIONES.paciente_numdoc)");
         return;
@@ -654,6 +680,8 @@ async function detectarConsultasDesdeBD(procs){
 
       // codPrestador: intenta varios campos del emisor
       const codPrestador = trimStr(emisor?.codPrestador);
+      const tipoDocProfesional = trimStr(profesional.tipo_identificacion);
+      const numDocProfesional = trimStr(profesional.cedula);
 
       const usuario = {
         tipoDocumentoIdentificacion: trimStr(paciente["Tipo identificacion"] || paciente.tipo_documento),
@@ -730,8 +758,8 @@ if (!grupo) {
             codDiagnosticoRelacionado2: null,
             codDiagnosticoRelacionado3: null,
             tipoDiagnosticoPrincipal: tipoDx,
-            tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
-            numDocumentoIdentificacion: usuario.numDocumentoIdentificacion,
+            tipoDocumentoIdentificacion: tipoDocProfesional,
+            numDocumentoIdentificacion: numDocProfesional,
             vrServicio: vr,
             conceptoRecaudo: guessConceptoRecaudo(!!fac),
             valorPagoModerador: 0,
@@ -750,8 +778,8 @@ if (!grupo) {
             grupoServicios: grupo,
             codServicio: codServicio,
             finalidadTecnologiaSalud: finalidad,
-            tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
-            numDocumentoIdentificacion: usuario.numDocumentoIdentificacion,
+            tipoDocumentoIdentificacion: tipoDocProfesional,
+            numDocumentoIdentificacion: numDocProfesional,
             codDiagnosticoPrincipal: dxP,
             codDiagnosticoRelacionado: null,
             codComplicacion: null,
