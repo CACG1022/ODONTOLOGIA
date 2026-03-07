@@ -2029,8 +2029,8 @@ if (selectComp) {
     if (!Array.isArray(evol)) evol = [];
 
     return evol.map((e) => ({
-  numero: e.numero ?? "",
-  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
+  id: e.id ?? "",
+  id_evolucion: e.id_evolucion ?? e["id-evolucion"] ?? generarEvolucionId(),
   fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
   hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
   profesional: e.profesional ?? e.evo_profesional ?? "",
@@ -2098,18 +2098,23 @@ if (selectComp) {
         </div>
       `;
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${escapeHtml(idNumero)}</td>
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}</td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td>${btnFirmas}</td>
-        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
+      const idNumero = evo.id ?? "";
+
+const tr = document.createElement("tr");
+tr.innerHTML = `
+<td>${escapeHtml(idNumero)}</td>
+
+<td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+${escapeHtml(idEvo)}
+</td>
+
+<td>${escapeHtml(fecha)}</td>
+<td>${escapeHtml(hora)}</td>
+<td>${escapeHtml(String(profesional).toUpperCase())}</td>
+<td>${_procedimientoCellFromEvo(evo)}</td>
+<td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+<td>${btnFirmas}</td>
+<td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button
             type="button"
             class="btn btn-buscar"
@@ -3391,18 +3396,23 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
         </div>
       `;
 
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}
-        </td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${_procedimientoCellFromEvo(evo)}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td>${btnFirmas}</td>
-        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
+     
+
+const tr = document.createElement("tr");
+tr.innerHTML = `
+<td>${escapeHtml(idNumero)}</td>
+
+<td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+${escapeHtml(idEvo)}
+</td>
+
+<td>${escapeHtml(fecha)}</td>
+<td>${escapeHtml(hora)}</td>
+<td>${escapeHtml(String(profesional).toUpperCase())}</td>
+<td>${_procedimientoCellFromEvo(evo)}</td>
+<td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+<td>${btnFirmas}</td>
+<td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" disabled title="No permitido">
             Eliminar
           </button>
