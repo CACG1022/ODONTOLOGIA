@@ -538,6 +538,20 @@ input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
       .limit(5000);
     if (procRes.error) throw procRes.error;
     const procedimientos = procRes.data || [];
+    // 4.1) detalle de factura
+let factura_detalle = [];
+
+if (fac?.id) {
+  const detRes = await sb
+    .from("factura_detalle")
+    .select("*")
+    .eq("factura_id", fac.id)
+    .limit(5000);
+
+  if (detRes.error) throw detRes.error;
+
+  factura_detalle = detRes.data || [];
+}
 
     // 5) paciente
     const doc = String(evo.paciente_numdoc ?? "");
@@ -562,18 +576,19 @@ input, select{border:1px solid var(--line);border-radius:10px;padding:10px 12px;
     const diagnosticos = diagRes.data || [];
 
     return {
-      meta: {
-        generated_at: new Date().toISOString(),
-        source: "html_rips_por_evolucion",
-        webhook: WEBHOOK_URL,
-      },
-      emisor: emRes.data || null,
-      evolucion: evo,
-      factura: fac,
-      procedimientos,
-      paciente,
-      diagnosticos,
-    };
+  meta: {
+    generated_at: new Date().toISOString(),
+    source: "html_rips_por_evolucion",
+    webhook: WEBHOOK_URL,
+  },
+  emisor: emRes.data || null,
+  evolucion: evo,
+  factura: fac,
+  procedimientos,
+  factura_detalle,
+  paciente,
+  diagnosticos,
+};
   }
 
   // =======================
@@ -629,6 +644,7 @@ async function detectarConsultasDesdeBD(procs){
       const emisor = payload.emisor;
       const diagnosticos = payload.diagnosticos || [];
       const procs = payload.procedimientos || [];
+      const detalleFactura = payload.factura_detalle || [];
 
       // =======================
 // OBTENER PROFESIONAL
@@ -740,7 +756,8 @@ if (!grupo) {
         const dxP = trimStr(p.diagnostico_principal) || (diagPrincipal || null);
         const tipoDx = trimStr(p.tipo_diagnostico);
 
-        const vr = Number(p.valor || 0);
+        const detalleItem = detalleFactura.find(d => String(d.codigo_cups || "").trim() === codigo);
+const vr = Number(detalleItem?.valor_total || 0);
 
         if (isConsulta){
           consultas.push({
