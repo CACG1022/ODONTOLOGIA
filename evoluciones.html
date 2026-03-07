@@ -3603,11 +3603,7 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 
 <span class="label">Dx complicación:</span>
 <span>
-  ${
-    p.diagnostico_complicacion
-      ? (p.diagnostico_complicacion.codigo || p.diagnostico_complicacion)+ " - " + (p.diagnostico_complicacion.nombre || "")
-      : "—"
-  }
+  ${p.codcomplicacion ? escapeHtml(p.codcomplicacion) : "—"}
 </span>
 
 <span class="label">Dx secundarios:</span>
