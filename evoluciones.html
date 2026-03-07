@@ -2071,7 +2071,7 @@ if (selectComp) {
 
     evoluciones.forEach((evo, idx) => {
       const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-      const numero = evo.numero ?? "";
+      const idNumero = evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -2100,7 +2100,7 @@ if (selectComp) {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>${escapeHtml(numero)}</td>
+        <td>${escapeHtml(idNumero)}</td>
         <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
           ${escapeHtml(idEvo)}</td>
         <td>${escapeHtml(fecha)}</td>
@@ -3356,7 +3356,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     if (!evoluciones || evoluciones.length === 0) {
       tbody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align:center; padding:14px; color:#6b7a90;">
+          <td colspan="9" style="text-align:center; padding:14px; color:#6b7a90;">
             Paciente sin evoluciones
           </td>
         </tr>
