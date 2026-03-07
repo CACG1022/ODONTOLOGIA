@@ -512,6 +512,8 @@ await cargarEmisor();
         <div>
           <label>Servicio</label>
           <select id="selectServicioHabilitacion"></select>
+          <label style="margin-top:10px;">Sede</label>
+<select id="selectSedeServicio"></select>
         </div>
 
       </div>
@@ -586,6 +588,7 @@ function abrirModalServicio(){
   ov.style.display="flex";
 
   cargarServiciosCatalogo();
+  cargarSedesServicios();
 }
 
 function cerrarModalServicio(){
@@ -637,31 +640,71 @@ async function cargarServiciosCatalogo(){
   });
 
 }
+async function cargarSedesServicios(){
+
+  const select = document.getElementById("selectSedeServicio");
+
+  if(!select) return;
+
+  select.innerHTML = `<option>Cargando sedes...</option>`;
+
+  const { data, error } = await supabaseClient
+    .from("sedes")
+    .select("id,nombre")
+    .eq("activo", true)
+    .order("nombre",{ascending:true});
+
+  if(error){
+    console.error("Error cargando sedes:", error);
+    select.innerHTML = `<option>Error cargando sedes</option>`;
+    return;
+  }
+
+  if(!data || data.length === 0){
+    select.innerHTML = `<option>No hay sedes registradas</option>`;
+    return;
+  }
+
+  select.innerHTML = "";
+
+  data.forEach(s => {
+
+    const opt = document.createElement("option");
+
+    opt.value = s.id;
+
+    opt.textContent = s.nombre;
+
+    select.appendChild(opt);
+
+  });
+
+}
+    
 
 async function guardarServicioHabilitado(){
 
-  const select = document.getElementById("selectServicioHabilitacion");
+  const selectServicio = document.getElementById("selectServicioHabilitacion");
+  const selectSede = document.getElementById("selectSedeServicio");
 
-  const codigo = select.value;
-  const nombre = select.options[select.selectedIndex].dataset.nombre;
+  if(!selectServicio || !selectSede){
+    alert("Error leyendo formulario");
+    return;
+  }
 
-  // Obtener la primera sede
-  const { data: sede, error: sedeError } = await supabaseClient
-    .from("sedes")
-    .select("id")
-    .limit(1)
-    .single();
+  const codigo = selectServicio.value;
+  const nombre = selectServicio.options[selectServicio.selectedIndex].dataset.nombre;
+  const sede_id = selectSede.value;
 
-  if(sedeError){
-    console.error(sedeError);
-    alert("No se pudo obtener la sede");
+  if(!sede_id){
+    alert("⚠️ Debes seleccionar una sede");
     return;
   }
 
   const { error } = await supabaseClient
     .from("servicios_habilitados_sede")
     .insert([{
-      sede_id: sede.id,
+      sede_id: sede_id,
       cod_servicio: codigo,
       nombre_servicio: nombre,
       activo: true
@@ -669,7 +712,7 @@ async function guardarServicioHabilitado(){
 
   if(error){
     console.error(error);
-    alert("Error guardando servicio");
+    alert("❌ Error guardando servicio");
     return;
   }
 
