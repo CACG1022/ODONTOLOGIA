@@ -3528,10 +3528,6 @@ if (d) {
     dxp = nombre ? `${cod} - ${nombre}` : cod;
   }
 }
-      const dxsArr = [];
-
-const s1 = p.diagnostico_secundario_1;
-const s2 = p.diagnostico_secundario_2;
 
 async function fmtDx(d){
   if (!d) return null;
@@ -3546,6 +3542,15 @@ async function fmtDx(d){
 
   return nombre ? `${cod} - ${nombre}` : cod;
 }
+
+const dxComp = await fmtDx(
+  p.diagnostico_complicacion || p.codcomplicacion || null
+);
+
+const dxsArr = [];
+
+const s1 = p.diagnostico_secundario_1;
+const s2 = p.diagnostico_secundario_2;
 
 const f1 = await fmtDx(s1);
 const f2 = await fmtDx(s2);
@@ -3602,17 +3607,7 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 <span>${escapeHtml(dxp)}</span>
 
 <span class="label">Dx complicación:</span>
-<span>
-${
-  (p.codcomplicacion !== undefined && p.codcomplicacion !== null && p.codcomplicacion !== "")
-    ? escapeHtml(p.codcomplicacion)
-    : (
-        p.diagnostico_complicacion
-          ? escapeHtml(p.diagnostico_complicacion.codigo || "")
-          : "—"
-      )
-}
-</span>
+<span>${escapeHtml(dxComp || "—")}</span>
 
 <span class="label">Dx secundarios:</span>
 <span>${dxs}</span>
