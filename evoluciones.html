@@ -895,7 +895,7 @@ textarea{
       <table class="tabla-evo">
         <thead>
           <tr>
-            <th>ID</th>
+            <th>ID Evolución</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Profesional</th>
@@ -2028,8 +2028,7 @@ if (selectComp) {
     if (!Array.isArray(evol)) evol = [];
 
     return evol.map((e) => ({
-  id: e.id ?? "",
-  id_evolucion: e.id_evolucion ?? e["id-evolucion"] ?? "",
+  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
   fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
   hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
   profesional: e.profesional ?? e.evo_profesional ?? "",
@@ -2069,7 +2068,7 @@ if (selectComp) {
     }
 
     evoluciones.forEach((evo, idx) => {
-      const idEvo = evo.id ?? "";
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3282,8 +3281,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
       .join(" | ");
 
     const item = {
-  id: "",
-  id_evolucion: generarEvolucionId(),
+      id: generarEvolucionId(),
       fecha,
       hora,
       profesional,
@@ -3364,8 +3362,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     }
 
     evoluciones.forEach((evo, idx) => {
-      const idEvo = evo.id ?? "";
-      const idEvolucionReal = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
+      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3408,9 +3405,9 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
           </button>
 
           <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-  onclick="verEvolucionDesdeWebhook('${idEvolucionReal}')" title="Ver evolución como documento">
-  Ver
-</button>
+            onclick="verEvolucionDesdeWebhook('${idEvo}')" title="Ver evolución como documento">
+            Ver
+          </button>
 
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
             onclick="editarFirmas(${idx})"
@@ -3531,6 +3528,10 @@ if (d) {
     dxp = nombre ? `${cod} - ${nombre}` : cod;
   }
 }
+      const dxsArr = [];
+
+const s1 = p.diagnostico_secundario_1;
+const s2 = p.diagnostico_secundario_2;
 
 async function fmtDx(d){
   if (!d) return null;
@@ -3545,15 +3546,6 @@ async function fmtDx(d){
 
   return nombre ? `${cod} - ${nombre}` : cod;
 }
-
-const dxComp = await fmtDx(
-  p.diagnostico_complicacion || p.codcomplicacion || null
-);
-
-const dxsArr = [];
-
-const s1 = p.diagnostico_secundario_1;
-const s2 = p.diagnostico_secundario_2;
 
 const f1 = await fmtDx(s1);
 const f2 = await fmtDx(s2);
@@ -3610,7 +3602,17 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 <span>${escapeHtml(dxp)}</span>
 
 <span class="label">Dx complicación:</span>
-<span>${escapeHtml(dxComp || "—")}</span>
+<span>
+${
+  (p.codcomplicacion !== undefined && p.codcomplicacion !== null && p.codcomplicacion !== "")
+    ? escapeHtml(p.codcomplicacion)
+    : (
+        p.diagnostico_complicacion
+          ? escapeHtml(p.diagnostico_complicacion.codigo || "")
+          : "—"
+      )
+}
+</span>
 
 <span class="label">Dx secundarios:</span>
 <span>${dxs}</span>
@@ -3814,5 +3816,7 @@ window.addEventListener("beforeunload", function (e) {
 </script>
 </body>
 </html>
+
+
 
 
