@@ -778,7 +778,7 @@ const vr = Number(detalleItem?.valor_total || 0);
             tipoDocumentoIdentificacion: tipoDocProfesional,
             numDocumentoIdentificacion: numDocProfesional,
             vrServicio: vr,
-            conceptoRecaudo: guessConceptoRecaudo(!!fac),
+            conceptoRecaudo: trimStr(fac?.conceptorecaudo),
             valorPagoModerador: 0,
             numFEVPagoModerador: null,
             consecutivo: cCons++
@@ -801,7 +801,7 @@ const vr = Number(detalleItem?.valor_total || 0);
             codDiagnosticoRelacionado: null,
             codComplicacion: null,
             vrServicio: vr,
-            conceptoRecaudo: guessConceptoRecaudo(!!fac),
+            conceptoRecaudo: trimStr(fac?.conceptorecaudo),
             valorPagoModerador: 0,
             numFEVPagoModerador: null,
             consecutivo: cProc++
