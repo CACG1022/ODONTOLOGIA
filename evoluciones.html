@@ -2723,7 +2723,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     const payload = {
       evento: "actualizar_firmas",
       cedula: _cedulaActual,
-      id_evolucion: evo.id,
+      id_evolucion: evo.id_evolucion || evo.id,
       firma_paciente: firmaPaciente || null,
       firma_profesional: firmaProfesional || null,
       fecha_envio: new Date().toISOString()
