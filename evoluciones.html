@@ -2071,7 +2071,7 @@ if (selectComp) {
 
     evoluciones.forEach((evo, idx) => {
       const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
-      const idNumero = Number(evo.id) || "";
+      const idNumero = evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3370,7 +3370,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     }
 
     evoluciones.forEach((evo, idx) => {
-      const idNumero = Number(evo.id) || "";
+      const idNumero = evo.id ?? "";
       const idEvo = evo.id_evolucion ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
