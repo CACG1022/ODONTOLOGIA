@@ -321,6 +321,21 @@ textarea{
 .tabla-evo-full td{
   white-space:nowrap;
 }
+/* 🔒 Columna Acciones siempre visible */
+.col-acciones{
+  position: sticky;
+  right: 0;
+  background: #ffffff;
+  z-index: 5;
+  min-width: 150px;
+  box-shadow: -6px 0 6px -6px rgba(0,0,0,0.15);
+}
+
+/* encabezado */
+.tabla-evo thead .col-acciones{
+  z-index: 10;
+  background:#eef6ff;
+}
 
     /* Dictado */
     .vwrap{ position: relative; display: flex; align-items: center; gap: 10px; }
@@ -913,7 +928,7 @@ textarea{
             <th>Procedimiento</th>
             <th>Detalle</th>
             <th>Firmas</th>
-            <th>Acciones</th>
+            <th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody id="tabla_evoluciones"></tbody>
@@ -2119,7 +2134,7 @@ if (selectComp) {
         <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
         <td>${btnFirmas}</td>
-        <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
+        <td class="col-acciones" style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button
             type="button"
             class="btn btn-buscar"
