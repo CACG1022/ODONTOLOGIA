@@ -1971,6 +1971,24 @@ if (!evolucion_id){
   $("evolucion_id")?.focus();
   return;
 }
+// 🔎 Verificar si la evolución ya tiene factura
+const { data: facturaExistente, error: errorFactura } = await supabase
+  .from("facturas")
+  .select("id, numero_factura")
+  .eq("evolucion_id", evolucion_id)
+  .limit(1);
+
+if (errorFactura){
+  console.error(errorFactura);
+  toast("Error verificando facturas existentes", "err");
+  return;
+}
+
+if (facturaExistente && facturaExistente.length > 0){
+  toast("Esta evolución ya tiene una factura generada", "err");
+  $("evolucion_id")?.focus();
+  return;
+}   
 
 if (!concepto_recaudo){
   toast("El concepto de recaudo es obligatorio", "err");
