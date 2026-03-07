@@ -311,14 +311,21 @@ await cargarEmisor();
     .modal-title{ font-weight:900; font-size:16px; }
     .modal-subtitle{ color:var(--muted); font-size:12px; margin-top:2px; }
     .modal-close{
-      background:transparent;
-      border:none;
-      cursor:pointer;
-      font-size:18px;
-      line-height:1;
-      padding:8px 10px;
-      border-radius:12px;
-    }
+  background:#f1f5f9;
+  border:none;
+  cursor:pointer;
+  font-size:20px;
+  font-weight:900;
+  color:#0f172a;
+  line-height:1;
+  padding:8px 12px;
+  border-radius:12px;
+  transition:all .2s;
+}
+
+.modal-close:hover{
+  background:#e2e8f0;
+}
     .modal-body{ padding:16px 18px; }
     .modal-actions{
       display:flex;
@@ -633,17 +640,31 @@ async function cargarServiciosCatalogo(){
 
 async function guardarServicioHabilitado(){
 
-  const select=document.getElementById("selectServicioHabilitacion");
+  const select = document.getElementById("selectServicioHabilitacion");
 
-  const codigo=select.value;
-  const nombre=select.options[select.selectedIndex].dataset.nombre;
+  const codigo = select.value;
+  const nombre = select.options[select.selectedIndex].dataset.nombre;
+
+  // Obtener la primera sede
+  const { data: sede, error: sedeError } = await supabaseClient
+    .from("sedes")
+    .select("id")
+    .limit(1)
+    .single();
+
+  if(sedeError){
+    console.error(sedeError);
+    alert("No se pudo obtener la sede");
+    return;
+  }
 
   const { error } = await supabaseClient
     .from("servicios_habilitados_sede")
     .insert([{
-      cod_servicio:codigo,
-      nombre_servicio:nombre,
-      activo:true
+      sede_id: sede.id,
+      cod_servicio: codigo,
+      nombre_servicio: nombre,
+      activo: true
     }]);
 
   if(error){
@@ -655,7 +676,6 @@ async function guardarServicioHabilitado(){
   cerrarModalServicio();
 
   await cargarServiciosHabilitados();
-
 }
     async function eliminarServicio(codigo){
 
