@@ -895,7 +895,7 @@ textarea{
       <table class="tabla-evo">
         <thead>
           <tr>
-            <th>ID Evolución</th>
+            <th>ID</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Profesional</th>
@@ -2028,7 +2028,8 @@ if (selectComp) {
     if (!Array.isArray(evol)) evol = [];
 
     return evol.map((e) => ({
-  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
+  id: e.id ?? "",
+  id_evolucion: e.id_evolucion ?? e["id-evolucion"] ?? "",
   fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
   hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
   profesional: e.profesional ?? e.evo_profesional ?? "",
@@ -2068,7 +2069,7 @@ if (selectComp) {
     }
 
     evoluciones.forEach((evo, idx) => {
-      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+      const idEvo = evo.id ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3281,7 +3282,8 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
       .join(" | ");
 
     const item = {
-      id: generarEvolucionId(),
+  id: "",
+  id_evolucion: generarEvolucionId(),
       fecha,
       hora,
       profesional,
@@ -3362,7 +3364,8 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
     }
 
     evoluciones.forEach((evo, idx) => {
-      const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+      const idEvo = evo.id ?? "";
+      const idEvolucionReal = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
       const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
       const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
       const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -3405,9 +3408,9 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
           </button>
 
           <button type="button" class="btn btn-agenda" style="padding:8px 10px; width:auto;"
-            onclick="verEvolucionDesdeWebhook('${idEvo}')" title="Ver evolución como documento">
-            Ver
-          </button>
+  onclick="verEvolucionDesdeWebhook('${idEvolucionReal}')" title="Ver evolución como documento">
+  Ver
+</button>
 
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;"
             onclick="editarFirmas(${idx})"
