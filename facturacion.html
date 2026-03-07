@@ -543,6 +543,22 @@ input[type="number"] {
             <option value="Otro">Otro</option>
           </select>
         </div>
+       
+<div class="ctrl">
+  <label>Concepto de recaudo</label>
+
+  <select id="concepto_recaudo" required>
+    <option value="">Seleccione...</option>
+
+    <option value="01">01 - COPAGO</option>
+    <option value="02">02 - CUOTA MODERADORA</option>
+    <option value="03">03 - PAGOS COMPARTIDOS EN PLANES VOLUNTARIOS DE SALUD</option>
+    <option value="04">04 - ANTICIPO</option>
+    <option value="05">05 - NO APLICA</option>
+
+  </select>
+</div>
+        
         <div class="ctrl oculto">
           <label>Estado de pago</label>
           <select id="pagada">
@@ -1946,6 +1962,14 @@ function obtenerCostoDeItem(it){
       const eps = ($("eps").value || "").trim() || null;
       const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
       const metodo_pago = ($("metodo_pago")?.value || "Efectivo").trim();
+      const concepto_recaudo = ($("concepto_recaudo")?.value || "").trim();
+
+if (!concepto_recaudo){
+  toast("El concepto de recaudo es obligatorio", "err");
+  $("concepto_recaudo")?.focus();
+  return;
+}
+      
       const observacion = ($("observacion")?.value || "").trim() || null;
       const pagada = (String($("pagada")?.value || "si").toLowerCase() === "si");
       const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
@@ -1973,6 +1997,7 @@ function obtenerCostoDeItem(it){
           iva_porcentaje: totals.iva_pct,
           iva_valor: totals.iva_valor,
           metodo_pago,
+          conceptorecaudo: concepto_recaudo,
           observacion,
           pagada,
           fecha_pago,
@@ -2005,7 +2030,8 @@ function obtenerCostoDeItem(it){
             cuota_moderadora: totals.cuota_moderadora,
             valor_total: totals.total,
             saldo_pendiente: pagada ? 0 : Number(totals.total || 0),
-            profesional
+            profesional,
+            conceptorecaudo: concepto_recaudo
           };
           const { data: fac2, error: e1b } = await supabase
             .from("facturas")
@@ -2024,6 +2050,7 @@ function obtenerCostoDeItem(it){
           fac.pagada = pagada;
           fac.fecha_pago = fecha_pago;
           fac.referencia_pago = referencia_pago;
+          fac.conceptorecaudo = concepto_recaudo;
         } else {
           fac = fac1;
         }
@@ -2989,6 +3016,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         if ($("paciente_correo")) $("paciente_correo").value = fac.paciente_correo || "";
         if ($("metodo_pago") && fac.metodo_pago) $("metodo_pago").value = fac.metodo_pago;
         if ($("observacion")) $("observacion").value = fac.observacion || "";
+        if ($("concepto_recaudo")) $("concepto_recaudo").value = fac.conceptorecaudo || "";
         if ($("pagada")){
           $("pagada").value = (fac.pagada === false) ? "no" : "si";
         }
