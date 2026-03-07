@@ -3604,7 +3604,7 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 <span class="label">Dx complicación:</span>
 <span>
 ${
-  p.codcomplicacion
+  (p.codcomplicacion !== undefined && p.codcomplicacion !== null && p.codcomplicacion !== "")
     ? escapeHtml(p.codcomplicacion)
     : (
         p.diagnostico_complicacion
