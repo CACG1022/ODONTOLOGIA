@@ -687,7 +687,10 @@ const mapaEspecialidades = await detectarConsultasDesdeBD(procs);
         const especialidad = mapaEspecialidades[codigo] || "";
 const isConsulta = especialidad === "Consulta y valoraciones";
 
-        const codServicio = asNum(p.codservicio) ?? asNum(p.codigo_cups) ?? 25;
+        const codServicio = asNum(p.codservicio);
+        if (codServicio === null) {
+  throw new Error(`El procedimiento ${codigo} no tiene codservicio en la tabla evolucion_procedimientos`);
+}
         const finalidad = trimStr(p.finalidadtecnologiasalud) || "38";
         const causa = trimStr(p.causamotivoatencion) || "38";
         const dxP = trimStr(p.diagnostico_principal) || (diagPrincipal || null);
