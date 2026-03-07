@@ -895,6 +895,7 @@ textarea{
       <table class="tabla-evo">
         <thead>
           <tr>
+            <th>ID</th>
             <th>ID Evolución</th>
             <th>Fecha</th>
             <th>Hora</th>
@@ -1614,8 +1615,9 @@ async function cargarFinalidadesDesdeSupabase(){
 
     const evo = evoluciones?.[idx];
     if (!evo) return;
-
-    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
+    const id = evo.id ?? "";
+    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
+    //const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? evo.id ?? "";
     const fecha = _soloFechaYYYYMMDD(evo.fecha ?? evo.evo_fecha);
     const hora  = _soloHoraHHMM(evo.hora ?? evo.evo_hora);
     const profesional = evo.profesional ?? evo.evo_profesional ?? "";
@@ -2027,8 +2029,10 @@ if (selectComp) {
     }
     if (!Array.isArray(evol)) evol = [];
 
-    return evol.map((e) => ({
-  id: e.id_evolucion ?? e["id-evolucion"] ?? e.id ?? generarEvolucionId(),
+  return evol.map((e) => ({
+  id: e.id ?? null,   // 🔥 NUEVO campo
+  id_evolucion: e.id_evolucion ?? e["id-evolucion"] ?? generarEvolucionId(),
+
   fecha: _soloFechaYYYYMMDD(e.fecha ?? e.evo_fecha),
   hora: _soloHoraHHMM(e.hora ?? e.evo_hora),
   profesional: e.profesional ?? e.evo_profesional ?? "",
@@ -3345,6 +3349,8 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
   window._renderEvoluciones_original = window.renderEvoluciones;
 
   window.renderEvoluciones = function renderEvoluciones(){
+    const id = evo.id ?? "";
+    const idEvo = evo.id_evolucion ?? evo["id-evolucion"] ?? "";
     const tbody = document.getElementById("tabla_evoluciones");
     if (!tbody) return;
 
@@ -3389,16 +3395,18 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
       `;
 
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
-          ${escapeHtml(idEvo)}
-        </td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${_procedimientoCellFromEvo(evo)}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td>${btnFirmas}</td>
+tr.innerHTML = `
+  <td>${escapeHtml(id)}</td>   <!-- 🔥 NUEVA COLUMNA -->
+  <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+    ${escapeHtml(idEvo)}
+  </td>
+  <td>${escapeHtml(fecha)}</td>
+  <td>${escapeHtml(hora)}</td>
+  <td>${escapeHtml(String(profesional).toUpperCase())}</td>
+  <td>${_procedimientoCellFromEvo(evo)}</td>
+  <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
+  <td>${btnFirmas}</td>
+`;
         <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button type="button" class="btn btn-buscar" style="padding:8px 10px; width:auto;" disabled title="No permitido">
             Eliminar
