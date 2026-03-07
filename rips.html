@@ -688,6 +688,22 @@ const mapaEspecialidades = await detectarConsultasDesdeBD(procs);
 const isConsulta = especialidad === "Consulta y valoraciones";
 
         const codServicio = asNum(p.codservicio);
+        const viaIngreso = trimStr(p.via_ingreso);
+const modalidad = trimStr(p.modalidad_atencion);
+const grupo = trimStr(p.grupo_servicio);
+
+if (!viaIngreso) {
+  throw new Error(`El procedimiento ${codigo} no tiene via_ingreso`);
+}
+
+if (!modalidad) {
+  throw new Error(`El procedimiento ${codigo} no tiene modalidad_atencion`);
+}
+
+if (!grupo) {
+  throw new Error(`El procedimiento ${codigo} no tiene grupo_servicio`);
+}
+        
         if (codServicio === null) {
   throw new Error(`El procedimiento ${codigo} no tiene codservicio en la tabla evolucion_procedimientos`);
 }
@@ -704,8 +720,8 @@ const isConsulta = especialidad === "Consulta y valoraciones";
             fechaInicioAtencion: fechaAtencion,
             numAutorizacion: null,
             codConsulta: codigo,
-            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion) || "01",
-            grupoServicios: trimStr(p.grupo_servicio) || "01",
+            modalidadGrupoServicioTecSal: modalidad,
+            grupoServicios: grupo,
             codServicio: codServicio,
             finalidadTecnologiaSalud: finalidad,
             causaMotivoAtencion: causa,
@@ -729,9 +745,9 @@ const isConsulta = especialidad === "Consulta y valoraciones";
             idMIPRES: null,
             numAutorizacion: null,
             codProcedimiento: codigo,
-            viaIngresoServicioSalud: trimStr(p.via_ingreso)
-            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion)
-            grupoServicios: trimStr(p.grupo_servicio),
+            viaIngresoServicioSalud: viaIngreso,
+            modalidadGrupoServicioTecSal: modalidad,
+            grupoServicios: grupo,
             codServicio: codServicio,
             finalidadTecnologiaSalud: finalidad,
             tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
