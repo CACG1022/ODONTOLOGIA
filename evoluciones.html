@@ -3599,24 +3599,20 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
     </span>
 
     <span class="label">Dx principal:</span>
+<span class="label">Dx principal:</span>
 <span>${escapeHtml(dxp)}</span>
 
 <span class="label">Dx complicación:</span>
 <span>
   ${
     p.diagnostico_complicacion
-      ? p.diagnostico_complicacion.codigo + " - " + (p.diagnostico_complicacion.nombre || "")
+      ? (p.diagnostico_complicacion.codigo || p.diagnostico_complicacion)+ " - " + (p.diagnostico_complicacion.nombre || "")
       : "—"
   }
 </span>
 
 <span class="label">Dx secundarios:</span>
 <span>${dxs}</span>
-    
-    <span>${escapeHtml(dxp)}</span>
-
-    <span class="label">Dx secundarios:</span>
-    <span>${dxs}</span>
 
   </div>
 
