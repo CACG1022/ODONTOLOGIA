@@ -1031,6 +1031,14 @@ textarea{
         </select>
       </div>
 
+     <div class="ctrl" id="wrap_proc_dx_complicacion_modal" style="display:none;">
+  <label>Diagnóstico de complicación</label>
+  <select id="proc_dx_complicacion_modal">
+    <option value="">Seleccione diagnóstico...</option>
+  </select>
+</div>
+      
+      
       <div class="ctrl">
         <label>Diagnósticos secundarios</label>
         <div id="proc_dx_sec_container_modal"></div>
@@ -1848,7 +1856,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
     // 1) Buscar procedimiento
     const { data: proc, error: eProc } = await window.supabase
       .from("procedimientos_precios")
-      .select("id, procedimiento, valor, codigo_cups")
+      .select("id, procedimiento, valor, codigo_cups, especialidad")
       .eq("activo", true)
       .eq("procedimiento", nombre)
       .maybeSingle();
@@ -1875,7 +1883,8 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   procedimiento_id: proc.id,
   procedimiento_nombre: proc.procedimiento,
   valor: proc.valor ?? null,
-  codigo_cups: proc.codigo_cups ?? null, // 🔥 NUEVO
+  codigo_cups: proc.codigo_cups ?? null,
+  especialidad: proc.especialidad ?? "",
 
   codservicio: conf.cod_servicio ?? null,
   finalidad_codigo: conf.finalidad_codigo ?? null,
@@ -1957,6 +1966,10 @@ if (!select) return;
       option.textContent = `${dx.codigo} - ${dx.nombre}`;
       select.appendChild(option);
     });
+    const selectComp = document.getElementById("proc_dx_complicacion_modal");
+if (selectComp) {
+  selectComp.innerHTML = select.innerHTML;
+}
 
 
 
@@ -2745,6 +2758,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
 
   // TomSelects del modal (para evitar re-inicializaciones)
   let _modalTomDxPrincipal = null;
+  let _modalTomDxComplicacion = null;
   let _modalTomMotivo = null;
   let _modalTomDxSecList = [];
   let _procModalSelected = null;
@@ -2753,7 +2767,26 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     try { return JSON.parse(val); } catch(e){ return null; }
   }
 
- 
+ function toggleDxComplicacionSegunEspecialidad(especialidad){
+
+  const wrap = document.getElementById("wrap_proc_dx_complicacion_modal");
+  const sel  = document.getElementById("proc_dx_complicacion_modal");
+
+  const esp = String(especialidad || "").trim().toLowerCase();
+
+  const mostrar = esp && esp !== "consulta y valoraciones";
+
+  if (wrap) wrap.style.display = mostrar ? "" : "none";
+
+  if (!mostrar && sel) {
+
+    if (sel.tomselect) {
+      sel.tomselect.clear(true);
+    }
+
+    sel.value = "";
+  }
+}
   
  function renderProcedimientosEvo(){
   const tb = document.getElementById("tbody_proc_evo");
@@ -2836,14 +2869,15 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     // 🔥 MUY IMPORTANTE
     // reconstruir _procModalSelected para evitar error RIPS
     _procModalSelected = {
-      procedimiento_id: proc.procedimiento_id,
-      procedimiento_nombre: proc.procedimiento_nombre,
-      valor: proc.valor,
-      codigo_cups: proc.codigo_cups,
-      codservicio: proc.codservicio,
-      finalidad_codigo: proc.finalidad_codigo,
-      finalidad_desc: proc.finalidad_desc
-    };
+  procedimiento_id: proc.procedimiento_id,
+  procedimiento_nombre: proc.procedimiento_nombre,
+  valor: proc.valor,
+  codigo_cups: proc.codigo_cups,
+  especialidad: proc.especialidad || "",
+  codservicio: proc.codservicio,
+  finalidad_codigo: proc.finalidad_codigo,
+  finalidad_desc: proc.finalidad_desc
+};
 
     document.getElementById("proc_nombre_modal").value = proc.procedimiento_nombre || "";
     document.getElementById("proc_detalle_modal").value = proc.detalle || "";
@@ -2863,6 +2897,16 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
         true
       );
     }
+    toggleDxComplicacionSegunEspecialidad(proc.especialidad || "");
+
+if (_modalTomDxComplicacion && proc.diagnostico_complicacion) {
+  _modalTomDxComplicacion.setValue(
+    JSON.stringify(proc.diagnostico_complicacion),
+    true
+  );
+} else if (_modalTomDxComplicacion) {
+  _modalTomDxComplicacion.clear(true);
+}
 
     // 🔥 DX SECUNDARIOS
     const cont = document.getElementById("proc_dx_sec_container_modal");
@@ -2931,6 +2975,18 @@ if (dxModal) {
     });
   }
 }
+    const dxCompModal = document.getElementById("proc_dx_complicacion_modal");
+if (dxCompModal) {
+  if (dxCompModal.tomselect) {
+    _modalTomDxComplicacion = dxCompModal.tomselect;
+  } else {
+    _modalTomDxComplicacion = new TomSelect(dxCompModal, {
+      searchField: ["text"],
+      placeholder: "Escribe para buscar diagnóstico...",
+      allowEmptyOption: true
+    });
+  }
+}
 
     // TomSelect Motivo
     if (motivoSel && !_modalTomMotivo) {
@@ -2965,13 +3021,16 @@ if (dxModal) {
     if (det) det.value = "";
 
     if (_modalTomMotivo) _modalTomMotivo.clear();
-    if (_modalTomDxPrincipal) _modalTomDxPrincipal.clear();
+if (_modalTomDxPrincipal) _modalTomDxPrincipal.clear();
+if (_modalTomDxComplicacion) _modalTomDxComplicacion.clear();
 
     const cont = document.getElementById("proc_dx_sec_container_modal");
     if (cont) cont.innerHTML = "";
 
     _modalTomDxSecList.forEach(ts => { try { ts.destroy(); } catch(e){} });
     _modalTomDxSecList = [];
+
+    toggleDxComplicacionSegunEspecialidad("");
   }
 
   function agregarDxSecModal(){
@@ -3029,17 +3088,19 @@ if (mensaje) mensaje.style.display = "none";
 
       const conf = await obtenerConfigRipsPorProcedimientoNombre(nombre);
       _procModalSelected = conf;
+      toggleDxComplicacionSegunEspecialidad(conf?.especialidad || "");
 
       const cs = document.getElementById("proc_codservicio_modal");
       const fi = document.getElementById("proc_finalidad_modal");
 
-      if (!conf) {
+     if (!conf) {
   if (cs) cs.value = "";
   if (fi) fi.value = "";
 
+  toggleDxComplicacionSegunEspecialidad("");
+
   console.warn("Procedimiento sin configuración RIPS");
 
-  // 🔥 Mostrar mensaje visual sin bloquear
   const mensaje = document.getElementById("mensajeRipsInvalido");
   if (mensaje) {
     mensaje.style.display = "block";
@@ -3075,6 +3136,8 @@ if (mensaje) mensaje.style.display = "none";
 
     const dxPrincipal = _safeParseJSON(dxVal);
     if (!dxPrincipal) { alert("⚠️ Diagnóstico principal inválido."); return; }
+    const dxCompVal = document.getElementById("proc_dx_complicacion_modal")?.value || "";
+const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
 
     let diagnosticoSec1 = null;
 let diagnosticoSec2 = null;
@@ -3123,6 +3186,7 @@ if (!via) {
   procedimiento_nombre: _procModalSelected.procedimiento_nombre,
   valor: _procModalSelected.valor ?? null,
   codigo_cups: _procModalSelected.codigo_cups ?? null,
+  especialidad: _procModalSelected.especialidad ?? "",
 
   codservicio: _procModalSelected.codservicio ?? null,
   finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
@@ -3130,9 +3194,12 @@ if (!via) {
 
   motivo_atencion: motivo,
   diagnostico_principal: dxPrincipal,
+  diagnostico_complicacion: dxComplicacion,
+  codcomplicacion: dxComplicacion?.codigo || "",
   diagnostico_secundario_1: diagnosticoSec1,
   diagnostico_secundario_2: diagnosticoSec2,
   detalle: detalle,
+
   tipo_diagnostico: tipoDx,
   nombre_tipo_diagnostico: window.TIPO_DX_MAP?.[tipoDx] || "",
 
@@ -3142,8 +3209,8 @@ if (!via) {
   grupo_servicio: grupo,
   nombre_grupo_servicio: window.GRUPO_MAP?.[grupo] || "",
 
- via_ingreso: via,
- nombre_via_ingreso: window.VIA_MAP?.[via] || "",
+  via_ingreso: via,
+  nombre_via_ingreso: window.VIA_MAP?.[via] || "",
 };
 
     if (_editIndexProcEvo !== null) {
@@ -3532,6 +3599,20 @@ const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
     </span>
 
     <span class="label">Dx principal:</span>
+<span>${escapeHtml(dxp)}</span>
+
+<span class="label">Dx complicación:</span>
+<span>
+  ${
+    p.diagnostico_complicacion
+      ? p.diagnostico_complicacion.codigo + " - " + (p.diagnostico_complicacion.nombre || "")
+      : "—"
+  }
+</span>
+
+<span class="label">Dx secundarios:</span>
+<span>${dxs}</span>
+    
     <span>${escapeHtml(dxp)}</span>
 
     <span class="label">Dx secundarios:</span>
