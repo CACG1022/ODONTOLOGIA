@@ -691,10 +691,10 @@ const isConsulta = especialidad === "Consulta y valoraciones";
         if (codServicio === null) {
   throw new Error(`El procedimiento ${codigo} no tiene codservicio en la tabla evolucion_procedimientos`);
 }
-        const finalidad = trimStr(p.finalidadtecnologiasalud) || "38";
-        const causa = trimStr(p.causamotivoatencion) || "38";
+        const finalidad = trimStr(p.finalidadtecnologiasalud);
+        const causa = trimStr(p.causamotivoatencion);
         const dxP = trimStr(p.diagnostico_principal) || (diagPrincipal || null);
-        const tipoDx = trimStr(p.tipo_diagnostico) || "02";
+        const tipoDx = trimStr(p.tipo_diagnostico);
 
         const vr = Number(p.valor || 0);
 
@@ -706,7 +706,7 @@ const isConsulta = especialidad === "Consulta y valoraciones";
             codConsulta: codigo,
             modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion) || "01",
             grupoServicios: trimStr(p.grupo_servicio) || "01",
-            codServicio: asNum(p.codigo_cups) ?? 334,
+            codServicio: codServicio,
             finalidadTecnologiaSalud: finalidad,
             causaMotivoAtencion: causa,
             codDiagnosticoPrincipal: dxP,
@@ -729,9 +729,9 @@ const isConsulta = especialidad === "Consulta y valoraciones";
             idMIPRES: null,
             numAutorizacion: null,
             codProcedimiento: codigo,
-            viaIngresoServicioSalud: trimStr(p.via_ingreso) || "01",
-            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion) || "01",
-            grupoServicios: trimStr(p.grupo_servicio) || "334",
+            viaIngresoServicioSalud: trimStr(p.via_ingreso)
+            modalidadGrupoServicioTecSal: trimStr(p.modalidad_atencion)
+            grupoServicios: trimStr(p.grupo_servicio),
             codServicio: codServicio,
             finalidadTecnologiaSalud: finalidad,
             tipoDocumentoIdentificacion: usuario.tipoDocumentoIdentificacion,
