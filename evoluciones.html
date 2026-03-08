@@ -754,6 +754,73 @@ textarea{
   font-size:12px;
   word-break:break-all;
 }
+    /* columnas pequeñas */
+.col-num-evo{
+  width:70px;
+  min-width:70px;
+}
+
+.col-id-evo{
+  width:170px;
+  min-width:170px;
+}
+
+/* columnas medias */
+.col-fecha{
+  width:110px;
+}
+
+.col-hora{
+  width:70px;
+}
+
+.col-profesional{
+  width:220px;
+}
+
+/* procedimiento fijo */
+.col-procedimiento{
+  width:220px;
+  min-width:220px;
+  max-width:220px;
+  white-space:normal !important;
+  word-break:break-word;
+  overflow-wrap:anywhere;
+}
+
+/* detalle flexible */
+.col-detalle{
+  width:auto;
+}
+
+/* botones */
+.col-firmas{
+  width:170px;
+}
+
+.col-acciones{
+  width:150px;
+}
+  @media (max-width: 900px){
+
+  .tabla-evo{
+    font-size:13px;
+  }
+
+  .col-profesional{
+    width:180px;
+  }
+
+  .col-procedimiento{
+    width:180px;
+    min-width:180px;
+  }
+
+  .col-detalle{
+    width:180px;
+  }
+
+}
     
 </style>
 </head>
@@ -949,15 +1016,15 @@ textarea{
   <table class="tabla-evo tabla-evo-full">
         <thead>
           <tr>
-            <th class="col-num-evo"># Evolución</th>
-            <th class="col-id-evo">ID Evolución</th>
-            <th>Fecha</th>
-            <th>Hora</th>
-            <th>Profesional</th>
-            <th>Procedimiento</th>
-            <th>Detalle</th>
-            <th>Firmas</th>
-            <th class="col-acciones">Acciones</th>
+<th class="col-num-evo"># Evolución</th>
+<th class="col-id-evo">ID Evolución</th>
+<th class="col-fecha">Fecha</th>
+<th class="col-hora">Hora</th>
+<th class="col-profesional">Profesional</th>
+<th class="col-procedimiento">Procedimiento</th>
+<th class="col-detalle">Detalle</th>
+<th class="col-firmas">Firmas</th>
+<th class="col-acciones">Acciones</th>
           </tr>
         </thead>
         <tbody id="tabla_evoluciones"></tbody>
@@ -2157,12 +2224,12 @@ if (selectComp) {
           ${escapeHtml(idEvo)}
         </td>
         <td class="col-num-evo">${escapeHtml(numeroEvolucion)}</td>
-        <td>${escapeHtml(fecha)}</td>
-        <td>${escapeHtml(hora)}</td>
-        <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${escapeHtml(String(procedimiento).toUpperCase())}</td>
-        <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
-        <td>${btnFirmas}</td>
+        <td class="col-fecha">${escapeHtml(fecha)}</td>
+        <td class="col-hora">${escapeHtml(hora)}</td>
+        <td class="col-profesional">${escapeHtml(String(profesional).toUpperCase())}</td>
+        <td class="col-procedimiento">${_procedimientoCellFromEvo(evo)}</td>
+        <td class="col-detalle">${escapeHtml(detalle)}</td>
+        <td class="col-firmas">${btnFirmas}</td>
         <td class="col-acciones" style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
           <button
             type="button"
