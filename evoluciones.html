@@ -737,6 +737,23 @@ textarea{
   word-break:break-word;
   overflow-wrap:anywhere;
 }
+
+    /* columna numero evolucion */
+.col-num-evo{
+  width:70px;
+  min-width:70px;
+  max-width:70px;
+  text-align:center;
+}
+
+/* columna id evolucion */
+.col-id-evo{
+  width:180px;
+  min-width:180px;
+  max-width:180px;
+  font-size:12px;
+  word-break:break-all;
+}
     
 </style>
 </head>
@@ -932,8 +949,8 @@ textarea{
   <table class="tabla-evo tabla-evo-full">
         <thead>
           <tr>
-            <th># Evolución</th>
-            <th>ID Evolución</th>
+            <th class="col-num-evo"># Evolución</th>
+            <th class="col-id-evo">ID Evolución</th>
             <th>Fecha</th>
             <th>Hora</th>
             <th>Profesional</th>
@@ -2136,10 +2153,10 @@ if (selectComp) {
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
+        <td class="col-id-evo" style="font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size:12px;">
           ${escapeHtml(idEvo)}
         </td>
-        <td>${escapeHtml(numeroEvolucion)}</td>
+        <td class="col-num-evo">${escapeHtml(numeroEvolucion)}</td>
         <td>${escapeHtml(fecha)}</td>
         <td>${escapeHtml(hora)}</td>
         <td>${escapeHtml(String(profesional).toUpperCase())}</td>
