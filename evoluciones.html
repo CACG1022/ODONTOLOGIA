@@ -317,9 +317,12 @@ textarea{
   table-layout:auto;
 }
 
-.tabla-evo-full th,
-.tabla-evo-full td{
+.tabla-evo-full th{
   white-space:nowrap;
+}
+
+.tabla-evo-full td{
+  white-space:normal;
 }
 /* 🔒 Columna Acciones siempre visible */
 .col-acciones{
@@ -725,11 +728,12 @@ textarea{
   }
 
 }
-   .col-procedimiento{
-  width:200px;
-  min-width:200px;
-  max-width:200px;
-  white-space:normal;
+  .col-procedimiento{
+  width:220px;
+  min-width:220px;
+  max-width:220px;
+
+  white-space:normal !important;
   word-break:break-word;
   overflow-wrap:anywhere;
 }
