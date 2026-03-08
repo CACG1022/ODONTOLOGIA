@@ -3436,7 +3436,7 @@ const planTratamiento = (document.getElementById("plan_tratamiento")?.value || "
         <td>${escapeHtml(fecha)}</td>
         <td>${escapeHtml(hora)}</td>
         <td>${escapeHtml(String(profesional).toUpperCase())}</td>
-        <td>${_procedimientoCellFromEvo(evo)}</td>
+        <td class="col-procedimiento">${_procedimientoCellFromEvo(evo)}</td>
         <td style="white-space:pre-wrap;">${escapeHtml(detalle)}</td>
         <td>${btnFirmas}</td>
         <td style="display:flex; flex-direction:column; gap:8px; flex-wrap:wrap;">
