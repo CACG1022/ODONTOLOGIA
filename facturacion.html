@@ -3325,14 +3325,15 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         $("btn-logout").addEventListener("click", cerrarSesion);
         $("paciente_cedula").addEventListener("input", onCedulaInput);
         $("btn-ver-facturas").addEventListener("click", async () => {
-          const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
-          $("buscar_facturas").value = ced || "";
-          openModal();
-          await listarFacturas();
-        }
-        $("btn-factoa").addEventListener("click", irFacturasPaciente);
-        $("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
+  const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
+  $("buscar_facturas").value = ced || "";
+  openModal();
+  await listarFacturas();
+});
 
+$("btn-factoa").addEventListener("click", irFacturasPaciente);
+
+$("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
         
         $("btn-cerrar-modal").addEventListener("click", closeModal);
         $("modal-facturas").addEventListener("click", (e) => {
