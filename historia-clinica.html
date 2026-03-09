@@ -476,11 +476,11 @@ function _evolucionesToHTML(evos){
   transform:translateX(-50%);
   display:flex;
   flex-direction:row;
-  flex-wrap:wrap;
+  align-items:center;
   gap:10px;
   z-index:9999;
   background:white;
-  padding:10px 14px;
+  padding:10px 16px;
   border-radius:12px;
   box-shadow:0 6px 18px rgba(0,0,0,.15);
 }
@@ -495,8 +495,7 @@ function _evolucionesToHTML(evos){
   font-size:13px;
   font-weight:600;
   white-space:nowrap;
-  box-shadow:0 3px 8px rgba(0,0,0,.15);
-  transition:all .2s ease;
+  flex-shrink:0;
 }
 
 .botones-flotantes button:hover{
