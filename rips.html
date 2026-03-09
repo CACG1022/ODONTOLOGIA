@@ -755,6 +755,9 @@ if (!grupo) {
         const causa = trimStr(p.causamotivoatencion);
         const dxP = trimStr(p.diagnostico_principal) || (diagPrincipal || null);
         const tipoDx = trimStr(p.tipo_diagnostico);
+        const dxRel1 = trimStr(p.diagnosticos_secundario_1) || null;
+        const dxRel2 = trimStr(p.diagnosticos_secundario_2) || null;
+        const dxRel3 = trimStr(p.diagnosticos_secundario_3) || null;
 
         const detalleItem = detalleFactura.find(d => String(d.codigo_cups || "").trim() === codigo);
 const vr = Number(detalleItem?.valor_total || 0);
@@ -771,9 +774,9 @@ const vr = Number(detalleItem?.valor_total || 0);
             finalidadTecnologiaSalud: finalidad,
             causaMotivoAtencion: causa,
             codDiagnosticoPrincipal: dxP,
-            codDiagnosticoRelacionado1: null,
-            codDiagnosticoRelacionado2: null,
-            codDiagnosticoRelacionado3: null,
+            codDiagnosticoRelacionado1: dxRel1,
+            codDiagnosticoRelacionado2: dxRel2,
+            codDiagnosticoRelacionado3: dxRel3,
             tipoDiagnosticoPrincipal: tipoDx,
             tipoDocumentoIdentificacion: tipoDocProfesional,
             numDocumentoIdentificacion: numDocProfesional,
