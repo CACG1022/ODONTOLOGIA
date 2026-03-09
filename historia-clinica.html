@@ -464,6 +464,32 @@ function _evolucionesToHTML(evos){
     .print-wrap{
   margin-top: 16px; /* ajusta: 8px, 16px, etc */
      }
+
+    /* ============================= */
+/* BOTONES FLOTANTES DERECHA */
+/* ============================= */
+
+.botones-flotantes{
+  position:fixed;
+  right:20px;
+  top:120px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  z-index:9999;
+  width:220px;
+}
+
+.botones-flotantes button{
+  width:100%;
+  padding:12px;
+  border-radius:10px;
+  border:none;
+  cursor:pointer;
+  color:white;
+  font-size:14px;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+}
 /* ✅ FULLSCREEN MODAL EVOLUCIONES */
 #modalEvoluciones.fullscreen{
   padding: 0 !important;
@@ -515,8 +541,50 @@ textarea:required {
   </style>
 </head>
 
+
+
 <body>
 <div class="container">
+<!-- BOTONES FLOTANTES DERECHA -->
+<div class="botones-flotantes">
+
+<button type="button" onclick="irInicio()" class="btn btn-inicio">
+IR A INICIO
+</button>
+
+<button type="button" onclick="cerrarSesion()" class="btn btn-salir">
+CERRAR CESION
+</button>
+
+<button type="button" onclick="irAConsentimientos()" class="btn btn-agendar">
+CONSENTIMIENTOS INFORMADOS
+</button>
+
+<div class="ctrl">
+        <button type="button" onclick="irAEvoluciones()" class="btn btn-agenda">EVOLUCIONES</button>
+      </div> 
+
+<button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">
+PLAN DE TRATAMIENTO
+</button>
+
+<button type="button" onclick="irAFormulasMedicas()" class="btn btn-agenda">
+FORMULAS MEDICAS
+</button>
+
+<button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
+IMPRIMIR HISTORIA CLINICA
+</button>
+
+<button id="btnGuardarEnviarHistoria"
+        type="button"
+        onclick="enviarAN8N()"
+        class="btn btn-guardar">
+GUARDAR Y ENVIAR
+</button>
+
+</div>
+
 
   <!-- BUSCAR -->
   <section class="card">
@@ -533,37 +601,7 @@ textarea:required {
         <button type="button" onclick="buscarHistoria()" class="btn btn-buscar">Buscar</button>
       </div>
 
-      <div class="ctrl">
-        <button type="button" onclick="irInicio()" class="btn btn-inicio">IR A INICIO</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="cerrarSesion()" class="btn btn-salir">CERRAR CESION</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="irAEvoluciones()" class="btn btn-agenda">EVOLUCIONES</button>
-      </div>
-
-      <div class="ctrl">
-        <button id="btnGuardarEnviarHistoria" type="button" onclick="enviarAN8N()" class="btn btn-guardar">GUARDAR Y ENVIAR</button>
-      </div>
-      <div class="ctrl">
-        <button type="button" onclick="irAConsentimientos()" class="btn btn-agendar">CONSENTIMIENTOS INFORMADOS</button>
-      </div>
-
-       <div class="ctrl">
-        <button type="button" onclick="irAFormulasMedicas()" class="btn btn-agenda">FÓRMULAS MÉDICAS</button>
-      </div>
-
-      <div class="ctrl">
-        <button type="button" onclick="irPlanTratamiento()" class="btn btn-agenda">PLAN DE TRATAMIENTO</button>
-      </div>
-    </div>
-
-    <div class="ctrl print-wrap">
-  <button type="button" onclick="imprimirHistoriaClinica()" class="btn btn-buscar">
-    IMPRIMIR HISTORIA CLÍNICA
-  </button>
-  </div>
+   
 
   </section>
 
