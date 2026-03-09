@@ -773,7 +773,7 @@ background:#ffffff;
       <option value="30">30%</option>
     </select>
     <!-- ✅ Campo Abono (AGREGADO) -->
-    <label for="abono">Total Abonado:</label>
+    <label for="abono">Abono:</label>
     <input
       type="number"
       id="abono"
@@ -3244,14 +3244,6 @@ lista.innerHTML = `
 
   totalSpan.textContent = totalAbonado.toLocaleString("es-CO");
 
-  // ===============================
-// ACTUALIZAR CAMPO ABONO TOTAL
-// ===============================
-const abonoInput = document.getElementById("abono");
-if(abonoInput){
-  abonoInput.value = totalAbonado;
-}
-
   const totalPlan = Number(document.getElementById("input-total").value || 0);
   const saldo = totalPlan - totalAbonado;
 
@@ -3372,6 +3364,10 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
+
+
+
+
 
 
 
