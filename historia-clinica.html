@@ -484,10 +484,13 @@ function _evolucionesToHTML(evos){
   padding:10px 16px;
   border-radius:12px;
   box-shadow:0 6px 18px rgba(0,0,0,.15);
+  max-width:95%;
+  overflow-x:auto;
 }
 
 /* botones */
 .botones-flotantes button{
+  width:auto;
   padding:8px 14px;
   border-radius:8px;
   border:none;
@@ -496,7 +499,7 @@ function _evolucionesToHTML(evos){
   font-size:13px;
   font-weight:600;
   white-space:nowrap;
-  flex-shrink:0;
+  flex:0 0 auto;
 }
 
 .botones-flotantes button:hover{
