@@ -471,13 +471,82 @@ function _evolucionesToHTML(evos){
 
 .botones-flotantes{
   position:fixed;
-  right:20px;
+  right:18px;
   top:120px;
   display:flex;
   flex-direction:column;
   gap:10px;
   z-index:9999;
-  width:220px;
+  width:200px;
+}
+
+/* botones */
+.botones-flotantes button{
+  width:100%;
+  padding:10px 12px;
+  border-radius:8px;
+  border:none;
+  cursor:pointer;
+  color:white;
+  font-size:13px;
+  font-weight:600;
+  box-shadow:0 4px 10px rgba(0,0,0,.15);
+  transition:all .2s ease;
+}
+
+/* efecto hover */
+.botones-flotantes button:hover{
+  transform:translateY(-2px);
+  box-shadow:0 6px 14px rgba(0,0,0,.25);
+  filter:brightness(1.08);
+}
+
+    /* ============================= */
+/* RESPONSIVE BOTONES FLOTANTES */
+/* ============================= */
+
+@media (max-width:1200px){
+
+  .botones-flotantes{
+    width:170px;
+    right:10px;
+  }
+
+  .botones-flotantes button{
+    font-size:12px;
+    padding:9px;
+  }
+
+}
+
+@media (max-width:900px){
+
+  .botones-flotantes{
+    width:150px;
+    right:6px;
+    top:100px;
+  }
+
+  .botones-flotantes button{
+    font-size:11px;
+    padding:8px;
+  }
+
+}
+
+@media (max-width:700px){
+
+  .botones-flotantes{
+    width:130px;
+    right:4px;
+    top:90px;
+  }
+
+  .botones-flotantes button{
+    font-size:10px;
+    padding:7px;
+  }
+
 }
 
 .botones-flotantes button{
