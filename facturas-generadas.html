@@ -769,6 +769,20 @@ function descargarFactura(index){
     };
   }
 
+  function aplicarFiltroCedulaURL(){
+
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("paciente_cedula");
+
+  if(!cedula) return;
+
+  const input = document.getElementById("filtro-buscar");
+
+  input.value = cedula;
+
+  aplicarFiltros();
+
+}
   function bindEvents(){
     $("btn-aplicar").addEventListener("click", aplicarFiltros);
     $("btn-reload").addEventListener("click", cargarFacturas);
@@ -791,11 +805,14 @@ function descargarFactura(index){
   }
 
   async function init(){
-    bindEvents();
-    const session = await verificarSesionYRol();
-    if(!session) return;
-    await cargarFacturas();
-  }
+  bindEvents();
+  const session = await verificarSesionYRol();
+  if(!session) return;
+
+  await cargarFacturas();
+
+  aplicarFiltroCedulaURL(); // NUEVO
+}
 
   window.verDetalle = verDetalle;
   window.descargarFactura = descargarFactura;
