@@ -469,7 +469,7 @@ input[type="number"] {
       <div class="title">Nueva factura</div>
       <div class="row-actions" style="margin-top:0;">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
-        <button id="btn-ver-facturas" onclick="irFacturasPaciente()">Ver facturas</button>
+        <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
       </div>
     </div>
     <div class="section">
@@ -2145,20 +2145,6 @@ if(evoSeleccionada){
       }catch(e){}
       state._focusRestore = null;
     }
-    function irFacturasPaciente(){
-
-  const cedula = document.getElementById("paciente_cedula").value;
-
-  if(!cedula){
-    alert("No hay cédula de paciente cargada");
-    return;
-  }
-
-  window.location.href =
-  "facturas-generadas.html?paciente_cedula=" + cedula;
-
-}
-    
     async function imprimirFacturaGuardada(){
       if (!state.facturaGuardada){
         toast("Primero guarda la factura", "warn");
@@ -4124,6 +4110,28 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
