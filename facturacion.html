@@ -2147,17 +2147,24 @@ if(evoSeleccionada){
       state._focusRestore = null;
     }
 
-    function irFacturasPaciente(){
+   function irFacturasPaciente(){
 
-  const cedula = document.getElementById("paciente_cedula").value;
+  const cedula = (document.getElementById("paciente_cedula")?.value || "")
+    .trim()
+    .replace(/[^\d]/g, "");
 
   if(!cedula){
     alert("No hay cédula del paciente");
     return;
   }
 
-  window.location.href =
-  "https://cacg1022.github.io/ODONTOLOGIA/facturas-generadas.html?paciente_cedula=" + cedula;
+  const url =
+  "https://cacg1022.github.io/ODONTOLOGIA/facturas-generadas.html?paciente_cedula="
+  + encodeURIComponent(cedula);
+
+  document.getElementById("iframe-factoa").src = url;
+
+  document.getElementById("modal-factoa").classList.add("show");
 
 }
     async function imprimirFacturaGuardada(){
@@ -3332,6 +3339,23 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
 });
 
 $("btn-factoa").addEventListener("click", irFacturasPaciente);
+        $("btn-cerrar-factoa").addEventListener("click", () => {
+  $("modal-factoa").classList.remove("show");
+});
+
+$("btn-max-factoa").addEventListener("click", () => {
+
+  const modal = $("modal-factoa").querySelector(".modal-card");
+
+  if(modal.style.width === "100%"){
+    modal.style.width = "95%";
+    modal.style.height = "90vh";
+  }else{
+    modal.style.width = "100%";
+    modal.style.height = "100vh";
+  }
+
+});
 
 $("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
         
@@ -3813,6 +3837,28 @@ document
 
     
 </script>
+<!-- MODAL FACTURAS GENERADAS -->
+<div class="modal" id="modal-factoa">
+  <div class="modal-card" style="width:95%;height:90vh;max-width:none;">
+    
+    <div class="modal-head">
+      <div class="modal-title">Facturas del paciente</div>
+
+      <div class="row-actions">
+        <button class="btn small" id="btn-max-factoa">⛶ Maximizar</button>
+        <button class="btn small" id="btn-cerrar-factoa">Cerrar</button>
+      </div>
+    </div>
+
+    <div class="modal-body" style="height:100%;padding:0;">
+      <iframe 
+        id="iframe-factoa"
+        style="width:100%;height:100%;border:none;">
+      </iframe>
+    </div>
+
+  </div>
+</div>
 </body>
 </html>
 
