@@ -470,6 +470,7 @@ input[type="number"] {
       <div class="row-actions" style="margin-top:0;">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
         <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
+        <button id="btn-factoa" onclick="irFacturasPaciente()">FACTOA</button>
       </div>
     </div>
     <div class="section">
@@ -2145,6 +2146,20 @@ if(evoSeleccionada){
       }catch(e){}
       state._focusRestore = null;
     }
+
+    function irFacturasPaciente(){
+
+  const cedula = document.getElementById("paciente_cedula").value;
+
+  if(!cedula){
+    alert("No hay cédula del paciente");
+    return;
+  }
+
+  window.location.href =
+  "https://cacg1022.github.io/ODONTOLOGIA/facturas-generadas.html?paciente_cedula=" + cedula;
+
+}
     async function imprimirFacturaGuardada(){
       if (!state.facturaGuardada){
         toast("Primero guarda la factura", "warn");
