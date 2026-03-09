@@ -399,6 +399,21 @@
     $("filtro-profesional").innerHTML = `<option value="">Todos</option>` + profesionales.map(v => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
   }
 
+  function aplicarFiltroCedulaURL(){
+
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("paciente_cedula");
+
+  if(!cedula) return;
+
+  const input = document.getElementById("filtro-buscar");
+
+  input.value = cedula;
+
+  aplicarFiltros();
+
+}
+
   function aplicarFiltros(){
     const buscar = normalizeText($("filtro-buscar").value);
     const desde = $("filtro-desde").value;
@@ -769,20 +784,7 @@ function descargarFactura(index){
     };
   }
 
-  function aplicarFiltroCedulaURL(){
-
-  const params = new URLSearchParams(window.location.search);
-  const cedula = params.get("paciente_cedula");
-
-  if(!cedula) return;
-
-  const input = document.getElementById("filtro-buscar");
-
-  input.value = cedula;
-
-  aplicarFiltros();
-
-}
+  
   function bindEvents(){
     $("btn-aplicar").addEventListener("click", aplicarFiltros);
     $("btn-reload").addEventListener("click", cargarFacturas);
@@ -804,16 +806,15 @@ function descargarFactura(index){
     });
   }
 
-  async function init(){
+ async function init(){
   bindEvents();
   const session = await verificarSesionYRol();
   if(!session) return;
 
   await cargarFacturas();
 
-  aplicarFiltroCedulaURL(); // NUEVO
+  aplicarFiltroCedulaURL();
 }
-
   window.verDetalle = verDetalle;
   window.descargarFactura = descargarFactura;
 
