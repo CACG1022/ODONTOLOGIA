@@ -470,7 +470,7 @@ input[type="number"] {
       <div class="row-actions" style="margin-top:0;">
         <button class="btn" id="btn-back" type="button">⬅ Volver</button>
         <button class="btn" id="btn-ver-facturas" type="button">📄 Ver facturas</button>
-        <button id="btn-factoa" onclick="irFacturasPaciente()">FACTOA</button>
+        <button class="btn" id="btn-factoa">FACTOA</button>
       </div>
     </div>
     <div class="section">
@@ -3329,7 +3329,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           $("buscar_facturas").value = ced || "";
           openModal();
           await listarFacturas();
-        });
+        }
+        $("btn-factoa").addEventListener("click", irFacturasPaciente););
         $("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
 
         
