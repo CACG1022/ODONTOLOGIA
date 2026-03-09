@@ -725,7 +725,10 @@ const mapaEspecialidades = await detectarConsultasDesdeBD(procs);
       let cProc = 1;
 
       procs.forEach((p) => {
-        const codigo = trimStr(p.codigo_cups || p.codservicio || p.codigo || p.codigo_procedimiento);
+        const codigo = trimStr(p.codigo_cups);
+        if (!codigo) {
+  throw new Error(`El procedimiento no tiene codigo_cups en evolucion_procedimientos. codservicio=${trimStr(p.codservicio)}`);
+}
         if (!codigo) return;
 
         const especialidad = mapaEspecialidades[codigo] || "";
