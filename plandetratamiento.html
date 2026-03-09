@@ -3243,6 +3243,16 @@ lista.innerHTML = `
 `;
 
   totalSpan.textContent = totalAbonado.toLocaleString("es-CO");
+  // ===============================
+// ACTUALIZAR CAMPO ABONO TOTAL
+// ===============================
+const abonoInput = document.getElementById("abono");
+if(abonoInput){
+  abonoInput.value = totalAbonado;
+}
+  if(typeof window.calcularTotal === "function"){
+  window.calcularTotal();
+}
 
   const totalPlan = Number(document.getElementById("input-total").value || 0);
   const saldo = totalPlan - totalAbonado;
