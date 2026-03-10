@@ -3446,6 +3446,10 @@ if ($("pagada")) $("pagada").value = "si";
         }
         $("btn-logout").addEventListener("click", cerrarSesion);
         $("paciente_cedula").addEventListener("input", onCedulaInput);
+        $("paciente_cedula").addEventListener("blur", () => {
+  const ced = $("paciente_cedula").value.trim();
+  if(ced) cargarEvolucionesPaciente(ced);
+});
         $("btn-ver-facturas").addEventListener("click", async () => {
   const ced = ($("paciente_cedula").value || "").trim().replace(/[^\d]/g, "");
   $("buscar_facturas").value = ced || "";
