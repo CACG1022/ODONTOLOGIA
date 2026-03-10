@@ -965,9 +965,7 @@ input[type="number"] {
       if (Number.isNaN(d.getTime())) return null;
       return v;
     }
-    function toISODateTimeFromYYYYMMDD(v){
-      return v ? (v + "T00:00:00.000Z") : null;
-    }
+    
     function toISODateTimeFromYYYYMMDD(v){
   return v ? (v + "T00:00:00.000Z") : null;
 }
@@ -2133,10 +2131,24 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
           .select("*")
           .single();
         if (e1){
-          const msg = String(e1.message || "").toLowerCase();
-          const isColumnMissing =
-            msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
-          if (!isColumnMissing) throw e1;
+  const msg = String(e1.message || "").toLowerCase();
+
+  const isDuplicateNumero =
+    msg.includes("duplicate key") ||
+    msg.includes("unique") ||
+    msg.includes("numero_factura");
+
+  if (isDuplicateNumero){
+    setStatus("");
+    toast("El número de factura ya fue usado. Intenta guardar nuevamente.", "err");
+    await autocompletarNumeroFactura();
+    return;
+  }
+
+  const isColumnMissing =
+    msg.includes("column") && (msg.includes("does not exist") || msg.includes("not exist"));
+
+  if (!isColumnMissing) throw e1;
           const payloadBase = {
             fecha,
             paciente_cedula,
@@ -3066,8 +3078,8 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
       }
       updateResumenFacturas(rows);
     }
-    function dateStartISO(d){ return d ? `${d}T00:00:00.000` : null; }
-    function dateEndISO(d){ return d ? `${d}T23:59:59.999` : null; }
+    function dateStartISO(d){ return d || null; }
+    function dateEndISO(d){ return d || null; }
     async function listarFacturas(){
       const limit = parseInt($("limite_facturas").value || "50", 10) || 50;
       const q = ($("buscar_facturas").value || "").trim();
@@ -3436,23 +3448,26 @@ if ($("pagada")) $("pagada").value = "si";
 });
 
 $("btn-factoa").addEventListener("click", irFacturasPaciente);
-        $("btn-cerrar-factoa").addEventListener("click", () => {
-  $("modal-factoa").classList.remove("show");
-});
+        if ($("btn-cerrar-factoa")) {
+  $("btn-cerrar-factoa").addEventListener("click", () => {
+    $("modal-factoa")?.classList.remove("show");
+  });
+}
 
-$("btn-max-factoa").addEventListener("click", () => {
+if ($("btn-max-factoa")) {
+  $("btn-max-factoa").addEventListener("click", () => {
+    const modal = $("modal-factoa")?.querySelector(".modal-card");
+    if (!modal) return;
 
-  const modal = $("modal-factoa").querySelector(".modal-card");
-
-  if(modal.style.width === "100%"){
-    modal.style.width = "95%";
-    modal.style.height = "90vh";
-  }else{
-    modal.style.width = "100%";
-    modal.style.height = "100vh";
-  }
-
-});
+    if (modal.style.width === "100%") {
+      modal.style.width = "95%";
+      modal.style.height = "90vh";
+    } else {
+      modal.style.width = "100%";
+      modal.style.height = "100vh";
+    }
+  });
+}
 
 $("btn-aplicar-pct-costo").addEventListener("click", aplicarPorcentajeCostosDesdeVUnit);
         
