@@ -787,7 +787,7 @@ background:#ffffff;
     <div class="totales">
       <span><strong>Subtotal:</strong> $<span id="subtotal">0</span></span>
       <span><strong>Descuento:</strong> $<span id="valor-descuento">0</span></span>
-      <span><strong>Total a pagar:</strong> $<span id="total">0</span></span>
+      <span><strong>Total Plan de tratamiento:</strong> $<span id="total">0</span></span>
     </div>
 
     <!-- ================= HISTORIAL DE ABONOS ================= -->
@@ -2396,6 +2396,7 @@ const observaciones = esc(getVal("observaciones"));
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
+  
 
   html, body {
     margin: 0;
@@ -2551,6 +2552,11 @@ const observaciones = esc(getVal("observaciones"));
 .historial-resumen div{
   margin-top:4px;
 }
+.saldo-pendiente{
+  color:#16a34a;
+  font-weight:800;
+  font-size:13.5px;
+}
 
     @page { margin: 14mm; }
 
@@ -2585,7 +2591,7 @@ const observaciones = esc(getVal("observaciones"));
   <div class="totales">
   <div class="row"><span class="k">Subtotal</span><span class="v">$ ${subtotal || "0"}</span></div>
   <div class="row"><span class="k">Descuento</span><span class="v">$ ${descuento || "0"}</span></div>
-  <div class="row"><span class="k">Total a pagar</span><span class="v">$ ${total || "0"}</span></div>
+  <div class="row"><span class="k">Total del tratamiento</span><span class="v">$ ${total || "0"}</span></div>
 </div>
 
 <div class="section historial-abonos-pdf">
@@ -2594,7 +2600,7 @@ const observaciones = esc(getVal("observaciones"));
 
   <div class="historial-resumen">
     <div>Total abonado: $ ${totalAbonado || "0"}</div>
-    <div>Saldo pendiente: $ ${saldoPendiente || "0"}</div>
+    <div class="saldo-pendiente">Saldo pendiente: $ ${saldoPendiente || "0"}</div>
   </div>
 </div>
 
