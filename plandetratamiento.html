@@ -772,18 +772,7 @@ background:#ffffff;
       <option value="20">20%</option>
       <option value="30">30%</option>
     </select>
-    <!-- ✅ Campo Abono (AGREGADO) -->
-    <label for="abono">Abono:</label>
-    <input
-      type="number"
-      id="abono"
-      name="abono_valor"
-      value="0"
-      min="0"
-      step="100"
-      inputmode="numeric"
-      style="max-width:220px; text-align:left; padding:8px 10px; height:38px;"
-    />
+  
 
 
     <!-- ✅ NUEVO CAMPO ESTADO -->
@@ -1641,15 +1630,6 @@ if(data.id_iiu){
       const nombre = data.nombre ? ` (${escapeHtml(data.nombre)})` : "";
       setHintHTML(`⚠️ Paciente ya valorado${fecha}${nombre}.`, "#c0392b");
 
-     // ==========================
-// ✅ CARGAR ABONO DESDE N8N
-// ==========================
-if (data.abono_valor !== undefined && data.abono_valor !== null) {
-  const abonoInput = document.getElementById("abono");
-  if (abonoInput) {
-    abonoInput.value = Number(data.abono_valor) || 0;
-  }
-}
 
       
       calcularTotal();
@@ -2196,67 +2176,7 @@ function irHistoriaClinica(){
 
 
 <script>
-/* ==========================
-   ✅ ABONO (AGREGADO)
-   - Recalcula "Total a pagar" restando el abono
-   - Envía el valor a n8n como "abono_valor"
-   - Mantiene subtotal y descuento iguales
-   - SIN modificar funciones existentes (se envuelve calcularTotal)
-   ========================== */
-(function(){
-  function num(v){
-    return Number(String(v ?? "").replace(/[^\d]/g,"")) || 0;
-  }
-  function clamp0(n){ return n < 0 ? 0 : n; }
 
-  function aplicarAbonoPostCalculo(){
-    const abonoInput = document.getElementById("abono");
-    const totalSpan  = document.getElementById("total");
-    const inputTotal = document.getElementById("input-total");
-    if(!abonoInput || !totalSpan || !inputTotal) return;
-
-    const abono = num(abonoInput.value);
-    const totalBase = num(inputTotal.value);
-
-    const totalFinal = clamp0(totalBase - abono);
-
-    // UI
-    totalSpan.textContent = totalFinal.toLocaleString("es-CO");
-
-    // Hidden (lo que llega a n8n)
-    inputTotal.value = String(totalFinal);
-
-    // (opcional útil) exponer en window para depuración
-    window.__ABONO_VALOR = abono;
-    window.__TOTAL_A_PAGAR = totalFinal;
-  }
-
-  // ✅ Envolver calcularTotal SIN editar su cuerpo
-  if(typeof window.calcularTotal === "function" && !window.__CALCULO_ABONO_ENVUELTO){
-    const _calcularTotal = window.calcularTotal;
-    window.calcularTotal = function(){
-      _calcularTotal.apply(this, arguments);
-      aplicarAbonoPostCalculo();
-    };
-    window.__CALCULO_ABONO_ENVUELTO = true;
-  }
-
-  // ✅ Recalcular al digitar abono
-  document.addEventListener("DOMContentLoaded", ()=>{
-    const abonoInput = document.getElementById("abono");
-    if(abonoInput){
-      abonoInput.addEventListener("input", ()=> {
-        if(typeof window.calcularTotal === "function") window.calcularTotal();
-        else aplicarAbonoPostCalculo();
-      });
-    }
-    // Forzar 1 vez al cargar
-    setTimeout(()=> {
-      if(typeof window.calcularTotal === "function") window.calcularTotal();
-      else aplicarAbonoPostCalculo();
-    }, 0);
-  });
-})();
 </script>
 
 
@@ -2456,10 +2376,12 @@ function irHistoriaClinica(){
     const procPrincipal = esc((document.getElementById("resumen-proc-principal")?.textContent || "").trim());
 
     const subtotal = esc(getText("subtotal"));
-    const descuento = esc(getText("valor-descuento"));
-    const total = esc(getText("total"));
-    const abono = esc(getVal("abono"));
-    const observaciones = esc(getVal("observaciones"));
+const descuento = esc(getText("valor-descuento"));
+const total = esc(getText("total"));
+const totalAbonado = esc(getText("total-abonado"));
+const saldoPendiente = esc(getText("saldo-pendiente"));
+const historialAbonosHTML = document.getElementById("lista-abonos")?.innerHTML || "<small>No hay abonos registrados.</small>";
+const observaciones = esc(getVal("observaciones"));
 
     const doc = `
 <!doctype html>
@@ -2601,6 +2523,34 @@ function irHistoriaClinica(){
       white-space: pre-wrap;
       min-height: 54px;
     }
+    .historial-abonos-pdf table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:12px;
+}
+
+.historial-abonos-pdf th,
+.historial-abonos-pdf td{
+  border:1px solid var(--line);
+  padding:6px 8px;
+  text-align:left;
+  vertical-align:top;
+}
+
+.historial-abonos-pdf th{
+  background:#f8fafc;
+  font-weight:800;
+}
+
+.historial-resumen{
+  margin-top:10px;
+  font-size:12.5px;
+  font-weight:700;
+}
+
+.historial-resumen div{
+  margin-top:4px;
+}
 
     @page { margin: 14mm; }
 
@@ -2632,12 +2582,21 @@ function irHistoriaClinica(){
       <ul>${resumenItems || "<li>Sin procedimientos asignados.</li>"}</ul>
     </div>
 
-    <div class="totales">
-      <div class="row"><span class="k">Subtotal</span><span class="v">$ ${subtotal || "0"}</span></div>
-      <div class="row"><span class="k">Descuento</span><span class="v">$ ${descuento || "0"}</span></div>
-      <div class="row"><span class="k">Abono</span><span class="v">$ ${abono || "0"}</span></div>
-      <div class="row"><span class="k">Total a pagar</span><span class="v">$ ${total || "0"}</span></div>
-    </div>
+  <div class="totales">
+  <div class="row"><span class="k">Subtotal</span><span class="v">$ ${subtotal || "0"}</span></div>
+  <div class="row"><span class="k">Descuento</span><span class="v">$ ${descuento || "0"}</span></div>
+  <div class="row"><span class="k">Total a pagar</span><span class="v">$ ${total || "0"}</span></div>
+</div>
+
+<div class="section historial-abonos-pdf">
+  <h3>Historial de Abonos</h3>
+  <div>${historialAbonosHTML}</div>
+
+  <div class="historial-resumen">
+    <div>Total abonado: $ ${totalAbonado || "0"}</div>
+    <div>Saldo pendiente: $ ${saldoPendiente || "0"}</div>
+  </div>
+</div>
 
     <div class="section">
       <h3>Observaciones</h3>
