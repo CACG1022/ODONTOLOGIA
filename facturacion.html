@@ -480,9 +480,9 @@ input[type="number"] {
           <input id="fecha" type="date">
         </div>
         <div class="ctrl">
-          <label>No. factura</label>
-          <input id="numero_factura" type="text">
-        </div>
+  <label>No. factura</label>
+  <input id="numero_factura" type="text" readonly>
+</div>
         <div class="ctrl">
           <label>Tipo usuario</label>
           <select id="tipo_usuario">
@@ -968,16 +968,89 @@ input[type="number"] {
     function toISODateTimeFromYYYYMMDD(v){
       return v ? (v + "T00:00:00.000Z") : null;
     }
-    function generarNumeroFactura(){
-      const d = new Date();
-      const y = d.getFullYear();
-      const m = String(d.getMonth()+1).padStart(2,"0");
-      const da = String(d.getDate()).padStart(2,"0");
-      const hh = String(d.getHours()).padStart(2,"0");
-      const mi = String(d.getMinutes()).padStart(2,"0");
-      const ss = String(d.getSeconds()).padStart(2,"0");
-      return `FAC-${y}${m}${da}-${hh}${mi}${ss}`;
+    function toISODateTimeFromYYYYMMDD(v){
+  return v ? (v + "T00:00:00.000Z") : null;
+}
+
+   async function obtenerEmisorActivo(){
+  const { data, error } = await supabase
+    .from("emisor_dian")
+    .select("id, prefijo, rango_desde, rango_hasta, activo")
+    .eq("activo", true)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (!data) {
+    throw new Error("No existe un emisor activo en la tabla emisor_dian.");
+  }
+
+  return data;
+}
+
+async function obtenerSiguienteNumeroFactura(){
+  const emisor = await obtenerEmisorActivo();
+
+  const prefijo = String(emisor.prefijo || "").trim();
+  const rangoDesde = Number(emisor.rango_desde || 0);
+  const rangoHasta = Number(emisor.rango_hasta || 0);
+
+  if (!prefijo) {
+    throw new Error("El prefijo del emisor DIAN está vacío.");
+  }
+
+  if (!Number.isFinite(rangoDesde) || !Number.isFinite(rangoHasta) || rangoDesde <= 0 || rangoHasta <= 0) {
+    throw new Error("El rango de facturación del emisor DIAN no es válido.");
+  }
+
+  if (rangoDesde > rangoHasta) {
+    throw new Error("El rango_desde no puede ser mayor que rango_hasta.");
+  }
+
+  const patron = `${prefijo}%`;
+
+  const { data: facturas, error: errorFact } = await supabase
+    .from("facturas")
+    .select("numero_factura")
+    .ilike("numero_factura", patron);
+
+  if (errorFact) throw errorFact;
+
+  let maxUsado = rangoDesde - 1;
+
+  (facturas || []).forEach(f => {
+    const numero = String(f.numero_factura || "").trim();
+
+    if (!numero.startsWith(prefijo)) return;
+
+    const consecutivoTexto = numero.slice(prefijo.length).trim();
+    const consecutivo = parseInt(consecutivoTexto, 10);
+
+    if (Number.isFinite(consecutivo) && consecutivo > maxUsado) {
+      maxUsado = consecutivo;
     }
+  });
+
+  const siguiente = Math.max(rangoDesde, maxUsado + 1);
+
+  if (siguiente > rangoHasta) {
+    throw new Error(`Se agotó el rango de facturación DIAN (${prefijo}${rangoDesde} - ${prefijo}${rangoHasta}).`);
+  }
+
+  return `${prefijo}${siguiente}`;
+}
+
+async function autocompletarNumeroFactura(){
+  try {
+    const numero = await obtenerSiguienteNumeroFactura();
+    if ($("numero_factura")) {
+      $("numero_factura").value = numero;
+    }
+  } catch (err) {
+    console.error("Error generando número de factura:", err);
+    toast("No se pudo generar el número de factura desde emisor_dian:\n" + (err?.message || "Error"), "err");
+  }
+} 
 
 // ===============================
 // CARGAR EVOLUCIONES DEL PACIENTE
@@ -1958,7 +2031,11 @@ function obtenerCostoDeItem(it){
         toast("Agrega al menos 1 procedimiento", "err");
         return;
       }
-      const numero_factura = ($("numero_factura").value || "").trim() || generarNumeroFactura();
+      let numero_factura = ($("numero_factura").value || "").trim();
+
+if (!numero_factura){
+  numero_factura = await obtenerSiguienteNumeroFactura();
+}
       $("numero_factura").value = numero_factura;
       const eps = ($("eps").value || "").trim() || null;
       const tipo_usuario = ($("tipo_usuario").value || "Particular").trim();
@@ -2002,6 +2079,24 @@ if (!concepto_recaudo){
       const referencia_pago = ($("referencia_pago")?.value || "").trim() || null;
       const fecha_pago = pagada ? new Date().toISOString() : null;
       const totals = calcularTotalesObj();
+
+     const { data: facturaDuplicada, error: errorDuplicada } = await supabase
+  .from("facturas")
+  .select("id, numero_factura")
+  .eq("numero_factura", numero_factura)
+  .limit(1);
+
+if (errorDuplicada){
+  console.error(errorDuplicada);
+  toast("Error verificando número de factura existente", "err");
+  return;
+}
+
+if (facturaDuplicada && facturaDuplicada.length > 0){
+  numero_factura = await obtenerSiguienteNumeroFactura();
+  $("numero_factura").value = numero_factura;
+}
+      
       setStatus("Guardando factura...");
       try{
         const payloadConExtras = {
@@ -2107,6 +2202,7 @@ if (!concepto_recaudo){
         if ($("btn-abonos")) $("btn-abonos").disabled = false;
         setStatus("");
         toast("Factura guardada ✅", "ok");
+        await autocompletarNumeroFactura();
         // =============================
 // MARCAR EVOLUCION COMO FACTURADA
 // =============================
@@ -3284,10 +3380,11 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
     async function init(){
       try{
         $("year").textContent = new Date().getFullYear();
-        $("fecha").value = hoyISO();
-        if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
-        $("numero_factura").value = generarNumeroFactura();
-        if ($("pagada")) $("pagada").value = "si";
+$("fecha").value = hoyISO();
+if ($("abono_fecha")) $("abono_fecha").value = hoyISO();
+if ($("numero_factura")) $("numero_factura").value = "";
+await autocompletarNumeroFactura();
+if ($("pagada")) $("pagada").value = "si";
         if ($("referencia_pago")) $("referencia_pago").value = "";
         $("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
         $("btn-buscar").addEventListener("click", async ()=>{
