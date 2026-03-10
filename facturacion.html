@@ -1369,9 +1369,13 @@ if ((isFocused || filtro) && count > 0) {
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         const data = await resp.json();
         if (!data?.existe){
-          setHint("No encontrado (puedes digitar el nombre).");
-          return;
-        }
+  setHint("No encontrado (puedes digitar el nombre).");
+
+  // 🔹 cargar evoluciones aunque no esté en historia
+  await cargarEvolucionesPaciente(cedula);
+
+  return;
+}
         const h = data.historia || {};
         const nombre = (h["Nombre y apellido"] || "").trim();
         const epsHC  = (h["EPS_Paciente"] || "").trim();
