@@ -2944,10 +2944,11 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
       </td>
 
       <td>
-        ${
+                ${
           [
             p.diagnostico_secundario_1,
-            p.diagnostico_secundario_2
+            p.diagnostico_secundario_2,
+            p.diagnostico_secundario_3
           ]
           .filter(Boolean)
           .map(d => `${d.codigo} - ${d.nombre || ""}`)
@@ -3052,6 +3053,9 @@ if (_modalTomDxComplicacion && proc.diagnostico_complicacion) {
 
     if (proc.diagnostico_secundario_2) {
       await cargarDxSec(proc.diagnostico_secundario_2);
+    }
+        if (proc.diagnostico_secundario_3) {
+      await cargarDxSec(proc.diagnostico_secundario_3);
     }
 
     document.getElementById("proc_tipo_diagnostico_modal").value = proc.tipo_diagnostico || "";
@@ -3160,6 +3164,12 @@ if (_modalTomDxComplicacion) _modalTomDxComplicacion.clear();
   function agregarDxSecModal(){
     const cont = document.getElementById("proc_dx_sec_container_modal");
     const dxModal = document.getElementById("proc_dx_principal_modal");
+        const totalActual = cont.querySelectorAll("select").length;
+    if (totalActual >= 3) {
+      alert("⚠️ Solo puedes agregar máximo 3 diagnósticos secundarios.");
+      return;
+    }
+    
     if (!cont || !dxModal) return;
 
     const row = document.createElement("div");
@@ -3263,20 +3273,22 @@ if (mensaje) mensaje.style.display = "none";
     const dxCompVal = document.getElementById("proc_dx_complicacion_modal")?.value || "";
 const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
 
-    let diagnosticoSec1 = null;
-let diagnosticoSec2 = null;
+      let diagnosticoSec1 = null;
+    let diagnosticoSec2 = null;
+    let diagnosticoSec3 = null;
 
-const dxSecTemp = [];
+    const dxSecTemp = [];
 
-document.querySelectorAll("#proc_dx_sec_container_modal select").forEach(sel => {
-  const v = sel.value || "";
-  if (!v) return;
-  const obj = _safeParseJSON(v);
-  if (obj) dxSecTemp.push(obj);
-});
+    document.querySelectorAll("#proc_dx_sec_container_modal select").forEach(sel => {
+      const v = sel.value || "";
+      if (!v) return;
+      const obj = _safeParseJSON(v);
+      if (obj) dxSecTemp.push(obj);
+    });
 
-if (dxSecTemp[0]) diagnosticoSec1 = dxSecTemp[0];
-if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
+    if (dxSecTemp[0]) diagnosticoSec1 = dxSecTemp[0];
+    if (dxSecTemp[1]) diagnosticoSec2 = dxSecTemp[1];
+    if (dxSecTemp[2]) diagnosticoSec3 = dxSecTemp[2];
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
 
@@ -3322,6 +3334,7 @@ if (!via) {
   codcomplicacion: dxComplicacion?.codigo || "",
   diagnostico_secundario_1: diagnosticoSec1,
   diagnostico_secundario_2: diagnosticoSec2,
+  diagnostico_secundario_3: diagnosticoSec3,
   detalle: detalle,
 
   tipo_diagnostico: tipoDx,
@@ -3680,12 +3693,15 @@ const dxsArr = [];
 
 const s1 = p.diagnostico_secundario_1;
 const s2 = p.diagnostico_secundario_2;
+const s3 = p.diagnostico_secundario_3;
 
 const f1 = await fmtDx(s1);
 const f2 = await fmtDx(s2);
+const f3 = await fmtDx(s3);
 
 if (f1) dxsArr.push(`Dx secundarios 1: ${f1}`);
 if (f2) dxsArr.push(`Dx secundarios 2: ${f2}`);
+if (f3) dxsArr.push(`Dx secundarios 3: ${f3}`);
 
 const dxs = dxsArr.length ? dxsArr.join("<br>") : "—";
 
