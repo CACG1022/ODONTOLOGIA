@@ -3536,55 +3536,7 @@ if (procDrop) procDrop.style.display = "none";
     } else {
       init();
     }
- /* =====================================================
-   ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
-   (?paciente_cedula=)
-   ===================================================== */
-(function () {
-  const params = new URLSearchParams(window.location.search);
-  const cedula = params.get("paciente_cedula");
-
-  if (!cedula) return;
-
-  // Esperar a que TODO esté inicializado
-  window.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("paciente_cedula");
-    if (!input) {
-      console.warn("❌ Input paciente_cedula no encontrado");
-      return;
-    }
-
-    // Setear la cédula
-    input.value = cedula;
-
-    // ⏳ Esperar a que Supabase + listeners estén listos
-    setTimeout(() => {
-      if (typeof buscarPacienteEnHistoria === "function") {
-        buscarPacienteEnHistoria(true); // ← ESTA ES LA CLAVE
-      } else {
-        console.error("❌ buscarPacienteEnHistoria no existe");
-      }
-
-      // ✅ Restaurar foco si hubo re-render (cantidad / v-unit)
-      try{
-        const fr = state._focusRestore;
-        if(fr && fr.id_local && fr.k){
-          const row = tbody.querySelector(`tr[data-id-local="${fr.id_local}"]`);
-          if(row){
-            const inp = row.querySelector(`input[data-k="${fr.k}"]`);
-            if(inp){
-              inp.focus();
-              if(typeof fr.start === "number" && typeof fr.end === "number"){
-                inp.setSelectionRange(fr.start, fr.end);
-              }
-            }
-          }
-        }
-      }catch(e){}
-      state._focusRestore = null;
-    }, 600);
-  });
-})();
+ 
 
    async function cargarPlanDesdeSupabase() {
   // 1️⃣ Obtener cédula desde la URL o input
@@ -3946,41 +3898,6 @@ document
         return r;
       };
     })();
-/* =====================================================
-   ✅ AUTO-BÚSQUEDA FACTURACIÓN DESDE URL
-   (?paciente_cedula=)
-   ===================================================== */
-(function () {
-
-  const params = new URLSearchParams(window.location.search);
-  const cedula = params.get("paciente_cedula");
-
-  if (!cedula) return;
-
-  window.addEventListener("DOMContentLoaded", () => {
-
-    const input = document.getElementById("paciente_cedula");
-
-    if (!input){
-      console.warn("Input paciente_cedula no encontrado");
-      return;
-    }
-
-    input.value = cedula;
-
-    setTimeout(() => {
-
-      if (typeof buscarPacienteEnHistoria === "function"){
-        buscarPacienteEnHistoria(true);
-      } else {
-        console.error("buscarPacienteEnHistoria no existe");
-      }
-
-    }, 300);
-
-  });
-
-})();
     
 </script>
 <!-- MODAL FACTURAS GENERADAS -->
