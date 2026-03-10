@@ -1382,6 +1382,8 @@ if ((isFocused || filtro) && count > 0) {
           if ($("eps") && epsHC) $("eps").value = epsHC;
           if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
           setHint("✅ Encontrado");
+          // 🔹 Cargar evoluciones disponibles
+await cargarEvolucionesPaciente(cedula);
         } else {
           if ($("paciente_correo") && correo) $("paciente_correo").value = correo;
           setHint("Encontrado, pero sin nombre en historia.");
