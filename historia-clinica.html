@@ -1791,6 +1791,139 @@ function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#039;");
   }
+  function _valorInput(id){
+  const el = document.getElementById(id);
+  if (!el) return "";
+  return (el.value || "").trim();
+}
+
+function _textoSelect(id){
+  const el = document.getElementById(id);
+  if (!el) return "";
+  const opt = el.options?.[el.selectedIndex];
+  return (opt?.text || el.value || "").trim();
+}
+
+function _checksMarcados(name){
+  return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`))
+    .map(x => (x.value || "").trim())
+    .filter(Boolean);
+}
+
+function _siNoDesdeChecks(name){
+  const vals = _checksMarcados(name);
+  return vals.join(", ");
+}
+
+function _listaHTML(items){
+  const arr = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (!arr.length) return `<div class="muted">Sin información registrada.</div>`;
+  return `<ul>${arr.map(x => `<li>${escapeHtml(x)}</li>`).join("")}</ul>`;
+}
+
+function _filaPrint(label, valor){
+  return `
+    <tr>
+      <td class="print-k">${escapeHtml(label)}</td>
+      <td>${escapeHtml(valor || "—")}</td>
+    </tr>
+  `;
+}
+
+function _diagnosticosToHTML(){
+  const principalTexto = _valorInput("diag_principal_busqueda");
+  const principalWrap = document.getElementById("diag_principal_busqueda")?.parentElement;
+  let fechaPrincipal = "";
+
+  if (principalWrap) {
+    const posibles = Array.from(principalWrap.querySelectorAll("div"));
+    const fechaDiv = posibles.find(d => (d.textContent || "").includes("Fecha diagnóstico:"));
+    if (fechaDiv) {
+      fechaPrincipal = (fechaDiv.textContent || "").replace("Fecha diagnóstico:", "").trim();
+    }
+  }
+
+  let html = `
+    <h3>Diagnóstico odontológico</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>Tipo</th>
+          <th>Diagnóstico</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  html += `
+    <tr>
+      <td>Principal</td>
+      <td>${escapeHtml(principalTexto || "—")}</td>
+      <td>${escapeHtml(fechaPrincipal || "—")}</td>
+    </tr>
+  `;
+
+  const filasSec = Array.from(document.querySelectorAll("#lista_diagnosticos_secundarios tr"));
+  if (filasSec.length) {
+    filasSec.forEach((tr, i) => {
+      const diag = tr.querySelector('td:nth-child(1) input')?.value || "";
+      const fecha = tr.querySelector('td:nth-child(2) input')?.value || "";
+      html += `
+        <tr>
+          <td>Secundario ${i + 1}</td>
+          <td>${escapeHtml(diag || "—")}</td>
+          <td>${escapeHtml(fecha || "—")}</td>
+        </tr>
+      `;
+    });
+  } else {
+    html += `
+      <tr>
+        <td>Secundarios</td>
+        <td colspan="2">—</td>
+      </tr>
+    `;
+  }
+
+  html += `</tbody></table>`;
+  return html;
+}
+
+function _documentosToHTML(){
+  const lista = Array.isArray(documentos) ? documentos : [];
+  if (!lista.length) return `<h3>Consentimientos informados</h3><div class="muted">Sin documentos registrados.</div>`;
+
+  let html = `
+    <h3>Consentimientos informados</h3>
+    <table class="t">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Fecha</th>
+          <th>Tipo</th>
+          <th>Procedimiento</th>
+          <th>Profesional</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+  lista.forEach(d => {
+    html += `
+      <tr>
+        <td>${escapeHtml(d.id || "")}</td>
+        <td>${escapeHtml(_soloFechaYYYYMMDD(d.firmado_en || d.creado_en || d.fecha || ""))}</td>
+        <td>${escapeHtml(d.tipo || "")}</td>
+        <td>${escapeHtml(d.procedimiento || "")}</td>
+        <td>${escapeHtml(d.profesional || "")}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody></table>`;
+  return html;
+}
 
   // ==============================
   // ✅ PROCEDIMIENTOS DESDE SUPABASE
@@ -3388,12 +3521,19 @@ document.getElementById("diag_principal_busqueda").disabled = true;
     principal.codigo || "";
 
 }
-    // Mostrar fecha del diagnóstico principal
-if (principal.fecha) {
+   // Mostrar fecha del diagnóstico principal
+const inputDiagPrincipal = document.getElementById("diag_principal_busqueda");
+if (inputDiagPrincipal && inputDiagPrincipal.parentElement) {
+  const anterior = inputDiagPrincipal.parentElement.querySelector(".fecha-diagnostico-principal");
+  if (anterior) anterior.remove();
+}
+
+if (principal?.fecha) {
 
   const input = document.getElementById("diag_principal_busqueda");
 
   const fechaLabel = document.createElement("div");
+  fechaLabel.className = "fecha-diagnostico-principal";
   fechaLabel.style.fontSize = "13px";
   fechaLabel.style.color = "#6b7a90";
   fechaLabel.style.marginTop = "6px";
@@ -4277,21 +4417,126 @@ async function capturarOdontogramaPNG(){
 }
 
 async function imprimirHistoriaClinica(){
-  // Si quieres obligar a que tenga campos mínimos:
-  // if (!validarCamposObligatorios()) return;
 
-  // 1) Datos del formulario
-  const datos = obtenerDatosHistoriaClinica();
+  const datosBasicosHTML = `
+    <h3>Datos básicos del paciente</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("Número de identificación", _valorInput("paciente_numdoc"))}
+        ${_filaPrint("Tipo de identificación", _textoSelect("paciente_tipo_id"))}
+        ${_filaPrint("Nombres y apellidos", _valorInput("paciente_nombre"))}
+        ${_filaPrint("Fecha de nacimiento", _valorInput("paciente_nacimiento"))}
+        ${_filaPrint("Edad", _valorInput("paciente_edad"))}
+        ${_filaPrint("Lugar de expedición", _valorInput("paciente_lugardoc"))}
+        ${_filaPrint("Lugar de nacimiento", _valorInput("paciente_lugarnac"))}
+        ${_filaPrint("Dirección de residencia", _valorInput("paciente_direccion"))}
+        ${_filaPrint("Zona residencial", _textoSelect("zonaresidencial"))}
+        ${_filaPrint("País de origen", _textoSelect("pais_origen"))}
+        ${_filaPrint("País de residencia", _textoSelect("pais_residencia"))}
+        ${_filaPrint("Departamento", _textoSelect("departamento_codigo"))}
+        ${_filaPrint("Ciudad de residencia", _textoSelect("ciudad_codigo"))}
+        ${_filaPrint("EPS", _textoSelect("eps_codigo"))}
+        ${_filaPrint("Grupo sanguíneo", _textoSelect("gruposanguineo"))}
+        ${_filaPrint("Sexo", _textoSelect("sexo"))}
+        ${_filaPrint("Género", _textoSelect("genero"))}
+        ${_filaPrint("Incapacidad", _textoSelect("incapacidad"))}
+        ${_filaPrint("Pertenencia étnica", _textoSelect("pertenencia_etnica"))}
+        ${_filaPrint("Nivel educativo", _textoSelect("nivel_educativo"))}
+        ${_filaPrint("Ocupación", _textoSelect("ocupacion_codigo"))}
+        ${_filaPrint("Tipo de paciente", _textoSelect("tipo_paciente"))}
+        ${_filaPrint("Teléfono", _valorInput("paciente_tel"))}
+        ${_filaPrint("Celular", _valorInput("paciente_cel"))}
+        ${_filaPrint("Correo electrónico", _valorInput("paciente_email"))}
+        ${_filaPrint("Estado civil", _textoSelect("estado_civil"))}
+        ${_filaPrint("Hijos", _siNoDesdeChecks("hijos"))}
+      </tbody>
+    </table>
+  `;
 
-  // 2) Armar odontograma completo (igual a enviarAN8N)
+  const acudienteHTML = `
+    <h3>Datos del acudiente</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("Nombre del acompañante", _valorInput("padre_nombre"))}
+        ${_filaPrint("Nombre del responsable", _valorInput("madre_nombre"))}
+        ${_filaPrint("Teléfono del acompañante", _valorInput("padre_tel"))}
+        ${_filaPrint("Teléfono del responsable", _valorInput("madre_tel"))}
+      </tbody>
+    </table>
+  `;
+
+  const emergenciaHTML = `
+    <h3>En caso de emergencia avisar a</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("Nombres y apellidos", _valorInput("emergencia_nombre"))}
+        ${_filaPrint("Parentesco", _valorInput("emergencia_parentesco"))}
+        ${_filaPrint("Teléfono", _valorInput("emergencia_tel"))}
+        ${_filaPrint("Celular", _valorInput("emergencia_cel"))}
+      </tbody>
+    </table>
+  `;
+
+  const condicionesMarcadas = _checksMarcados("condiciones");
+  if (condicionesMarcadas.includes("Otra") && _valorInput("otra_cual")) {
+    condicionesMarcadas.push("Otra: " + _valorInput("otra_cual"));
+  }
+
+  const historiaMedicaHTML = `
+    <h3>Historia médica</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("¿Enfermedad grave actualmente o previa?", _siNoDesdeChecks("grave"))}
+        ${_filaPrint("¿Cuál?", _valorInput("grave_cual"))}
+        ${_filaPrint("Condiciones", condicionesMarcadas.join(", "))}
+        ${_filaPrint("¿Problemas de coagulación?", _siNoDesdeChecks("coagulacion"))}
+        ${_filaPrint("¿Toma anticoagulantes?", _siNoDesdeChecks("anticoagulantes"))}
+        ${_filaPrint("¿Toma medicamentos?", _siNoDesdeChecks("toma_medicamentos"))}
+        ${_filaPrint("¿Cuáles medicamentos?", _valorInput("medicamentos_cuales"))}
+        ${_filaPrint("Dosis y frecuencia", _valorInput("med_dosis"))}
+        ${_filaPrint("Alergia a medicamentos", _valorInput("alergia_meds"))}
+        ${_filaPrint("¿Toma bebidas alcohólicas?", _siNoDesdeChecks("alcohol"))}
+        ${_filaPrint("¿Fuma?", _siNoDesdeChecks("fuma"))}
+        ${_filaPrint("¿Consume drogas psicoactivas?", _siNoDesdeChecks("drogas"))}
+      </tbody>
+    </table>
+  `;
+
+  const soloMujeresHTML = `
+    <h3>Sólo para mujeres</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("¿Ha tenido embarazos y partos?", _siNoDesdeChecks("embarazos_partos"))}
+        ${_filaPrint("No. de hijos", _valorInput("numero_hijos"))}
+        ${_filaPrint("¿Actualmente está embarazada?", _siNoDesdeChecks("embarazada"))}
+        ${_filaPrint("Tiempo", _valorInput("tiempo_embarazo"))}
+        ${_filaPrint("¿Toma anticonceptivos?", _siNoDesdeChecks("anticonceptivos"))}
+        ${_filaPrint("¿Histerectomía o menopausia?", _siNoDesdeChecks("histerectomia_menopausia"))}
+      </tbody>
+    </table>
+  `;
+
+  const historiaOdontologicaHTML = `
+    <h3>Historia odontológica</h3>
+    <table class="t">
+      <tbody>
+        ${_filaPrint("Motivo de consulta odontológica", _valorInput("motivo_consulta"))}
+        ${_filaPrint("¿Presenta dolor en...?", _checksMarcados("dolor[]").join(", "))}
+        ${_filaPrint("Tratamientos recibidos", _checksMarcados("tratamientos").join(", "))}
+      </tbody>
+    </table>
+  `;
+
   const todosLosDientes = [
     18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28,
     48,47,46,45,44,43,42,41,31,32,33,34,35,36,37,38
   ];
+
   const odontogramaCompleto = {};
   todosLosDientes.forEach(num => {
     odontogramaCompleto[num] = { Mesial:"", Distal:"", Oclusal:"", Vestibular:"", Lingual:"", Palatino:"" };
   });
+
   Object.entries(reporte || {}).forEach(([diente, caras]) => {
     Object.entries(caras).forEach(([cara, preexistencia]) => {
       const region = obtenerRegion(diente, cara);
@@ -4299,166 +4544,132 @@ async function imprimirHistoriaClinica(){
     });
   });
 
-  // 3) (Opcional) capturar odontograma visual
-  const odontogramaImg = await capturarOdontogramaPNG(); // si no instalaste html2canvas, devuelve ""
-
-  // 4) Construir HTML imprimible
-  const paciente = (document.getElementById("paciente_nombre")?.value || "").trim();
-  const cedula   = (document.getElementById("paciente_numdoc")?.value || "").trim();
-  const fechaImp = new Date().toISOString().slice(0,10);
+  const fechaImpresion = new Date().toLocaleString("es-CO");
 
   const html = `
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Historia Clínica - ${escapeHtml(cedula)}</title>
+<meta charset="UTF-8">
+<title>Historia Clínica Odontológica</title>
 <style>
-  body{ font-family: system-ui, Segoe UI, Arial; color:#111; padding:18px; }
-  h1{ margin:0 0 8px; font-size:20px; }
-  h2{ margin:18px 0 10px; font-size:16px; }
-  h3{ margin:14px 0 8px; font-size:14px; }
-  .muted{ color:#666; font-size:12px; }
-  .top{ display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
-  .logo{ height:80px; object-fit:contain; }
-  .box{ border:1px solid #ddd; border-radius:10px; padding:12px; margin-top:10px; }
-  .t{ width:100%; border-collapse:collapse; font-size:12px; }
-  .t th,.t td{ border:1px solid #ddd; padding:8px; vertical-align:top; }
-  .t thead th{ background:#f3f6fb; }
-  .kv .k{ width:240px; font-weight:700; background:#fafafa; }
-  img.odon{ width:100%; max-width:900px; border:1px solid #ddd; border-radius:10px; }
+  body{
+    font-family: Arial, sans-serif;
+    color:#1f2937;
+    padding:24px;
+    font-size:13px;
+    line-height:1.4;
+  }
+  .header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+    border-bottom:2px solid #dbe5f1;
+    padding-bottom:14px;
+    margin-bottom:20px;
+  }
+  .logo{
+    height:90px;
+    object-fit:contain;
+  }
+  h1{
+    margin:0 0 8px 0;
+    color:#2a5d84;
+    font-size:24px;
+  }
+  h3{
+    margin:24px 0 10px 0;
+    color:#2a5d84;
+    border-bottom:1px solid #dbe5f1;
+    padding-bottom:6px;
+  }
+  .meta{
+    font-size:12px;
+    color:#475569;
+  }
+  .t{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:8px;
+  }
+  .t th, .t td{
+    border:1px solid #dbe5f1;
+    padding:8px;
+    vertical-align:top;
+    text-align:left;
+  }
+  .t thead tr{
+    background:#eef6ff;
+  }
+  .print-k{
+    width:280px;
+    background:#f8fbff;
+    font-weight:700;
+  }
+  .muted{
+    color:#64748b;
+    font-style:italic;
+  }
+  ul{
+    margin:8px 0 0 20px;
+    padding:0;
+  }
+  .page-break{
+    page-break-before: always;
+  }
   @media print{
     body{ padding:0; }
-    .noPrint{ display:none !important; }
-    .box{ break-inside:avoid; }
-    table{ break-inside:auto; }
-    tr{ break-inside:avoid; break-after:auto; }
   }
 </style>
 </head>
 <body>
 
-<div class="top">
-  <div>
-    <h1>Historia Clínica Odontológica</h1>
-    <div class="muted">
-      Paciente: <b>${escapeHtml(paciente)}</b> &nbsp;|&nbsp;
-      Identificación: <b>${escapeHtml(cedula)}</b> &nbsp;|&nbsp;
-      Fecha impresión: <b>${escapeHtml(fechaImp)}</b>
+  <div class="header">
+    <div>
+      <h1>Historia Clínica Odontológica</h1>
+      <div class="meta">
+        <div><b>Fecha de impresión:</b> ${escapeHtml(fechaImpresion)}</div>
+        <div><b>Paciente:</b> ${escapeHtml(_valorInput("paciente_nombre"))}</div>
+        <div><b>Identificación:</b> ${escapeHtml(_valorInput("paciente_numdoc"))}</div>
+      </div>
     </div>
+    <img class="logo" src="${LOGO_CLINICA}" alt="Logo Clínica">
   </div>
-  <img class="logo" src="${LOGO_CLINICA}" alt="Logo">
-</div>
 
-<div class="box">
-  <h2>Datos básicos</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombres y apellidos", datos.paciente_nombre)}
-      ${_tableRow("Edad", datos.paciente_edad)}
-      ${_tableRow("Tipo identificación", _siNo(datos.idtipo))}
-      ${_tableRow("No. documento", datos.paciente_numdoc)}
-      ${_tableRow("Lugar expedición", datos.paciente_lugardoc)}
-      ${_tableRow("Fecha nacimiento", datos.paciente_nacimiento)}
-      ${_tableRow("Lugar nacimiento", datos.paciente_lugarnac)}
-      ${_tableRow("Dirección", datos.paciente_direccion)}
-      ${_tableRow("Ciudad residencia", datos.Ciudad_de_Residencia)}
-      ${_tableRow("EPS", datos.EPS_Paciente)}
-      ${_tableRow("Ocupación", datos.paciente_ocupacion)}
-      ${_tableRow("Teléfono", datos.paciente_tel)}
-      ${_tableRow("Celular", datos.paciente_cel)}
-      ${_tableRow("Correo", datos.paciente_email)}
-      ${_tableRow("Estado civil", datos.paciente_estadocivil)}
-      ${_tableRow("Hijos", _siNo(datos.hijos))}
-    </tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>Acudiente</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombre padre", datos.padre_nombre)}
-      ${_tableRow("Teléfono padre", datos.padre_tel)}
-      ${_tableRow("EPS padre", datos.padre_eps)}
-      ${_tableRow("Tipo (padre)", datos.padre_tipo)}
-      ${_tableRow("Nombre madre", datos.madre_nombre)}
-      ${_tableRow("Teléfono madre", datos.madre_tel)}
-      ${_tableRow("EPS madre", datos.madre_eps)}
-      ${_tableRow("Tipo (madre)", datos.madre_tipo)}
-    </tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>Emergencia</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Nombre", datos.emergencia_nombre)}
-      ${_tableRow("Parentesco", datos.emergencia_parentesco)}
-      ${_tableRow("Teléfono", datos.emergencia_tel)}
-      ${_tableRow("Celular", datos.emergencia_cel)}
-    </tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>Historia médica</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Enfermedad grave", _siNo(datos.grave))}
-      ${_tableRow("¿Cuál?", datos.grave_cual)}
-      ${_tableRow("Condiciones", _siNo(datos.condiciones))}
-      ${_tableRow("Otra condición ¿Cuál?", datos.otra_cual)}
-      ${_tableRow("Coagulación", _siNo(datos.coagulacion))}
-      ${_tableRow("Anticoagulantes", _siNo(datos.anticoagulantes))}
-      ${_tableRow("Toma medicamentos", _siNo(datos.toma_medicamentos))}
-      ${_tableRow("Medicamentos ¿Cuáles?", datos.medicamentos_cuales)}
-      ${_tableRow("Dosis y frecuencia", datos.med_dosis)}
-      ${_tableRow("Alergia a medicamentos", datos.alergia_meds)}
-      ${_tableRow("Alcohol", _siNo(datos.alcohol))}
-      ${_tableRow("Fuma", _siNo(datos.fuma))}
-      ${_tableRow("Drogas", _siNo(datos.drogas))}
-    </tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>Historia odontológica</h2>
-  <table class="t kv">
-    <tbody>
-      ${_tableRow("Motivo consulta", datos.motivo_consulta)}
-      ${_tableRow("Dolor", _siNo(datos["dolor[]"]))}
-      ${_tableRow("Tratamientos recibidos", _siNo(datos.tratamientos))}
-    </tbody>
-  </table>
-</div>
-
-<div class="box">
-  <h2>Odontograma</h2>
-  ${odontogramaImg ? `<div style="margin:10px 0;"><img class="odon" src="${odontogramaImg}" alt="Odontograma"></div>` : ""}
-  ${_odontogramaToHTML(odontogramaCompleto)}
-</div>
-
-<div class="box">
+  ${datosBasicosHTML}
+  ${acudienteHTML}
+  ${emergenciaHTML}
+  ${historiaMedicaHTML}
+  ${soloMujeresHTML}
+  ${historiaOdontologicaHTML}
+  ${_diagnosticosToHTML()}
   ${_evolucionesToHTML(evoluciones)}
-</div>
+  ${_odontogramaToHTML(odontogramaCompleto)}
+  ${_documentosToHTML()}
 
 <script>
 (async function(){
   const imgs = Array.from(document.images || []);
-  const waits = imgs.map(img => img.complete ? Promise.resolve() : new Promise(r => { img.onload=r; img.onerror=r; }));
+  const waits = imgs.map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(res => { img.onload = res; img.onerror = res; });
+  });
   await Promise.all(waits);
-  setTimeout(() => window.print(), 200);
+  setTimeout(() => window.print(), 250);
 })();
 <\/script>
 
-</body></html>
-`;
+</body>
+</html>
+  `;
 
-  // 5) Abrir y imprimir
   const w = window.open("", "_blank");
+  if (!w) {
+    alert("⚠️ El navegador bloqueó la ventana emergente para imprimir.");
+    return;
+  }
+
   w.document.open();
   w.document.write(html);
   w.document.close();
