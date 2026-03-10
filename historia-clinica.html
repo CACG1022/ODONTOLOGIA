@@ -1254,10 +1254,21 @@ GUARDAR
     
 
     <!-- DIAGNÓSTICOS SECUNDARIOS -->
-    <div class="ctrl full">
-      <label>Diagnósticos secundarios</label>
-      <div id="lista_diagnosticos_secundarios"></div>
-    </div>
+<div class="ctrl full">
+  <label>Diagnósticos secundarios</label>
+
+  <table style="width:100%; border-collapse:collapse;">
+    <thead>
+      <tr style="background:#eef6ff;">
+        <th style="border:1px solid #e7edf5; padding:8px;">Diagnóstico</th>
+        <th style="border:1px solid #e7edf5; padding:8px; width:140px;">Fecha</th>
+      </tr>
+    </thead>
+
+    <tbody id="lista_diagnosticos_secundarios"></tbody>
+  </table>
+
+</div>
 
   </div>
 
@@ -3377,26 +3388,57 @@ document.getElementById("diag_principal_busqueda").disabled = true;
     principal.codigo || "";
 
 }
+    // Mostrar fecha del diagnóstico principal
+if (principal.fecha) {
+
+  const input = document.getElementById("diag_principal_busqueda");
+
+  const fechaLabel = document.createElement("div");
+  fechaLabel.style.fontSize = "13px";
+  fechaLabel.style.color = "#6b7a90";
+  fechaLabel.style.marginTop = "6px";
+
+  fechaLabel.textContent = "Fecha diagnóstico: " + principal.fecha;
+
+  input.parentElement.appendChild(fechaLabel);
+}
 
 // 🔹 DIAGNÓSTICOS SECUNDARIOS
 secundarios.forEach(sec => {
+
   const container = document.getElementById("lista_diagnosticos_secundarios");
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "diag-sec-item";
-  wrapper.dataset.codigo = sec.codigo || "";
-  wrapper.dataset.texto = sec.descripcion || "";
-  wrapper.style.marginBottom = "10px";
+  const tr = document.createElement("tr");
+
+  const tdDiag = document.createElement("td");
+  tdDiag.style.border = "1px solid #e7edf5";
+  tdDiag.style.padding = "8px";
 
   const input = document.createElement("input");
   input.type = "text";
   input.value = `${sec.codigo} - ${sec.descripcion}`;
   input.disabled = true;
+  input.style.width = "100%";
 
-  wrapper.appendChild(input);
-  container.appendChild(wrapper);
+  tdDiag.appendChild(input);
+
+  const tdFecha = document.createElement("td");
+  tdFecha.style.border = "1px solid #e7edf5";
+  tdFecha.style.padding = "8px";
+
+  const fechaInput = document.createElement("input");
+  fechaInput.type = "date";
+  fechaInput.value = sec.fecha || "";
+  fechaInput.disabled = true;
+  fechaInput.style.width = "100%";
+
+  tdFecha.appendChild(fechaInput);
+
+  tr.appendChild(tdDiag);
+  tr.appendChild(tdFecha);
+
+  container.appendChild(tr);
 });
-
       
       // ✅ cargar historia / odontograma / evoluciones SIEMPRE
       document.getElementById("paciente_nombre").value = h["Nombre y apellido"] ?? "";
