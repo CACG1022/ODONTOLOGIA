@@ -3446,6 +3446,42 @@ if ($("pagada")) $("pagada").value = "si";
         }
         $("btn-logout").addEventListener("click", cerrarSesion);
         $("paciente_cedula").addEventListener("input", onCedulaInput);
+
+        // ===============================
+// LEER CEDULA DESDE LA URL
+// ===============================
+const params = new URLSearchParams(window.location.search);
+const cedulaURL = params.get("paciente_cedula");
+
+if (cedulaURL) {
+
+  const input = document.getElementById("paciente_cedula");
+
+  input.value = cedulaURL;
+
+  // Ejecutar búsqueda automática
+  buscarPacienteEnHistoria(true);
+
+}
+        // ===============================
+// LEER CÉDULA DESDE LA URL
+// ===============================
+function cargarCedulaDesdeURL(){
+
+  const params = new URLSearchParams(window.location.search);
+  const cedula = params.get("paciente_cedula");
+
+  if(!cedula) return;
+
+  const input = document.getElementById("paciente_cedula");
+
+  input.value = cedula;
+
+  // 🔹 Ejecutar búsqueda manualmente
+  buscarPacienteEnHistoria(true);
+
+}
+        
         $("paciente_cedula").addEventListener("blur", () => {
   const ced = $("paciente_cedula").value.trim();
   if(ced) cargarEvolucionesPaciente(ced);
