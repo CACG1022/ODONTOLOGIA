@@ -3898,47 +3898,13 @@ document
         return r;
       };
     })();
+
     
-</script>
-<!-- MODAL FACTURAS GENERADAS -->
-<div class="modal" id="modal-factoa">
-  <div class="modal-card" style="width:95%;height:90vh;max-width:none;">
-    
-    <div class="modal-head">
-      <div class="modal-title">Facturas del paciente</div>
-
-      <div class="row-actions">
-        <button class="btn small" id="btn-max-factoa">⛶ Maximizar</button>
-        <button class="btn small" id="btn-cerrar-factoa">Cerrar</button>
-      </div>
-    </div>
-
-    <div class="modal-body" style="height:100%;padding:0;">
-      <iframe 
-        id="iframe-factoa"
-        style="width:100%;height:100%;border:none;">
-      </iframe>
-    </div>
-
-  </div>
-</div>
-</body>
-</html>
-
-
-
-
-
-
-
-
-
-
 <!-- =========================================================
      FACTURACIÓN ELECTRÓNICA (CORS SAFE - FORM POST)
      NO modifica ni interfiere con lógica existente
      ========================================================= -->
-<script>
+
 
 function enviarFacturacionElectronica(){
   try{
@@ -3981,7 +3947,7 @@ function enviarFacturacionElectronica(){
     alert("Error enviando a facturación electrónica");
   }
 }
-</script>
+
 
 
 
@@ -3989,7 +3955,7 @@ function enviarFacturacionElectronica(){
      FIX: AUTOCARGA DESDE ?paciente_cedula=XXXX (NO rompe nada)
      + OVERRIDE: FACTURACIÓN ELECTRÓNICA SIN PESTAÑAS Y CON PAYLOAD COMPLETO
      ========================================================= -->
-<script>
+
 (function(){
   // --------- Helper: DOM ready ----------
   function onReady(fn){
@@ -4236,5 +4202,40 @@ function enviarFacturacionElectronica(){
   });
 })();
 </script>
+<!-- MODAL FACTURAS GENERADAS -->
+<div class="modal" id="modal-factoa">
+  <div class="modal-card" style="width:95%;height:90vh;max-width:none;">
+    
+    <div class="modal-head">
+      <div class="modal-title">Facturas del paciente</div>
+
+      <div class="row-actions">
+        <button class="btn small" id="btn-max-factoa">⛶ Maximizar</button>
+        <button class="btn small" id="btn-cerrar-factoa">Cerrar</button>
+      </div>
+    </div>
+
+    <div class="modal-body" style="height:100%;padding:0;">
+      <iframe 
+        id="iframe-factoa"
+        style="width:100%;height:100%;border:none;">
+      </iframe>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
 
 
