@@ -87,7 +87,7 @@ a{
 text-decoration:none;
 color:#2c6fa3;
 font-weight:600;
-display:inline-block;
+display:block;
 margin-top:6px;
 }
 
@@ -99,8 +99,6 @@ text-align:center;
 }
 
 .download{
-display:block;
-margin-top:8px;
 color:#1f6aa5;
 font-weight:700;
 cursor:pointer;
@@ -185,7 +183,12 @@ alert("Error consultando archivos")
 
 function descargar(key){
 
-const url=`${webhookDescarga}?key=${encodeURIComponent(key)}`
+if(!key){
+alert("Archivo inválido")
+return
+}
+
+const url = `${webhookDescarga}?key=${encodeURIComponent(key)}`
 
 window.open(url,"_blank")
 
