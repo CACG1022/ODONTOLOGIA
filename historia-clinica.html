@@ -1776,6 +1776,62 @@ style="flex:1;border:none;width:100%;"
 
 </div>
 </div>
+
+ <!-- ============================= -->
+<!-- MODAL CARGAR DOCUMENTOS -->
+<!-- ============================= -->
+
+<div id="modalCargarDocumentos" style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.6);
+z-index:1000006;
+padding:20px;
+">
+
+<div style="
+background:#fff;
+width:95%;
+height:95%;
+margin:auto;
+border-radius:14px;
+overflow:hidden;
+display:flex;
+flex-direction:column;
+">
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:12px 16px;
+background:#eef6ff;
+border-bottom:1px solid #e7edf5;
+">
+
+<b style="color:#2a5d84;">Cargar documentos</b>
+
+<button onclick="cerrarModalCargarDocumentos()" style="
+background:#0D47A1;
+border:none;
+color:white;
+padding:8px 12px;
+border-radius:8px;
+cursor:pointer;
+">
+Cerrar ✕
+</button>
+
+</div>
+
+<iframe
+id="iframeCargarDocumentos"
+style="flex:1;border:none;width:100%;"
+></iframe>
+
+</div>
+</div> 
   
 </div>
 
@@ -1854,9 +1910,17 @@ function cerrarModalDocumentos(){
   document.getElementById("modalDocumentos").style.display = "none";
   document.getElementById("iframeDocumentos").src = "";
 }
+function cerrarModalCargarDocumentos(){
+  document.getElementById("modalCargarDocumentos").style.display = "none";
+  document.getElementById("iframeCargarDocumentos").src = "";
+}
 function cargarDocumentosPaciente(){
 
-  window.open("https://cacg1022.github.io/ODONTOLOGIA/documentos.html","_blank");
+  const iframe = document.getElementById("iframeCargarDocumentos");
+
+  iframe.src = "https://cacg1022.github.io/ODONTOLOGIA/documentos.html";
+
+  document.getElementById("modalCargarDocumentos").style.display = "block";
 
 }
   function irAgendamiento() { window.open(URL_AGENDAMIENTO, "_blank"); }
