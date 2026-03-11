@@ -4,103 +4,192 @@
 <meta charset="UTF-8">
 <title>Visor de Archivos Clínicos</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 
+*{
+box-sizing:border-box;
+}
+
 body{
 font-family:'Inter',sans-serif;
-background:#f3f6f9;
 margin:0;
-}
-
-header{
-background:#2c6fa3;
-color:white;
-padding:18px;
-font-size:22px;
-font-weight:600;
-}
-
-.container{
-max-width:1100px;
-margin:auto;
-padding:30px;
-}
-
-.search{
-display:flex;
-gap:10px;
-margin-bottom:30px;
-}
-
-input{
-padding:12px;
-font-size:16px;
-border-radius:8px;
-border:1px solid #ddd;
-width:250px;
-}
-
-button{
-background:#2c6fa3;
-color:white;
-border:none;
-padding:12px 20px;
-border-radius:8px;
-cursor:pointer;
-}
-
-.section{
-margin-bottom:40px;
-}
-
-.section h2{
-margin-bottom:15px;
+background:white;
 color:#1f2a37;
 }
 
-.grid{
-display:grid;
-grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
-gap:20px;
+/* HEADER */
+
+header{
+background:#0f2a44;
+color:white;
+padding:22px 40px;
+font-size:22px;
+font-weight:600;
+letter-spacing:.3px;
+box-shadow:0 4px 20px rgba(0,0,0,0.08);
 }
 
-.card{
-background:white;
-border-radius:12px;
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-padding:15px;
+/* CONTENEDOR */
+
+.container{
+max-width:1200px;
+margin:auto;
+padding:40px;
 }
+
+/* BUSCADOR */
+
+.search{
+display:flex;
+gap:12px;
+margin-bottom:50px;
+align-items:center;
+}
+
+.search input{
+padding:14px 16px;
+font-size:15px;
+border-radius:10px;
+border:1px solid #d9e2ec;
+width:260px;
+transition:.2s;
+}
+
+.search input:focus{
+outline:none;
+border-color:#1b3d5a;
+box-shadow:0 0 0 3px rgba(27,61,90,0.1);
+}
+
+.search button{
+background:#0f2a44;
+color:white;
+border:none;
+padding:13px 26px;
+border-radius:10px;
+cursor:pointer;
+font-weight:600;
+transition:.2s;
+}
+
+.search button:hover{
+background:#163a5c;
+}
+
+/* SECCIONES */
+
+.section{
+margin-bottom:60px;
+}
+
+.section h2{
+font-size:20px;
+margin-bottom:20px;
+color:#0f2a44;
+font-weight:600;
+}
+
+/* GRID */
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
+gap:25px;
+}
+
+/* TARJETAS */
+
+.card{
+
+background:rgba(255,255,255,0.65);
+
+backdrop-filter:blur(12px);
+-webkit-backdrop-filter:blur(12px);
+
+border:1px solid rgba(0,0,0,0.06);
+
+border-radius:14px;
+
+padding:20px;
+
+box-shadow:0 10px 30px rgba(0,0,0,0.08);
+
+transition:.25s;
+
+}
+
+.card:hover{
+
+transform:translateY(-4px);
+
+box-shadow:0 15px 35px rgba(0,0,0,0.12);
+
+}
+
+/* IMAGEN */
 
 .card img{
 width:100%;
-border-radius:8px;
+border-radius:10px;
+margin-bottom:10px;
 }
+
+/* NOMBRE ARCHIVO */
 
 .file{
 font-size:14px;
-margin-top:10px;
+margin-top:5px;
+font-weight:500;
+color:#1f2a37;
 }
 
-a{
-text-decoration:none;
-color:#2c6fa3;
+/* BOTONES */
+
+a.download{
+
+display:inline-block;
+
+margin-top:10px;
+
+color:#0f2a44;
+
 font-weight:600;
-display:block;
-margin-top:6px;
+
+font-size:14px;
+
 cursor:pointer;
+
+text-decoration:none;
+
 }
+
+a.download:hover{
+text-decoration:underline;
+}
+
+/* PDF / DOC */
 
 .pdf{
-background:#f9fafb;
-padding:20px;
-border-radius:10px;
 text-align:center;
+}
+
+.pdf-icon{
+font-size:38px;
+margin-bottom:10px;
+}
+
+/* LOADING */
+
+.loading{
+opacity:.6;
+font-style:italic;
 }
 
 </style>
 </head>
+
 
 <body>
 
@@ -108,22 +197,29 @@ text-align:center;
 Visor de Archivos Clínicos
 </header>
 
+
 <div class="container">
 
 <div class="search">
+
 <input id="doc" placeholder="Documento del paciente">
+
 <button onclick="buscar()">Buscar</button>
+
 </div>
+
 
 <div class="section">
 <h2>Radiografías</h2>
 <div id="radiografias" class="grid"></div>
 </div>
 
+
 <div class="section">
 <h2>Fotografías</h2>
 <div id="fotografias" class="grid"></div>
 </div>
+
 
 <div class="section">
 <h2>Documentos</h2>
@@ -133,10 +229,13 @@ Visor de Archivos Clínicos
 </div>
 
 
+
 <script>
 
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
+
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
+
 
 
 async function buscar(){
@@ -144,13 +243,16 @@ async function buscar(){
 const doc=document.getElementById("doc").value
 
 if(!doc){
-alert("Ingrese documento")
+
+alert("Ingrese documento del paciente")
 return
+
 }
 
-document.getElementById("radiografias").innerHTML="Cargando..."
-document.getElementById("fotografias").innerHTML="Cargando..."
-document.getElementById("documentos").innerHTML="Cargando..."
+document.getElementById("radiografias").innerHTML='<div class="loading">Cargando...</div>'
+document.getElementById("fotografias").innerHTML='<div class="loading">Cargando...</div>'
+document.getElementById("documentos").innerHTML='<div class="loading">Cargando...</div>'
+
 
 try{
 
@@ -172,30 +274,18 @@ alert("Error consultando archivos")
 
 
 
-function extraerKey(url){
-
-const partes=url.split("/dentova/")
-
-if(partes.length<2) return null
-
-return partes[1]
-
-}
-
-
-
-function descargarArchivo(url){
-
-const key=extraerKey(url)
+function descargar(key){
 
 if(!key){
-alert("No se pudo obtener la key")
+
+alert("No se encontró la ruta del archivo")
 return
+
 }
 
-const link=webhookDescarga+"?key="+encodeURIComponent(key)
+const url = webhookDescarga + "?key=" + encodeURIComponent(key)
 
-window.open(link,"_blank")
+window.open(url,"_blank")
 
 }
 
@@ -216,43 +306,77 @@ cont.innerHTML=""
 
 lista.forEach(file=>{
 
-let html=""
+/* IMAGEN */
 
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
-html=`
+cont.innerHTML+=`
+
 <div class="card">
+
 <img src="${file.url}">
+
 <div class="file">${file.nombre}</div>
-<a onclick="descargarArchivo('${file.url}')">Descargar</a>
+
+<a class="download" onclick="descargar('${file.key}')">
+
+Descargar
+
+</a>
+
 </div>
+
 `
 
 }
+
+/* PDF */
 
 else if(file.nombre.match(/\.pdf$/i)){
 
-html=`
+cont.innerHTML+=`
+
 <div class="card pdf">
-📄 ${file.nombre}<br><br>
-<a onclick="descargarArchivo('${file.url}')">Descargar PDF</a>
+
+<div class="pdf-icon">📄</div>
+
+<div class="file">${file.nombre}</div>
+
+<a class="download" onclick="descargar('${file.key}')">
+
+Descargar PDF
+
+</a>
+
 </div>
+
 `
 
 }
+
+/* OTROS */
 
 else{
 
-html=`
+cont.innerHTML+=`
+
 <div class="card pdf">
-📁 ${file.nombre}<br><br>
-<a onclick="descargarArchivo('${file.url}')">Descargar archivo</a>
+
+<div class="pdf-icon">📁</div>
+
+<div class="file">${file.nombre}</div>
+
+<a class="download" onclick="descargar('${file.key}')">
+
+Descargar archivo
+
+</a>
+
 </div>
+
 `
 
 }
-
-cont.innerHTML+=html
 
 })
 
