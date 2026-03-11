@@ -15,15 +15,15 @@ margin:0;
 }
 
 header{
-background:#1f6aa5;
+background:#2c6fa3;
 color:white;
-padding:20px;
+padding:18px;
 font-size:22px;
 font-weight:600;
 }
 
 .container{
-max-width:1200px;
+max-width:1100px;
 margin:auto;
 padding:30px;
 }
@@ -43,7 +43,7 @@ width:250px;
 }
 
 button{
-background:#1f6aa5;
+background:#2c6fa3;
 color:white;
 border:none;
 padding:12px 20px;
@@ -85,7 +85,7 @@ margin-top:10px;
 
 a{
 text-decoration:none;
-color:#1f6aa5;
+color:#2c6fa3;
 font-weight:600;
 }
 
@@ -109,11 +109,8 @@ Visor de Archivos Clínicos
 <div class="container">
 
 <div class="search">
-
 <input id="doc" placeholder="Documento del paciente">
-
-<button onclick="cargar()">Buscar</button>
-
+<button onclick="buscar()">Buscar</button>
 </div>
 
 
@@ -138,10 +135,9 @@ Visor de Archivos Clínicos
 
 <script>
 
-const endpoint="http://31.97.133.62:9000/dentova/pacientes"
+const webhook="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
 
-
-async function cargar(){
+async function buscar(){
 
 const doc=document.getElementById("doc").value
 
@@ -150,59 +146,63 @@ alert("Ingrese documento")
 return
 }
 
-cargarTipo("radiografias",doc)
-cargarTipo("fotografias",doc)
-cargarTipo("documentos",doc)
+document.getElementById("radiografias").innerHTML="Cargando..."
+document.getElementById("fotografias").innerHTML="Cargando..."
+document.getElementById("documentos").innerHTML="Cargando..."
+
+try{
+
+const res=await fetch(`${webhook}?documento=${doc}`)
+const data=await res.json()
+
+mostrar("radiografias",data.radiografias)
+mostrar("fotografias",data.fotografias)
+mostrar("documentos",data.documentos)
+
+}catch(e){
+
+console.error(e)
+alert("Error consultando archivos")
+
+}
 
 }
 
 
-async function cargarTipo(tipo,doc){
+
+function mostrar(tipo,lista){
 
 const cont=document.getElementById(tipo)
 
-cont.innerHTML="Cargando..."
+if(!lista || lista.length==0){
 
-try{
+cont.innerHTML="Sin archivos"
+return
 
-const url=`${endpoint}/${doc}/${tipo}`
-
-const res=await fetch(url)
-
-const text=await res.text()
-
-const parser=new DOMParser()
-
-const xml=parser.parseFromString(text,"text/xml")
-
-const files=xml.querySelectorAll("Key")
+}
 
 cont.innerHTML=""
 
-files.forEach(file=>{
+lista.forEach(file=>{
 
-const name=file.textContent.split("/").pop()
-
-const link=`${endpoint}/${file.textContent}`
-
-if(name.match(/\.(jpg|png|jpeg|webp)$/i)){
+if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 cont.innerHTML+=`
 <div class="card">
-<img src="${link}">
-<div class="file">${name}</div>
-<a href="${link}" target="_blank">Abrir</a>
+<img src="${file.url}">
+<div class="file">${file.nombre}</div>
+<a href="${file.url}" target="_blank">Abrir</a>
 </div>
 `
 
 }
 
-else if(name.match(/\.pdf$/i)){
+else if(file.nombre.match(/\.pdf$/i)){
 
 cont.innerHTML+=`
 <div class="card pdf">
-📄 ${name}<br><br>
-<a href="${link}" target="_blank">Ver documento</a>
+📄 ${file.nombre}<br><br>
+<a href="${file.url}" target="_blank">Ver documento</a>
 </div>
 `
 
@@ -212,21 +212,14 @@ else{
 
 cont.innerHTML+=`
 <div class="card pdf">
-📁 ${name}<br><br>
-<a href="${link}" target="_blank">Descargar</a>
+📁 ${file.nombre}<br><br>
+<a href="${file.url}" target="_blank">Descargar</a>
 </div>
 `
 
 }
 
 })
-
-}
-catch(e){
-
-cont.innerHTML="Sin archivos"
-
-}
 
 }
 
