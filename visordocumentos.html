@@ -8,9 +8,7 @@
 
 <style>
 
-*{
-box-sizing:border-box;
-}
+*{box-sizing:border-box;}
 
 body{
 font-family:'Inter',sans-serif;
@@ -102,41 +100,25 @@ gap:25px;
 /* TARJETAS */
 
 .card{
-
 background:rgba(255,255,255,0.65);
-
 backdrop-filter:blur(12px);
--webkit-backdrop-filter:blur(12px);
-
 border:1px solid rgba(0,0,0,0.06);
-
 border-radius:14px;
-
 padding:20px;
-
 box-shadow:0 10px 30px rgba(0,0,0,0.08);
-
 transition:.25s;
-
 }
 
 .card:hover{
-
 transform:translateY(-4px);
-
 box-shadow:0 15px 35px rgba(0,0,0,0.12);
-
 }
-
-/* IMAGEN */
 
 .card img{
 width:100%;
 border-radius:10px;
 margin-bottom:10px;
 }
-
-/* NOMBRE ARCHIVO */
 
 .file{
 font-size:14px;
@@ -145,31 +127,19 @@ font-weight:500;
 color:#1f2a37;
 }
 
-/* BOTONES */
-
-a.download{
-
+.download{
 display:inline-block;
-
 margin-top:10px;
-
 color:#0f2a44;
-
 font-weight:600;
-
 font-size:14px;
-
 cursor:pointer;
-
 text-decoration:none;
-
 }
 
-a.download:hover{
+.download:hover{
 text-decoration:underline;
 }
-
-/* PDF / DOC */
 
 .pdf{
 text-align:center;
@@ -179,8 +149,6 @@ text-align:center;
 font-size:38px;
 margin-bottom:10px;
 }
-
-/* LOADING */
 
 .loading{
 opacity:.6;
@@ -196,7 +164,6 @@ font-style:italic;
 <header>
 Visor de Archivos Clínicos
 </header>
-
 
 <div class="container">
 
@@ -214,12 +181,10 @@ Visor de Archivos Clínicos
 <div id="radiografias" class="grid"></div>
 </div>
 
-
 <div class="section">
 <h2>Fotografías</h2>
 <div id="fotografias" class="grid"></div>
 </div>
-
 
 <div class="section">
 <h2>Documentos</h2>
@@ -229,13 +194,10 @@ Visor de Archivos Clínicos
 </div>
 
 
-
 <script>
 
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
-
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
-
 
 
 async function buscar(){
@@ -243,16 +205,13 @@ async function buscar(){
 const doc=document.getElementById("doc").value
 
 if(!doc){
-
 alert("Ingrese documento del paciente")
 return
-
 }
 
 document.getElementById("radiografias").innerHTML='<div class="loading">Cargando...</div>'
 document.getElementById("fotografias").innerHTML='<div class="loading">Cargando...</div>'
 document.getElementById("documentos").innerHTML='<div class="loading">Cargando...</div>'
-
 
 try{
 
@@ -273,22 +232,17 @@ alert("Error consultando archivos")
 }
 
 
-
 function descargar(key){
 
 if(!key){
-
 alert("No se encontró la ruta del archivo")
 return
-
 }
 
 const url = webhookDescarga + "?key=" + encodeURIComponent(key)
-
 window.open(url,"_blank")
 
 }
-
 
 
 function mostrar(tipo,lista){
@@ -296,17 +250,13 @@ function mostrar(tipo,lista){
 const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
-
 cont.innerHTML="Sin archivos"
 return
-
 }
 
 cont.innerHTML=""
 
 lista.forEach(file=>{
-
-/* IMAGEN */
 
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
@@ -319,9 +269,7 @@ cont.innerHTML+=`
 <div class="file">${file.nombre}</div>
 
 <a class="download" onclick="descargar('${file.key}')">
-
 Descargar
-
 </a>
 
 </div>
@@ -329,8 +277,6 @@ Descargar
 `
 
 }
-
-/* PDF */
 
 else if(file.nombre.match(/\.pdf$/i)){
 
@@ -343,9 +289,7 @@ cont.innerHTML+=`
 <div class="file">${file.nombre}</div>
 
 <a class="download" onclick="descargar('${file.key}')">
-
 Descargar PDF
-
 </a>
 
 </div>
@@ -353,8 +297,6 @@ Descargar PDF
 `
 
 }
-
-/* OTROS */
 
 else{
 
@@ -367,9 +309,7 @@ cont.innerHTML+=`
 <div class="file">${file.nombre}</div>
 
 <a class="download" onclick="descargar('${file.key}')">
-
 Descargar archivo
-
 </a>
 
 </div>
@@ -379,6 +319,28 @@ Descargar archivo
 }
 
 })
+
+}
+
+
+
+/* ----------------------------- */
+/* AUTOCARGA DESDE URL */
+/* ----------------------------- */
+
+window.onload = function(){
+
+const params = new URLSearchParams(window.location.search)
+
+const doc = params.get("doc")
+
+if(doc){
+
+document.getElementById("doc").value = doc
+
+buscar()
+
+}
 
 }
 
