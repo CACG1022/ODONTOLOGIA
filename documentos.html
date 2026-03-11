@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DENTOVA · Gestión de Documentos Clínicos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+body{
+    font-family: 'Inter', sans-serif;
+    background:#f4f7fb;
+    margin:0;
+}
+header{
+    background:#0f4c81;
+    color:white;
+    padding:20px 40px;
+    font-size:22px;
+    font-weight:600;
+}
+.container{
+    max-width:1100px;
+    margin:auto;
+    padding:30px;
+}
+.card{
+    background:white;
+    border-radius:10px;
+    padding:25px;
+    margin-bottom:25px;
+    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+}
+h2{
+    margin-top:0;
+    color:#0f4c81;
+}
+.grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:20px;
+}
+input,select,textarea{
+    width:100%;
+    padding:10px;
+    border-radius:6px;
+    border:1px solid #d8dee9;
+    font-size:14px;
+}
+textarea{
+    resize:vertical;
+}
+button{
+    background:#0f4c81;
+    color:white;
+    border:none;
+    padding:12px 20px;
+    border-radius:6px;
+    font-weight:600;
+    cursor:pointer;
+}
+.upload-area{
+    border:2px dashed #0f4c81;
+    padding:40px;
+    text-align:center;
+    border-radius:10px;
+    background:#f9fbff;
+}
+.file-list{
+    margin-top:20px;
+}
+.file-item{
+    padding:10px;
+    border-bottom:1px solid #eee;
+}
+</style>
+</head>
+
+<body>
+
+<header>DENTOVA · Documentos Clínicos</header>
+
+<div class="container">
+
+<div class="card">
+<h2>Información del Paciente</h2>
+
+<div class="grid">
+
+<div>
+<label>Documento paciente</label>
+<input id="docPaciente" placeholder="1022956631">
+</div>
+
+<div>
+<label>Nombre paciente</label>
+<input id="nombrePaciente">
+</div>
+
+<div>
+<label>Profesional</label>
+<input id="profesional">
+</div>
+
+<div>
+<label>Tipo documento</label>
+<select id="tipoDoc">
+<option>Radiografía</option>
+<option>Fotografía</option>
+<option>Consentimiento</option>
+<option>Examen diagnóstico</option>
+<option>Documento clínico</option>
+</select>
+</div>
+
+</div>
+
+<div style="margin-top:15px;">
+<label>Observaciones</label>
+<textarea id="obs"></textarea>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<h2>Cargar Archivo</h2>
+
+<div class="upload-area">
+<input type="file" id="fileInput" multiple>
+<p>Selecciona radiografías, fotografías o documentos</p>
+</div>
+
+<div class="file-list" id="fileList"></div>
+
+</div>
+
+<div class="card">
+<h2>Biblioteca de Documentos</h2>
+<div id="biblioteca"></div>
+</div>
+
+</div>
+
+
+<script>
+
+let archivos = [];
+
+document.getElementById("fileInput").addEventListener("change",function(){
+
+    const lista = document.getElementById("fileList");
+
+    for(let file of this.files){
+
+        archivos.push(file)
+
+        let div=document.createElement("div")
+        div.className="file-item"
+        div.innerText=file.name
+
+        lista.appendChild(div)
+    }
+
+})
+
+function guardar(){
+
+    const doc=document.getElementById("docPaciente").value
+    const nombre=document.getElementById("nombrePaciente").value
+    const tipo=document.getElementById("tipoDoc").value
+
+    const biblioteca=document.getElementById("biblioteca")
+
+    archivos.forEach(file=>{
+
+        let item=document.createElement("div")
+        item.className="file-item"
+
+        item.innerHTML=`
+        <b>${file.name}</b><br>
+        Paciente: ${nombre} (${doc})<br>
+        Tipo: ${tipo}
+        `
+
+        biblioteca.appendChild(item)
+
+    })
+
+    archivos=[]
+    document.getElementById("fileList").innerHTML=""
+
+}
+
+let btn=document.createElement("button")
+btn.innerText="Guardar documentos"
+btn.onclick=guardar
+
+document.querySelector(".upload-area").appendChild(btn)
+
+</script>
+
+</body>
+</html>
