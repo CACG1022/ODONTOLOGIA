@@ -3,98 +3,128 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<title>DENTOVA · Documentos Clínicos</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DENTOVA · Gestión de Documentos Clínicos</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
 <style>
+
 body{
-    font-family: 'Inter', sans-serif;
-    background:#f4f7fb;
-    margin:0;
+font-family: Arial, Helvetica, sans-serif;
+background:#f4f7fb;
+margin:0;
 }
+
 header{
-    background:#0f4c81;
-    color:white;
-    padding:20px 40px;
-    font-size:22px;
-    font-weight:600;
+background:#1f4e79;
+color:white;
+padding:18px;
+font-size:20px;
+font-weight:bold;
 }
+
 .container{
-    max-width:1100px;
-    margin:auto;
-    padding:30px;
+max-width:900px;
+margin:auto;
+padding:30px;
 }
+
 .card{
-    background:white;
-    border-radius:10px;
-    padding:25px;
-    margin-bottom:25px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.08);
+background:white;
+padding:25px;
+border-radius:10px;
+box-shadow:0 3px 12px rgba(0,0,0,0.1);
+margin-bottom:25px;
 }
+
 h2{
-    margin-top:0;
-    color:#0f4c81;
+margin-top:0;
+color:#1f4e79;
 }
+
 .grid{
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    gap:20px;
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:15px;
 }
+
 input,select,textarea{
-    width:100%;
-    padding:10px;
-    border-radius:6px;
-    border:1px solid #d8dee9;
-    font-size:14px;
+width:100%;
+padding:10px;
+border:1px solid #ccc;
+border-radius:6px;
+font-size:14px;
 }
+
 textarea{
-    resize:vertical;
+resize:vertical;
 }
+
+.file-box{
+border:2px dashed #9fb7d6;
+padding:35px;
+text-align:center;
+border-radius:10px;
+background:#f9fbff;
+}
+
 button{
-    background:#0f4c81;
-    color:white;
-    border:none;
-    padding:12px 20px;
-    border-radius:6px;
-    font-weight:600;
-    cursor:pointer;
+background:#1f4e79;
+color:white;
+border:none;
+padding:12px 25px;
+border-radius:6px;
+font-size:15px;
+cursor:pointer;
 }
-.upload-area{
-    border:2px dashed #0f4c81;
-    padding:40px;
-    text-align:center;
-    border-radius:10px;
-    background:#f9fbff;
+
+button:hover{
+background:#163a5c;
 }
-.file-list{
-    margin-top:20px;
+
+.progress{
+margin-top:15px;
+height:10px;
+background:#e2e8f0;
+border-radius:5px;
+overflow:hidden;
 }
-.file-item{
-    padding:10px;
-    border-bottom:1px solid #eee;
+
+.progress-bar{
+height:100%;
+width:0%;
+background:#2ecc71;
 }
+
+.msg{
+margin-top:15px;
+font-weight:bold;
+}
+
 </style>
 </head>
 
 <body>
 
-<header>DENTOVA · Documentos Clínicos</header>
+<header>
+DENTOVA · Documentos Clínicos
+</header>
 
 <div class="container">
 
 <div class="card">
+
 <h2>Información del Paciente</h2>
 
 <div class="grid">
 
 <div>
 <label>Documento paciente</label>
-<input id="docPaciente" placeholder="1022956631">
+<input id="documento" required>
 </div>
 
 <div>
 <label>Nombre paciente</label>
-<input id="nombrePaciente">
+<input id="nombre">
 </div>
 
 <div>
@@ -104,100 +134,113 @@ button{
 
 <div>
 <label>Tipo documento</label>
-<select id="tipoDoc">
-<option>Radiografía</option>
-<option>Fotografía</option>
-<option>Consentimiento</option>
-<option>Examen diagnóstico</option>
-<option>Documento clínico</option>
+<select id="tipo">
+<option value="radiografias">Radiografía</option>
+<option value="fotografias">Fotografía</option>
+<option value="documentos">Documento</option>
 </select>
 </div>
 
 </div>
 
-<div style="margin-top:15px;">
+<br>
+
 <label>Observaciones</label>
-<textarea id="obs"></textarea>
-</div>
-
-</div>
-
-
-<div class="card">
-
-<h2>Cargar Archivo</h2>
-
-<div class="upload-area">
-<input type="file" id="fileInput" multiple>
-<p>Selecciona radiografías, fotografías o documentos</p>
-</div>
-
-<div class="file-list" id="fileList"></div>
+<textarea id="observaciones"></textarea>
 
 </div>
 
 <div class="card">
-<h2>Biblioteca de Documentos</h2>
-<div id="biblioteca"></div>
+
+<h2>Subir archivo</h2>
+
+<div class="file-box">
+
+<input type="file" id="archivo">
+
+<br><br>
+
+<button onclick="subir()">Subir documento</button>
+
+<div class="progress">
+<div class="progress-bar" id="barra"></div>
 </div>
+
+<div class="msg" id="mensaje"></div>
 
 </div>
 
+</div>
+
+</div>
 
 <script>
 
-let archivos = [];
+async function subir(){
 
-document.getElementById("fileInput").addEventListener("change",function(){
+const archivo = document.getElementById("archivo").files[0]
 
-    const lista = document.getElementById("fileList");
+if(!archivo){
+alert("Seleccione un archivo")
+return
+}
 
-    for(let file of this.files){
+const documento = document.getElementById("documento").value
+const nombre = document.getElementById("nombre").value
+const profesional = document.getElementById("profesional").value
+const tipo = document.getElementById("tipo").value
+const observaciones = document.getElementById("observaciones").value
 
-        archivos.push(file)
+const formData = new FormData()
 
-        let div=document.createElement("div")
-        div.className="file-item"
-        div.innerText=file.name
+formData.append("file", archivo)
+formData.append("documento", documento)
+formData.append("nombre", nombre)
+formData.append("profesional", profesional)
+formData.append("tipo", tipo)
+formData.append("observaciones", observaciones)
 
-        lista.appendChild(div)
-    }
+const barra = document.getElementById("barra")
+const mensaje = document.getElementById("mensaje")
 
-})
+mensaje.innerText="Subiendo archivo..."
 
-function guardar(){
+const xhr = new XMLHttpRequest()
 
-    const doc=document.getElementById("docPaciente").value
-    const nombre=document.getElementById("nombrePaciente").value
-    const tipo=document.getElementById("tipoDoc").value
+xhr.upload.onprogress = function(e){
 
-    const biblioteca=document.getElementById("biblioteca")
+if(e.lengthComputable){
 
-    archivos.forEach(file=>{
-
-        let item=document.createElement("div")
-        item.className="file-item"
-
-        item.innerHTML=`
-        <b>${file.name}</b><br>
-        Paciente: ${nombre} (${doc})<br>
-        Tipo: ${tipo}
-        `
-
-        biblioteca.appendChild(item)
-
-    })
-
-    archivos=[]
-    document.getElementById("fileList").innerHTML=""
+let porcentaje = (e.loaded / e.total) * 100
+barra.style.width = porcentaje + "%"
 
 }
 
-let btn=document.createElement("button")
-btn.innerText="Guardar documentos"
-btn.onclick=guardar
+}
 
-document.querySelector(".upload-area").appendChild(btn)
+xhr.onload = function(){
+
+if(xhr.status === 200){
+
+mensaje.style.color="green"
+mensaje.innerText="Archivo subido correctamente"
+
+barra.style.width="100%"
+
+}else{
+
+mensaje.style.color="red"
+mensaje.innerText="Error al subir archivo"
+
+}
+
+}
+
+xhr.open("POST","https://ftth-n8n2.pzveh5.easypanel.host/webhook/dc74c235-f669-4f21-ac09-7e2531caa95a")
+
+xhr.send(formData)
+
+}
 
 </script>
 
