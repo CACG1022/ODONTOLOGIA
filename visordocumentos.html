@@ -87,6 +87,8 @@ a{
 text-decoration:none;
 color:#2c6fa3;
 font-weight:600;
+display:inline-block;
+margin-top:6px;
 }
 
 .pdf{
@@ -94,6 +96,14 @@ background:#f9fafb;
 padding:20px;
 border-radius:10px;
 text-align:center;
+}
+
+.download{
+display:block;
+margin-top:8px;
+color:#1f6aa5;
+font-weight:700;
+cursor:pointer;
 }
 
 </style>
@@ -129,13 +139,16 @@ Visor de Archivos Clínicos
 <div id="documentos" class="grid"></div>
 </div>
 
-
 </div>
 
 
 <script>
 
 const webhook="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
+
+const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
+
+
 
 async function buscar(){
 
@@ -170,6 +183,16 @@ alert("Error consultando archivos")
 
 
 
+function descargar(key){
+
+const url=`${webhookDescarga}?key=${encodeURIComponent(key)}`
+
+window.open(url,"_blank")
+
+}
+
+
+
 function mostrar(tipo,lista){
 
 const cont=document.getElementById(tipo)
@@ -192,6 +215,7 @@ cont.innerHTML+=`
 <img src="${file.url}">
 <div class="file">${file.nombre}</div>
 <a href="${file.url}" target="_blank">Abrir</a>
+<a class="download" onclick="descargar('${file.key}')">⬇ Descargar</a>
 </div>
 `
 
@@ -203,6 +227,7 @@ cont.innerHTML+=`
 <div class="card pdf">
 📄 ${file.nombre}<br><br>
 <a href="${file.url}" target="_blank">Ver documento</a>
+<a class="download" onclick="descargar('${file.key}')">⬇ Descargar</a>
 </div>
 `
 
@@ -213,7 +238,7 @@ else{
 cont.innerHTML+=`
 <div class="card pdf">
 📁 ${file.nombre}<br><br>
-<a href="${file.url}" target="_blank">Descargar</a>
+<a class="download" onclick="descargar('${file.key}')">⬇ Descargar</a>
 </div>
 `
 
