@@ -138,6 +138,20 @@ Visor de Archivos Clínicos
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
 
+function obtenerDocumentoURL(){
+
+const params=new URLSearchParams(window.location.search)
+const doc=params.get("doc")
+
+if(doc){
+
+document.getElementById("doc").value=doc
+buscar()
+
+}
+
+}
+
 
 async function buscar(){
 
@@ -257,6 +271,7 @@ cont.innerHTML+=html
 })
 
 }
+  window.addEventListener("load",obtenerDocumentoURL)
 
 </script>
 
