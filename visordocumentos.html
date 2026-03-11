@@ -136,7 +136,6 @@ Visor de Archivos Clínicos
 <script>
 
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
-
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
 
 
@@ -172,16 +171,31 @@ alert("Error consultando archivos")
 }
 
 
-function descargarArchivo(key){
+
+function extraerKey(url){
+
+const partes=url.split("/dentova/")
+
+if(partes.length<2) return null
+
+return partes[1]
+
+}
+
+
+
+function descargarArchivo(url){
+
+const key=extraerKey(url)
 
 if(!key){
-alert("Archivo inválido")
+alert("No se pudo obtener la key")
 return
 }
 
-const url = webhookDescarga + "?key=" + encodeURIComponent(key)
+const link=webhookDescarga+"?key="+encodeURIComponent(key)
 
-window.open(url,"_blank")
+window.open(link,"_blank")
 
 }
 
@@ -210,7 +224,7 @@ html=`
 <div class="card">
 <img src="${file.url}">
 <div class="file">${file.nombre}</div>
-<a class="download" data-key="${file.key}">Descargar</a>
+<a onclick="descargarArchivo('${file.url}')">Descargar</a>
 </div>
 `
 
@@ -221,7 +235,7 @@ else if(file.nombre.match(/\.pdf$/i)){
 html=`
 <div class="card pdf">
 📄 ${file.nombre}<br><br>
-<a class="download" data-key="${file.key}">Descargar PDF</a>
+<a onclick="descargarArchivo('${file.url}')">Descargar PDF</a>
 </div>
 `
 
@@ -232,29 +246,13 @@ else{
 html=`
 <div class="card pdf">
 📁 ${file.nombre}<br><br>
-<a class="download" data-key="${file.key}">Descargar archivo</a>
+<a onclick="descargarArchivo('${file.url}')">Descargar archivo</a>
 </div>
 `
 
 }
 
 cont.innerHTML+=html
-
-})
-
-
-
-/* activar botones */
-
-cont.querySelectorAll(".download").forEach(btn=>{
-
-btn.addEventListener("click",function(){
-
-const key=this.getAttribute("data-key")
-
-descargarArchivo(key)
-
-})
 
 })
 
