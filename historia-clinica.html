@@ -1719,7 +1719,59 @@ Fecha: {{FECHA}}
 
 </div>
 </div>
+<!-- MODAL VER DOCUMENTOS -->
+<div id="modalDocumentos" style="
+display:none;
+position:fixed;
+inset:0;
+background:rgba(0,0,0,.5);
+z-index:1000005;
+padding:20px;
+">
 
+<div style="
+background:white;
+width:95%;
+max-width:1200px;
+height:90vh;
+margin:auto;
+border-radius:14px;
+overflow:hidden;
+display:flex;
+flex-direction:column;
+box-shadow:0 10px 30px rgba(0,0,0,.3);
+">
+
+<div style="
+display:flex;
+justify-content:space-between;
+align-items:center;
+padding:14px 16px;
+background:#eef6ff;
+border-bottom:1px solid #e7edf5;
+">
+
+<b style="color:#2a5d84;">Documentos del paciente</b>
+
+<button onclick="cerrarModalDocumentos()" style="
+border:none;
+background:#0D47A1;
+color:white;
+font-weight:700;
+border-radius:10px;
+padding:8px 12px;
+cursor:pointer;
+">
+Cerrar ✕
+</button>
+
+</div>
+
+<iframe id="iframeDocumentos"
+style="flex:1; border:none;"></iframe>
+
+</div>
+</div>
 <!-- 📤 FORMULARIO OCULTO PARA N8N -->
 <form id="formN8N"
   action="https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8"
@@ -1841,7 +1893,9 @@ function verDocumentos(){
 
   const url = "https://cacg1022.github.io/ODONTOLOGIA/visordocumentos.html?doc=" + encodeURIComponent(cedula);
 
-  window.open(url, "_blank");
+  document.getElementById("iframeDocumentos").src = url;
+
+  document.getElementById("modalDocumentos").style.display = "block";
 }
 
 
@@ -2930,6 +2984,13 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
     if (m) m.style.display = "none";
     _docVistaActual = null;
   }
+  function cerrarModalDocumentos(){
+
+  document.getElementById("modalDocumentos").style.display = "none";
+
+  document.getElementById("iframeDocumentos").src = "";
+
+}
 
   // ✅ FIX: leer desde firma_paciente_path / firma_profesional_path
   function verDocumento(id){
