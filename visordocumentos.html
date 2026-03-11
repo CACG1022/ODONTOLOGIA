@@ -4,160 +4,103 @@
 <meta charset="UTF-8">
 <title>Visor de Archivos Clínicos</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
 
-*{box-sizing:border-box;}
-
 body{
 font-family:'Inter',sans-serif;
+background:#f3f6f9;
 margin:0;
-background:white;
-color:#1f2a37;
 }
-
-/* HEADER */
 
 header{
-background:#0f2a44;
+background:#2c6fa3;
 color:white;
-padding:22px 40px;
+padding:18px;
 font-size:22px;
 font-weight:600;
-letter-spacing:.3px;
-box-shadow:0 4px 20px rgba(0,0,0,0.08);
 }
-
-/* CONTENEDOR */
 
 .container{
-max-width:1200px;
+max-width:1100px;
 margin:auto;
-padding:40px;
+padding:30px;
 }
-
-/* BUSCADOR */
 
 .search{
 display:flex;
-gap:12px;
-margin-bottom:50px;
-align-items:center;
+gap:10px;
+margin-bottom:30px;
 }
 
-.search input{
-padding:14px 16px;
-font-size:15px;
-border-radius:10px;
-border:1px solid #d9e2ec;
-width:260px;
-transition:.2s;
+input{
+padding:12px;
+font-size:16px;
+border-radius:8px;
+border:1px solid #ddd;
+width:250px;
 }
 
-.search input:focus{
-outline:none;
-border-color:#1b3d5a;
-box-shadow:0 0 0 3px rgba(27,61,90,0.1);
-}
-
-.search button{
-background:#0f2a44;
+button{
+background:#2c6fa3;
 color:white;
 border:none;
-padding:13px 26px;
-border-radius:10px;
+padding:12px 20px;
+border-radius:8px;
 cursor:pointer;
-font-weight:600;
-transition:.2s;
 }
-
-.search button:hover{
-background:#163a5c;
-}
-
-/* SECCIONES */
 
 .section{
-margin-bottom:60px;
+margin-bottom:40px;
 }
 
 .section h2{
-font-size:20px;
-margin-bottom:20px;
-color:#0f2a44;
-font-weight:600;
+margin-bottom:15px;
+color:#1f2a37;
 }
-
-/* GRID */
 
 .grid{
 display:grid;
-grid-template-columns:repeat(auto-fill,minmax(230px,1fr));
-gap:25px;
+grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+gap:20px;
 }
-
-/* TARJETAS */
 
 .card{
-background:rgba(255,255,255,0.65);
-backdrop-filter:blur(12px);
-border:1px solid rgba(0,0,0,0.06);
-border-radius:14px;
-padding:20px;
-box-shadow:0 10px 30px rgba(0,0,0,0.08);
-transition:.25s;
-}
-
-.card:hover{
-transform:translateY(-4px);
-box-shadow:0 15px 35px rgba(0,0,0,0.12);
+background:white;
+border-radius:12px;
+box-shadow:0 5px 20px rgba(0,0,0,0.08);
+padding:15px;
 }
 
 .card img{
 width:100%;
-border-radius:10px;
-margin-bottom:10px;
+border-radius:8px;
 }
 
 .file{
 font-size:14px;
-margin-top:5px;
-font-weight:500;
-color:#1f2a37;
-}
-
-.download{
-display:inline-block;
 margin-top:10px;
-color:#0f2a44;
-font-weight:600;
-font-size:14px;
-cursor:pointer;
-text-decoration:none;
 }
 
-.download:hover{
-text-decoration:underline;
+a{
+text-decoration:none;
+color:#2c6fa3;
+font-weight:600;
+display:block;
+margin-top:6px;
+cursor:pointer;
 }
 
 .pdf{
+background:#f9fafb;
+padding:20px;
+border-radius:10px;
 text-align:center;
-}
-
-.pdf-icon{
-font-size:38px;
-margin-bottom:10px;
-}
-
-.loading{
-opacity:.6;
-font-style:italic;
 }
 
 </style>
 </head>
-
 
 <body>
 
@@ -168,13 +111,9 @@ Visor de Archivos Clínicos
 <div class="container">
 
 <div class="search">
-
 <input id="doc" placeholder="Documento del paciente">
-
 <button onclick="buscar()">Buscar</button>
-
 </div>
-
 
 <div class="section">
 <h2>Radiografías</h2>
@@ -205,13 +144,13 @@ async function buscar(){
 const doc=document.getElementById("doc").value
 
 if(!doc){
-alert("Ingrese documento del paciente")
+alert("Ingrese documento")
 return
 }
 
-document.getElementById("radiografias").innerHTML='<div class="loading">Cargando...</div>'
-document.getElementById("fotografias").innerHTML='<div class="loading">Cargando...</div>'
-document.getElementById("documentos").innerHTML='<div class="loading">Cargando...</div>'
+document.getElementById("radiografias").innerHTML="Cargando..."
+document.getElementById("fotografias").innerHTML="Cargando..."
+document.getElementById("documentos").innerHTML="Cargando..."
 
 try{
 
@@ -232,17 +171,34 @@ alert("Error consultando archivos")
 }
 
 
-function descargar(key){
+
+function extraerKey(url){
+
+const partes=url.split("/dentova/")
+
+if(partes.length<2) return null
+
+return partes[1]
+
+}
+
+
+
+function descargarArchivo(url){
+
+const key=extraerKey(url)
 
 if(!key){
-alert("No se encontró la ruta del archivo")
+alert("No se pudo obtener la key")
 return
 }
 
-const url = webhookDescarga + "?key=" + encodeURIComponent(key)
-window.open(url,"_blank")
+const link=webhookDescarga+"?key="+encodeURIComponent(key)
+
+window.open(link,"_blank")
 
 }
+
 
 
 function mostrar(tipo,lista){
@@ -250,97 +206,55 @@ function mostrar(tipo,lista){
 const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
+
 cont.innerHTML="Sin archivos"
 return
+
 }
 
 cont.innerHTML=""
 
 lista.forEach(file=>{
 
+let html=""
+
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
-cont.innerHTML+=`
-
+html=`
 <div class="card">
-
 <img src="${file.url}">
-
 <div class="file">${file.nombre}</div>
-
-<a class="download" onclick="descargar('${file.key}')">
-Descargar
-</a>
-
+<a onclick="descargarArchivo('${file.url}')">Descargar</a>
 </div>
-
 `
 
 }
 
 else if(file.nombre.match(/\.pdf$/i)){
 
-cont.innerHTML+=`
-
+html=`
 <div class="card pdf">
-
-<div class="pdf-icon">📄</div>
-
-<div class="file">${file.nombre}</div>
-
-<a class="download" onclick="descargar('${file.key}')">
-Descargar PDF
-</a>
-
+📄 ${file.nombre}<br><br>
+<a onclick="descargarArchivo('${file.url}')">Descargar PDF</a>
 </div>
-
 `
 
 }
 
 else{
 
-cont.innerHTML+=`
-
+html=`
 <div class="card pdf">
-
-<div class="pdf-icon">📁</div>
-
-<div class="file">${file.nombre}</div>
-
-<a class="download" onclick="descargar('${file.key}')">
-Descargar archivo
-</a>
-
+📁 ${file.nombre}<br><br>
+<a onclick="descargarArchivo('${file.url}')">Descargar archivo</a>
 </div>
-
 `
 
 }
 
+cont.innerHTML+=html
+
 })
-
-}
-
-
-
-/* ----------------------------- */
-/* AUTOCARGA DESDE URL */
-/* ----------------------------- */
-
-window.onload = function(){
-
-const params = new URLSearchParams(window.location.search)
-
-const doc = params.get("doc")
-
-if(doc){
-
-document.getElementById("doc").value = doc
-
-buscar()
-
-}
 
 }
 
@@ -348,3 +262,4 @@ buscar()
 
 </body>
 </html>
+
