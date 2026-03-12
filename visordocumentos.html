@@ -178,7 +178,11 @@ mostrar("documentos",data.documentos)
 }catch(e){
 
 console.error(e)
-alert("Error consultando archivos")
+alert("El paciente no posee documentos adjuntos.")
+
+document.getElementById("radiografias").innerHTML="Sin archivos"
+document.getElementById("fotografias").innerHTML="Sin archivos"
+document.getElementById("documentos").innerHTML="Sin archivos"
 
 }
 
@@ -221,7 +225,7 @@ const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
 
-cont.innerHTML="Sin archivos"
+cont.innerHTML="El paciente no posee documentos adjuntos."
 return
 
 }
