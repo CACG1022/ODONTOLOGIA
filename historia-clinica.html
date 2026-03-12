@@ -1916,9 +1916,16 @@ function cerrarModalCargarDocumentos(){
 }
 function cargarDocumentosPaciente(){
 
+  const cedula = document.getElementById("paciente_numdoc")?.value?.trim();
+
+  if(!cedula){
+    alert("⚠️ Primero debe cargar o buscar un paciente.");
+    return;
+  }
+
   const iframe = document.getElementById("iframeCargarDocumentos");
 
-  iframe.src = "https://cacg1022.github.io/ODONTOLOGIA/documentos.html";
+  iframe.src = "https://cacg1022.github.io/ODONTOLOGIA/documentos.html?doc=" + encodeURIComponent(cedula);
 
   document.getElementById("modalCargarDocumentos").style.display = "block";
 
