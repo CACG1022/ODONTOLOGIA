@@ -232,6 +232,10 @@ return
 
 cont.innerHTML=""
 
+lista.forEach(file=>{
+
+let html=""
+
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
@@ -271,7 +275,6 @@ cont.innerHTML+=html
 })
 
 }
-  window.addEventListener("load",obtenerDocumentoURL)
 
 </script>
 
