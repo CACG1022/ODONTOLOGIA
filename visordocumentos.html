@@ -221,16 +221,16 @@ const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
 
-cont.innerHTML="Sin archivos"
+cont.innerHTML=`
+<div class="card pdf">
+📂 El paciente no posee documentos adjuntos
+</div>
+`
 return
 
 }
 
 cont.innerHTML=""
-
-lista.forEach(file=>{
-
-let html=""
 
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
