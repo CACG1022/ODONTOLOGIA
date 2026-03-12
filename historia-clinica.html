@@ -752,7 +752,7 @@ GUARDAR
       
       <div class="ctrl">
         <label for="paciente_nombre">*Nombres y apellidos</label>
-        <input id="paciente_nombre" type="text" required>
+        <input id="paciente_nombre" type="text" required onblur="formatearNombre(this)">
       </div>
 
       <div class="ctrl">
@@ -990,12 +990,12 @@ GUARDAR
     <div class="grid g-2">
       <div class="ctrl">
         <label for="padre_nombre">Nombre del acompañante</label>
-        <input id="padre_nombre" type="text">
+        <input id="padre_nombre" type="text" onblur="formatearNombre(this)">
       </div>
 
       <div class="ctrl">
         <label for="madre_nombre">Nombre del responsable</label>
-        <input id="madre_nombre" type="text">
+        <input id="madre_nombre" type="text" onblur="formatearNombre(this)">
       </div>
 
       <div class="ctrl">
@@ -1018,7 +1018,7 @@ GUARDAR
     <div class="grid g-2">
       <div class="ctrl">
         <label for="emergencia_nombre">Nombres y apellidos</label>
-        <input id="emergencia_nombre" type="text">
+        <input id="emergencia_nombre" type="text" onblur="formatearNombre(this)">
       </div>
 
       <div class="ctrl">
@@ -2002,6 +2002,22 @@ function irAgendar() { window.open(URL_AGENDAR, "_blank"); }
       .replaceAll('"',"&quot;")
       .replaceAll("'","&#039;");
   }
+// ==============================
+// FORMATEAR NOMBRES AUTOMÁTICAMENTE
+// ==============================
+function formatearNombre(input){
+
+  let texto = input.value.toLowerCase().trim();
+
+  texto = texto.split(" ").map(palabra=>{
+    if(!palabra) return "";
+    return palabra.charAt(0).toUpperCase() + palabra.slice(1);
+  }).join(" ");
+
+  input.value = texto;
+
+}
+  
   function _valorInput(id){
   const el = document.getElementById(id);
   if (!el) return "";
