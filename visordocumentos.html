@@ -221,11 +221,7 @@ const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
 
-cont.innerHTML=`
-<div class="card pdf">
-📂 El paciente no posee documentos adjuntos
-</div>
-`
+cont.innerHTML="Sin archivos"
 return
 
 }
@@ -275,6 +271,7 @@ cont.innerHTML+=html
 })
 
 }
+  window.addEventListener("load",obtenerDocumentoURL)
 
 </script>
 
