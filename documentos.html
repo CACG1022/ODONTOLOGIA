@@ -100,6 +100,11 @@ margin-top:15px;
 font-weight:bold;
 }
 
+  input:required,
+select:required{
+background:#eaf6ff;
+}
+
 </style>
 </head>
 
@@ -123,30 +128,23 @@ DENTOVA · Documentos Clínicos
 </div>
 
 <div>
-<label>Nombre paciente</label>
-<input id="nombre">
-</div>
-
-<div>
-<label>Profesional</label>
-<input id="profesional">
-</div>
-
-<div>
 <label>Tipo documento</label>
-<select id="tipo">
+<select id="tipo" required>
+<option value="">Seleccione una opción</option>
 <option value="radiografias">Radiografía</option>
 <option value="fotografias">Fotografía</option>
 <option value="documentos">Documento</option>
 </select>
 </div>
 
+<div>
+<label>Fecha</label>
+<input id="fecha" type="date" required>
 </div>
 
-<br>
+</div>
 
-<label>Observaciones</label>
-<textarea id="observaciones"></textarea>
+
 
 </div>
 
@@ -185,25 +183,39 @@ alert("Seleccione un archivo")
 return
 }
 
-const documento = document.getElementById("documento").value
-const nombre = document.getElementById("nombre").value
-const profesional = document.getElementById("profesional").value
+const documento = document.getElementById("documento").value.trim()
 const tipo = document.getElementById("tipo").value
-const observaciones = document.getElementById("observaciones").value
+const fecha = document.getElementById("fecha").value
+
+if(!documento){
+alert("Debe diligenciar el campo Documento paciente")
+return
+}
+
+if(!tipo){
+alert("Debe seleccionar el Tipo documento")
+return
+}
+
+if(!fecha){
+alert("Debe diligenciar la Fecha")
+return
+}
 
 const formData = new FormData()
 
 formData.append("file", archivo)
 formData.append("documento", documento)
-formData.append("nombre", nombre)
-formData.append("profesional", profesional)
 formData.append("tipo", tipo)
-formData.append("observaciones", observaciones)
+formData.append("fecha", fecha)
 
 const barra = document.getElementById("barra")
 const mensaje = document.getElementById("mensaje")
 
+mensaje.style.color="#1f2937"
 mensaje.innerText="Subiendo archivo..."
+
+barra.style.width="0%"
 
 const xhr = new XMLHttpRequest()
 
@@ -224,7 +236,6 @@ if(xhr.status === 200){
 
 mensaje.style.color="green"
 mensaje.innerText="Archivo subido correctamente"
-
 barra.style.width="100%"
 
 }else{
@@ -241,6 +252,30 @@ xhr.open("POST","https://ftth-n8n2.pzveh5.easypanel.host/webhook/dc74c235-f669-4
 xhr.send(formData)
 
 }
+
+ function cargarDatosIniciales(){
+
+const params = new URLSearchParams(window.location.search)
+const doc = params.get("doc") || ""
+
+const inputDocumento = document.getElementById("documento")
+const inputFecha = document.getElementById("fecha")
+
+if(inputDocumento && doc){
+inputDocumento.value = doc
+}
+
+if(inputFecha){
+const hoy = new Date()
+const yyyy = hoy.getFullYear()
+const mm = String(hoy.getMonth() + 1).padStart(2,"0")
+const dd = String(hoy.getDate()).padStart(2,"0")
+inputFecha.value = `${yyyy}-${mm}-${dd}`
+}
+
+}
+
+document.addEventListener("DOMContentLoaded", cargarDatosIniciales) 
 
 </script>
 
