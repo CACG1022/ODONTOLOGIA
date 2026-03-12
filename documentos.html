@@ -262,7 +262,10 @@ const inputDocumento = document.getElementById("documento")
 const inputFecha = document.getElementById("fecha")
 
 if(inputDocumento && doc){
+
 inputDocumento.value = doc
+inputDocumento.readOnly = true
+
 }
 
 if(inputFecha){
@@ -276,6 +279,17 @@ inputFecha.value = `${yyyy}-${mm}-${dd}`
 }
 
 document.addEventListener("DOMContentLoaded", cargarDatosIniciales) 
+document.addEventListener("DOMContentLoaded", function(){
+
+const inputDocumento = document.getElementById("documento")
+
+if(!inputDocumento.value){
+
+alert("Debe ingresar el documento del paciente para subir archivos")
+
+}
+
+})
 
 </script>
 
