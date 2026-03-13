@@ -138,14 +138,14 @@
     return;
   }
 
-  const email = (session.user?.email || "").toLowerCase();
+ const email = (session.user?.email || "").toLowerCase();
 if (email !== ADMIN_EMAIL.toLowerCase()) {
   alert("No autorizado.");
   window.location.href = INDEX_URL;
   return;
 }
 
-ES_CAMILO_SUPERADMIN = (email === "camilo-1000@hotmail.com");}
+ES_CAMILO_SUPERADMIN = (email === "camilo-1000@hotmail.com");
 
   const { data: perfilAdmin, error: perfilError } = await supabase
     .from("profiles")
@@ -204,7 +204,13 @@ if (!tenantIdParaNuevoUsuario) {
 
       try {
         // 1) Crear usuario en Auth (esto envía correo de confirmación si lo tienes activo)
-        const { data, error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    emailRedirectTo: "https://cacg1022.github.io/ODONTOLOGIA/login.html"
+  }
+});
 
         if (error) {
           setMsg("Error creando usuario: " + error.message);
