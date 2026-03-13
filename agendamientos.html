@@ -285,7 +285,21 @@
 
       $("user-email").textContent = session.user?.email || "Usuario autenticado";
 
-      const role = await cargarRolDesdeProfiles(session.user.id);
+     const { data: perfil } = await supabase
+  .from("profiles")
+  .select("role, tenant_id")
+  .eq("id", session.user.id)
+  .single();
+
+const role = perfil?.role || null;
+CURRENT_TENANT_ID = perfil?.tenant_id || null;
+
+      if (!CURRENT_TENANT_ID){
+  alert("Tu usuario no tiene tenant asignado.");
+  window.location.href = HOME_URL;
+  return { ok:false };
+}
+      
       $("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
       const r = String(role || "").toLowerCase().trim();
@@ -495,10 +509,11 @@
       const endLocal   = toDbFromDate(new Date(rangeEndISO));
 
       let q = supabase
-        .from(TABLA_CITAS)
-        .select("*")
-        .gte("inicio", startLocal)
-        .lt("inicio", endLocal)
+  .from(TABLA_CITAS)
+  .select("*")
+  .eq("tenant_id", CURRENT_TENANT_ID)
+  .gte("inicio", startLocal)
+  .lt("inicio", endLocal)
         .order("inicio", { ascending: true });
 
       if (profesionalIdFiltro) q = q.eq("profesional_id", profesionalIdFiltro);
@@ -515,6 +530,7 @@
         .from(TABLA_CITAS)
         .select("*")
         .eq("id", id)
+.eq("tenant_id", CURRENT_TENANT_ID)
         .single();
 
       if (error) throw new Error(error.message);
@@ -537,6 +553,7 @@
         .from(TABLA_CITAS)
         .update(row)
         .eq("id", id)
+.eq("tenant_id", CURRENT_TENANT_ID)
         .select("*")
         .single();
 
@@ -548,7 +565,8 @@
       const { error } = await supabase
         .from(TABLA_CITAS)
         .delete()
-        .eq("id", id);
+        .eq("id", id)
+.eq("tenant_id", CURRENT_TENANT_ID)
 
       if (error) throw new Error(error.message);
       return true;
@@ -645,6 +663,8 @@ $("notificar_paciente").checked =
     // =========================
     let calendar;
     let currentSession = null;
+    let CURRENT_TENANT_ID = null;
+    
 
     function getFilters(){
       return {
@@ -927,6 +947,7 @@ $("notificar_paciente").checked =
         const notificarPaciente = $("notificar_paciente").checked;
 
         const row = {
+  tenant_id: CURRENT_TENANT_ID,
   usuario_id: currentSession.user.id,
   profesional_id: profesionalId,
 
