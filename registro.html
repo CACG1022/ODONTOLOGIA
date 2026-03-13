@@ -138,26 +138,26 @@
     return;
   }
 
- const email = (session.user?.email || "").toLowerCase();
-if (email !== ADMIN_EMAIL.toLowerCase()) {
-  alert("No autorizado.");
-  window.location.href = INDEX_URL;
-  return;
-}
+const email = (session.user?.email || "").toLowerCase();
 
-ES_CAMILO_SUPERADMIN = (email === "camilo-1000@hotmail.com");
+ES_CAMILO_SUPERADMIN = (email === ADMIN_EMAIL.toLowerCase());
 
   const { data: perfilAdmin, error: perfilError } = await supabase
-    .from("profiles")
-    .select("tenant_id")
-    .eq("id", session.user.id)
-    .single();
+  .from("profiles")
+  .select("tenant_id, role")
+  .eq("id", session.user.id)
+  .single();
 
   if (perfilError) {
     alert("No se pudo obtener el tenant del administrador: " + perfilError.message);
     window.location.href = INDEX_URL;
     return;
   }
+   if (perfilAdmin?.role !== "admin") {
+  alert("Solo los administradores pueden registrar usuarios.");
+  window.location.href = INDEX_URL;
+  return;
+}   
 
   if (!perfilAdmin?.tenant_id) {
     alert("El administrador actual no tiene tenant_id asignado en profiles.");
