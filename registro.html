@@ -82,6 +82,7 @@
     const ADMIN_EMAIL = "camilo-1000@hotmail.com";
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
+    let TENANT_ID_ACTUAL = null;
 
     function setMsg(txt){
       const errorDiv = document.getElementById("error");
@@ -89,27 +90,47 @@
     }
 
     async function protegerRegistro(){
-      const { data: { session }, error } = await supabase.auth.getSession();
+  const { data: { session }, error } = await supabase.auth.getSession();
 
-      if (error) {
-        alert("Error validando sesión: " + error.message);
-        window.location.href = LOGIN_URL;
-        return;
-      }
+  if (error) {
+    alert("Error validando sesión: " + error.message);
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-      if (!session) {
-        alert("Debes iniciar sesión.");
-        window.location.href = LOGIN_URL;
-        return;
-      }
+  if (!session) {
+    alert("Debes iniciar sesión.");
+    window.location.href = LOGIN_URL;
+    return;
+  }
 
-      const email = (session.user?.email || "").toLowerCase();
-      if (email !== ADMIN_EMAIL.toLowerCase()) {
-        alert("No autorizado.");
-        window.location.href = INDEX_URL;
-        return;
-      }
-    }
+  const email = (session.user?.email || "").toLowerCase();
+  if (email !== ADMIN_EMAIL.toLowerCase()) {
+    alert("No autorizado.");
+    window.location.href = INDEX_URL;
+    return;
+  }
+
+  const { data: perfilAdmin, error: perfilError } = await supabase
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", session.user.id)
+    .single();
+
+  if (perfilError) {
+    alert("No se pudo obtener el tenant del administrador: " + perfilError.message);
+    window.location.href = INDEX_URL;
+    return;
+  }
+
+  if (!perfilAdmin?.tenant_id) {
+    alert("El administrador actual no tiene tenant_id asignado en profiles.");
+    window.location.href = INDEX_URL;
+    return;
+  }
+
+  TENANT_ID_ACTUAL = perfilAdmin.tenant_id;
+}
 
     await protegerRegistro();
 
@@ -124,6 +145,10 @@
         setMsg("Por favor completa todos los campos.");
         return;
       }
+      if (!TENANT_ID_ACTUAL) {
+  setMsg("No se pudo determinar el tenant_id del administrador actual.");
+  return;
+}
 
       try {
         // 1) Crear usuario en Auth (esto envía correo de confirmación si lo tienes activo)
@@ -142,9 +167,13 @@
 
         // 2) Asignar rol en profiles (UPDATE, porque normalmente el profile ya existe por trigger con role='user')
         const { error: uerr } = await supabase
-          .from("profiles")
-          .update({ role, email })
-          .eq("id", newUserId);
+  .from("profiles")
+  .update({ 
+    role, 
+    email,
+    tenant_id: TENANT_ID_ACTUAL
+  })
+  .eq("id", newUserId);
 
         if (uerr) {
           setMsg(
