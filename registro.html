@@ -63,6 +63,11 @@
       <option value="auxiliar">Auxiliar</option>
       <option value="admin">Administrador</option>
     </select>
+    <div id="tenant-selector-wrap" style="display:none;">
+  <select id="tenant_selector">
+    <option value="">Seleccione clínica...</option>
+  </select>
+</div>
 
     <button id="boton-registrar">Crear cuenta</button>
 
@@ -83,11 +88,40 @@
     const LOGIN_URL = "login.html";
     const INDEX_URL = "index.html";
     let TENANT_ID_ACTUAL = null;
+    let ES_CAMILO_SUPERADMIN = false;
 
     function setMsg(txt){
       const errorDiv = document.getElementById("error");
       errorDiv.textContent = txt || "";
     }
+    async function cargarTenantsEnSelector(){
+  const wrap = document.getElementById("tenant-selector-wrap");
+  const select = document.getElementById("tenant_selector");
+
+  if (!wrap || !select) return;
+
+  const { data, error } = await supabase
+    .from("tenants")
+    .select("id, nombre_clinica")
+    .order("nombre_clinica", { ascending: true });
+
+  if (error) {
+    console.error("Error cargando tenants:", error);
+    setMsg("No se pudo cargar la lista de clínicas: " + error.message);
+    return;
+  }
+
+  select.innerHTML = `<option value="">Seleccione clínica...</option>`;
+
+  (data || []).forEach(t => {
+    const opt = document.createElement("option");
+    opt.value = t.id;
+    opt.textContent = t.nombre_clinica || t.id;
+    select.appendChild(opt);
+  });
+
+  wrap.style.display = "block";
+}
 
     async function protegerRegistro(){
   const { data: { session }, error } = await supabase.auth.getSession();
@@ -105,11 +139,13 @@
   }
 
   const email = (session.user?.email || "").toLowerCase();
-  if (email !== ADMIN_EMAIL.toLowerCase()) {
-    alert("No autorizado.");
-    window.location.href = INDEX_URL;
-    return;
-  }
+if (email !== ADMIN_EMAIL.toLowerCase()) {
+  alert("No autorizado.");
+  window.location.href = INDEX_URL;
+  return;
+}
+
+ES_CAMILO_SUPERADMIN = (email === "camilo-1000@hotmail.com");}
 
   const { data: perfilAdmin, error: perfilError } = await supabase
     .from("profiles")
@@ -130,8 +166,11 @@
   }
 
   TENANT_ID_ACTUAL = perfilAdmin.tenant_id;
-}
 
+if (ES_CAMILO_SUPERADMIN) {
+  await cargarTenantsEnSelector();
+}
+}
     await protegerRegistro();
 
     document.getElementById("boton-registrar").addEventListener("click", async () => {
@@ -145,8 +184,21 @@
         setMsg("Por favor completa todos los campos.");
         return;
       }
-      if (!TENANT_ID_ACTUAL) {
-  setMsg("No se pudo determinar el tenant_id del administrador actual.");
+      let tenantIdParaNuevoUsuario = TENANT_ID_ACTUAL;
+
+if (ES_CAMILO_SUPERADMIN) {
+  const tenantSeleccionado = document.getElementById("tenant_selector")?.value || "";
+
+  if (!tenantSeleccionado) {
+    setMsg("Debes seleccionar la clínica para el nuevo usuario.");
+    return;
+  }
+
+  tenantIdParaNuevoUsuario = tenantSeleccionado;
+}
+
+if (!tenantIdParaNuevoUsuario) {
+  setMsg("No se pudo determinar el tenant_id para el nuevo usuario.");
   return;
 }
 
@@ -166,12 +218,12 @@
         }
 
         // 2) Asignar rol en profiles (UPDATE, porque normalmente el profile ya existe por trigger con role='user')
-        const { error: uerr } = await supabase
+       const { error: uerr } = await supabase
   .from("profiles")
   .update({ 
     role, 
     email,
-    tenant_id: TENANT_ID_ACTUAL
+    tenant_id: tenantIdParaNuevoUsuario
   })
   .eq("id", newUserId);
 
