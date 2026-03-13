@@ -26,6 +26,10 @@
   };
 
   const MODULO = "historia_clinica";
+  window.__TENANT_ID_ACTUAL = null;
+  window.__USUARIO_EMAIL_ACTUAL = null;
+  window.__USER_ID_ACTUAL = null;
+  
 
   // ==============================
   // 🔒 RESTRICCIÓN AUXILIAR
@@ -95,10 +99,10 @@
     if (!session) return;
 
     const { data: perfil, error: ePerfil } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .single();
+  .from("profiles")
+  .select("role, tenant_id")
+  .eq("id", session.user.id)
+  .single();
 
     if (ePerfil || !perfil?.role) {
       alert("No se pudo obtener tu rol.");
@@ -108,8 +112,17 @@
 
     const rol = perfil.role;
 
-    // ✅ Guardar rol global para validaciones de UI/acciones
-    window.__ROL_ACTUAL = rol;
+// ✅ Guardar datos globales de sesión
+window.__ROL_ACTUAL = rol;
+window.__TENANT_ID_ACTUAL = perfil?.tenant_id || null;
+window.__USUARIO_EMAIL_ACTUAL = session.user?.email || "";
+window.__USER_ID_ACTUAL = session.user?.id || null;
+
+  if (!window.__TENANT_ID_ACTUAL) {
+  alert("Tu usuario no tiene tenant_id asignado.");
+  window.location.href = window.APP_URLS.HOME;
+  return;
+}
 
     const { data: permiso, error: ePerm } = await supabase
       .from("modulos_permisos")
@@ -2741,13 +2754,15 @@ async function cargarProfesionalesDesdeSupabase() {
     document.getElementById("usuarioN8N").value = usuario;
 
     const payload = {
-      historia_clinica: datosHistoria,
-      odontograma: odontogramaCompleto,
-      evoluciones: evoluciones,
-      //profesional_diagnostico: profesionalDiagnostico,  // 🔥 nuevo
-      fecha_envio: new Date().toISOString(),
-      usuario_logueado: usuario
-    };
+  tenant_id: window.__TENANT_ID_ACTUAL,
+  user_id: window.__USER_ID_ACTUAL,
+  usuario_email: window.__USUARIO_EMAIL_ACTUAL,
+  historia_clinica: datosHistoria,
+  odontograma: odontogramaCompleto,
+  evoluciones: evoluciones,
+  fecha_envio: new Date().toISOString(),
+  usuario_logueado: usuario
+};
 
     fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8", {
   method: "POST",
@@ -3160,10 +3175,11 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
     try {
       const { data, error } = await window.supabase
-        .from("consentimientos")
-        .select("*")
-        .eq("cedula_paciente", cedula)
-        .order("creado_en", { ascending: false });
+  .from("consentimientos")
+  .select("*")
+  .eq("cedula_paciente", cedula)
+  .eq("tenant_id", window.__TENANT_ID_ACTUAL)
+  .order("creado_en", { ascending: false });
 
       if (error) throw error;
 
@@ -3238,24 +3254,24 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
 
     // ✅✅✅ AQUÍ ESTÁ EL FIX: NOMBRES EXACTOS DE TU TABLA
     const row = {
-      id,
-      cedula_paciente,
-      paciente_nombre,
-      procedimiento,
-      profesional,
-      template_key,
-      texto,
+  id,
+  tenant_id: window.__TENANT_ID_ACTUAL,
+  cedula_paciente,
+  paciente_nombre,
+  procedimiento,
+  profesional,
+  template_key,
+  texto,
 
-      // ✅ En tu tabla se llaman *_path
-      firma_paciente_path: firma_paciente_dataurl,
-      firma_profesional_path: firma_profesional_dataurl,
+  firma_paciente_path: firma_paciente_dataurl,
+  firma_profesional_path: firma_profesional_dataurl,
 
-      firmado_en,
-      creado_en,
-      creado_por,
-      user_agent: navigator.userAgent,
-      hash_documento
-    };
+  firmado_en,
+  creado_en,
+  creado_por,
+  user_agent: navigator.userAgent,
+  hash_documento
+};
 
     try {
       let tries = 0;
@@ -3299,9 +3315,10 @@ He podido realizar preguntas y se me han resuelto dudas. Autorizo de manera libr
       if (!window.supabase) throw new Error("Supabase no disponible");
 
       const { error } = await window.supabase
-        .from("consentimientos")
-        .delete()
-        .eq("id", id);
+  .from("consentimientos")
+  .delete()
+  .eq("id", id)
+  .eq("tenant_id", window.__TENANT_ID_ACTUAL);
 
       if (error) throw error;
 
@@ -3698,7 +3715,8 @@ function confirmarDiagnosticoPrincipal() {
     renderDocumentos();
     nuevoDocumento();
 
-    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${cedula}`;
+    const tenantId = window.__TENANT_ID_ACTUAL || "";
+const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${encodeURIComponent(cedula)}&tenant_id=${encodeURIComponent(tenantId)}`;
 
     try {
       const resp = await fetch(url);
@@ -4278,10 +4296,11 @@ async function cargarPlantillasDesdeSupabase(){
 
   try{
     const { data, error } = await window.supabase
-      .from("consentimiento_plantillas")
-      .select("*")
-      .eq("activo", true)
-      .order("creado_en", { ascending:false });
+  .from("consentimiento_plantillas")
+  .select("*")
+  .eq("activo", true)
+  .eq("tenant_id", window.__TENANT_ID_ACTUAL)
+  .order("creado_en", { ascending:false });
 
     if (error) throw error;
 
@@ -4365,12 +4384,13 @@ async function guardarPlantillaSupabase(){
   if (!window.supabase) { alert("Supabase no disponible"); return; }
 
   const row = {
-    id: _tplEditId || undefined,
-    nombre,
-    procedimiento,
-    contenido,
-    activo: true
-  };
+  id: _tplEditId || undefined,
+  tenant_id: window.__TENANT_ID_ACTUAL,
+  nombre,
+  procedimiento,
+  contenido,
+  activo: true
+};
 
   try{
     const { error } = await window.supabase
@@ -4396,9 +4416,10 @@ async function eliminarPlantillaSupabase(){
 
   try{
     const { error } = await window.supabase
-      .from("consentimiento_plantillas")
-      .update({ activo:false })
-      .eq("id", id);
+  .from("consentimiento_plantillas")
+  .update({ activo:false })
+  .eq("id", id)
+  .eq("tenant_id", window.__TENANT_ID_ACTUAL);
 
     if (error) throw error;
 
@@ -4550,7 +4571,7 @@ function abrirModalEvoluciones(){
   modal.style.display = "block";
 
   // ✅ cargar evoluciones dentro del iframe (sin salir de la historia)
-  iframe.src = `evoluciones.html?auto=1&cedula=${encodeURIComponent(paciente.cedula)}`;
+  iframe.src = `evoluciones.html?auto=1&cedula=${encodeURIComponent(paciente.cedula)}&tenant_id=${encodeURIComponent(window.__TENANT_ID_ACTUAL || "")}`;
 }
 
 
@@ -4575,8 +4596,9 @@ function cerrarModalEvoluciones(){
   }
 
   const url =
-    "https://cacg1022.github.io/ODONTOLOGIA/formulasmedicas.html" +
-    "?cedula=" + encodeURIComponent(cedula);
+  "https://cacg1022.github.io/ODONTOLOGIA/formulasmedicas.html" +
+  "?cedula=" + encodeURIComponent(cedula) +
+  "&tenant_id=" + encodeURIComponent(window.__TENANT_ID_ACTUAL || "");
 
   window.location.href = url;
 }
