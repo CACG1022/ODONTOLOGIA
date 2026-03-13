@@ -30,6 +30,7 @@
     const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let EMISOR_ID = null;
+    let TENANT_ID = null;
 
     // =========================
     // 🔐 VALIDAR SESIÓN Y ROL
@@ -50,10 +51,10 @@
       }
 
       const { data: perfil, error } = await supabaseClient
-        .from("profiles")
-        .select("role")
-        .eq("id", session.user.id)
-        .maybeSingle();
+  .from("profiles")
+  .select("role, tenant_id")
+  .eq("id", session.user.id)
+  .maybeSingle();
 
       if (error) {
         console.error("❌ Error leyendo perfil:", error);
@@ -63,6 +64,14 @@
       }
 
       const rol = String(perfil?.role || "").toLowerCase();
+
+      TENANT_ID = perfil?.tenant_id || null;
+
+if(!TENANT_ID){
+  alert("❌ El usuario no tiene tenant asignado");
+  window.location.href = INDEX_URL;
+  return false;
+}
 
       if (rol !== "admin") {
         alert("⛔ Solo el administrador puede acceder a este módulo.");
@@ -80,9 +89,10 @@
     async function cargarEmisor(){
       const { data, error } = await supabaseClient
         .from("emisor_dian")
-        .select("*")
-        .limit(1)
-        .maybeSingle();
+          .select("*")
+          .eq("tenant_id", TENANT_ID)
+          .limit(1)
+          .maybeSingle();
 
       console.log("📦 Resultado emisor_dian:", { data, error });
 
@@ -136,6 +146,7 @@
 
       const payload = {
         id: EMISOR_ID || undefined,
+        tenant_id: TENANT_ID,
         nit: nit?.value || "",
         dv: dv?.value || "",
         codPrestador: codPrestador?.value || "",
@@ -163,7 +174,7 @@ console.log("Payload enviado:", payload);
 
 const { data, error } = await supabaseClient
   .from("emisor_dian")
-  .upsert(payload, { onConflict: "id" })
+  .upsert(payload, { onConflict: "tenant_id" })
   .select();
 if (error) {
   console.error("❌ Error guardando:", error);
@@ -651,6 +662,7 @@ async function cargarSedesServicios(){
   const { data, error } = await supabaseClient
     .from("sedes")
     .select("id,nombre")
+    .eq("tenant_id", TENANT_ID)
     .eq("activo", true)
     .order("nombre",{ascending:true});
 
@@ -887,7 +899,13 @@ async function cargarServiciosHabilitados(){
 
       const { error } = await supabaseClient
         .from("sedes")
-        .insert([{ nombre, direccion, codigo_reps, activo }]);
+        .insert([{
+           nombre,
+           direccion,
+           codigo_reps,
+           activo,
+           tenant_id: TENANT_ID
+}]);
 
       if (error) {
         console.error("❌ Error guardando sede:", error);
