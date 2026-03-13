@@ -717,6 +717,7 @@ async function guardarServicioHabilitado(){
     .from("servicios_habilitados_sede")
     .insert([{
       sede_id: sede_id,
+      tenant_id: TENANT_ID,
       cod_servicio: codigo,
       nombre_servicio: nombre,
       activo: true
@@ -743,7 +744,8 @@ async function guardarServicioHabilitado(){
   const { error } = await supabaseClient
     .from("servicios_habilitados_sede")
     .delete()
-    .eq("cod_servicio", codigo);
+.eq("tenant_id", TENANT_ID)
+.eq("cod_servicio", codigo);
 
   if(error){
     console.error(error);
@@ -768,10 +770,11 @@ async function cargarServiciosHabilitados(){
   try{
 
     const { data, error } = await supabaseClient
-      .from("servicios_habilitados_sede")
-      .select("cod_servicio, nombre_servicio")
-      .eq("activo", true)
-      .order("cod_servicio", { ascending:true });
+  .from("servicios_habilitados_sede")
+  .select("cod_servicio, nombre_servicio")
+  .eq("tenant_id", TENANT_ID)
+  .eq("activo", true)
+  .order("cod_servicio", { ascending:true });
 
     if(error){
       console.error("Error cargando servicios:", error);
@@ -859,9 +862,10 @@ async function cargarServiciosHabilitados(){
       if (!tbody) return;
 
       const { data, error } = await supabaseClient
-        .from("sedes")
-        .select("id,nombre,direccion,codigo_reps,activo,created_at")
-        .order("created_at", { ascending: false });
+  .from("sedes")
+  .select("id,nombre,direccion,codigo_reps,activo,created_at")
+  .eq("tenant_id", TENANT_ID)
+  .order("created_at", { ascending: false });
 
       if (error) {
         console.error("❌ Error cargando sedes:", error);
