@@ -517,7 +517,12 @@ async function importarExcel(file){
 
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-    const rows = XLSX.utils.sheet_to_json(sheet);
+    const rows = XLSX.utils.sheet_to_json(sheet, {
+      console.log("Filas Excel:", rows);
+  defval: "",
+  raw: false
+});
+
 
     if(!rows.length){
       showToast("La plantilla está vacía","err");
@@ -540,9 +545,18 @@ async function importarExcel(file){
 
     for(const r of rows){
 
-  const procedimiento = String(r.procedimiento || "").trim();
-  const cups = String(r.codigo_cups || "").trim();
-  const especialidad = String(r.especialidad || "").trim();
+  const procedimiento = String(
+  r.procedimiento || r.Procedimiento || r.PROCEDIMIENTO || ""
+).trim();
+
+const cups = String(
+  r.codigo_cups || r.Codigo_cups || r.codigoCups || ""
+).trim();
+
+const especialidad = String(
+  r.especialidad || r.Especialidad || ""
+).trim();
+
       if(!especialidadesValidas.includes(especialidad)){
   showToast(`Especialidad inválida: ${especialidad}`,"err");
   return;
