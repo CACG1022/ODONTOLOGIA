@@ -328,6 +328,18 @@ async function cargarPacientes() {
     // ✅ CONTAR CITAS DE HOY
     // =========================
     async function cargarCitasHoy() {
+      const { data: { session } } = await supabase.auth.getSession();
+if (!session) return;
+
+// obtener tenant del usuario
+const { data: perfil } = await supabase
+  .from("profiles")
+  .select("tenant_id")
+  .eq("id", session.user.id)
+  .single();
+
+const TENANT_ID = perfil?.tenant_id;
+      
       try {
         const inicioDia = new Date();
         inicioDia.setHours(0,0,0,0);
@@ -335,11 +347,13 @@ async function cargarPacientes() {
         const finDia = new Date();
         finDia.setHours(23,59,59,999);
 
-        const { count, error } = await supabase
-          .from("citas")
-          .select("id", { count: "exact", head: true })
-          .gte("inicio", inicioDia.toISOString())
-          .lte("inicio", finDia.toISOString());
+const { count, error } = await supabase
+  .from("citas")
+  .select("id", { count: "exact", head: true })
+  .eq("tenant_id", TENANT_ID)
+  .gte("inicio", inicioDia.toISOString())
+  .lte("inicio", finDia.toISOString());
+        
 
         if (error) throw error;
 
