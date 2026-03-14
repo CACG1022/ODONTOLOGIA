@@ -166,6 +166,9 @@ function render(){
       count.textContent = `${state.filtered.length} procedimientos`;
 
       tbody.innerHTML = "";
+  const selectAll = document.getElementById("selectAll");
+if(selectAll) selectAll.checked = false;
+
 
       state.filtered.forEach((row)=>{
         const tr = document.createElement("tr");
@@ -836,16 +839,6 @@ const { data, error } = await supabase
 
   await cargarProcedimientos();
 
-  document.getElementById("selectAll").addEventListener("change", function(){
-
-  const checks = document.querySelectorAll(".select-row");
-
-  checks.forEach(c=>{
-    c.checked = this.checked;
-  });
-
-});
-
 }
 
 
@@ -1003,6 +996,17 @@ document.getElementById("btn-cerrar-modal").addEventListener("click", ()=>{
       await cargarProfesionales();
       llenarFiltroProfesionales();
       await cargarProcedimientos();
+
+      document.getElementById("selectAll").addEventListener("change", function(){
+
+  const checks = document.querySelectorAll(".select-row");
+
+  checks.forEach(c=>{
+    c.checked = this.checked;
+  });
+
+});
+
 
     }
 
