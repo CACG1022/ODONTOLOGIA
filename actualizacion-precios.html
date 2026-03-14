@@ -374,6 +374,73 @@ function render(){
   render();
 }
 
+async function importarCUPS(){
+
+  if(!confirm("¿Importar procedimientos desde la tabla CUPS?")){
+    return;
+  }
+
+  setStatus("Importando procedimientos CUPS...");
+
+  try{
+
+    // obtener usuario actual
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if(!session){
+      showToast("Sesión no válida", "err");
+      return;
+    }
+
+    const tenant_id = session.user.id;
+
+    // traer CUPS con especialidad válida
+    const { data: cupsData, error: errCups } = await supabase
+      .from("CUPS")
+      .select("codigo,nombre,especialidad")
+      .not("especialidad","is",null);
+
+    if(errCups){
+      console.error(errCups);
+      showToast("Error leyendo tabla CUPS", "err");
+      return;
+    }
+
+    if(!cupsData || cupsData.length === 0){
+      showToast("No hay procedimientos para importar", "warn");
+      return;
+    }
+
+    // preparar datos para insertar
+    const rows = cupsData.map(c => ({
+      codigo: c.codigo,
+      procedimiento: c.nombre,
+      especialidad: c.especialidad,
+      tenant_id: tenant_id
+    }));
+
+    const { error: errInsert } = await supabase
+      .from("procedimientos_precios")
+      .insert(rows);
+
+    setStatus("");
+
+    if(errInsert){
+      console.error(errInsert);
+      showToast("Error importando procedimientos", "err");
+      return;
+    }
+
+    showToast("Procedimientos importados correctamente ✅");
+
+    await cargarProcedimientos();
+
+  }catch(e){
+    console.error(e);
+    showToast("Error inesperado", "err");
+  }
+
+}
 
     async function cargarProcedimientos(){
       setStatus("Cargando procedimientos...");
@@ -655,6 +722,8 @@ TENANT_ID = perfil?.tenant_id || null;
       // events
       document.getElementById("search").addEventListener("input", applyFilter);
       document.getElementById("btn-refresh").addEventListener("click", cargarProcedimientos);
+      document.getElementById("btn-importar-cups").addEventListener("click", importarCUPS);
+
       document.getElementById("btn-rips").addEventListener("click", () => { window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/clasificacionprocedimientos.html";});
       
       document.getElementById("btn-back").addEventListener("click", ()=> window.location.href = INDEX_URL);
@@ -1141,6 +1210,7 @@ td.col-valor input {
         <button class="btn primary" type="button" id="btn-open-modal">Agregar nuevo procedimiento</button>
         <button class="btn" type="button" id="btn-rips">Clasificar procedimientos RIPS</button>
       <button class="btn primary" type="button" id="btn-save-all">Guardar todos los cambios</button>
+      <button class="btn primary" type="button" id="btn-importar-cups">Importar procedimientos CUPS</button>
         <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
         <button class="btn" type="button" id="btn-back">Volver</button>
       
