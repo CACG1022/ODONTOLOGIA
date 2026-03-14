@@ -102,6 +102,7 @@
     let currentUser = null;
     let isAdmin = false;
     let editingId = null;
+    let TENANT_ID = null;
 
     function toast(msg){
       const el = $("toast");
@@ -210,9 +211,10 @@
       const onlyActive = $("solo-activos")?.checked || false;
 
       let query = supabase
-        .from("profesionales")
-        .select("id, cedula, tipo_identificacion, nombre, correo, activo, creado_en, profesion, especialidad, celular")
-        .order("creado_en", { ascending: false });
+  .from("profesionales")
+  .select("id, cedula, tipo_identificacion, nombre, correo, activo, creado_en, profesion, especialidad, celular")
+  .eq("tenant_id", TENANT_ID)
+  .order("creado_en", { ascending: false });
 
       if (onlyActive) query = query.eq("activo", true);
 
@@ -265,7 +267,17 @@
         } else {
           const { error } = await supabase
             .from("profesionales")
-            .insert([{ cedula, tipo_identificacion, nombre, correo, celular, profesion: profesion || null, especialidad: especialidad || null, activo }]);
+            .insert([{
+  cedula,
+  tipo_identificacion,
+  nombre,
+  correo,
+  celular,
+  profesion: profesion || null,
+  especialidad: especialidad || null,
+  activo,
+  tenant_id: TENANT_ID
+}]);
 
           if (error) throw error;
           toast("✅ Profesional agregado");
@@ -311,6 +323,19 @@
       }
 
       currentUser = session.user;
+
+      // obtener tenant_id del usuario
+const { data: perfil, error: perfilError } = await supabase
+  .from("profiles")
+  .select("tenant_id")
+  .eq("id", session.user.id)
+  .single();
+
+if (perfilError) {
+  console.error("Error leyendo tenant:", perfilError);
+} else {
+  TENANT_ID = perfil?.tenant_id;
+}
 
       const email = (currentUser?.email || "").toLowerCase();
       $("user-email").textContent = currentUser?.email || "Usuario autenticado";
