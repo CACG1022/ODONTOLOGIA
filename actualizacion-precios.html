@@ -518,11 +518,11 @@ async function importarExcel(file){
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
     const rows = XLSX.utils.sheet_to_json(sheet, {
-      console.log("Filas Excel:", rows);
+      
   defval: "",
   raw: false
 });
-
+console.log("Filas Excel:", rows);
 
     if(!rows.length){
       showToast("La plantilla está vacía","err");
