@@ -427,11 +427,11 @@ const tenant_id = profile.tenant_id;
 
     // preparar datos para insertar
     const rows = cupsData.map(c => ({
-      codigo: c.codigo,
-      procedimiento: c.nombre,
-      especialidad: c.especialidad,
-      tenant_id: tenant_id
-    }));
+  codigo_cups: c.codigo,
+  procedimiento: c.nombre,
+  especialidad: c.especialidad,
+  tenant_id: tenant_id
+}));
 
     const { error: errInsert } = await supabase
       .from("procedimientos_precios")
