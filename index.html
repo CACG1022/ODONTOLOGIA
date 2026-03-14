@@ -44,6 +44,7 @@
 
     // ✅ Admin por email
     const ADMIN_EMAIL = "Camilo-1000@hotmail.com".toLowerCase();
+    let TENANT_ID_ACTUAL = null;
 
     function setDisabled(el, disabled, reason = "No autorizado") {
       if (!el) return;
@@ -85,24 +86,24 @@
     }
 
     // ✅ Lee rol desde profiles
-    async function cargarRolDesdeProfiles(userId) {
-      try {
-        const { data, error } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", userId)
-          .single();
+   async function cargarRolDesdeProfiles(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role, tenant_id")
+      .eq("id", userId)
+      .single();
 
-        if (error) {
-          console.warn("No se pudo leer profiles.role:", error.message);
-          return null;
-        }
-        return data?.role || null;
-      } catch (e) {
-        console.warn("Error leyendo role:", e);
-        return null;
-      }
+    if (error) {
+      console.warn("No se pudo leer profiles.role / tenant_id:", error.message);
+      return null;
     }
+    return data || null;
+  } catch (e) {
+    console.warn("Error leyendo role / tenant_id:", e);
+    return null;
+  }
+}
 
     // ✅ Normaliza nombres de módulos para que coincidan aunque tengan .html
     function normModulo(s) {
@@ -170,6 +171,33 @@
     }
 
     function puedeAcceder(permisosMap, modulo, roleKey) {
+      async function cargarNombreClinicaDesdeEmisor() {
+  if (!TENANT_ID_ACTUAL) return;
+
+  try {
+    const { data, error } = await supabase
+      .from("emisor_dian")
+      .select("nombre_comercial")
+      .eq("tenant_id", TENANT_ID_ACTUAL)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("No se pudo cargar emisor_dian.nombre_comercial:", error.message);
+      return;
+    }
+
+    const nombreClinica = String(data?.nombre_comercial || "").trim();
+    if (!nombreClinica) return;
+
+    const heroName = document.getElementById("hero-clinic-name");
+    if (heroName) heroName.textContent = nombreClinica;
+
+    const footerClinic = document.getElementById("footer-clinic-name");
+    if (footerClinic) footerClinic.textContent = nombreClinica;
+  } catch (e) {
+    console.warn("Error cargando nombre de clínica:", e);
+  }
+}
       if (!permisosMap) return false;
 
       const candidates = getModuloCandidates(modulo);
@@ -193,7 +221,9 @@
       const u = document.getElementById("user-email");
       if (u) u.textContent = session.user?.email || "Usuario autenticado";
 
-      const roleRaw = await cargarRolDesdeProfiles(session.user.id);
+      const perfil = await cargarRolDesdeProfiles(session.user.id);
+const roleRaw = perfil?.role || null;
+TENANT_ID_ACTUAL = perfil?.tenant_id || null;
       const roleNorm = String(roleRaw || "").toLowerCase().trim();
 
       const roleEl = document.getElementById("user-role");
@@ -251,6 +281,7 @@
 
       const y = document.getElementById("year");
       if (y) y.textContent = new Date().getFullYear();
+      await cargarNombreClinicaDesdeEmisor();
     }
 // =========================
 // ✅ CONTAR PACIENTES ÚNICOS (CORREGIDO)
@@ -1012,9 +1043,9 @@ z-index: 1;
       <div class="hero-grid">
         <div class="hero-left">
           <h1 class="headline">
-            DENTOVA <span class="neon">IIIIIIIIIIIIII</span><br/>
-            LEIDI SILVA ODONTOLOGÍA
-          </h1>
+  DENTOVA <span class="neon">IIIIIIIIIIIIII</span><br/>
+  <span id="hero-clinic-name">LEIDI SILVA ODONTOLOGÍA</span>
+</h1>
           <p class="sub">Panel premium con glassmorphism y módulos inteligentes para tu sistema de odontología.</p>
           <div class="cta-row">
             <button class="cta-big" type="button" onclick="window.location.href='https://cacg1022.github.io/ODONTOLOGIA/emisor.html'">Datos del consultorio </button>
@@ -1264,7 +1295,7 @@ z-index: 1;
       
 
       <div class="foot">
-        <div>© <span id="year"></span> Clínica Dra. Leidi Silva</div>
+        <div>© <span id="year"></span> <span id="footer-clinic-name">Clínica Dra. Leidi Silva</span></div>
         <div class="mono">Fecha: <span id="today"></span></div>
       </div>
     </section>
