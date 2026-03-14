@@ -1095,6 +1095,20 @@ td.col-valor input {
   align-items: center;
   flex-wrap: wrap; /* importante para pantallas pequeñas */
 }
+    /* ===== NUEVO LAYOUT HEADER ===== */
+
+.header-layout{
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.buttons-row{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+}
+
 
 .filters-row input,
 .filters-row select{
@@ -1188,7 +1202,7 @@ td.col-valor input {
   </div>
 
   <div class="container" id="app" style="display:none;">
-    <div class="header">
+    <div class="header header-layout">
       <div class="header-left">
         <div class="title">Procedimientos</div>
         <div class="count" id="count">0 procedimientos</div>
@@ -1221,12 +1235,21 @@ td.col-valor input {
   </select>
 </div>
 
-        <button class="btn primary" type="button" id="btn-open-modal">Agregar nuevo procedimiento</button>
-        <button class="btn" type="button" id="btn-rips">Clasificar procedimientos RIPS</button>
-      <button class="btn primary" type="button" id="btn-save-all">Guardar todos los cambios</button>
-      <button class="btn primary" type="button" id="btn-importar-cups">Importar procedimientos CUPS</button>
-        <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
-        <button class="btn" type="button" id="btn-back">Volver</button>
+        <div class="buttons-row">
+
+<button class="btn primary" type="button" id="btn-open-modal">Agregar nuevo procedimiento</button>
+
+<button class="btn" type="button" id="btn-rips">Clasificar procedimientos RIPS</button>
+
+<button class="btn primary" type="button" id="btn-save-all">Guardar todos los cambios</button>
+
+<button class="btn primary" type="button" id="btn-importar-cups">Importar procedimientos CUPS</button>
+
+<button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
+
+<button class="btn" type="button" id="btn-back">Volver</button>
+
+
       
       </div>
     </div>
