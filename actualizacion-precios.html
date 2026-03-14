@@ -85,6 +85,7 @@ async function validarCUPS(codigo){
       editing: new Map(), // id -> {profesional, especialidad, procedimiento, valor, costo, codigo_cups}
       isAdmin: false
     };
+    let TENANT_ID = null;
 
     function showToast(msg, type="ok"){
       const el = document.getElementById("toast");
@@ -377,10 +378,11 @@ function render(){
     async function cargarProcedimientos(){
       setStatus("Cargando procedimientos...");
       try{
-        const { data, error } = await supabase
-          .from("procedimientos_precios")
-          .select("id,profesional,especialidad,costo,procedimiento,valor,codigo_cups,updated_at")
-          .order("procedimiento", { ascending: true });
+const { data, error } = await supabase
+  .from("procedimientos_precios")
+  .select("id,profesional,especialidad,costo,procedimiento,valor,codigo_cups,updated_at")
+  .eq("tenant_id", TENANT_ID)
+  .order("procedimiento", { ascending: true });
 
         if (error){
           setStatus("Error: " + error.message);
@@ -451,7 +453,8 @@ function render(){
   const { error } = await supabase
     .from("procedimientos_precios")
     .update(payload)
-    .eq("id", id);
+.eq("id", id)
+.eq("tenant_id", TENANT_ID);
 
   setStatus("");
 
@@ -528,7 +531,8 @@ function render(){
       const { error } = await supabase
         .from("procedimientos_precios")
         .delete()
-        .eq("id", id);
+.eq("id", id)
+.eq("tenant_id", TENANT_ID);
 
       setStatus("");
       if(error){
@@ -587,13 +591,14 @@ document.addEventListener("click", async (e)=>{
     const { error } = await supabase
       .from("procedimientos_precios")
       .insert([{
-        profesional,
-        especialidad,
-        procedimiento,
-        codigo_cups: cups,
-        valor,
-        costo
-      }]);
+  tenant_id: TENANT_ID,
+  profesional,
+  especialidad,
+  procedimiento,
+  codigo_cups: cups,
+  valor,
+  costo
+}]);
 
     if(error){
       showToast("Error al crear: " + error.message, "err");
@@ -624,6 +629,15 @@ document.addEventListener("click", async (e)=>{
 
       // rol
       const role = await cargarRolDesdeProfiles(session.user.id);
+      // obtener tenant del usuario
+const { data: perfil } = await supabase
+  .from("profiles")
+  .select("tenant_id")
+  .eq("id", session.user.id)
+  .single();
+
+TENANT_ID = perfil?.tenant_id || null;
+      
       document.getElementById("user-role").textContent = role ? `Rol: ${role}` : "Rol: (sin rol)";
 
       const email = (session.user?.email || "").toLowerCase();
