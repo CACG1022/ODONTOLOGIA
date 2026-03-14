@@ -392,7 +392,21 @@ async function importarCUPS(){
       return;
     }
 
-    const tenant_id = session.user.id;
+    // obtener tenant del usuario
+const { data: profile, error: errProfile } = await supabase
+.from("profiles")
+.select("tenant_id")
+.eq("id", session.user.id)
+.single();
+
+if(errProfile){
+console.error(errProfile);
+showToast("No se pudo obtener tenant", "err");
+return;
+}
+
+const tenant_id = profile.tenant_id;
+
 
     // traer CUPS con especialidad válida
     const { data: cupsData, error: errCups } = await supabase
