@@ -1413,6 +1413,49 @@ td.col-valor input {
 #btn-rips:hover {
   filter: brightness(0.95);
 }
+  /* ===== Control ancho columnas ===== */
+
+.col-check{
+  width:40px;
+}
+
+.col-prof{
+  width:170px;
+}
+
+.col-esp{
+  width:170px;
+}
+
+.col-costo{
+  width:90px;
+}
+
+.col-cups{
+  width:110px;
+}
+
+.col-precio{
+  width:110px;
+}
+
+.col-proc{
+  width:420px;
+}
+
+.col-acc{
+  width:150px;
+}
+td.col-costo input,
+td.col-cups input,
+td.col-precio input{
+  max-width:100px;
+}
+
+td.col-proc input{
+  width:100%;
+}
+
     
 </style>
 </head>
@@ -1509,18 +1552,19 @@ td.col-valor input {
       <table>
         <thead>
 <tr>
-<th>
+<th class="col-check">
 <input type="checkbox" id="selectAll">
 </th>
-<th>Profesional</th>
-<th>Especialidad</th>
-<th>Costo</th>
-<th>Procedimiento</th>
-<th>CUPS</th>
-<th>Precio</th>
-<th>Acciones</th>
+<th class="col-prof">Profesional</th>
+<th class="col-esp">Especialidad</th>
+<th class="col-costo">Costo</th>
+<th class="col-proc">Procedimiento</th>
+<th class="col-cups">CUPS</th>
+<th class="col-precio">Precio</th>
+<th class="col-acc">Acciones</th>
 </tr>
 </thead>
+
 
         <tbody id="tbody"></tbody>
       </table>
