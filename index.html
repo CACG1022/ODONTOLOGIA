@@ -197,9 +197,7 @@ async function cargarNombreClinicaDesdeEmisor() {
     const heroName = document.getElementById("hero-clinic-name");
     if (heroName) heroName.textContent = nombreClinica;
 
-    // FOOTER
-    const footerName = document.getElementById("footer-clinic-name");
-    if (footerName) footerName.textContent = nombreClinica;
+  
 
   } catch (err) {
     console.warn("Error cargando nombre de clínica:", err);
@@ -1306,7 +1304,7 @@ z-index: 1;
       
 
       <div class="foot">
-        <div>© <span id="year"></span> <span id="footer-clinic-name">---</span></div>
+        <div>© <span id="year"></span> DENTOVA</div>
         <div class="mono">Fecha: <span id="today"></span></div>
       </div>
     </section>
