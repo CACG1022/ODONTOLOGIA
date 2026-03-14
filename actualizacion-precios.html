@@ -170,6 +170,16 @@ function render(){
       state.filtered.forEach((row)=>{
         const tr = document.createElement("tr");
 
+        // ===== Checkbox selección =====
+const tdCheck = document.createElement("td");
+const check = document.createElement("input");
+check.type = "checkbox";
+check.className = "select-row";
+check.value = row.id;
+
+tdCheck.appendChild(check);
+
+
         
         // ===== Profesional =====
         const tdProf = document.createElement("td");
@@ -329,7 +339,7 @@ function render(){
 
         tdAcc.appendChild(btnSave);
         tdAcc.appendChild(btnDel);
-
+        tr.appendChild(tdCheck);
         tr.appendChild(tdProf);
         tr.appendChild(tdEsp);
         tr.appendChild(tdCosto);
@@ -787,7 +797,57 @@ const { data, error } = await supabase
       document.getElementById("search").dispatchEvent(new Event("input"));
     }
 
-   
+   async function eliminarSeleccionados(){
+
+  const checks = document.querySelectorAll(".select-row:checked");
+
+  if(checks.length === 0){
+    showToast("Seleccione al menos un procedimiento","warn");
+    return;
+  }
+
+  if(!confirm(`¿Eliminar ${checks.length} procedimientos seleccionados?`)){
+    return;
+  }
+
+  const ids = [];
+
+  checks.forEach(c=>{
+    ids.push(c.value);
+  });
+
+  setStatus("Eliminando procedimientos...");
+
+  const { error } = await supabase
+    .from("procedimientos_precios")
+    .delete()
+    .in("id", ids)
+    .eq("tenant_id", TENANT_ID);
+
+  setStatus("");
+
+  if(error){
+    console.error(error);
+    showToast("Error eliminando registros","err");
+    return;
+  }
+
+  showToast("Procedimientos eliminados correctamente");
+
+  await cargarProcedimientos();
+
+  document.getElementById("selectAll").addEventListener("change", function(){
+
+  const checks = document.querySelectorAll(".select-row");
+
+  checks.forEach(c=>{
+    c.checked = this.checked;
+  });
+
+});
+
+}
+
 
     // ===== Crear desde modal =====
 document.addEventListener("click", async (e)=>{
@@ -1422,6 +1482,9 @@ td.col-valor input {
 
 <button class="btn primary" type="button" id="btn-importar-excel">Importar desde Excel</button>
 
+<button class="btn-red" onclick="eliminarSeleccionados()">Eliminar seleccionados</button>
+
+
 
 
 <button class="btn" type="button" id="btn-refresh">Actualizar lista</button>
@@ -1439,16 +1502,20 @@ td.col-valor input {
     <div style="max-height: 62vh; overflow-y:auto; overflow-x:hidden;">
       <table>
         <thead>
-          <tr>
-            <th style="width: 180px;">Profesional</th>
-            <th style="width: 200px;">Especialidad</th>
-            <th class="col-costo" style="width: 140px;">Costo</th>
-            <th style="min-width: 320px;">Procedimiento</th>
-            <th style="width: 180px;">CUPS</th>
-            <th style="width: 160px;">Precio</th>
-            <th style="min-width: 200px;">Acciones</th>
-          </tr>
-        </thead>
+<tr>
+<th>
+<input type="checkbox" id="selectAll">
+</th>
+<th>Profesional</th>
+<th>Especialidad</th>
+<th>Costo</th>
+<th>Procedimiento</th>
+<th>CUPS</th>
+<th>Precio</th>
+<th>Acciones</th>
+</tr>
+</thead>
+
         <tbody id="tbody"></tbody>
       </table>
     </div>
