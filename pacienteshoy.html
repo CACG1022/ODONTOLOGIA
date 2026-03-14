@@ -177,7 +177,8 @@ const supabase = createClient(
  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
-
+let TENANT_ID = null;
+  
 /* ===== RELOJ ===== */
 function actualizarReloj(){
  const ahora = new Date();
@@ -198,6 +199,30 @@ function anunciarPacienteEnSala(){
 
 /* ===== AGENDA ===== */
 const tabla = document.getElementById("tabla");
+  async function obtenerTenantUsuario(){
+
+  const { data: { session } } = await supabase.auth.getSession();
+
+  if(!session){
+    alert("Sesión expirada");
+    window.location.href="login.html";
+    return;
+  }
+
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", session.user.id)
+    .single();
+
+  if(error){
+    console.error("Error leyendo tenant:", error);
+    return;
+  }
+
+  TENANT_ID = data?.tenant_id || null;
+
+}
 const emptyMsg = document.getElementById("empty");
 const fechaInput = document.getElementById("fecha");
 const profesionalSelect = document.getElementById("profesional");
@@ -238,6 +263,7 @@ async function cargarCitas(){
  const { data } = await supabase
    .from("citas")
    .select("*")
+   .eq("tenant_id", TENANT_ID)
    .gte("inicio",`${fecha} 00:00:00`)
    .lte("inicio",`${fecha} 23:59:59`)
    .order("inicio");
@@ -286,7 +312,11 @@ async function cargarCitas(){
    });
 
    select.onchange=async e=>{
-     await supabase.from("citas").update({estado:e.target.value}).eq("id",c.id);
+     await supabase
+  .from("citas")
+  .update({estado:e.target.value})
+  .eq("id",c.id)
+  .eq("tenant_id", TENANT_ID);
      select.className=`estado-select ${claseEstado(e.target.value)}`;
    };
 
@@ -313,6 +343,7 @@ async function cargarCitas(){
 fechaInput.onchange=cargarCitas;
 profesionalSelect.onchange=cargarCitas;
 setInterval(cargarCitas,60000);
+await obtenerTenantUsuario();
 cargarCitas();
 </script>
 
