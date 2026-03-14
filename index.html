@@ -169,12 +169,15 @@
         return null;
       }
     }
+    // =============================
+// CARGAR NOMBRE DE CLÍNICA (TENANT)
+// =============================
+async function cargarNombreClinicaDesdeEmisor() {
 
-    function puedeAcceder(permisosMap, modulo, roleKey) {
-      async function cargarNombreClinicaDesdeEmisor() {
   if (!TENANT_ID_ACTUAL) return;
 
   try {
+
     const { data, error } = await supabase
       .from("emisor_dian")
       .select("nombre_comercial")
@@ -182,22 +185,30 @@
       .maybeSingle();
 
     if (error) {
-      console.warn("No se pudo cargar emisor_dian.nombre_comercial:", error.message);
+      console.warn("No se pudo leer emisor_dian:", error.message);
       return;
     }
 
     const nombreClinica = String(data?.nombre_comercial || "").trim();
+
     if (!nombreClinica) return;
 
+    // HERO
     const heroName = document.getElementById("hero-clinic-name");
     if (heroName) heroName.textContent = nombreClinica;
 
-    const footerClinic = document.getElementById("footer-clinic-name");
-    if (footerClinic) footerClinic.textContent = nombreClinica;
-  } catch (e) {
-    console.warn("Error cargando nombre de clínica:", e);
+    // FOOTER
+    const footerName = document.getElementById("footer-clinic-name");
+    if (footerName) footerName.textContent = nombreClinica;
+
+  } catch (err) {
+    console.warn("Error cargando nombre de clínica:", err);
   }
+
 }
+
+    function puedeAcceder(permisosMap, modulo, roleKey) {
+
       if (!permisosMap) return false;
 
       const candidates = getModuloCandidates(modulo);
