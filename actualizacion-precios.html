@@ -459,6 +459,18 @@ const tenant_id = profile.tenant_id;
 }
 function descargarPlantilla(){
 
+  const especialidades = [
+    "Consulta y valoraciones",
+    "Odontología General",
+    "Rehabilitación Oral",
+    "Periodoncia",
+    "Endodoncia",
+    "Cirugía",
+    "Ortodoncia",
+    "Odontopediatría",
+    "Implantologia"
+  ];
+
   const data = [
     {
       procedimiento:"",
@@ -472,12 +484,27 @@ function descargarPlantilla(){
 
   const ws = XLSX.utils.json_to_sheet(data);
 
+  // crear hoja para lista desplegable
+  const wsList = XLSX.utils.aoa_to_sheet(
+    especialidades.map(e => [e])
+  );
+
   const wb = XLSX.utils.book_new();
+
   XLSX.utils.book_append_sheet(wb, ws, "plantilla");
+  XLSX.utils.book_append_sheet(wb, wsList, "listas");
+
+  // rango de validación
+  ws["!dataValidation"] = [{
+    sqref: "E2:E5000",
+    type: "list",
+    formula1: "listas!$A$1:$A$9"
+  }];
 
   XLSX.writeFile(wb, "plantilla_importacion_procedimientos.xlsx");
 
 }
+
 
 async function importarExcel(file){
 
@@ -498,29 +525,58 @@ async function importarExcel(file){
     }
 
     const inserts = [];
+    const especialidadesValidas = [
+"Consulta y valoraciones",
+"Odontología General",
+"Rehabilitación Oral",
+"Periodoncia",
+"Endodoncia",
+"Cirugía",
+"Ortodoncia",
+"Odontopediatría",
+"Implantologia"
+];
+
 
     for(const r of rows){
 
-      const procedimiento = String(r.procedimiento || "").trim();
-      const cups = String(r.codigo_cups || "").trim();
-      const especialidad = String(r.especialidad || "").trim();
+  const procedimiento = String(r.procedimiento || "").trim();
+  const cups = String(r.codigo_cups || "").trim();
+  const especialidad = String(r.especialidad || "").trim();
+      if(!especialidadesValidas.includes(especialidad)){
+  showToast(`Especialidad inválida: ${especialidad}`,"err");
+  return;
+}
 
-      if(!procedimiento || !cups || !especialidad){
-        showToast("Hay filas con datos obligatorios vacíos","err");
-        return;
-      }
 
-      inserts.push({
-        tenant_id: TENANT_ID,
-        procedimiento: procedimiento,
-        codigo_cups: cups,
-        especialidad: especialidad,
-        valor: money(r.valor),
-        costo: money(r.costo),
-        profesional: r.profesional || null
-      });
+  if(!procedimiento || !cups || !especialidad){
+    showToast("Hay filas con datos obligatorios vacíos","err");
+    return;
+  }
 
-    }
+  // validar que CUPS exista
+  const { data:cupsData } = await supabase
+    .from("CUPS")
+    .select("codigo")
+    .eq("codigo", cups)
+    .limit(1);
+
+  if(!cupsData || cupsData.length === 0){
+    showToast(`El CUPS ${cups} no existe en la tabla CUPS`,"err");
+    return;
+  }
+
+  inserts.push({
+    tenant_id: TENANT_ID,
+    procedimiento: procedimiento,
+    codigo_cups: cups,
+    especialidad: especialidad,
+    valor: money(r.valor),
+    costo: money(r.costo),
+    profesional: r.profesional || null
+  });
+
+}
 
     const {error} = await supabase
       .from("procedimientos_precios")
