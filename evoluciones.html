@@ -3308,10 +3308,22 @@ if (fi && conf.finalidad_codigo){
     const procNombre = (document.getElementById("proc_nombre_modal")?.value || "").trim();
     if (!procNombre) { alert("⚠️ Debes seleccionar un procedimiento."); return; }
 
-    if (!_procModalSelected || !_procModalSelected.procedimiento_id) {
-      alert("⛔ No se pudo cargar RIPS para este procedimiento. Revisa configuración.");
-      return;
-    }
+   // 🔹 Permitir procedimientos sin configuración RIPS
+// 🔹 Permitir procedimientos sin configuración RIPS
+if (!_procModalSelected) {
+
+  _procModalSelected = {
+    procedimiento_id: null,
+    procedimiento_nombre: procNombre,
+    valor: null,
+    codigo_cups: null,
+    especialidad: "",
+    codservicio: null,
+    finalidad_codigo: null,
+    finalidad_desc: ""
+  };
+
+}
 
     const motivo = (document.getElementById("proc_motivo_modal")?.value || "").trim();
     if (!motivo) { alert("⚠️ Debes seleccionar el motivo de atención."); return; }
