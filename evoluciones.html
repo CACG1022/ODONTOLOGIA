@@ -2010,7 +2010,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   codigo_cups: proc.codigo_cups ?? null,
   especialidad: proc.especialidad ?? "",
 
-  codservicio: conf.cod_servicio ?? null,
+  codservicio: String(conf.cod_servicio || "").trim(),
   finalidad_codigo: conf.finalidad_codigo ?? null,
   finalidad_desc: finTxt
 };
@@ -3300,7 +3300,9 @@ if (mensaje) mensaje.style.display = "none";
 
 } else {
 
-  if (cs) cs.value = conf.codservicio || "";
+  if (cs && conf.codservicio) {
+  cs.value = String(conf.codservicio).trim();
+}
 
   if (fi && conf.finalidad_codigo){
     fi.value = conf.finalidad_codigo;
