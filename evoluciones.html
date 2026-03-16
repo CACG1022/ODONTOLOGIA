@@ -3313,9 +3313,23 @@ if (mensaje) mensaje.style.display = "none";
     if (!procNombre) { alert("⚠️ Debes seleccionar un procedimiento."); return; }
 
     if (!_procModalSelected || !_procModalSelected.procedimiento_id) {
-      alert("⛔ No se pudo cargar RIPS para este procedimiento. Revisa configuración.");
-      return;
-    }
+
+  const continuar = confirm(
+    "⚠️ Este procedimiento no tiene configuración RIPS.\n\n¿Deseas guardarlo de todas formas?"
+  );
+
+  if (!continuar) return;
+
+  // crear objeto mínimo para permitir guardado
+  _procModalSelected = {
+    procedimiento_id: null,
+    procedimiento_nombre: procNombre,
+    codservicio: null,
+    finalidad_codigo: null,
+    finalidad_desc: ""
+  };
+
+}
 
     const motivo = (document.getElementById("proc_motivo_modal")?.value || "").trim();
     if (!motivo) { alert("⚠️ Debes seleccionar el motivo de atención."); return; }
