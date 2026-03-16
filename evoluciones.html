@@ -3277,7 +3277,8 @@ if (mensaje) mensaje.style.display = "none";
       const cs = document.getElementById("proc_codservicio_modal");
       const fi = document.getElementById("proc_finalidad_modal");
 
-     if (!conf) {
+    if (!conf) {
+
   if (cs) cs.value = "";
   if (fi) fi.value = "";
 
@@ -3290,7 +3291,14 @@ if (mensaje) mensaje.style.display = "none";
     mensaje.style.display = "block";
   }
 
-  //return;
+} else {
+
+  if (cs) cs.value = conf.codservicio || "";
+
+  if (fi && conf.finalidad_codigo){
+    fi.value = conf.finalidad_codigo;
+  }
+
 }
 
       if (cs) cs.value = conf.codservicio || "";
