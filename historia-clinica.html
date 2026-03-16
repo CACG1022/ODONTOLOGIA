@@ -27,6 +27,7 @@
 
   const MODULO = "historia_clinica";
   window.__TENANT_ID_ACTUAL = null;
+  let __buscandoHistoria = false;
   window.__USUARIO_EMAIL_ACTUAL = null;
   window.__USER_ID_ACTUAL = null;
   
@@ -178,6 +179,18 @@ window.__USER_ID_ACTUAL = session.user?.id || null;
  document.addEventListener("DOMContentLoaded", () => {
   cargarPaises();
 });
+async function esperarTenantId(maxMs = 5000) {
+  const inicio = Date.now();
+
+  while (!window.__TENANT_ID_ACTUAL) {
+    if (Date.now() - inicio > maxMs) {
+      throw new Error("tenant_id no disponible a tiempo");
+    }
+    await new Promise(r => setTimeout(r, 100));
+  }
+
+  return window.__TENANT_ID_ACTUAL;
+}
 
 function _fmt(val){
   if (val === null || val === undefined) return "";
@@ -2351,22 +2364,26 @@ async function cargarProfesionalesDesdeSupabase() {
   const params = new URLSearchParams(location.search);
   const cedulaURL = (params.get("buscar_cedula") || params.get("cedula") || "").trim();
 
-  // 🔎 Si la página fue abierta desde reporte-pacientes
+ // 🔎 Si la página fue abierta desde reporte-pacientes
 if (cedulaURL) {
-
   const campoCedula = document.getElementById("buscar_cedula");
 
   if (campoCedula) {
     campoCedula.value = cedulaURL;
   }
 
-  // ejecutar búsqueda automática
-  setTimeout(() => {
-    if (typeof buscarHistoria === "function") {
-      buscarHistoria();
-    }
-  }, 500);
+  try {
+    await esperarTenantId();
 
+    if (typeof buscarHistoria === "function") {
+      await buscarHistoria();
+    } else {
+      console.error("❌ buscarHistoria() no existe");
+    }
+  } catch (e) {
+    console.error("Error en auto-carga por URL:", e);
+    alert("No se pudo cargar automáticamente la historia clínica: " + (e.message || e));
+  }
 }
 
   // 2) leer paciente completo por localStorage
@@ -3724,8 +3741,19 @@ function confirmarDiagnosticoPrincipal() {
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
   // ==============================
   async function buscarHistoria() {
+  if (__buscandoHistoria) {
+    console.warn("buscarHistoria ya está en ejecución");
+    return;
+  }
+
+  __buscandoHistoria = true;
+
+  try {
     const cedula = document.getElementById("buscar_cedula").value.trim();
-    if (!cedula) { alert("Ingrese una cédula"); return; }
+    if (!cedula) {
+      alert("Ingrese una cédula");
+      return;
+    }
 
     _cedulaActual = cedula;
 
@@ -3734,11 +3762,31 @@ function confirmarDiagnosticoPrincipal() {
     nuevoDocumento();
 
     const tenantId = window.__TENANT_ID_ACTUAL || "";
-const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${encodeURIComponent(cedula)}&tenant_id=${encodeURIComponent(tenantId)}`;
+    if (!tenantId) {
+      throw new Error("tenant_id vacío antes de consultar historia");
+    }
 
-    try {
-      const resp = await fetch(url);
-      const data = await resp.json();
+    const url = `https://ftth-n8n2.pzveh5.easypanel.host/webhook/62804cbf-8f21-453b-823e-e5c1b94f31c8?cedula=${encodeURIComponent(cedula)}&tenant_id=${encodeURIComponent(tenantId)}`;
+
+    const resp = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      }
+    });
+
+    if (!resp.ok) {
+      const textoError = await resp.text();
+      throw new Error(`HTTP ${resp.status} - ${textoError.slice(0, 300)}`);
+    }
+
+    const contentType = resp.headers.get("content-type") || "";
+    if (!contentType.toLowerCase().includes("application/json")) {
+      const textoNoJson = await resp.text();
+      throw new Error(`La respuesta no es JSON válido: ${textoNoJson.slice(0, 300)}`);
+    }
+
+    const data = await resp.json();
 
       if (!data.existe) {
         evoluciones = [];
@@ -4107,13 +4155,14 @@ if (selTipo) {
         fecha: _hoyISO()
       });
 
-      alert("Historia clínica cargada con éxito");
+            alert("Historia clínica cargada con éxito");
     } catch (err) {
-      console.error(err);
-      alert("Error consultando N8N");
+      console.error("Error en buscarHistoria:", err);
+      alert("Error consultando historia clínica: " + (err.message || err));
+    } finally {
+      __buscandoHistoria = false;
     }
   }
-
 
   // ======================================
 // CARGAR PROFESIONALES PARA DIAGNÓSTICO
@@ -5028,43 +5077,7 @@ function _evolucionesToHTML(evos){
   const isFS = modal.classList.contains("fullscreen");
   if (btn) btn.textContent = isFS ? "Restaurar 🗗" : "Maximizar ⛶";
 }
-/* =====================================================
-   ✅ AUTO-BÚSQUEDA DESDE URL (?buscar_cedula=)
-   ===================================================== */
-(function () {
-  const params = new URLSearchParams(window.location.search);
-  const cedula = params.get("buscar_cedula");
-  const tenantId = params.get("tenant_id");
 
-if (tenantId) {
-  window.__TENANT_ID_ACTUAL = tenantId;
-}
-
-  if (!cedula) return;
-
-  window.addEventListener("DOMContentLoaded", () => {
-    const input = document.getElementById("buscar_cedula");
-    if (!input) {
-      console.warn("Input buscar_cedula no encontrado");
-      return;
-    }
-
-    // Colocar cédula en el input
-    input.value = cedula;
-
-    // 🔥 Ejecutar la función REAL
-    setTimeout(() => {
-      if (typeof buscarHistoria === "function") {
-        buscarHistoria();
-      } else {
-        console.error("❌ buscarHistoria() no existe");
-      }
-    }, 300);
-  });
-})();
-
-
-  
   
 window.toggleEvolucionesFullscreen = toggleEvolucionesFullscreen;
 
