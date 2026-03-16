@@ -1097,9 +1097,11 @@ textarea{
 </div>
 
       <div class="ctrl">
-          <label>Cod servicio (auto)</label>
-          <input id="proc_codservicio_modal" type="text" readonly placeholder="Auto" />  
-        </div>
+  <label>Cod servicio</label>
+  <select id="proc_codservicio_modal">
+    <option value="">Seleccione servicio...</option>
+  </select>
+</div>
 
         <div class="ctrl">
   <label>Finalidad tecnología salud</label>
@@ -2014,6 +2016,51 @@ const dxSec = (evo.diagnosticos_secundarios || [])
 };
   }
 
+// ==============================
+// ✅ SERVICIOS DE HABILITACION (COD SERVICIO)
+// ==============================
+async function cargarServiciosHabilitacion(){
+
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  const sel = document.getElementById("proc_codservicio_modal");
+  if(!sel) return;
+
+  sel.innerHTML = `<option value="">Seleccione servicio...</option>`;
+
+  try{
+
+    const { data, error } = await window.supabase
+      .from("servicios_de_habilitacion")
+      .select("codigo_servicio, nombre_servicio")
+      .order("nombre_servicio", { ascending: true });
+
+    if(error) throw error;
+
+    (data || []).forEach(s => {
+
+      const opt = document.createElement("option");
+
+      // 🔹 valor que se guarda
+      opt.value = s.codigo_servicio;
+
+      // 🔹 texto visible
+      opt.textContent = s.nombre_servicio;
+
+      sel.appendChild(opt);
+
+    });
+
+  }catch(e){
+    console.warn("⚠️ Error cargando servicios habilitación:", e);
+  }
+
+}
   // ==============================
   // ✅ PROFESIONALES DESDE SUPABASE
   // ==============================
@@ -2530,8 +2577,10 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
     await cargarClasificacionesRIPS();
+    await cargarServiciosHabilitacion();
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
+    
 
     const inpProc = document.getElementById("evo_tipo");
 if (inpProc) {
