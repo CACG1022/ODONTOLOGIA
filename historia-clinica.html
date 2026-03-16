@@ -2351,6 +2351,24 @@ async function cargarProfesionalesDesdeSupabase() {
   const params = new URLSearchParams(location.search);
   const cedulaURL = (params.get("buscar_cedula") || params.get("cedula") || "").trim();
 
+  // 🔎 Si la página fue abierta desde reporte-pacientes
+if (cedulaURL) {
+
+  const campoCedula = document.getElementById("buscar_cedula");
+
+  if (campoCedula) {
+    campoCedula.value = cedulaURL;
+  }
+
+  // ejecutar búsqueda automática
+  setTimeout(() => {
+    if (typeof buscarHistoria === "function") {
+      buscarHistoria();
+    }
+  }, 500);
+
+}
+
   // 2) leer paciente completo por localStorage
   let pacienteLS = null;
   try {
@@ -5016,6 +5034,11 @@ function _evolucionesToHTML(evos){
 (function () {
   const params = new URLSearchParams(window.location.search);
   const cedula = params.get("buscar_cedula");
+  const tenantId = params.get("tenant_id");
+
+if (tenantId) {
+  window.__TENANT_ID_ACTUAL = tenantId;
+}
 
   if (!cedula) return;
 
