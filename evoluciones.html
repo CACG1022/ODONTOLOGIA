@@ -1096,11 +1096,12 @@ textarea{
   ⚠️ Este procedimiento no tiene configuración RIPS.
 </div>
 
-      <div class="ctrl">
-          <label>Cod servicio (auto)</label>
-          <input id="proc_codservicio_modal" type="text" readonly placeholder="Auto" />  
-        </div>
-
+     <div class="ctrl">
+  <label>Cod servicio</label>
+  <select id="proc_codservicio_modal">
+    <option value="">Seleccione...</option>
+  </select>
+</div>
         <div class="ctrl">
   <label>Finalidad tecnología salud</label>
   <select id="proc_finalidad_modal">
@@ -1426,7 +1427,47 @@ if (selModalidad) {
     });
   }
 }
+// ==============================
+// 🔹 COD SERVICIO (DESDE SUPABASE)
+//    tabla: servicios_de_habilitacion
+//    filtro: tipo = "Odontologia"
+//    muestra: nombre_servicio
+//    guarda: codigo_servicio
+// ==============================
+async function cargarServiciosOdontologiaDesdeSupabase(){
 
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
+  }
+  if (!window.supabase) return;
+
+  const select = document.getElementById("proc_codservicio_modal");
+  if (!select) return;
+
+  try {
+    const { data, error } = await window.supabase
+      .from("servicios_de_habilitacion")
+      .select("codigo_servicio, nombre_servicio, tipo")
+      .eq("tipo", "Odontologia")
+      .order("nombre_servicio", { ascending: true });
+
+    if (error) throw error;
+
+    select.innerHTML = '<option value="">Seleccione...</option>';
+
+    (data || []).forEach(item => {
+      const option = document.createElement("option");
+      option.value = String(item.codigo_servicio || "").trim(); // ✅ valor real a guardar
+      option.textContent = String(item.nombre_servicio || "").trim(); // ✅ texto visible
+      select.appendChild(option);
+    });
+
+  } catch (err) {
+    console.warn("Error cargando servicios de habilitación:", err);
+  }
+}
   // ==============================
 // 🔹 FINALIDAD TECNOLOGÍA (DESDE SUPABASE)
 // ==============================
@@ -2525,6 +2566,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     limpiarEvolucionForm();
     mostrarNombrePaciente("");
     await cargarFinalidadesDesdeSupabase();
+    await cargarServiciosOdontologiaDesdeSupabase();
     await cargarProcedimientosDesdeSupabase();
     await cargarProfesionalesDesdeSupabase();
     await cargarDiagnosticosCIE10();
@@ -3224,10 +3266,10 @@ if (mensaje) mensaje.style.display = "none";
       _procModalSelected = conf;
       toggleDxComplicacionSegunEspecialidad(conf?.especialidad || "");
 
-      const cs = document.getElementById("proc_codservicio_modal");
-      const fi = document.getElementById("proc_finalidad_modal");
+ const cs = document.getElementById("proc_codservicio_modal");
+const fi = document.getElementById("proc_finalidad_modal");
 
-     if (!conf) {
+if (!conf) {
   if (cs) cs.value = "";
   if (fi) fi.value = "";
 
@@ -3243,8 +3285,11 @@ if (mensaje) mensaje.style.display = "none";
   return;
 }
 
-      if (cs) cs.value = conf.codservicio || "";
-      if (fi && conf.finalidad_codigo){
+// ✅ Deja preseleccionado el cod_servicio configurado,
+// pero ahora el usuario sí podrá cambiarlo manualmente en el desplegable
+if (cs) cs.value = conf.codservicio || "";
+
+if (fi && conf.finalidad_codigo){
   fi.value = conf.finalidad_codigo; // 🔥 selecciona el código en el select
 }
     }
@@ -3291,11 +3336,18 @@ const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
     if (dxSecTemp[2]) diagnosticoSec3 = dxSecTemp[2];
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
+    const codServicioSeleccionado = (document.getElementById("proc_codservicio_modal")?.value || "").trim();
+
+if (!codServicioSeleccionado) {
+  alert("⚠️ Debes seleccionar el código de servicio.");
+  return;
+}
 
 const tipoDx = document.getElementById("proc_tipo_diagnostico_modal")?.value || "";
 const modalidad = document.getElementById("proc_modalidad_modal")?.value || "";
 const grupo = document.getElementById("proc_grupo_servicio_modal")?.value || "";
 const via = document.getElementById("proc_via_ingreso_modal")?.value || "";
+ 
 
 if (!tipoDx) {
   alert("⚠️ Debes seleccionar el tipo de diagnóstico.");
@@ -3324,7 +3376,7 @@ if (!via) {
   codigo_cups: _procModalSelected.codigo_cups ?? null,
   especialidad: _procModalSelected.especialidad ?? "",
 
-  codservicio: _procModalSelected.codservicio ?? null,
+  codservicio: codServicioSeleccionado || null,
   finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
   finalidad_desc: _procModalSelected.finalidad_desc ?? "",
 
