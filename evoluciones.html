@@ -3270,10 +3270,6 @@ if (mensaje) mensaje.style.display = "none";
 const fi = document.getElementById("proc_finalidad_modal");
 
 if (!conf) {
-  if (cs) cs.value = "";
-  if (fi) fi.value = "";
-
-  toggleDxComplicacionSegunEspecialidad("");
 
   console.warn("Procedimiento sin configuración RIPS");
 
@@ -3282,7 +3278,15 @@ if (!conf) {
     mensaje.style.display = "block";
   }
 
-  return;
+  // ⚠️ No bloquear el flujo
+  // Solo dejar los campos vacíos para que el usuario pueda llenarlos manualmente
+
+  if (cs && !cs.value) cs.value = "";
+  if (fi && !fi.value) fi.value = "";
+
+  toggleDxComplicacionSegunEspecialidad("");
+
+  // 🔥 IMPORTANTE: quitamos el return para permitir continuar
 }
 
 // ✅ Deja preseleccionado el cod_servicio configurado,
