@@ -2038,6 +2038,7 @@ async function cargarServiciosHabilitacion(){
     const { data, error } = await window.supabase
       .from("servicios_de_habilitacion")
       .select("codigo_servicio, nombre_servicio")
+      .eq("tipo","Odontologia")
       .order("nombre_servicio", { ascending: true });
 
     if(error) throw error;
