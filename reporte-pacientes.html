@@ -761,6 +761,8 @@ table td{
       pacientes: [],
       charts: { contact:null, dist:null }
     };
+    // 🔑 tenant actual del usuario
+   let TENANT_ID = null;
 
     const $ = (id) => document.getElementById(id);
 
@@ -1117,6 +1119,18 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
       if (!guard.ok) return;
 
       state.session = guard.session;
+      // 🔎 obtener tenant_id del usuario logueado
+const { data: perfil, error: perfilError } = await supabase
+  .from("profiles")
+  .select("tenant_id")
+  .eq("id", guard.session.user.id)
+  .single();
+
+if (perfilError){
+  console.error("Error obteniendo tenant:", perfilError);
+} else {
+  TENANT_ID = perfil?.tenant_id;
+}
       $("user-email").textContent = (guard.session.user?.email || "Usuario").toString();
 
       await refrescarDashboard();
@@ -1186,11 +1200,11 @@ if (sd) sd.textContent = `Correo: ${conCorreo} • Tel: ${conTel}`;
         <td class="mono">${escapeHtml(p.telefono ?? "—")}</td>
         <td class="mono">${escapeHtml(p.correo ?? "—")}</td>
 
-        <td><button class="btn small primary" onclick="window.open('historia-clinica.html?buscar_cedula=${ced}', '_blank')">ver</button></td>
-        <td><button class="btn small" onclick="window.open('plandetratamiento.html?cedula=${ced}', '_blank')">ver</button></td>
-        <td><button class="btn small" onclick="window.open('facturacion.html?paciente_cedula=${ced}', '_blank')">ver</button></td>
-        <td><button class="btn small" onclick="window.open('evoluciones.html?auto=1&cedula=${ced}', '_blank')">ver</button></td>
-        <td><button class="btn small" onclick="window.open('laboratorio.html?auto=1&cedula=${ced}', '_blank')">ver</button></td>
+        <td><button class="btn small primary"onclick="window.open('historia-clinica.html?buscar_cedula=${ced}&tenant_id=' + TENANT_ID, '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('plandetratamiento.html?cedula=${ced}&tenant_id=' + TENANT_ID, '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('facturacion.html?paciente_cedula=${ced}&tenant_id=' + TENANT_ID, '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('evoluciones.html?auto=1&cedula=${ced}&tenant_id=' + TENANT_ID, '_blank')">ver</button></td>
+        <td><button class="btn small" onclick="window.open('laboratorio.html?auto=1&cedula=${ced}&tenant_id=' + TENANT_ID, '_blank')">ver</button></td>
         
 
       `;
