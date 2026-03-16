@@ -27,7 +27,7 @@
 
   const MODULO = "historia_clinica";
   window.__TENANT_ID_ACTUAL = null;
-  let __buscandoHistoria = false;
+  window.__buscandoHistoria = false;
   window.__USUARIO_EMAIL_ACTUAL = null;
   window.__USER_ID_ACTUAL = null;
   
@@ -3741,12 +3741,12 @@ function confirmarDiagnosticoPrincipal() {
   // ✅ BUSCAR HISTORIA (FIX Ciudad_de_Residencia + carga docs)
   // ==============================
   async function buscarHistoria() {
-  if (__buscandoHistoria) {
-    console.warn("buscarHistoria ya está en ejecución");
-    return;
-  }
+if (window.__buscandoHistoria) {
+  console.warn("buscarHistoria ya está en ejecución");
+  return;
+}
 
-  __buscandoHistoria = true;
+window.__buscandoHistoria = true;
 
   try {
     const cedula = document.getElementById("buscar_cedula").value.trim();
@@ -4160,8 +4160,8 @@ if (selTipo) {
       console.error("Error en buscarHistoria:", err);
       alert("Error consultando historia clínica: " + (err.message || err));
     } finally {
-      __buscandoHistoria = false;
-    }
+  window.__buscandoHistoria = false;
+}
   }
 
   // ======================================
