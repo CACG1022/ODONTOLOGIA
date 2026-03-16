@@ -2349,7 +2349,7 @@ async function cargarProfesionalesDesdeSupabase() {
   cargarProfesionalesDesdeSupabase();
   // 1) leer cedula por URL
   const params = new URLSearchParams(location.search);
-  const cedulaURL = (params.get("cedula") || "").trim();
+  const cedulaURL = (params.get("buscar_cedula") || params.get("cedula") || "").trim();
 
   // 2) leer paciente completo por localStorage
   let pacienteLS = null;
