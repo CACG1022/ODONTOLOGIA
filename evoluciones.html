@@ -1097,11 +1097,9 @@ textarea{
 </div>
 
       <div class="ctrl">
-  <label>Cod servicio</label>
-  <select id="proc_codservicio_modal">
-    <option value="">Seleccione servicio...</option>
-  </select>
-</div>
+          <label>Cod servicio (auto)</label>
+          <input id="proc_codservicio_modal" type="text" readonly placeholder="Auto" />  
+        </div>
 
         <div class="ctrl">
   <label>Finalidad tecnología salud</label>
@@ -2010,58 +2008,12 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   codigo_cups: proc.codigo_cups ?? null,
   especialidad: proc.especialidad ?? "",
 
-  codservicio: String(conf.cod_servicio || "").trim(),
+  codservicio: conf.cod_servicio ?? null,
   finalidad_codigo: conf.finalidad_codigo ?? null,
   finalidad_desc: finTxt
 };
   }
 
-// ==============================
-// ✅ SERVICIOS DE HABILITACION (COD SERVICIO)
-// ==============================
-async function cargarServiciosHabilitacion(){
-
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  const sel = document.getElementById("proc_codservicio_modal");
-  if(!sel) return;
-
-  sel.innerHTML = `<option value="">Seleccione servicio...</option>`;
-
-  try{
-
-    const { data, error } = await window.supabase
-      .from("servicios_de_habilitacion")
-      .select("codigo_servicio, nombre_servicio")
-      .eq("tipo","Odontologia")
-      .order("nombre_servicio", { ascending: true });
-
-    if(error) throw error;
-
-    (data || []).forEach(s => {
-
-      const opt = document.createElement("option");
-
-      // 🔹 valor que se guarda
-      opt.value = s.codigo_servicio;
-
-      // 🔹 texto visible
-      opt.textContent = s.nombre_servicio;
-
-      sel.appendChild(opt);
-
-    });
-
-  }catch(e){
-    console.warn("⚠️ Error cargando servicios habilitación:", e);
-  }
-
-}
   // ==============================
   // ✅ PROFESIONALES DESDE SUPABASE
   // ==============================
@@ -2578,10 +2530,8 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     await cargarDiagnosticosCIE10();
     await cargarMotivosAtencion();
     await cargarClasificacionesRIPS();
-    await cargarServiciosHabilitacion();
     // ✅ SOLO SE AUTO-CARGA SI VIENE ?auto=1
     await autoloadEvolucionesSiHayPaciente();
-    
 
     const inpProc = document.getElementById("evo_tipo");
 if (inpProc) {
@@ -3166,21 +3116,14 @@ if (dxCompModal) {
   }
 }
 
-    // 🔥 TomSelect Motivo (reinicializar siempre para evitar lista vacía)
-
-if (motivoSel) {
-
-  if (motivoSel.tomselect) {
-    motivoSel.tomselect.destroy();
-  }
-
-  _modalTomMotivo = new TomSelect(motivoSel, {
-    searchField: ["text"],
-    placeholder: "Buscar motivo...",
-    allowEmptyOption: true
-  });
-
-}
+    // TomSelect Motivo
+    if (motivoSel && !_modalTomMotivo) {
+      _modalTomMotivo = new TomSelect(motivoSel, {
+        searchField: ["text"],
+        placeholder: "Buscar motivo...",
+        allowEmptyOption: true
+      });
+    }
 
    
     limpiarModalProcEvo();
@@ -3284,8 +3227,7 @@ if (mensaje) mensaje.style.display = "none";
       const cs = document.getElementById("proc_codservicio_modal");
       const fi = document.getElementById("proc_finalidad_modal");
 
- if (!conf) {
-
+     if (!conf) {
   if (cs) cs.value = "";
   if (fi) fi.value = "";
 
@@ -3298,19 +3240,13 @@ if (mensaje) mensaje.style.display = "none";
     mensaje.style.display = "block";
   }
 
-} else {
-
-  if (cs && conf.codservicio) {
-  cs.value = String(conf.codservicio).trim();
+  return;
 }
 
-  if (fi && conf.finalidad_codigo){
-    fi.value = conf.finalidad_codigo;
-  }
-
+      if (cs) cs.value = conf.codservicio || "";
+      if (fi && conf.finalidad_codigo){
+  fi.value = conf.finalidad_codigo; // 🔥 selecciona el código en el select
 }
-
-  
     }
 
     procInp.addEventListener("change", handleProcChange);
@@ -3322,23 +3258,9 @@ if (mensaje) mensaje.style.display = "none";
     if (!procNombre) { alert("⚠️ Debes seleccionar un procedimiento."); return; }
 
     if (!_procModalSelected || !_procModalSelected.procedimiento_id) {
-
-  const continuar = confirm(
-    "⚠️ Este procedimiento no tiene configuración RIPS.\n\n¿Deseas guardarlo de todas formas?"
-  );
-
-  if (!continuar) return;
-
-  // crear objeto mínimo para permitir guardado
-  _procModalSelected = {
-    procedimiento_id: null,
-    procedimiento_nombre: procNombre,
-    codservicio: null,
-    finalidad_codigo: null,
-    finalidad_desc: ""
-  };
-
-}
+      alert("⛔ No se pudo cargar RIPS para este procedimiento. Revisa configuración.");
+      return;
+    }
 
     const motivo = (document.getElementById("proc_motivo_modal")?.value || "").trim();
     if (!motivo) { alert("⚠️ Debes seleccionar el motivo de atención."); return; }
@@ -3369,18 +3291,6 @@ const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
     if (dxSecTemp[2]) diagnosticoSec3 = dxSecTemp[2];
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
-
-    const finalidadSelect = document.getElementById("proc_finalidad_modal");
-
-let finalidadCodigo = finalidadSelect?.value || null;
-let finalidadTexto = "";
-
-if (finalidadSelect && finalidadSelect.selectedIndex >= 0) {
-  finalidadTexto = finalidadSelect.options[finalidadSelect.selectedIndex].text;
-}
-
-const codServicioSelect = document.getElementById("proc_codservicio_modal");
-const codServicioValor = codServicioSelect?.value || null;
 
 const tipoDx = document.getElementById("proc_tipo_diagnostico_modal")?.value || "";
 const modalidad = document.getElementById("proc_modalidad_modal")?.value || "";
@@ -3414,9 +3324,9 @@ if (!via) {
   codigo_cups: _procModalSelected.codigo_cups ?? null,
   especialidad: _procModalSelected.especialidad ?? "",
 
-  codservicio: codServicioValor,
-finalidad_codigo: finalidadCodigo,
-finalidad_desc: finalidadTexto,
+  codservicio: _procModalSelected.codservicio ?? null,
+  finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
+  finalidad_desc: _procModalSelected.finalidad_desc ?? "",
 
   motivo_atencion: motivo,
   diagnostico_principal: dxPrincipal,
@@ -4046,6 +3956,15 @@ window.addEventListener("beforeunload", function (e) {
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
 
 
 
