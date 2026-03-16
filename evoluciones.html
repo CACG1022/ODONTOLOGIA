@@ -3278,15 +3278,17 @@ if (!conf) {
     mensaje.style.display = "block";
   }
 
-  // ⚠️ No bloquear el flujo
-  // Solo dejar los campos vacíos para que el usuario pueda llenarlos manualmente
-
-  if (cs && !cs.value) cs.value = "";
-  if (fi && !fi.value) fi.value = "";
-
+  // 🔹 Mantener funcionamiento de los otros campos
   toggleDxComplicacionSegunEspecialidad("");
 
-  // 🔥 IMPORTANTE: quitamos el return para permitir continuar
+  // 🔹 Limpiar solo finalidad si no existe configuración
+  if (fi) fi.value = "";
+
+  // 🔹 NO modificar el cod_servicio si el usuario ya lo eligió
+  if (cs && !cs.value) cs.value = "";
+
+  // 🔹 Salir aquí para no afectar otros select del formulario
+  return;
 }
 
 // ✅ Deja preseleccionado el cod_servicio configurado,
