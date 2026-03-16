@@ -2148,6 +2148,7 @@ if (selectComp) {
   // ==============================
   let evoluciones = [];
   let _cedulaActual = "";
+  let _tenantId = "";
 
   function limpiarEvolucionForm() {
     const f = document.getElementById("evo_fecha");
@@ -2408,6 +2409,7 @@ if (!codServicio || !finalidadTecnologiaSalud) {
       const payload = {
         evento: "agregar_evolucion",
         cedula: cedula,
+        tenant_id: _tenantId,
         evolucion: item,
         diagnostico_principal: diagnosticoPrincipal,
         diagnosticos_secundarios: diagnosticosSecundarios,
@@ -2550,6 +2552,10 @@ if (!codServicio || !finalidadTecnologiaSalud) {
   async function autoloadEvolucionesSiHayPaciente() {
     const ced = getCedulaAuto();
     if (!ced) return;
+
+  // 🔹 Obtener tenant_id desde la URL
+const params = new URLSearchParams(window.location.search);
+_tenantId = (params.get("tenant_id") || "").trim();
 
     const inp = document.getElementById("cedula_paciente");
     if (inp) inp.value = ced;
@@ -2888,6 +2894,7 @@ async function verEvolucionDesdeWebhook(idEvolucion) {
     const payload = {
       evento: "actualizar_firmas",
       cedula: _cedulaActual,
+      tenant_id: _tenantId,
       id_evolucion: evo.id,
       firma_paciente: firmaPaciente || null,
       firma_profesional: firmaProfesional || null,
