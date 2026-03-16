@@ -179,7 +179,7 @@ window.__USER_ID_ACTUAL = session.user?.id || null;
  document.addEventListener("DOMContentLoaded", () => {
   cargarPaises();
 });
-async function esperarTenantId(maxMs = 5000) {
+window.esperarTenantId = async function (maxMs = 5000) {
   const inicio = Date.now();
 
   while (!window.__TENANT_ID_ACTUAL) {
