@@ -3159,13 +3159,19 @@ if (dxCompModal) {
 }
 
     // TomSelect Motivo
-    if (motivoSel && !_modalTomMotivo) {
-      _modalTomMotivo = new TomSelect(motivoSel, {
-        searchField: ["text"],
-        placeholder: "Buscar motivo...",
-        allowEmptyOption: true
-      });
-    }
+if (motivoSel) {
+
+  if (motivoSel.tomselect) {
+    _modalTomMotivo = motivoSel.tomselect;
+  } else {
+    _modalTomMotivo = new TomSelect(motivoSel, {
+      searchField: ["text"],
+      placeholder: "Buscar motivo...",
+      allowEmptyOption: true
+    });
+  }
+
+}
 
    
     limpiarModalProcEvo();
