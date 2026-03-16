@@ -3361,6 +3361,10 @@ const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
     const codServicioSeleccionado = (document.getElementById("proc_codservicio_modal")?.value || "").trim();
+    const finalidadSeleccionada = (document.getElementById("proc_finalidad_modal")?.value || "").trim();
+
+const finalidadTexto = document.getElementById("proc_finalidad_modal")
+  ?.selectedOptions?.[0]?.textContent?.trim() || "";
 
 if (!codServicioSeleccionado) {
   alert("⚠️ Debes seleccionar el código de servicio.");
@@ -3401,8 +3405,8 @@ if (!via) {
   especialidad: _procModalSelected.especialidad ?? "",
 
   codservicio: codServicioSeleccionado || null,
-  finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
-  finalidad_desc: _procModalSelected.finalidad_desc ?? "",
+  finalidad_codigo: finalidadSeleccionada || null,
+finalidad_desc: finalidadTexto || "",
 
   motivo_atencion: motivo,
   diagnostico_principal: dxPrincipal,
