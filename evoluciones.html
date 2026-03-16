@@ -3370,6 +3370,18 @@ const dxComplicacion = dxCompVal ? _safeParseJSON(dxCompVal) : null;
 
     const detalle = (document.getElementById("proc_detalle_modal")?.value || "").trim();
 
+    const finalidadSelect = document.getElementById("proc_finalidad_modal");
+
+let finalidadCodigo = finalidadSelect?.value || null;
+let finalidadTexto = "";
+
+if (finalidadSelect && finalidadSelect.selectedIndex >= 0) {
+  finalidadTexto = finalidadSelect.options[finalidadSelect.selectedIndex].text;
+}
+
+const codServicioSelect = document.getElementById("proc_codservicio_modal");
+const codServicioValor = codServicioSelect?.value || null;
+
 const tipoDx = document.getElementById("proc_tipo_diagnostico_modal")?.value || "";
 const modalidad = document.getElementById("proc_modalidad_modal")?.value || "";
 const grupo = document.getElementById("proc_grupo_servicio_modal")?.value || "";
@@ -3402,9 +3414,9 @@ if (!via) {
   codigo_cups: _procModalSelected.codigo_cups ?? null,
   especialidad: _procModalSelected.especialidad ?? "",
 
-  codservicio: _procModalSelected.codservicio ?? null,
-  finalidad_codigo: _procModalSelected.finalidad_codigo ?? null,
-  finalidad_desc: _procModalSelected.finalidad_desc ?? "",
+  codservicio: codServicioValor,
+finalidad_codigo: finalidadCodigo,
+finalidad_desc: finalidadTexto,
 
   motivo_atencion: motivo,
   diagnostico_principal: dxPrincipal,
