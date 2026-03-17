@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Fórmula Médica - Clínica Dra. Leidi Silva</title>
+  <title>Fórmula Médica</title>
 
   <!-- Fuente bonita (opcional) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -346,7 +346,8 @@
       role: null,
       userEmail: "",
       firmaDataUrl: "",
-      meds: []
+      meds: [],
+      clinicaNombre: ""
     };
 
     const $ = (id) => document.getElementById(id);
@@ -387,6 +388,37 @@
         return null;
       }
     }
+    async function cargarNombreClinica(userId){
+  try{
+    // 1. Obtener tenant_id desde profiles
+    const { data: perfil, error: errPerfil } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", userId)
+      .single();
+
+    if (errPerfil || !perfil?.tenant_id){
+      console.warn("No se pudo obtener tenant_id");
+      return;
+    }
+
+    // 2. Buscar en emisor_dian
+    const { data: emisor, error: errEmisor } = await supabase
+      .from("emisor_dian")
+      .select("nombre_comercial")
+      .eq("tenant_id", perfil.tenant_id)
+      .single();
+
+    if (errEmisor){
+      console.warn("No se pudo obtener nombre_comercial");
+      return;
+    }
+
+    state.clinicaNombre = emisor?.nombre_comercial || "";
+  }catch(e){
+    console.error("Error cargando clínica:", e);
+  }
+}
 
     async function validarAcceso(){
       const role = (state.role || "user").toString().trim().toLowerCase();
@@ -413,6 +445,9 @@
       
       $("user-email").textContent = state.userEmail || "Usuario";
       $("user-role").textContent = state.role ? `Rol: ${state.role}` : "Rol: (sin rol)";
+      if ($("nombreClinicaHeader")){
+  $("nombreClinicaHeader").textContent = state.clinicaNombre || "Clínica";
+}
     }
 
     function nowISO(){
@@ -805,6 +840,9 @@
 
      
       $("pFechaHora").textContent = receta.fecha_hora || "";
+      if ($("nombreClinicaPrint")){
+  $("nombreClinicaPrint").textContent = state.clinicaNombre || "Clínica";
+}
       $("pPaciente").textContent = `${paciente.nombre || ""}`;
       $("pCedula").textContent = `${paciente.tipo_id ? paciente.tipo_id + " " : ""}${paciente.cedula || ""}`;
       $("pContacto").textContent =
@@ -872,6 +910,7 @@ async function init(){
       // rol
       state.role = (await cargarRolDesdeProfiles(session.user.id)) || "user";
       setHeader();
+  await cargarNombreClinica(session.user.id);
 
       // acceso
       const ok = await validarAcceso();
@@ -993,6 +1032,10 @@ async function verFormula(id){
 
   // 🔧 FORZAR VISIBILIDAD (printArea viene con display:none)
   const pa = modalContainer.querySelector("#printArea");
+  const elNombreClinica = $m("#nombreClinicaPrint");
+if (elNombreClinica){
+  elNombreClinica.textContent = state.clinicaNombre || "Clínica";
+}
   if (pa){
     pa.style.display = "block";
   }
@@ -1108,7 +1151,7 @@ window.cerrarModalFormula = cerrarModalFormula;
         
         <div>
           <h1>Fórmula Médica</h1>
-          <p>Clínica Dra. Leidi Silva • Plantilla para prescripción7</p>
+          <p><span id="nombreClinicaHeader"></span> • Plantilla para prescripción7</p>
         </div>
       </div>
 
@@ -1302,7 +1345,7 @@ window.cerrarModalFormula = cerrarModalFormula;
   <div class="p-head">
     <div style="flex:1;">
       <p class="p-title">FÓRMULA MÉDICA</p>
-      <p class="p-sub">Clínica Dra. Leidi Silva</p>
+      <p class="p-sub" id="nombreClinicaPrint"></p>
       <p class="p-sub">Fecha y hora: <b id="pFechaHora"></b></p>
     </div>
   </div>
