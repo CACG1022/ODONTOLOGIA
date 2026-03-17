@@ -3064,7 +3064,8 @@ if (_modalTomDxComplicacion && proc.diagnostico_complicacion) {
     if (!modal) return;
      modal.style.display = "flex";
 
-    
+    // 🧹 LIMPIAR FORMULARIO AL ABRIR MODAL
+limpiarModalProcEvo();
 
     // Reusar diagnósticos del select principal (ya cargado con cargarDiagnosticosCIE10)
     const dxModal = document.getElementById("proc_dx_principal_modal");
@@ -3118,7 +3119,6 @@ if (motivoSel) {
 }
 
    
-    limpiarModalProcEvo();
   }
 
   function cerrarModalProcEvo(evt){
