@@ -2025,6 +2025,11 @@ function obtenerCostoDeItem(it){
 </html>`;
     }
     async function guardarFactura(){
+     if (!state.tenant_id) {
+  toast("Error: tenant no definido", "err");
+  return;
+}
+      
       const fecha = ($("fecha").value || "").trim() || hoyISO();
       const paciente_cedula = ($("paciente_cedula").value || "").trim();
       const paciente_nombre = ($("paciente_nombre").value || "").trim();
@@ -2065,6 +2070,7 @@ const { data: facturaExistente, error: errorFactura } = await supabase
   .from("facturas")
   .select("id, numero_factura")
   .eq("evolucion_id", evolucion_id)
+  .eq("tenant_id", state.tenant_id)
   .limit(1);
 
 if (errorFactura){
@@ -2112,6 +2118,7 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
       try{
         const payloadConExtras = {
           fecha,
+          tenant_id: state.tenant_id,
           paciente_cedula,
           paciente_nombre,
           paciente_correo,
@@ -2165,6 +2172,7 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
           const payloadBase = {
             fecha,
             paciente_cedula,
+            tenant_id: state.tenant_id,
             paciente_nombre,
             tipo_usuario,
             eps,
@@ -2203,6 +2211,7 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
         }
         const detalle = state.items.map(it => ({
   factura_id: fac.id,
+  tenant_id: state.tenant_id,
   paciente_cedula: paciente_cedula,   // 👈 AGREGA ESTA LÍNEA       
   procedimiento_id: it.procedimiento_id, // ✅ CLAVE
   codigo_cups: it.codigo_cups || null,
@@ -2471,6 +2480,7 @@ if(evoSeleccionada){
           .from("facturas")
           .select("*")
           .eq("id", facturaId)
+          .eq("tenant_id", state.tenant_id)
           .single();
         if (ef) throw ef;
         // 2) Detalle
@@ -3104,6 +3114,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
         let query = supabase
           .from("facturas")
           .select("id, fecha, numero_factura, paciente_nombre, paciente_cedula, paciente_correo, valor_total, copago, cuota_moderadora, tipo_usuario, eps, profesional, metodo_pago, observacion, iva_aplica, iva_porcentaje, iva_valor, subtotal, pagada, saldo_pendiente, fecha_pago, referencia_pago")
+          .eq("tenant_id", state.tenant_id)
           .order("fecha", { ascending: false })
           .limit(limit);
         if (desde){
@@ -3167,6 +3178,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           .from("facturas")
           .select("*")
           .eq("id", facturaId)
+          .eq("tenant_id", state.tenant_id)
           .single();
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
@@ -3250,6 +3262,7 @@ tr.querySelector('[data-act="abonos"]').addEventListener("click", async () => {
           .from("facturas")
           .select("*")
           .eq("id", facturaId)
+          .eq("tenant_id", state.tenant_id)
           .single();
         if (e1) throw e1;
         const { data: det, error: e2 } = await supabase
