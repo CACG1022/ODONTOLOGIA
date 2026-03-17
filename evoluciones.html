@@ -2006,54 +2006,83 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   //    - Finalidad = finalidad_codigo (se muestra como "codigo - descripcion" si existe)
   // ==============================
   async function obtenerConfigRipsPorProcedimientoNombre(nombreProcedimiento) {
-    const nombre = String(nombreProcedimiento || "").trim();
-    if (!nombre) return null;
+  const nombre = String(nombreProcedimiento || "").trim();
+  if (!nombre) return null;
 
-    let tries = 0;
-    while (!window.supabase && tries < 40) {
-      await new Promise(r => setTimeout(r, 100));
-      tries++;
-    }
-    if (!window.supabase) return null;
-
-    // 1) Buscar procedimiento
-    const { data: proc, error: eProc } = await window.supabase
-      .from("procedimientos_precios")
-      .select("id, procedimiento, valor, codigo_cups, especialidad")
-      .eq("activo", true)
-      .eq("procedimiento", nombre)
-      .maybeSingle();
-
-    if (eProc || !proc?.id) return null;
-
-    // 2) Buscar configuración RIPS
-    const { data: conf, error: eConf } = await window.supabase
-  .from("procedimiento_configuracion_rips")
-  .select(`
-    cod_servicio,
-    finalidad_codigo,
-    finalidad_tecnologia:finalidad_codigo (descripcion)
-  `)
-  .eq("procedimiento_id", proc.id)
-  .maybeSingle();
-
-    if (eConf || !conf) return null;
-
-    const finTxt = String(conf.finalidad_codigo ?? "") +
-      (conf?.finalidad_tecnologia?.descripcion ? (" - " + conf.finalidad_tecnologia.descripcion) : "");
-
-   return {
-  procedimiento_id: proc.id,
-  procedimiento_nombre: proc.procedimiento,
-  valor: proc.valor ?? null,
-  codigo_cups: proc.codigo_cups ?? null,
-  especialidad: proc.especialidad ?? "",
-
-  codservicio: conf.cod_servicio ?? null,
-  finalidad_codigo: conf.finalidad_codigo ?? null,
-  finalidad_desc: finTxt
-};
+  let tries = 0;
+  while (!window.supabase && tries < 40) {
+    await new Promise(r => setTimeout(r, 100));
+    tries++;
   }
+  if (!window.supabase) return null;
+
+  // 🔍 Validar tenant
+  if (!_tenantId) {
+    console.warn("⚠️ tenant_id vacío al buscar procedimiento");
+  }
+
+  // 1) Buscar procedimiento
+  console.log("🔍 buscando procedimiento:", nombre, "tenant:", _tenantId);
+
+  const { data: procList, error: eProc } = await window.supabase
+    .from("procedimientos_precios")
+    .select("id, procedimiento, valor, codigo_cups, especialidad, tenant_id")
+    .eq("activo", true)
+    .ilike("procedimiento", `%${nombre}%`)   // 🔥 flexible
+    .eq("tenant_id", _tenantId);
+
+  if (eProc) {
+    console.error("❌ error query:", eProc);
+    return null;
+  }
+
+  console.log("📦 resultados encontrados:", procList);
+
+  const proc = procList && procList.length ? procList[0] : null;
+
+  if (!proc?.id) {
+    console.warn("❌ procedimiento NO encontrado");
+    return null;
+  }
+
+  // 2) Buscar configuración RIPS
+  const { data: conf, error: eConf } = await window.supabase
+    .from("procedimiento_configuracion_rips")
+    .select(`
+      cod_servicio,
+      finalidad_codigo,
+      finalidad_tecnologia:finalidad_codigo (descripcion)
+    `)
+    .eq("procedimiento_id", proc.id)
+    .maybeSingle();
+
+  if (eConf) {
+    console.error("❌ error config RIPS:", eConf);
+    return null;
+  }
+
+  if (!conf) {
+    console.warn("⚠️ procedimiento sin configuración RIPS");
+  }
+
+  const finTxt = String(conf?.finalidad_codigo ?? "") +
+    (conf?.finalidad_tecnologia?.descripcion
+      ? (" - " + conf.finalidad_tecnologia.descripcion)
+      : "");
+
+  // ✅ RETURN SIEMPRE (aunque no haya RIPS)
+  return {
+    procedimiento_id: proc.id,
+    procedimiento_nombre: proc.procedimiento,
+    valor: proc.valor ?? null,
+    codigo_cups: proc.codigo_cups ?? null,
+    especialidad: proc.especialidad ?? "",
+
+    codservicio: conf?.cod_servicio ?? null,
+    finalidad_codigo: conf?.finalidad_codigo ?? null,
+    finalidad_desc: finTxt
+  };
+}
 
   // ==============================
   // ✅ PROFESIONALES DESDE SUPABASE
