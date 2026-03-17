@@ -1364,7 +1364,9 @@ if ((isFocused || filtro) && count > 0) {
       state._lastCedula = cedula;
       setHint("Buscando paciente...");
       try{
-        const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}`;
+        const tenant_id = state.session?.user?.id || "";
+
+const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}&tenant_id=${encodeURIComponent(tenant_id)}`;
         const resp = await fetch(url, { method: "GET" });
         if (!resp.ok) throw new Error("HTTP " + resp.status);
         const data = await resp.json();
