@@ -64,12 +64,7 @@
       align-items:center;
       min-width: 260px;
     }
-    .brand img{
-      width: 64px;
-      height: 64px;
-      object-fit: contain;
-      filter: drop-shadow(0 10px 18px rgba(15,23,42,.18));
-    }
+   
     .brand h1{
       margin:0;
       font-size: 16px;
@@ -1111,7 +1106,7 @@ window.cerrarModalFormula = cerrarModalFormula;
     <!-- TOP BAR -->
     <div class="top no-print">
       <div class="brand">
-        <img id="logoTop" alt="Logo clínica">
+        <img id="logoTop" alt="Logo clínica" style="display:none;">
         <div>
           <h1>Fórmula Médica</h1>
           <p>Clínica Dra. Leidi Silva • Plantilla para prescripción7</p>
@@ -1304,8 +1299,7 @@ window.cerrarModalFormula = cerrarModalFormula;
 
     <!-- ====== AREA IMPRESIÓN ====== -->
     <div id="printArea">
-      <div class="p-head">
-        <img id="pLogo" alt="Logo">
+      <img id="pLogo" alt="Logo" style="display:none;">
         <div style="flex:1;">
           <p class="p-title">FÓRMULA MÉDICA</p>
           <p class="p-sub">Clínica Dra. Leidi Silva</p>
