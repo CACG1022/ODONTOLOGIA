@@ -803,7 +803,7 @@
     function buildPrintArea(){
       const { paciente, receta } = buildPayload();
 
-      $("pLogo").src = LOGO_URL;
+     
       $("pFechaHora").textContent = receta.fecha_hora || "";
       $("pPaciente").textContent = `${paciente.nombre || ""}`;
       $("pCedula").textContent = `${paciente.tipo_id ? paciente.tipo_id + " " : ""}${paciente.cedula || ""}`;
@@ -1000,8 +1000,7 @@ async function verFormula(id){
   // ✅ IMPORTANTE: siempre escribir dentro del printArea del MODAL (no en el hidden del documento)
   const $m = (sel) => pa ? pa.querySelector(sel) : null;
 
-  const elLogo = $m("#pLogo");
-  if (elLogo) elLogo.src = LOGO_URL;
+ 
 
   const elFechaHora = $m("#pFechaHora");
   if (elFechaHora) elFechaHora.textContent = data.fecha_hora || "";
@@ -1106,7 +1105,7 @@ window.cerrarModalFormula = cerrarModalFormula;
     <!-- TOP BAR -->
     <div class="top no-print">
       <div class="brand">
-        <img id="logoTop" alt="Logo clínica" style="display:none;">
+        
         <div>
           <h1>Fórmula Médica</h1>
           <p>Clínica Dra. Leidi Silva • Plantilla para prescripción7</p>
@@ -1299,13 +1298,16 @@ window.cerrarModalFormula = cerrarModalFormula;
 
     <!-- ====== AREA IMPRESIÓN ====== -->
     <div id="printArea">
-      <img id="pLogo" alt="Logo" style="display:none;">
-        <div style="flex:1;">
-          <p class="p-title">FÓRMULA MÉDICA</p>
-          <p class="p-sub">Clínica Dra. Leidi Silva</p>
-          <p class="p-sub">Fecha y hora: <b id="pFechaHora"></b></p>
-        </div>
-      </div>
+  <div class="p-head">
+    <!-- ❌ Logo eliminado -->
+    <!-- <img id="pLogo" alt="Logo"> -->
+
+    <div style="flex:1;">
+      <p class="p-title">FÓRMULA MÉDICA</p>
+      <p class="p-sub">Clínica Dra. Leidi Silva</p>
+      <p class="p-sub">Fecha y hora: <b id="pFechaHora"></b></p>
+    </div>
+  </div>
 
       <div class="p-box">
         <div class="p-row">
