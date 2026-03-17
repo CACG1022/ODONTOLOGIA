@@ -1368,7 +1368,7 @@ if ((isFocused || filtro) && count > 0) {
       state._lastCedula = cedula;
       setHint("Buscando paciente...");
       try{
-        const tenant_id = state.session?.user?.id || "";
+        const tenant_id = state.tenant_id || "";
 
 const url = `${N8N_BUSCAR_URL}?cedula=${encodeURIComponent(cedula)}&tenant_id=${encodeURIComponent(tenant_id)}`;
         console.log("Enviando a n8n:", { cedula, tenant_id });
