@@ -1031,8 +1031,17 @@ async function verFormula(id){
   modalContainer.innerHTML = $("printArea").outerHTML;
 
   // 🔧 FORZAR VISIBILIDAD (printArea viene con display:none)
-  const pa = modalContainer.querySelector("#printArea");
-  const elNombreClinica = $m("#nombreClinicaPrint");
+ const pa = modalContainer.querySelector("#printArea");
+
+if (pa){
+  pa.style.display = "block";
+}
+
+// ✅ DEFINE $m PRIMERO
+const $m = (sel) => pa ? pa.querySelector(sel) : null;
+
+// ✅ AHORA SÍ úsalo
+const elNombreClinica = $m("#nombreClinicaPrint");
 if (elNombreClinica){
   elNombreClinica.textContent = state.clinicaNombre || "Clínica";
 }
@@ -1041,7 +1050,7 @@ if (elNombreClinica){
   }
 
   // ✅ IMPORTANTE: siempre escribir dentro del printArea del MODAL (no en el hidden del documento)
-  const $m = (sel) => pa ? pa.querySelector(sel) : null;
+
 
  
 
