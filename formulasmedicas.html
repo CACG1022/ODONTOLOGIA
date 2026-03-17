@@ -735,6 +735,22 @@
         const ok = confirm("No hay firma en el canvas. ¿Deseas guardar SIN firma?");
         if (!ok) return;
       }
+            const { data: perfil, error: perfilError } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", state.session.user.id)
+        .single();
+
+      if (perfilError){
+        console.error(perfilError);
+        toast("No se pudo obtener el tenant_id del usuario.", "err");
+        return;
+      }
+
+      if (!perfil?.tenant_id){
+        toast("El usuario no tiene tenant_id configurado en profiles.", "err");
+        return;
+      }
 
       const payload = {
         paciente_cedula: paciente.cedula,
@@ -759,8 +775,10 @@
         firma_png: state.firmaDataUrl || null,
         profesional_id: state.session?.user?.id || null,
         profesional_email: state.userEmail || null,
-        profesional_role: state.role || null
+        profesional_role: state.role || null,
+        tenant_id: perfil.tenant_id
       };
+      
 
       $("btnGuardar").disabled = true;
       try{
