@@ -410,7 +410,7 @@
     }
 
     function setHeader(){
-      $("logoTop").src = LOGO_URL;
+      
       $("user-email").textContent = state.userEmail || "Usuario";
       $("user-role").textContent = state.role ? `Rol: ${state.role}` : "Rol: (sin rol)";
     }
@@ -861,7 +861,7 @@
     }
 async function init(){
       // logo y reloj
-      $("logoTop").src = LOGO_URL;
+     
       tickClock();
       setInterval(tickClock, 1000);
 
