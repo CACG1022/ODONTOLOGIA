@@ -1931,72 +1931,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
     }
   }
 
-  async function cargarConfigRipsPorProcedimientoNombre(nombreProcedimiento) {
-  // campos UI
-  const inpCod = document.getElementById("evo_codservicio");
-  const inpFin = document.getElementById("evo_finalidad");
-
-  // limpiar primero
-  if (inpCod) inpCod.value = "";
-  if (inpFin) inpFin.value = "";
-
-  const nombre = String(nombreProcedimiento || "").trim();
-  if (!nombre) return;
-
-  // esperar supabase
-  let tries = 0;
-  while (!window.supabase && tries < 40) {
-    await new Promise(r => setTimeout(r, 100));
-    tries++;
-  }
-  if (!window.supabase) return;
-
-  try {
-    // 1) Buscar procedimiento_id en procedimientos_precios por nombre (procedimiento)
-    const { data: proc, error: eProc } = await window.supabase
-      .from("procedimientos_precios")
-      .select("id, procedimiento")
-      .eq("activo", true)
-      .eq("procedimiento", nombre)
-      .maybeSingle();
-
-    if (eProc) throw eProc;
-    if (!proc?.id) return; // no encontrado
-
-    // 2) Con ese id buscar configuración rips
-    const { data: conf, error: eConf } = await window.supabase
-      .from("procedimiento_configuracion_rips")
-      .select(`
-        servicio_habilitado_id,
-        cod_servicio,
-        finalidad_codigo,
-        finalidad_tecnologia:finalidad_codigo (descripcion)
-      `)
-      .eq("procedimiento_id", proc.id)
-      .maybeSingle();
-
-    if (eConf) throw eConf;
-    if (!conf) return;
-
-    // 3) cargar UI (cod + finalidad)
-    if (inpCod) inpCod.value = conf.servicio_habilitado_id ?? conf.cod_servicio ?? "";
-
-    // aquí puedes mostrar el código o la descripción (yo recomiendo descripción + código)
-    const finDesc = conf?.finalidad_tecnologia?.descripcion || "";
-    const finCod = conf.finalidad_codigo ?? "";
-
-    if (inpFin) {
-  // Mostrar código + descripción al usuario
-  inpFin.value = finDesc ? `${finCod} - ${finDesc}` : String(finCod);
-
-  // 🔒 Guardar SOLO el código en un atributo oculto
-  inpFin.dataset.codigo = String(finCod);
-}
-
-  } catch (err) {
-    console.warn("⚠️ Error cargando config RIPS:", err);
-  }
-}
+  
 
 
   // ==============================
@@ -2005,7 +1940,7 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   //    - Cod servicio = servicio_habilitado_id (fallback: cod_servicio)
   //    - Finalidad = finalidad_codigo (se muestra como "codigo - descripcion" si existe)
   // ==============================
-  async function obtenerConfigRipsPorProcedimientoNombre(nombreProcedimiento) {
+ async function obtenerConfigRipsPorProcedimientoNombre(nombreProcedimiento) {
   const nombre = String(nombreProcedimiento || "").trim();
   if (!nombre) return null;
 
@@ -2016,71 +1951,34 @@ const dxSec = (evo.diagnosticos_secundarios || [])
   }
   if (!window.supabase) return null;
 
-  // 🔍 Validar tenant
-  if (!_tenantId) {
-    console.warn("⚠️ tenant_id vacío al buscar procedimiento");
-  }
-
-  // 1) Buscar procedimiento
   console.log("🔍 buscando procedimiento:", nombre, "tenant:", _tenantId);
 
-  const { data: procList, error: eProc } = await window.supabase
+  const { data: procList, error } = await window.supabase
     .from("procedimientos_precios")
-    .select("id, procedimiento, valor, codigo_cups, especialidad, tenant_id")
+    .select("id, procedimiento, valor, codigo_cups, especialidad")
     .eq("activo", true)
-    .ilike("procedimiento", `%${nombre}%`)   // 🔥 flexible
+    .ilike("procedimiento", `%${nombre}%`)
     .eq("tenant_id", _tenantId);
 
-  if (eProc) {
-    console.error("❌ error query:", eProc);
+  if (error) {
+    console.error("❌ error query:", error);
     return null;
   }
-
-  console.log("📦 resultados encontrados:", procList);
 
   const proc = procList && procList.length ? procList[0] : null;
 
-  if (!proc?.id) {
-    console.warn("❌ procedimiento NO encontrado");
+  if (!proc) {
+    console.warn("⚠️ procedimiento no encontrado");
     return null;
   }
 
-  // 2) Buscar configuración RIPS
-  const { data: conf, error: eConf } = await window.supabase
-    .from("procedimiento_configuracion_rips")
-    .select(`
-      cod_servicio,
-      finalidad_codigo,
-      finalidad_tecnologia:finalidad_codigo (descripcion)
-    `)
-    .eq("procedimiento_id", proc.id)
-    .maybeSingle();
-
-  if (eConf) {
-    console.error("❌ error config RIPS:", eConf);
-    return null;
-  }
-
-  if (!conf) {
-    console.warn("⚠️ procedimiento sin configuración RIPS");
-  }
-
-  const finTxt = String(conf?.finalidad_codigo ?? "") +
-    (conf?.finalidad_tecnologia?.descripcion
-      ? (" - " + conf.finalidad_tecnologia.descripcion)
-      : "");
-
-  // ✅ RETURN SIEMPRE (aunque no haya RIPS)
   return {
     procedimiento_id: proc.id,
     procedimiento_nombre: proc.procedimiento,
     valor: proc.valor ?? null,
     codigo_cups: proc.codigo_cups ?? null,
-    especialidad: proc.especialidad ?? "",
-
-    codservicio: conf?.cod_servicio ?? null,
-    finalidad_codigo: conf?.finalidad_codigo ?? null,
-    finalidad_desc: finTxt
+    especialidad: proc.especialidad ?? ""
+    // 🔥 SIN RIPS
   };
 }
 
@@ -3200,6 +3098,7 @@ if (dxCompModal) {
   }
 }
 
+  const motivoSel = document.getElementById("proc_motivo_modal");  
  // TomSelect Motivo
 if (motivoSel) {
 
@@ -3315,7 +3214,7 @@ if (mensaje) mensaje.style.display = "none";
 
       const conf = await obtenerConfigRipsPorProcedimientoNombre(nombre);
       _procModalSelected = conf;
-      toggleDxComplicacionSegunEspecialidad(conf?.especialidad || "");
+      //toggleDxComplicacionSegunEspecialidad(conf?.especialidad || "");
 
       console.log("🧩 conf:", conf);
       console.log("🧩 especialidad:", conf?.especialidad);
@@ -3347,11 +3246,14 @@ if (!conf) {
 
 // ✅ Deja preseleccionado el cod_servicio configurado,
 // pero ahora el usuario sí podrá cambiarlo manualmente en el desplegable
-if (cs) cs.value = conf.codservicio || "";
 
-if (fi && conf.finalidad_codigo){
-  fi.value = conf.finalidad_codigo; // 🔥 selecciona el código en el select
+// 🔥 SOLO manejar especialidad (UI)
+if (conf) {
+  toggleDxComplicacionSegunEspecialidad(conf.especialidad || "");
+} else {
+  toggleDxComplicacionSegunEspecialidad("");
 }
+
     }
 
     procInp.addEventListener("change", handleProcChange);
@@ -3365,18 +3267,13 @@ if (fi && conf.finalidad_codigo){
    // 🔹 Permitir procedimientos sin configuración RIPS
 // 🔹 Permitir procedimientos sin configuración RIPS
 if (!_procModalSelected) {
-
   _procModalSelected = {
     procedimiento_id: null,
     procedimiento_nombre: procNombre,
     valor: null,
     codigo_cups: null,
-    especialidad: "",
-    codservicio: null,
-    finalidad_codigo: null,
-    finalidad_desc: ""
+    especialidad: ""
   };
-
 }
 
     const motivo = (document.getElementById("proc_motivo_modal")?.value || "").trim();
