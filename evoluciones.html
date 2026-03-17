@@ -2434,6 +2434,12 @@ if (!codServicio || !finalidadTecnologiaSalud) {
   async function buscarEvolucionesPorCedula() {
     
     const cedula = (document.getElementById("cedula_paciente")?.value || "").trim();
+   // 🔹 Asegurar tenant_id siempre (también en búsqueda manual)
+const params = new URLSearchParams(window.location.search);
+if (!_tenantId) {
+  _tenantId = (params.get("tenant_id") || "").trim();
+}
+    
     if (!cedula) { alert("Ingrese una cédula"); return; }
 
     _cedulaActual = cedula;
@@ -2442,7 +2448,9 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     evoluciones = [];
     renderEvoluciones();
 
-    const url = WEBHOOK_BUSCAR_HISTORIA + "?cedula=" + encodeURIComponent(cedula);
+    const url = WEBHOOK_BUSCAR_HISTORIA 
+  + "?cedula=" + encodeURIComponent(cedula)
+  + "&tenant_id=" + encodeURIComponent(_tenantId);
 
     try {
       const r = await fetchJSONSeguro(url);
@@ -2553,9 +2561,6 @@ if (!codServicio || !finalidadTecnologiaSalud) {
     const ced = getCedulaAuto();
     if (!ced) return;
 
-  // 🔹 Obtener tenant_id desde la URL
-const params = new URLSearchParams(window.location.search);
-_tenantId = (params.get("tenant_id") || "").trim();
 
     const inp = document.getElementById("cedula_paciente");
     if (inp) inp.value = ced;
@@ -2568,6 +2573,12 @@ _tenantId = (params.get("tenant_id") || "").trim();
   // INIT
   // ==============================
   document.addEventListener("DOMContentLoaded", async () => {
+    // 🔹 Inicializar tenant_id GLOBAL una sola vez
+const params = new URLSearchParams(window.location.search);
+_tenantId = (params.get("tenant_id") || "").trim();
+
+console.log("🧩 tenant_id cargado:", _tenantId);
+    
     _ensureFirmasInit();
     limpiarEvolucionForm();
     mostrarNombrePaciente("");
