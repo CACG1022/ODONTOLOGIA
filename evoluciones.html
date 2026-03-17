@@ -1460,7 +1460,7 @@ async function cargarServiciosOdontologiaDesdeSupabase(){
     (data || []).forEach(item => {
       const option = document.createElement("option");
       option.value = String(item.codigo_servicio || "").trim(); // ✅ valor real a guardar
-      option.textContent = String(item.nombre_servicio || "").trim(); // ✅ texto visible
+     option.textContent = `${item.codigo_servicio} - ${item.nombre_servicio}`;
       select.appendChild(option);
     });
 
