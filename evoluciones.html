@@ -3140,6 +3140,17 @@ if (motivoSel) {
     if (fi) fi.value = "";
     if (det) det.value = "";
 
+    // 🔥 LIMPIAR CLASIFICACIÓN RIPS (LOS QUE TE FALLAN)
+const tipoDx = document.getElementById("proc_tipo_diagnostico_modal");
+const modalidad = document.getElementById("proc_modalidad_modal");
+const grupo = document.getElementById("proc_grupo_servicio_modal");
+const via = document.getElementById("proc_via_ingreso_modal");
+
+if (tipoDx) tipoDx.value = "";
+if (modalidad) modalidad.value = "01";
+if (grupo) grupo.value = "";
+if (via) via.value = "";
+
     if (_modalTomMotivo) _modalTomMotivo.clear();
 if (_modalTomDxPrincipal) _modalTomDxPrincipal.clear();
 if (_modalTomDxComplicacion) _modalTomDxComplicacion.clear();
