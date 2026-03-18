@@ -4,40 +4,50 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>DENTOVA Login</title>
+
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --bg:#071b1f;
-  --card: rgba(255,255,255,0.04);
-  --line: rgba(255,255,255,0.08);
-  --text:#e6f7f5;
-  --muted:#8aa3a0;
-  --green:#39d98a;
-  --green2:#1f9d6b;
+  --bg1:#03141a;
+  --bg2:#072c30;
+  --bg3:#0a3f43;
+
+  --card: rgba(255,255,255,0.03);
+  --line: rgba(255,255,255,0.06);
+
+  --text:#e8fdf9;
+  --muted:#7fa3a0;
+
+  --green:#3ddc97;
+  --green2:#1fa67a;
+
+  --error:#ff6b6b;
 }
 
 *{box-sizing:border-box}
+
 body{
   margin:0;
   font-family:'Inter',sans-serif;
-  background: radial-gradient(circle at 20% 20%, #0c2a2f, #041316 60%);
   height:100vh;
   display:flex;
   align-items:center;
   justify-content:center;
   color:var(--text);
+
+  background: linear-gradient(135deg, var(--bg1), var(--bg2) 50%, var(--bg3));
   overflow:hidden;
 }
 
-/* subtle moving gradient */
+/* movimiento sutil */
 body::before{
   content:"";
   position:absolute;
-  width:200%;
-  height:200%;
-  background: radial-gradient(circle, rgba(57,217,138,0.08), transparent 60%);
-  animation: moveBg 12s linear infinite;
+  width:180%;
+  height:180%;
+  background: radial-gradient(circle, rgba(61,220,151,0.05), transparent 60%);
+  animation: moveBg 14s ease-in-out infinite;
 }
 
 @keyframes moveBg{
@@ -50,14 +60,14 @@ body::before{
   position:relative;
   width:380px;
   padding:40px 30px;
-  border-radius:20px;
+  border-radius:18px;
   background:var(--card);
-  backdrop-filter: blur(14px);
+  backdrop-filter: blur(16px);
   border:1px solid var(--line);
-  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  box-shadow:0 30px 80px rgba(0,0,0,0.7);
 }
 
-/* scan line effect */
+/* línea que baja */
 .card::after{
   content:"";
   position:absolute;
@@ -66,7 +76,7 @@ body::before{
   width:100%;
   height:2px;
   background:linear-gradient(90deg, transparent, var(--green), transparent);
-  animation: scan 3s linear infinite;
+  animation: scan 4s linear infinite;
 }
 
 @keyframes scan{
@@ -77,35 +87,38 @@ body::before{
 .logo{
   text-align:center;
   margin-bottom:25px;
-  font-weight:700;
-  letter-spacing:2px;
+  font-weight:600;
+  letter-spacing:1.5px;
+  font-size:14px;
 }
 
 .logo span{
+  display:block;
+  font-size:22px;
   color:var(--green);
+  margin-top:5px;
 }
 
 h2{
-  margin:0 0 10px;
+  margin:0 0 8px;
   font-weight:600;
 }
 
 p{
   margin:0 0 25px;
-  font-size:14px;
+  font-size:13px;
   color:var(--muted);
 }
 
 .input{
   width:100%;
-  margin-bottom:15px;
-  position:relative;
+  margin-bottom:14px;
 }
 
 .input input{
   width:100%;
-  padding:14px 15px;
-  border-radius:12px;
+  padding:14px;
+  border-radius:10px;
   border:1px solid var(--line);
   background:rgba(255,255,255,0.02);
   color:white;
@@ -116,24 +129,25 @@ p{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  font-size:13px;
+  font-size:12px;
   margin-bottom:20px;
+  color:var(--muted);
 }
 
 button{
   width:100%;
   padding:14px;
   border:none;
-  border-radius:12px;
+  border-radius:10px;
   background:linear-gradient(90deg, var(--green2), var(--green));
-  color:#06221b;
+  color:#04261f;
   font-weight:700;
   cursor:pointer;
   position:relative;
   overflow:hidden;
 }
 
-/* button loading effect */
+/* efecto carga botón */
 button::before{
   content:"";
   position:absolute;
@@ -141,8 +155,8 @@ button::before{
   left:-100%;
   width:100%;
   height:100%;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-  animation: load 2s infinite;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: load 2.5s infinite;
 }
 
 @keyframes load{
@@ -150,13 +164,19 @@ button::before{
   100%{left:100%}
 }
 
+.error{
+  margin-top:12px;
+  text-align:center;
+  font-size:13px;
+  color:var(--error);
+}
+
 .footer{
   text-align:center;
-  font-size:12px;
+  font-size:11px;
   margin-top:20px;
   color:var(--muted);
 }
-
 </style>
 </head>
 
@@ -165,7 +185,7 @@ button::before{
 <div class="card">
 
   <div class="logo">
-    SOFTWARE DENTAL<br>
+    SOFTWARE DENTAL
     <span>DENTOVA</span>
   </div>
 
@@ -173,25 +193,98 @@ button::before{
   <p>Acceso seguro al sistema clínico</p>
 
   <div class="input">
-    <input type="email" placeholder="Correo electrónico">
+    <input id="email" type="email" placeholder="Correo electrónico">
   </div>
 
   <div class="input">
-    <input type="password" placeholder="Contraseña">
+    <input id="password" type="password" placeholder="Contraseña">
   </div>
 
   <div class="row">
-    <label><input type="checkbox"> Recordar</label>
-    <span>¿Olvidaste?</span>
+    <label><input type="checkbox" id="remember"> Recordar</label>
+    <span id="forgot" style="cursor:pointer;">¿Olvidaste?</span>
   </div>
 
-  <button>ENTRAR AL SISTEMA</button>
+  <button id="boton-login">ENTRAR AL SISTEMA</button>
 
-  <div class="footer">
-    © 2026 DENTOVA
-  </div>
+  <div id="error" class="error"></div>
+
+  <div class="footer">© 2026 DENTOVA</div>
 
 </div>
+
+<!-- 🔐 SUPABASE LOGIN REAL -->
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
+
+const emailEl = document.getElementById("email");
+const passEl = document.getElementById("password");
+const errorDiv = document.getElementById("error");
+const rememberEl = document.getElementById("remember");
+
+/* recordar correo */
+const savedEmail = localStorage.getItem("remember_email");
+if (savedEmail) {
+  emailEl.value = savedEmail;
+  rememberEl.checked = true;
+}
+
+/* LOGIN */
+document.getElementById("boton-login").addEventListener("click", async () => {
+  const email = emailEl.value.trim();
+  const password = passEl.value.trim();
+  errorDiv.textContent = "";
+
+  if (!email || !password) {
+    errorDiv.textContent = "Por favor completa todos los campos.";
+    return;
+  }
+
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      errorDiv.textContent = "Error: " + error.message;
+      return;
+    }
+
+    if (rememberEl.checked) localStorage.setItem("remember_email", email);
+    else localStorage.removeItem("remember_email");
+
+    localStorage.setItem("usuario_logueado", email);
+
+    window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+
+  } catch (err) {
+    errorDiv.textContent = "Error inesperado al conectar.";
+  }
+});
+
+/* RECUPERAR PASSWORD */
+document.getElementById("forgot").addEventListener("click", async () => {
+  const email = emailEl.value.trim();
+  if (!email) {
+    errorDiv.textContent = "Escribe tu correo primero.";
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://cacg1022.github.io/ODONTOLOGIA/reset.html"
+  });
+
+  if (error) {
+    errorDiv.textContent = error.message;
+    return;
+  }
+
+  alert("Correo de recuperación enviado ✅");
+});
+</script>
 
 </body>
 </html>
