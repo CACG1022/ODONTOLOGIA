@@ -164,6 +164,38 @@ button{
   height:100%;
   z-index:0;
 }
+  button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg, var(--green2), var(--green));
+  font-weight:700;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+
+/* 🔥 efecto premium */
+button::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  animation: shine 2.5s infinite;
+}
+
+@keyframes shine{
+  0%{left:-100%}
+  100%{left:100%}
+}
+  button:hover{
+  transform:scale(1.02);
+  box-shadow:0 0 25px rgba(61,220,151,0.3);
+}
 </style>
 </head>
 
@@ -204,7 +236,7 @@ button{
 
 </div>
 
-<!-- 🦷 PARTICULAS CON IMAGEN -->
+<!-- ✨ PARTICULAS DINÁMICAS -->
 <script>
 const canvas = document.getElementById("particles");
 const ctx = canvas.getContext("2d");
@@ -213,62 +245,79 @@ canvas.width = innerWidth;
 canvas.height = innerHeight;
 
 let particles=[];
-let mouse={x:0,y:0};
+let mouse={x:null,y:null,radius:120};
 
-const img = new Image();
-img.src = "https://static.wixstatic.com/media/63e6ec_5374fe6f441940e09de8a9672bec9db1~mv2.png";
-
-window.onmousemove=e=>{
+window.addEventListener("mousemove",(e)=>{
   mouse.x=e.x;
   mouse.y=e.y;
-};
+});
 
 class Particle{
   constructor(){
     this.x=Math.random()*canvas.width;
     this.y=Math.random()*canvas.height;
-    this.size=Math.random()*30+20;
-    this.speedY=Math.random()*0.4+0.2;
+    this.size=Math.random()*1.5+0.3;
+    this.speedY=Math.random()*0.6+0.2;
+    this.speedX=(Math.random()-0.5)*0.3;
+    this.opacity=Math.random()*0.5+0.2;
   }
 
   update(){
     this.y-=this.speedY;
-    if(this.y<0)this.y=canvas.height;
+    this.x+=this.speedX;
 
-    let dx=this.x-mouse.x;
-    let dy=this.y-mouse.y;
-    let dist=Math.sqrt(dx*dx+dy*dy);
+    if(this.y<0){
+      this.y=canvas.height;
+      this.x=Math.random()*canvas.width;
+    }
 
-    if(dist<120){
-      this.x+=dx/15;
-      this.y+=dy/15;
+    // interacción con mouse
+    if(mouse.x && mouse.y){
+      let dx=this.x-mouse.x;
+      let dy=this.y-mouse.y;
+      let dist=Math.sqrt(dx*dx+dy*dy);
+
+      if(dist<mouse.radius){
+        this.x+=dx/20;
+        this.y+=dy/20;
+      }
     }
   }
 
   draw(){
-    ctx.drawImage(img, this.x, this.y, this.size, this.size);
+    ctx.beginPath();
+    ctx.fillStyle=`rgba(61,220,151,${this.opacity})`;
+    ctx.arc(this.x,this.y,this.size,0,Math.PI*2);
+    ctx.fill();
   }
 }
 
 function init(){
-  for(let i=0;i<35;i++){
+  particles=[];
+  for(let i=0;i<70;i++){
     particles.push(new Particle());
   }
 }
 
 function animate(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
+
   particles.forEach(p=>{
     p.update();
     p.draw();
   });
+
   requestAnimationFrame(animate);
 }
 
-img.onload = () => {
+init();
+animate();
+
+window.addEventListener("resize",()=>{
+  canvas.width=innerWidth;
+  canvas.height=innerHeight;
   init();
-  animate();
-};
+});
 </script>
 
 <!-- 🔐 LOGIN -->
