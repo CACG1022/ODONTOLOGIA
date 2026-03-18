@@ -35,12 +35,11 @@ body{
   align-items:center;
   justify-content:center;
   color:var(--text);
-
   background: linear-gradient(135deg, var(--bg1), var(--bg2) 50%, var(--bg3));
   overflow:hidden;
 }
 
-/* movimiento sutil */
+/* fondo animado */
 body::before{
   content:"";
   position:absolute;
@@ -65,24 +64,6 @@ body::before{
   backdrop-filter: blur(16px);
   border:1px solid var(--line);
   box-shadow:0 30px 80px rgba(0,0,0,0.7);
-  overflow: visible;
-}
-
-/* línea que baja */
-.card::after{
-  content:"";
-  position:absolute;
-  left:0;
-  top:0;
-  width:100%;
-  height:2px;
-  background:linear-gradient(90deg, transparent, var(--green), transparent);
-  animation: scan 4s linear infinite;
-}
-
-@keyframes scan{
-  0%{top:0}
-  100%{top:100%}
 }
 
 .logo{
@@ -100,39 +81,60 @@ body::before{
   margin-top:5px;
 }
 
-h2{
-  margin:0 0 8px;
-  font-weight:600;
+.logo-wrap{
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 14px 0;
 }
 
-p{
-  margin:0 0 25px;
-  font-size:13px;
-  color:var(--muted);
+.logo-glow{
+  position:absolute;
+  width:360px;
+  height:360px;
+  border-radius:50%;
+  background: radial-gradient(circle,
+    rgba(61,220,151,0.55) 0%,
+    rgba(61,220,151,0.35) 25%,
+    rgba(61,220,151,0.18) 45%,
+    rgba(61,220,151,0.08) 60%,
+    transparent 75%);
+  filter: blur(50px);
+  animation: pulseGlow 3s infinite;
+  mix-blend-mode: screen;
 }
 
-.input{
-  width:100%;
-  margin-bottom:14px;
+.logo-img{
+  width:180px;
+  z-index:2;
+  position:relative;
+  filter:
+    drop-shadow(0 15px 25px rgba(0,0,0,0.6))
+    drop-shadow(0 0 25px rgba(61,220,151,0.35))
+    drop-shadow(0 0 60px rgba(61,220,151,0.25));
+  animation: floatLogo 4s infinite;
 }
 
-.input input{
+@keyframes floatLogo{
+  0%,100%{transform:translateY(0)}
+  50%{transform:translateY(-6px)}
+}
+
+@keyframes pulseGlow{
+  0%{opacity:.6; transform:scale(1)}
+  50%{opacity:1; transform:scale(1.1)}
+  100%{opacity:.6; transform:scale(1)}
+}
+
+input{
   width:100%;
   padding:14px;
+  margin-bottom:14px;
   border-radius:10px;
   border:1px solid var(--line);
   background:rgba(255,255,255,0.02);
   color:white;
-  outline:none;
-}
-
-.row{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  font-size:12px;
-  margin-bottom:20px;
-  color:var(--muted);
 }
 
 button{
@@ -141,115 +143,28 @@ button{
   border:none;
   border-radius:10px;
   background:linear-gradient(90deg, var(--green2), var(--green));
-  color:#04261f;
   font-weight:700;
   cursor:pointer;
-  position:relative;
-  overflow:hidden;
-}
-
-/* efecto carga botón */
-button::before{
-  content:"";
-  position:absolute;
-  top:0;
-  left:-100%;
-  width:100%;
-  height:100%;
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-  animation: load 2.5s infinite;
-}
-
-@keyframes load{
-  0%{left:-100%}
-  100%{left:100%}
-}
-
-.error{
-  margin-top:12px;
-  text-align:center;
-  font-size:13px;
-  color:var(--error);
 }
 
 .footer{
   text-align:center;
   font-size:11px;
   margin-top:20px;
-  color:var(--muted);
 }
 
-
-  @keyframes floatLogo{
-  0%{transform:translateY(0px)}
-  50%{transform:translateY(-6px)}
-  100%{transform:translateY(0px)}
-}
-
-@keyframes pulseGlow{
-  0%{opacity:0.6; transform:translateX(-50%) scale(1)}
-  50%{opacity:1; transform:translateX(-50%) scale(1.1)}
-  100%{opacity:0.6; transform:translateX(-50%) scale(1)}
-}
-  .logo-wrap{
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  margin: 14px 0 8px;
-}
-
-.logo-glow{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform:translate(-50%, -50%);
-  width:360px;
-  height:360px;
-  border-radius:50%;
-  background:
-    background:
-  radial-gradient(circle,
-    rgba(61,220,151,0.55) 0%,
-    rgba(61,220,151,0.35) 25%,
-    rgba(61,220,151,0.18) 45%,
-    rgba(61,220,151,0.08) 60%,
-    transparent 75%);
-  filter: blur(40px);
-  z-index: 1;
-  pointer-events: none;
-  animation: pulseGlow 3.2s ease-in-out infinite;
-}
-
-.logo-img{
-  width: 180px;
-  display:block;
-  position: relative;
-  z-index: 2;
-  filter:
-    drop-shadow(0 15px 25px rgba(0,0,0,0.6))
-    drop-shadow(0 0 25px rgba(61,220,151,0.35))
-    drop-shadow(0 0 60px rgba(61,220,151,0.25));
-  animation: floatLogo 4s ease-in-out infinite;
-}
-  .logo-glow{
-  mix-blend-mode: screen;
-}
 #particles{
-  position: fixed;
-  top:0;
-  left:0;
+  position:fixed;
   width:100%;
   height:100%;
   z-index:0;
-  pointer-events:none;
 }
 </style>
 </head>
 
 <body>
- <canvas id="particles"></canvas> 
+
+<canvas id="particles"></canvas>
 
 <div class="card">
 
@@ -259,175 +174,102 @@ button::before{
   <div class="logo-wrap">
     <div class="logo-glow"></div>
 
-    <img
-      src="https://static.wixstatic.com/media/63e6ec_7fa8eb772e6a48f7a3fc89e8fa1bd426~mv2.png/v1/fill/w_317,h_363,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/DENTOVA%20v3.png"
-      alt="DENTOVA Logo"
-      class="logo-img"
-    >
+    <img src="https://static.wixstatic.com/media/63e6ec_7fa8eb772e6a48f7a3fc89e8fa1bd426~mv2.png"
+         class="logo-img">
   </div>
+
   <span>DENTOVA</span>
 </div>
 
-  <h2>Iniciar sesión</h2>
-  <p>Acceso seguro al sistema clínico</p>
+<h2>Iniciar sesión</h2>
 
-  <div class="input">
-    <input id="email" type="email" placeholder="Correo electrónico">
-  </div>
+<input id="email" type="email" placeholder="Correo electrónico">
+<input id="password" type="password" placeholder="Contraseña">
 
-  <div class="input">
-    <input id="password" type="password" placeholder="Contraseña">
-  </div>
+<button id="boton-login">ENTRAR</button>
 
-  <div class="row">
-    <label><input type="checkbox" id="remember"> Recordar</label>
-    <span id="forgot" style="cursor:pointer;">¿Olvidaste?</span>
-  </div>
-
-  <button id="boton-login">ENTRAR AL SISTEMA</button>
-
-  <div id="error" class="error"></div>
-
-  <div class="footer">© 2026 DENTOVA</div>
+<div class="footer">© 2026 DENTOVA</div>
 
 </div>
 
-<!-- 🔐 SUPABASE LOGIN REAL -->
-<script type="module">
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
-
-const emailEl = document.getElementById("email");
-const passEl = document.getElementById("password");
-const errorDiv = document.getElementById("error");
-const rememberEl = document.getElementById("remember");
-
-/* recordar correo */
-const savedEmail = localStorage.getItem("remember_email");
-if (savedEmail) {
-  emailEl.value = savedEmail;
-  rememberEl.checked = true;
-}
-
-/* LOGIN */
-document.getElementById("boton-login").addEventListener("click", async () => {
-  const email = emailEl.value.trim();
-  const password = passEl.value.trim();
-  errorDiv.textContent = "";
-
-  if (!email || !password) {
-    errorDiv.textContent = "Por favor completa todos los campos.";
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-
-    if (error) {
-      errorDiv.textContent = "Error: " + error.message;
-      return;
-    }
-
-    if (rememberEl.checked) localStorage.setItem("remember_email", email);
-    else localStorage.removeItem("remember_email");
-
-    localStorage.setItem("usuario_logueado", email);
-
-    window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-
-  } catch (err) {
-    errorDiv.textContent = "Error inesperado al conectar.";
-  }
-});
-
-/* RECUPERAR PASSWORD */
-document.getElementById("forgot").addEventListener("click", async () => {
-  const email = emailEl.value.trim();
-  if (!email) {
-    errorDiv.textContent = "Escribe tu correo primero.";
-    return;
-  }
-
-  const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: "https://cacg1022.github.io/ODONTOLOGIA/reset.html"
-  });
-
-  if (error) {
-    errorDiv.textContent = error.message;
-    return;
-  }
-
-  alert("Correo de recuperación enviado ✅");
-});
-
-  const canvas = document.getElementById("particles");
+<script>
+// 🦷 partículas muelitas PRO
+const canvas = document.getElementById("particles");
 const ctx = canvas.getContext("2d");
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-let particles = [];
+let particles=[];
+let mouse={x:0,y:0};
 
-class Particle {
-  constructor() {
-    this.x = Math.random() * canvas.width;
-    this.y = Math.random() * canvas.height;
-    this.size = Math.random() * 2 + 0.5;
-    this.speedY = Math.random() * 0.5 + 0.2;
-    this.opacity = Math.random() * 0.5 + 0.2;
+window.onmousemove=e=>{
+  mouse.x=e.x;
+  mouse.y=e.y;
+};
+
+class Particle{
+  constructor(){
+    this.x=Math.random()*canvas.width;
+    this.y=Math.random()*canvas.height;
+    this.size=Math.random()*12+8;
+    this.speedY=Math.random()*0.5+0.2;
   }
 
-  update() {
-    this.y -= this.speedY;
-    if (this.y < 0) {
-      this.y = canvas.height;
-      this.x = Math.random() * canvas.width;
+  update(){
+    this.y-=this.speedY;
+    if(this.y<0)this.y=canvas.height;
+
+    let dx=this.x-mouse.x;
+    let dy=this.y-mouse.y;
+    let dist=Math.sqrt(dx*dx+dy*dy);
+
+    if(dist<120){
+      this.x+=dx/10;
+      this.y+=dy/10;
     }
   }
 
-  draw() {
+  draw(){
+    ctx.save();
+    ctx.translate(this.x,this.y);
+    ctx.scale(this.size/100,this.size/100);
+
     ctx.beginPath();
-    ctx.fillStyle = `rgba(61,220,151,${this.opacity})`;
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.moveTo(50,10);
+    ctx.bezierCurveTo(20,10,10,40,20,70);
+    ctx.bezierCurveTo(25,85,35,90,40,70);
+    ctx.bezierCurveTo(45,90,55,90,60,70);
+    ctx.bezierCurveTo(65,90,75,85,80,70);
+    ctx.bezierCurveTo(90,40,80,10,50,10);
+    ctx.fillStyle="rgba(61,220,151,0.25)";
     ctx.fill();
+
+    ctx.restore();
   }
 }
 
-function init() {
-  particles = [];
-  for (let i = 0; i < 80; i++) {
+function init(){
+  for(let i=0;i<40;i++){
     particles.push(new Particle());
   }
 }
 
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  particles.forEach(p => {
+function animate(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  particles.forEach(p=>{
     p.update();
     p.draw();
   });
-
   requestAnimationFrame(animate);
 }
 
 init();
 animate();
-
-window.addEventListener("resize", () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  init();
-});
 </script>
 
 </body>
 </html>
-
 
 
 
