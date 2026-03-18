@@ -549,12 +549,12 @@ verificarSesionYPermisos();
     body{
   margin:0;
   font-family:'Inter',sans-serif;
-  height:100vh;
+  min-height:100vh; /* 🔥 en vez de height fijo */
   display:block;
   align-items:center;
   justify-content:center;
   color:var(--text);
-  overflow:hidden;
+  overflow-x:hidden; /* 🔥 permite scroll vertical */
   background:
     radial-gradient(circle at 50% 50%, rgba(12,92,94,.18), transparent 28%),
     linear-gradient(135deg, #041f23, #093c41, #0b3a53);
