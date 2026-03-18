@@ -591,12 +591,15 @@ body::before{
     }
 
     .wrap{
-      width:min(1200px, 100%);
-      margin: 0 auto;
-      display:flex;
-      flex-direction:column;
-      gap: 18px;
-    }
+  position: relative; /* 🔥 clave */
+  z-index: 2;         /* 🔥 clave */
+
+  width:min(1200px, 100%);
+  margin: 0 auto;
+  display:flex;
+  flex-direction:column;
+  gap: 18px;
+}
 
     /* ===== Topbar ===== */
     .topbar{
@@ -1125,7 +1128,15 @@ z-index: 1;
   font-weight: 1200;
 }
 
-
+#particles{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  z-index:-1; /* 🔥 esto manda el canvas al fondo */
+  pointer-events:none;
+}
     
 
 </style>
