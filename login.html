@@ -64,6 +64,7 @@ body::before{
   backdrop-filter: blur(16px);
   border:1px solid var(--line);
   box-shadow:0 30px 80px rgba(0,0,0,0.7);
+  z-index:2;
 }
 
 .logo{
@@ -91,17 +92,16 @@ body::before{
 
 .logo-glow{
   position:absolute;
-  width:360px;
-  height:360px;
+  width:300px;
+  height:300px;
   border-radius:50%;
   background: radial-gradient(circle,
-    rgba(61,220,151,0.55) 0%,
-    rgba(61,220,151,0.35) 25%,
-    rgba(61,220,151,0.18) 45%,
-    rgba(61,220,151,0.08) 60%,
-    transparent 75%);
-  filter: blur(50px);
-  animation: pulseGlow 3s infinite;
+    rgba(61,220,151,0.25) 0%,
+    rgba(61,220,151,0.15) 30%,
+    rgba(61,220,151,0.08) 50%,
+    transparent 70%);
+  filter: blur(45px);
+  animation: pulseGlow 4s infinite;
   mix-blend-mode: screen;
 }
 
@@ -137,6 +137,15 @@ input{
   color:white;
 }
 
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  margin-bottom:20px;
+  color:var(--muted);
+}
+
 button{
   width:100%;
   padding:14px;
@@ -145,12 +154,39 @@ button{
   background:linear-gradient(90deg, var(--green2), var(--green));
   font-weight:700;
   cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+
+/* animación botón */
+button::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation:load 2.5s infinite;
+}
+
+@keyframes load{
+  0%{left:-100%}
+  100%{left:100%}
+}
+
+.error{
+  margin-top:12px;
+  text-align:center;
+  font-size:13px;
+  color:var(--error);
 }
 
 .footer{
   text-align:center;
   font-size:11px;
   margin-top:20px;
+  color:var(--muted);
 }
 
 #particles{
@@ -186,14 +222,21 @@ button{
 <input id="email" type="email" placeholder="Correo electrónico">
 <input id="password" type="password" placeholder="Contraseña">
 
+<div class="row">
+  <label><input type="checkbox" id="remember"> Recordar</label>
+  <span id="forgot" style="cursor:pointer;">¿Olvidaste?</span>
+</div>
+
 <button id="boton-login">ENTRAR</button>
+
+<div id="error" class="error"></div>
 
 <div class="footer">© 2026 DENTOVA</div>
 
 </div>
 
+<!-- 🦷 PARTICULAS -->
 <script>
-// 🦷 partículas muelitas PRO
 const canvas = document.getElementById("particles");
 const ctx = canvas.getContext("2d");
 
@@ -214,6 +257,7 @@ class Particle{
     this.y=Math.random()*canvas.height;
     this.size=Math.random()*12+8;
     this.speedY=Math.random()*0.5+0.2;
+    this.opacity=Math.random()*0.4+0.3;
   }
 
   update(){
@@ -232,17 +276,19 @@ class Particle{
 
   draw(){
     ctx.save();
+    ctx.globalAlpha=this.opacity;
+
     ctx.translate(this.x,this.y);
     ctx.scale(this.size/100,this.size/100);
 
     ctx.beginPath();
-    ctx.moveTo(50,10);
-    ctx.bezierCurveTo(20,10,10,40,20,70);
-    ctx.bezierCurveTo(25,85,35,90,40,70);
-    ctx.bezierCurveTo(45,90,55,90,60,70);
-    ctx.bezierCurveTo(65,90,75,85,80,70);
-    ctx.bezierCurveTo(90,40,80,10,50,10);
-    ctx.fillStyle="rgba(61,220,151,0.25)";
+    ctx.moveTo(50,15);
+    ctx.bezierCurveTo(30,15,20,35,28,55);
+    ctx.bezierCurveTo(32,70,40,75,45,60);
+    ctx.bezierCurveTo(48,75,52,75,55,60);
+    ctx.bezierCurveTo(60,75,68,70,72,55);
+    ctx.bezierCurveTo(80,35,70,15,50,15);
+    ctx.fillStyle="rgba(61,220,151,0.28)";
     ctx.fill();
 
     ctx.restore();
@@ -266,6 +312,73 @@ function animate(){
 
 init();
 animate();
+</script>
+
+<!-- 🔐 SUPABASE LOGIN -->
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
+
+const emailEl = document.getElementById("email");
+const passEl = document.getElementById("password");
+const errorDiv = document.getElementById("error");
+const rememberEl = document.getElementById("remember");
+
+/* recordar */
+const savedEmail = localStorage.getItem("remember_email");
+if (savedEmail) {
+  emailEl.value = savedEmail;
+  rememberEl.checked = true;
+}
+
+/* login */
+document.getElementById("boton-login").addEventListener("click", async () => {
+  const email = emailEl.value.trim();
+  const password = passEl.value.trim();
+  errorDiv.textContent = "";
+
+  if (!email || !password) {
+    errorDiv.textContent = "Completa los campos.";
+    return;
+  }
+
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    errorDiv.textContent = error.message;
+    return;
+  }
+
+  if (rememberEl.checked) localStorage.setItem("remember_email", email);
+  else localStorage.removeItem("remember_email");
+
+  window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
+});
+
+/* recuperar */
+document.getElementById("forgot").addEventListener("click", async () => {
+  const email = emailEl.value.trim();
+
+  if (!email) {
+    errorDiv.textContent = "Escribe tu correo.";
+    return;
+  }
+
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: "https://cacg1022.github.io/ODONTOLOGIA/reset.html"
+  });
+
+  if (error) {
+    errorDiv.textContent = error.message;
+    return;
+  }
+
+  alert("Correo enviado ✅");
+});
 </script>
 
 </body>
