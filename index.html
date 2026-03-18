@@ -556,8 +556,12 @@ verificarSesionYPermisos();
   color:var(--text);
   overflow-x:hidden; /* 🔥 permite scroll vertical */
   background:
-    radial-gradient(circle at 50% 50%, rgba(12,92,94,.18), transparent 28%),
-    linear-gradient(135deg, #041f23, #093c41, #0b3a53);
+  radial-gradient(circle at 50% 50%, rgba(12,92,94,.18), transparent 28%),
+  linear-gradient(135deg, #041f23, #093c41, #0b3a53);
+
+background-attachment: fixed; /* 🔥 CLAVE */
+background-repeat: no-repeat;
+background-size: cover;
 }
 
 body::before{
