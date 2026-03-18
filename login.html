@@ -223,7 +223,28 @@ button::before{
   50%{opacity:1; transform:translateX(-50%) scale(1.1)}
   100%{opacity:0.6; transform:translateX(-50%) scale(1)}
 }
-  
+  .logo-glow{
+  position:absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 260px;
+  height: 260px;
+
+  background: radial-gradient(circle,
+    rgba(61,220,151,0.45),
+    rgba(61,220,151,0.2),
+    transparent 70%
+  );
+
+  filter: blur(50px);
+  z-index: 1;
+
+  animation: pulseGlow 3s ease-in-out infinite;
+}
+  .logo-glow{
+  mix-blend-mode: screen;
+}
 </style>
 </head>
 
