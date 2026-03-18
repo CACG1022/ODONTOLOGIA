@@ -1,330 +1,201 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login -</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DENTOVA Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  <style>
-    :root{
-      --bg1:#071a2b;
-      --bg2:#0b2f52;
-
-      --glass: rgba(255,255,255,.10);
-      --glass2: rgba(255,255,255,.06);
-      --stroke: rgba(255,255,255,.18);
-
-      --text: rgba(255,255,255,.92);
-      --muted: rgba(255,255,255,.70);
-
-      --field-bg: rgba(0,0,0,.18);
-      --field-stroke: rgba(255,255,255,.14);
-
-      --btn: rgba(0,0,0,.22);
-      --btn-hover: rgba(0,0,0,.30);
-
-      --accent: #7ecbff;
-      --error: #ff6b6b;
-    }
-
-    *{ box-sizing:border-box; }
-
-    body{
-      margin:0;
-      min-height:100vh;
-      display:flex;
-      justify-content:center;
-      align-items:center;
-      font-family: Arial, sans-serif;
-      color:var(--text);
-
-      /* Fondo tipo la imagen */
-      background:
-        radial-gradient(1200px 700px at 30% 25%, rgba(120,200,255,.25), transparent 55%),
-        radial-gradient(900px 600px at 75% 70%, rgba(90,140,255,.18), transparent 60%),
-        linear-gradient(160deg, var(--bg1), var(--bg2));
-    }
-
-    /* ✅ Contenedor para que el logo quede ARRIBA del card */
-    .login-wrapper{
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap: 16px;
-    }
-
-    /* ✅ Logo arriba, centrado */
-    .logo-top{
-      display:flex;
-      justify-content:center;
-      align-items:center;
-    }
-    .logo-top img{
-  width: 300px;   /* ⬅️ MÁS GRANDE */
-  height: auto;
-  object-fit: contain;
-  filter: drop-shadow(0 12px 22px rgba(0,0,0,.5));
+<style>
+:root{
+  --bg:#071b1f;
+  --card: rgba(255,255,255,0.04);
+  --line: rgba(255,255,255,0.08);
+  --text:#e6f7f5;
+  --muted:#8aa3a0;
+  --green:#39d98a;
+  --green2:#1f9d6b;
 }
 
+*{box-sizing:border-box}
+body{
+  margin:0;
+  font-family:'Inter',sans-serif;
+  background: radial-gradient(circle at 20% 20%, #0c2a2f, #041316 60%);
+  height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  color:var(--text);
+  overflow:hidden;
+}
 
+/* subtle moving gradient */
+body::before{
+  content:"";
+  position:absolute;
+  width:200%;
+  height:200%;
+  background: radial-gradient(circle, rgba(57,217,138,0.08), transparent 60%);
+  animation: moveBg 12s linear infinite;
+}
 
-    .login-card{
-      width: 360px;
-      padding: 26px 26px 22px;
-      border-radius: 18px;
-      background: linear-gradient(180deg, var(--glass), var(--glass2));
-      border: 1px solid var(--stroke);
-      box-shadow:
-        0 18px 40px rgba(0,0,0,.35),
-        inset 0 0 0 1px rgba(255,255,255,.06);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      position: relative;
-      overflow: hidden;
-    }
+@keyframes moveBg{
+  0%{transform:translate(-10%, -10%)}
+  50%{transform:translate(10%, 10%)}
+  100%{transform:translate(-10%, -10%)}
+}
 
-    /* Brillos laterales */
-    .login-card::before,
-    .login-card::after{
-      content:"";
-      position:absolute;
-      top: 18px;
-      bottom: 18px;
-      width: 22px;
-      filter: blur(8px);
-      opacity:.45;
-      background: radial-gradient(circle, rgba(126,203,255,.9), transparent 60%);
-      pointer-events:none;
-    }
-    .login-card::before{ left: -10px; }
-    .login-card::after{ right: -10px; }
+.card{
+  position:relative;
+  width:380px;
+  padding:40px 30px;
+  border-radius:20px;
+  background:var(--card);
+  backdrop-filter: blur(14px);
+  border:1px solid var(--line);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+}
 
-    .title{
-      text-align:center;
-      margin: 0 0 16px;
-      font-size: 14px;
-      line-height: 1.25;
-      color: var(--muted);
-      letter-spacing: .2px;
-    }
+/* scan line effect */
+.card::after{
+  content:"";
+  position:absolute;
+  left:0;
+  top:0;
+  width:100%;
+  height:2px;
+  background:linear-gradient(90deg, transparent, var(--green), transparent);
+  animation: scan 3s linear infinite;
+}
 
-    .field{
-      position: relative;
-      margin: 10px 0;
-    }
+@keyframes scan{
+  0%{top:0}
+  100%{top:100%}
+}
 
-    .field input{
-      width:100%;
-      height: 44px;
-      border-radius: 8px;
-      border: 1px solid var(--field-stroke);
-      background: rgba(255,255,255,.92);
-      outline:none;
-      color: #102033;
-      padding: 0 12px 0 42px;
-      font-size: 14px;
-    }
-    .field input::placeholder{ color: rgba(16,32,51,.55); }
+.logo{
+  text-align:center;
+  margin-bottom:25px;
+  font-weight:700;
+  letter-spacing:2px;
+}
 
-    .field .left-icon{
-      position:absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 18px;
-      height: 18px;
-      opacity:.65;
-      fill: rgba(16,32,51,.9);
-    }
+.logo span{
+  color:var(--green);
+}
 
-    .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin: 10px 0 14px;
-      font-size: 12px;
-      color: var(--muted);
-    }
+h2{
+  margin:0 0 10px;
+  font-weight:600;
+}
 
-    .remember{
-      display:flex;
-      align-items:center;
-      gap: 6px;
-      user-select:none;
-    }
-    .remember input{
-      width: 14px;
-      height: 14px;
-      accent-color: var(--accent);
-    }
+p{
+  margin:0 0 25px;
+  font-size:14px;
+  color:var(--muted);
+}
 
-    .row a{
-      color: var(--muted);
-      text-decoration:none;
-    }
-    .row a:hover{
-      color: rgba(255,255,255,.95);
-      text-decoration: underline;
-    }
+.input{
+  width:100%;
+  margin-bottom:15px;
+  position:relative;
+}
 
-    button{
-      width:100%;
-      height: 44px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.14);
-      background: var(--btn);
-      color: rgba(255,255,255,.88);
-      font-weight: 700;
-      letter-spacing: .6px;
-      cursor:pointer;
-      text-transform: uppercase;
-      box-shadow: 0 10px 18px rgba(0,0,0,.22);
-    }
-    button:hover{ background: var(--btn-hover); }
+.input input{
+  width:100%;
+  padding:14px 15px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.02);
+  color:white;
+  outline:none;
+}
 
-    .mensaje-error{
-      margin: 12px 0 0;
-      min-height: 18px;
-      text-align:center;
-      color: var(--error);
-      font-size: 13px;
-    }
+.row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:13px;
+  margin-bottom:20px;
+}
 
-    @media (max-width: 420px){
-      .login-card{ width: calc(100vw - 28px); }
-      .logo-top img{ width: 120px; }
-    }
-  </style>
+button{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg, var(--green2), var(--green));
+  color:#06221b;
+  font-weight:700;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+
+/* button loading effect */
+button::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:-100%;
+  width:100%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  animation: load 2s infinite;
+}
+
+@keyframes load{
+  0%{left:-100%}
+  100%{left:100%}
+}
+
+.footer{
+  text-align:center;
+  font-size:12px;
+  margin-top:20px;
+  color:var(--muted);
+}
+
+</style>
 </head>
 
 <body>
-  <div class="login-wrapper">
 
-    <!-- ✅ LOGO ARRIBA DEL CUADRO -->
-    <div class="logo-top">
-      <!-- RECOMENDADO: usa tu logo blanco con fondo transparente -->
-      <img
-        src="https://static.wixstatic.com/media/63e6ec_3945b13f3ee94c0d8c27c716cb633be5~mv2.png/v1/fill/w_480,h_378,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/DENTOVA_edited.png"
-        alt="Logo Clínica Dra. Leidi Silva"
-      />
-    </div>
+<div class="card">
 
-    <!-- ✅ CARD LOGIN -->
-    <div class="login-card">
-      <p class="title">Software Dental<br/></p>
-
-      <div class="field">
-        <svg class="left-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z"/>
-        </svg>
-        <input type="email" id="email" placeholder="Correo electrónico" autocomplete="username" required />
-      </div>
-
-      <div class="field">
-        <svg class="left-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M17 9h-1V7a4 4 0 0 0-8 0v2H7a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Zm-7-2a2 2 0 0 1 4 0v2h-4Z"/>
-        </svg>
-        <input type="password" id="password" placeholder="Contraseña" autocomplete="current-password" required />
-      </div>
-
-      <div class="row">
-        <label class="remember">
-          <input type="checkbox" id="remember" />
-          Remember me
-        </label>
-        <a href="#" id="forgot">Forgot Password?</a>
-      </div>
-
-      <button id="boton-login">LOGIN</button>
-
-      <p id="error" class="mensaje-error"></p>
-    </div>
+  <div class="logo">
+    SOFTWARE DENTAL<br>
+    <span>DENTOVA</span>
   </div>
 
-  <script type="module">
-    import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+  <h2>Iniciar sesión</h2>
+  <p>Acceso seguro al sistema clínico</p>
 
-    const supabaseUrl = "https://dmcfrmpqlkrqbpjhrfyo.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE";
-    const supabase = createClient(supabaseUrl, supabaseKey);
+  <div class="input">
+    <input type="email" placeholder="Correo electrónico">
+  </div>
 
-    const emailEl = document.getElementById("email");
-    const passEl = document.getElementById("password");
-    const errorDiv = document.getElementById("error");
-    const rememberEl = document.getElementById("remember");
+  <div class="input">
+    <input type="password" placeholder="Contraseña">
+  </div>
 
-    // Prefill si "Remember me" estaba guardado
-    const savedEmail = localStorage.getItem("remember_email");
-    if (savedEmail) {
-      emailEl.value = savedEmail;
-      rememberEl.checked = true;
-    }
+  <div class="row">
+    <label><input type="checkbox"> Recordar</label>
+    <span>¿Olvidaste?</span>
+  </div>
 
-    document.getElementById("boton-login").addEventListener("click", async () => {
-      const email = emailEl.value.trim();
-      const password = passEl.value.trim();
-      errorDiv.textContent = "";
+  <button>ENTRAR AL SISTEMA</button>
 
-      if (!email || !password) {
-        errorDiv.textContent = "Por favor completa todos los campos.";
-        return;
-      }
+  <div class="footer">
+    © 2026 DENTOVA
+  </div>
 
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-        console.log("➡️ Login:", { data, error });
+</div>
 
-        if (error) {
-          errorDiv.textContent = "Error: " + error.message;
-          return;
-        }
-
-        // Remember me
-        if (rememberEl.checked) localStorage.setItem("remember_email", email);
-        else localStorage.removeItem("remember_email");
-
-        alert("Inicio de sesión exitoso ✅");
-        localStorage.setItem("usuario_logueado", email);
-
-        // ✅ Redirigir a la página de historia clínica:
-        window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
-      } catch (err) {
-        console.error("❌ Error inesperado:", err);
-        errorDiv.textContent = "Error inesperado al conectar con Supabase.";
-      }
-    });
-
-    // Forgot Password (opcional)
-    document.getElementById("forgot").addEventListener("click", async (e) => {
-      e.preventDefault();
-      errorDiv.textContent = "";
-
-      const email = emailEl.value.trim();
-      if (!email) {
-        errorDiv.textContent = "Escribe tu correo para enviarte el enlace de recuperación.";
-        return;
-      }
-
-      try {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: "https://cacg1022.github.io/ODONTOLOGIA/reset.html"
-        });
-
-        if (error) {
-          errorDiv.textContent = "Error: " + error.message;
-          return;
-        }
-
-        alert("Te enviamos un correo para restablecer tu contraseña ✅");
-      } catch (err) {
-        console.error(err);
-        errorDiv.textContent = "No se pudo enviar el correo de recuperación.";
-      }
-    });
-  </script>
 </body>
 </html>
+
 
 
 
