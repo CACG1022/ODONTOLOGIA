@@ -179,15 +179,17 @@ button::before{
 }
 
 .logo-img{
-  width: 150px;
+  width: 160px; /* 🔥 más grande */
   display:block;
-  margin: 16px auto 10px;
-  filter: drop-shadow(0 15px 35px rgba(0,0,0,0.8));
-  transition: transform 0.3s ease;
-}
+  margin: 18px auto 10px;
+  position: relative;
+  z-index: 2;
 
-.logo-img:hover{
-  transform: scale(1.05);
+  /* sombra base */
+  filter: drop-shadow(0 20px 40px rgba(0,0,0,0.8));
+
+  /* animación sutil */
+  animation: floatLogo 4s ease-in-out infinite;
 }
 
   
