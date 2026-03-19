@@ -641,18 +641,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   width:220px;
   justify-content:center;
 }
-    /* 🔥 EFECTO SUAVE DEL LOGIN */
-body::before{
-  content:"";
-  position:fixed;
-  inset:-20%;
-  background:
-    radial-gradient(circle at 20% 70%, rgba(61,220,151,.08), transparent 20%),
-    radial-gradient(circle at 80% 30%, rgba(61,220,151,.06), transparent 18%),
-    radial-gradient(circle at 50% 50%, rgba(61,220,151,.04), transparent 30%);
-  animation: moveBg 16s ease-in-out infinite;
-  pointer-events:none;
-}
+
 
 @keyframes moveBg{
   0%{transform:translate(-2%, -2%) scale(1)}
