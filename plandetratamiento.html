@@ -189,10 +189,6 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     * { box-sizing: border-box; }
 
     body {
-      min-height: 100vh;
-background-attachment: fixed;
-      position: relative;
-z-index: 0;
   font-family: var(--font);
   margin: 0;
   padding: 1em;
@@ -272,7 +268,7 @@ z-index: 0;
     }
 
     h2{
-      text-align: center;.odontograma-wrap{
+      text-align: center;
       color: var(--title);
       font-size: 1.55em;
       margin: 8px 0 16px;
@@ -280,20 +276,15 @@ z-index: 0;
       letter-spacing: -0.02em;
     }
 
-   form{
-  position: relative;
-  z-index: 2;
-
-  background: rgba(255,255,255,0.75);
-backdrop-filter: blur(10px);
-
-  padding: 18px;
-  max-width: 960px;
-  margin: auto;
-  border-radius: 18px;
-  box-shadow: var(--shadow);
-  border: 1px solid #e6eef8;
-}
+    form{
+      background: var(--card-bg);
+      padding: 18px;
+      max-width: 960px;
+      margin: auto;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid #e6eef8;
+    }
 
     label{
       font-weight: 600;
@@ -393,7 +384,7 @@ backdrop-filter: blur(10px);
     }
 
     .totales{
-      background: rgba(255,255,255,0.4);
+      background: #f6f9ff;
       border: 1px solid #e1eaf7;
       border-radius: 14px;
       padding: 14px;
@@ -453,7 +444,7 @@ backdrop-filter: blur(10px);
       border:1px solid #e1eaf7;
       border-radius: 16px;
       padding: 14px;
-      background: transparent;
+      background:#fcfdff;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -648,29 +639,29 @@ backdrop-filter: blur(10px);
   width:220px;
   justify-content:center;
 }
-
+    /* 🔥 EFECTO SUAVE DEL LOGIN */
+body::before{
+  content:"";
+  position:fixed;
+  inset:-20%;
+  background:
+    radial-gradient(circle at 20% 70%, rgba(61,220,151,.08), transparent 20%),
+    radial-gradient(circle at 80% 30%, rgba(61,220,151,.06), transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(61,220,151,.04), transparent 30%);
+  animation: moveBg 16s ease-in-out infinite;
+  pointer-events:none;
+}
 
 @keyframes moveBg{
   0%{transform:translate(-2%, -2%) scale(1)}
   50%{transform:translate(2%, 2%) scale(1.04)}
   100%{transform:translate(-2%, -2%) scale(1)}
 }
-
- /* ================= PARTÍCULAS ================= */
-#particles-bg{
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1; /* 🔥 CLAVE REAL */
-  pointer-events: none;
-}
       
   </style>
 </head>
 
 <body>
- <canvas id="particles-bg"></canvas>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
@@ -3263,88 +3254,7 @@ lista.innerHTML = `
     : "0";
 }
 </script>
- <script>
-const particlesCanvas = document.getElementById("particles-bg");
-const particlesCtx = particlesCanvas.getContext("2d");
-
-function resizeParticles(){
-  particlesCanvas.width = window.innerWidth;
-  particlesCanvas.height = window.innerHeight;
-}
-resizeParticles();
-
-let particles = [];
-let mouse = { x: null, y: null, radius: 120 };
-
-window.addEventListener("mousemove", (e) => {
-  mouse.x = e.x;
-  mouse.y = e.y;
-});
-
-class Particle{
-  constructor(){
-    this.reset(true);
-  }
-
-  reset(initial = false){
-    this.x = Math.random() * particlesCanvas.width;
-    this.y = initial ? Math.random() * particlesCanvas.height : particlesCanvas.height + Math.random() * 30;
-    this.size = Math.random() * 1.5 + 0.3;
-    this.speedY = Math.random() * 0.6 + 0.2;
-    this.speedX = (Math.random() - 0.5) * 0.22;
-    this.opacity = Math.random() * 0.45 + 0.18;
-  }
-
-  update(){
-    this.y -= this.speedY;
-    this.x += this.speedX;
-
-    if (this.y < -10) this.reset(false);
-
-    if (mouse.x !== null && mouse.y !== null) {
-      const dx = this.x - mouse.x;
-      const dy = this.y - mouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < mouse.radius) {
-        this.x += dx / 22;
-        this.y += dy / 22;
-      }
-    }
-  }
-
-  draw(){
-    particlesCtx.beginPath();
-    particlesCtx.fillStyle = `rgba(61,220,151,0.3)`;
-    particlesCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    particlesCtx.fill();
-  }
-}
-
-function initParticles(){
-  particles = [];
-  for (let i = 0; i < 70; i++) {
-    particles.push(new Particle());
-  }
-}
-
-function animateParticles(){
-  particlesCtx.clearRect(0, 0, particlesCanvas.width, particlesCanvas.height);
-  particles.forEach(p => {
-    p.update();
-    p.draw();
-  });
-  requestAnimationFrame(animateParticles);
-}
-
-initParticles();
-animateParticles();
-
-window.addEventListener("resize", () => {
-  resizeParticles();
-  initParticles();
-});
-</script> 
+  
 </body>
 </html>
 
@@ -3456,6 +3366,15 @@ window.enviarPDFaN8n = async function(){
  
 
 </div>
+
+
+
+
+
+
+
+
+
 
 
 
