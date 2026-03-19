@@ -261,6 +261,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     }
 
     form{
+      position: relative;
+      z-index: 1;
       background: var(--card-bg);
       padding: 18px;
       max-width: 960px;
@@ -623,11 +625,21 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   width:220px;
   justify-content:center;
 }
+    #particles{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
       
   </style>
 </head>
 
 <body>
+  <canvas id="particles"></canvas>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
@@ -3219,6 +3231,80 @@ lista.innerHTML = `
     ? saldo.toLocaleString("es-CO")
     : "0";
 }
+
+const canvas = document.getElementById("particles");
+const ctx = canvas.getContext("2d");
+
+let particlesArray;
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  init();
+});
+
+class Particle {
+  constructor(x, y, dx, dy, size) {
+    this.x = x;
+    this.y = y;
+    this.dx = dx;
+    this.dy = dy;
+    this.size = size;
+  }
+
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(32,240,208,0.7)";
+    ctx.fill();
+  }
+
+  update() {
+    if (this.x + this.size > canvas.width || this.x - this.size < 0) {
+      this.dx = -this.dx;
+    }
+    if (this.y + this.size > canvas.height || this.y - this.size < 0) {
+      this.dy = -this.dy;
+    }
+
+    this.x += this.dx;
+    this.y += this.dy;
+
+    this.draw();
+  }
+}
+
+function init() {
+  particlesArray = [];
+  let numberOfParticles = 60;
+
+  for (let i = 0; i < numberOfParticles; i++) {
+    let size = Math.random() * 2 + 1;
+    let x = Math.random() * canvas.width;
+    let y = Math.random() * canvas.height;
+    let dx = (Math.random() - 0.5) * 0.5;
+    let dy = (Math.random() - 0.5) * 0.5;
+
+    particlesArray.push(new Particle(x, y, dx, dy, size));
+  }
+}
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < particlesArray.length; i++) {
+    particlesArray[i].update();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+init();
+animate();
+  
 </script>
   
 </body>
