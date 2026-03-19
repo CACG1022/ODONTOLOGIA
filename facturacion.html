@@ -1455,6 +1455,7 @@ await cargarEvolucionesPaciente(cedula);
   descripcion: p.procedimiento || "",
   cantidad,
   valor_unitario: valorU,
+  profesional: p.profesional,
   valor_total: valorU * cantidad
 };
 
@@ -1542,7 +1543,7 @@ function generarSelectProfesionales(valorActual = "") {
         tr.dataset.idLocal = String(it.id_local);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
-          <td>${generarSelectProfesionales(obtenerProfesionalRawDeItem(it))}</td>
+          <td>${generarSelectProfesionales(obtenerProfesionalRawDeItem(it) || "")}</td>
           <td><input type="number" min="0" step="100" value="${(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))}" data-k="costo"></td>
           <td class="mono costo-total" data-k="costo_total">$ ${money((Number(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it)) || 0) * (Number(it.cantidad||0) || 0))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
@@ -1737,18 +1738,22 @@ function obtenerCostoDeItem(it){
 }
 
 
-    function obtenerProfesionalRawDeItem(it){
-  // 1. Si el item ya trae profesional crudo
+   function obtenerProfesionalRawDeItem(it){
+  // 1. Si el item ya tiene profesional (ej: editado manual)
   if (it.profesional) return it.profesional;
 
-  // 2. Buscarlo desde procedimientos_precios
+  // 2. Buscar en procedimientos_precios por ID
   const p = state.procedimientos.find(
     x => String(x.id) === String(it.procedimiento_id)
   );
 
-  if (p && p.profesional) return p.profesional;
+  if (p && p.profesional) {
+    // 🔥 IMPORTANTE: guardar en el item para futuras veces
+    it.profesional = p.profesional;
+    return p.profesional;
+  }
 
-  return null;
+  return "";
 }
 
 
