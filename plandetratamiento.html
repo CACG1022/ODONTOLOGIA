@@ -3310,7 +3310,7 @@ class Particle{
 
   draw(){
     particlesCtx.beginPath();
-    particlesCtx.fillStyle = `rgba(61,220,151,${this.opacity})`;
+    particlesCtx.fillStyle = `rgba(61,220,151,0.3)`;
     particlesCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
     particlesCtx.fill();
   }
