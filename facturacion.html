@@ -3676,7 +3676,8 @@ if (procDrop) procDrop.style.display = "none";
   descripcion: it.procedimiento,
   cantidad: Number(it.cantidad || 1),
   valor_unitario: Number(it.valor_unitario || 0),
-  valor_total: Number(it.valor_total || 0)
+  valor_total: Number(it.valor_total || 0),
+  profesional: it.profesional || null
 });
 
   });
@@ -3900,7 +3901,8 @@ if (valorU === null || !Number.isFinite(valorU)) {
         cantidad,
         valor_unitario: Math.max(0, Number(valorU || 0)),
         valor_total: Math.max(0, Number(valorU || 0)) * cantidad,
-        costo: Number(p?.costo || 0)
+        costo: Number(p?.costo || 0),
+        profesional: p?.profesional || null
       });
     }
 
