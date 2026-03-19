@@ -189,6 +189,8 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     * { box-sizing: border-box; }
 
     body {
+      position: relative;
+z-index: 0;
   font-family: var(--font);
   margin: 0;
   padding: 1em;
@@ -663,7 +665,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
 </head>
 
 <body>
- <!-- <canvas id="particles-bg"></canvas> -->
+ <canvas id="particles-bg"></canvas>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
