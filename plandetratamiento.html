@@ -189,15 +189,12 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     * { box-sizing: border-box; }
 
     body {
-      font-family: var(--font);
-      margin: 0;
-      padding: 0; /* 🔥 QUITAR ESPACIO BLANCO */
-      background:
-  radial-gradient(900px 520px at 20% 20%, rgba(32,240,208,.18), transparent 60%),
-  radial-gradient(780px 520px at 85% 70%, rgba(36,183,255,.14), transparent 62%),
-  linear-gradient(145deg, #041f23, #093c41, #0b3a53);
-      color: #0f172a;
-    }
+  font-family: var(--font);
+  margin: 0;
+  padding: 0;
+  color: #0f172a;
+  overflow-x: hidden;
+}
     html, body{
   min-height: 100vh;
   background: linear-gradient(145deg, #041f23, #093c41, #0b3a53);
