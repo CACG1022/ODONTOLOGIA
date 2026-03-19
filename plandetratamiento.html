@@ -198,8 +198,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     radial-gradient(circle at 50% 50%, rgba(12,92,94,.18), transparent 28%),
     linear-gradient(135deg, #041f23, #093c41 52%, #0b3a53);
 
-  color: #e8fdf9;
-  overflow-x: hidden;
+  color: #0f172a;
 }
 
     .topbar{
@@ -265,18 +264,13 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     }
 
     form{
-  position: relative;
-  z-index: 2;
-
-  background: rgba(255,255,255,.05);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+      background: var(--card-bg);
       padding: 18px;
       max-width: 960px;
       margin: auto;
       border-radius: 18px;
       box-shadow: var(--shadow);
-     border: 1px solid rgba(255,255,255,.08);
+      border: 1px solid #e6eef8;
     }
 
     label{
@@ -632,8 +626,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   width:220px;
   justify-content:center;
 }
-
- /* ================= FONDO ANIMADO LOGIN ================= */
+    /* 🔥 EFECTO SUAVE DEL LOGIN */
 body::before{
   content:"";
   position:fixed;
@@ -650,22 +643,12 @@ body::before{
   0%{transform:translate(-2%, -2%) scale(1)}
   50%{transform:translate(2%, 2%) scale(1.04)}
   100%{transform:translate(-2%, -2%) scale(1)}
-}   
-
-  #particles{
-  position:fixed;
-  inset:0;
-  width:100%;
-  height:100%;
-  z-index:0;
-  pointer-events:none;
 }
       
   </style>
 </head>
 
 <body>
-  <canvas id="particles"></canvas>
   <div class="topbar">
     <div class="topbar-inner">
       <div class="topbar-title">Plan de tratamiento</div>
@@ -2247,7 +2230,7 @@ function irHistoriaClinica(){
     background: #fff;
     border-radius: 14px;
     box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    overflow-x: hidden;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     border: 1px solid #e5e7eb;
@@ -3258,90 +3241,7 @@ lista.innerHTML = `
     : "0";
 }
 </script>
-
-<script>
-const canvas = document.getElementById("particles");
-const ctx = canvas.getContext("2d");
-
-function resizeCanvas(){
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-
-let particles = [];
-let mouse = { x: null, y: null, radius: 120 };
-
-window.addEventListener("mousemove", (e) => {
-  mouse.x = e.x;
-  mouse.y = e.y;
-});
-
-class Particle{
-  constructor(){
-    this.reset(true);
-  }
-
-  reset(initial = false){
-    this.x = Math.random() * canvas.width;
-    this.y = initial ? Math.random() * canvas.height : canvas.height + Math.random() * 30;
-    this.size = Math.random() * 1.5 + 0.3;
-    this.speedY = Math.random() * 0.6 + 0.2;
-    this.speedX = (Math.random() - 0.5) * 0.22;
-    this.opacity = Math.random() * 0.45 + 0.18;
-  }
-
-  update(){
-    this.y -= this.speedY;
-    this.x += this.speedX;
-
-    if (this.y < -10) this.reset(false);
-
-    if (mouse.x !== null && mouse.y !== null) {
-      const dx = this.x - mouse.x;
-      const dy = this.y - mouse.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      if (dist < mouse.radius) {
-        this.x += dx / 22;
-        this.y += dy / 22;
-      }
-    }
-  }
-
-  draw(){
-    ctx.beginPath();
-    ctx.fillStyle = `rgba(61,220,151,${this.opacity})`;
-    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-    ctx.fill();
-  }
-}
-
-function initParticles(){
-  particles = [];
-  for (let i = 0; i < 70; i++) {
-    particles.push(new Particle());
-  }
-}
-
-function animateParticles(){
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  particles.forEach(p => {
-    p.update();
-    p.draw();
-  });
-  requestAnimationFrame(animateParticles);
-}
-
-initParticles();
-animateParticles();
-
-window.addEventListener("resize", () => {
-  resizeCanvas();
-  initParticles();
-});
-</script>
-
+  
 </body>
 </html>
 
