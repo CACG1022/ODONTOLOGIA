@@ -1517,15 +1517,18 @@ await cargarEvolucionesPaciente(cedula);
   toast(`Costos actualizados: Costo = V/Unit × ${pct}%`, "ok");
 }
 function generarSelectProfesionales(valorActual = "") {
+  const actual = String(valorActual ?? "").trim();
+
   let options = `<option value="">— Selecciona —</option>`;
 
   for (const pr of state.profesionales) {
-    const ced = (pr.cedula ?? "").toString().trim();
-    const nom = (pr.nombre ?? "").toString().trim();
+    const ced = String(pr.cedula ?? "").trim();
+    const nom = String(pr.nombre ?? "").trim();
 
-    const selected = (valorActual === ced || valorActual === nom) ? "selected" : "";
+    const isSelected = actual === ced || actual === nom;
+    const selectedAttr = isSelected ? " selected" : "";
 
-    options += `<option value="${ced}">${nom}</option>`;
+    options += `<option value="${escapeHtml(ced)}"${selectedAttr}>${escapeHtml(nom)}</option>`;
   }
 
   return `<select class="select-profesional">${options}</select>`;
@@ -1553,76 +1556,60 @@ function generarSelectProfesionales(valorActual = "") {
           <td class="mono">$ ${money(it.valor_total)}</td>
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
-        tr.querySelectorAll("input").forEach(inp => {
-
-          // ✅ EVENTO PARA CAMBIO DE PROFESIONAL
+        // ✅ EVENTO PROFESIONAL
 const selectProf = tr.querySelector(".select-profesional");
 if (selectProf) {
   selectProf.addEventListener("change", () => {
     it.profesional = selectProf.value;
-
-    // 🔄 Actualizar resumen automáticamente
     renderResumenPorProfesional();
     renderMargenGanancia();
   });
 }
-          
-           inp.addEventListener("input", () => {
-             const k = inp.dataset.k;
-             const v = num(inp.value);
 
-             if (k === "cantidad") {
-               it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
-               it.valor_total = it.cantidad * it.valor_unitario;
-               renderItems();
-               recalcularTotales();
-               return;
-             }
+// ✅ EVENTOS INPUTS (CORRECTO)
+tr.querySelectorAll("input").forEach(inp => {
 
-             if (k === "valor_unitario") {
-               it.valor_unitario = Math.max(0, v);
-               it.valor_total = it.cantidad * it.valor_unitario;
-               renderItems();
-               recalcularTotales();
-               return;
-             }
+  inp.addEventListener("input", () => {
+    const k = inp.dataset.k;
+    const v = num(inp.value);
 
-             if (k === "costo") {
-               it.costo = Math.max(0, v);
+    if (k === "cantidad") {
+      it.cantidad = Math.max(1, parseInt(String(v), 10) || 1);
+      it.valor_total = it.cantidad * it.valor_unitario;
+      renderItems();
+      recalcularTotales();
+      return;
+    }
 
-               // 🔄 Recalcular costo total en vivo
-               const row = inp.closest("tr");
-               if (row) {
-                 const ct = row.querySelector(".costo-total");
-                 if (ct) {
-                   const costoU = Number(it.costo || 0);
-                   const cant = Number(it.cantidad || 0);
-                   ct.textContent = "$ " + money(costoU * cant);
-                 }
-               }
-               // ✅ AGREGAR ESTO 👇
-                 renderResumenPorProfesional();
-                 renderMargenGanancia();
-               return;
-             }
-           });
+    if (k === "valor_unitario") {
+      it.valor_unitario = Math.max(0, v);
+      it.valor_total = it.cantidad * it.valor_unitario;
+      renderItems();
+      recalcularTotales();
+      return;
+    }
 
-         inp.addEventListener("blur", () => {
-           if (inp.dataset.k === "costo") {
-             const v = num(inp.value);
-             it.costo = Math.max(0, v);
-             const row = inp.closest("tr");
-             if (row) {
-               const ct = row.querySelector(".costo-total");
-               if (ct) {
-                 const costoU = Number(it.costo || 0);
-                 const cant = Number(it.cantidad || 0);
-                 ct.textContent = "$ " + money(costoU * cant);
-               }
-             }
-           }
-         });
-         });
+    if (k === "costo") {
+      it.costo = Math.max(0, v);
+
+      const row = inp.closest("tr");
+      if (row) {
+        const ct = row.querySelector(".costo-total");
+        if (ct) {
+          const costoU = Number(it.costo || 0);
+          const cant = Number(it.cantidad || 0);
+          ct.textContent = "$ " + money(costoU * cant);
+        }
+      }
+
+      renderResumenPorProfesional();
+      renderMargenGanancia();
+      return;
+    }
+  });
+
+});
+        
         tr.querySelector("button").addEventListener("click", () => eliminarItem(it.id_local));
         tbody.appendChild(tr);
       }
@@ -3666,6 +3653,10 @@ if (procDrop) procDrop.style.display = "none";
   }
 
   console.log("📦 Plan recibido desde Supabase:", data);
+  console.log("🧪 Profesionales del plan:", data.map(x => ({
+  procedimiento_id: x.procedimiento_id,
+  profesional: x.profesional
+})));
 
   // 3️⃣ Insertar en state.items
   data.forEach(it => {
@@ -3854,9 +3845,9 @@ async function cargarProcedimientosDeEvolucion(){
     let procsPrecio = [];
     if (ids.length){
       const { data: pData } = await supabase
-        .from("procedimientos_precios")
-        .select("id, procedimiento, valor, codigo_cups, costo")
-        .in("id", ids);
+  .from("procedimientos_precios")
+  .select("id, procedimiento, valor, codigo_cups, costo, profesional")
+  .in("id", ids);
 
       procsPrecio = pData || [];
     }
