@@ -173,14 +173,13 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
       --topbtn-hover: #00796b;
 
       /* ✅ look “form” como tu imagen */
-      --page-bg: transparent;
---card-bg: rgba(255,255,255,0.05);
---field-bg: rgba(255,255,255,0.04);
---field-border: rgba(255,255,255,0.14);
---field-border-2: rgba(61,220,151,0.35);
---label: rgba(232,253,249,0.78);
---title: #e8fdf9;
---ink: #e8fdf9;
+      --page-bg: #f4f7fb;
+      --card-bg: #ffffff;
+      --field-bg: #ffffff;
+      --field-border: #d6e3f3;
+      --field-border-2: #bcd4f4;
+      --label: #5b6b7c;
+      --title: #1f4e72;
 
       --radius: 14px;
       --shadow: 0 10px 30px rgba(16, 24, 40, .08);
@@ -190,18 +189,12 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     * { box-sizing: border-box; }
 
     body {
-  font-family: var(--font);
-  margin: 0;
-  padding: 1em;
-  color: #e8fdf9;
-  overflow-x: hidden;
-
-  background:
-    radial-gradient(900px 520px at 20% 20%, rgba(32,240,208,.22), transparent 60%),
-    radial-gradient(780px 520px at 85% 70%, rgba(36,183,255,.18), transparent 62%),
-    radial-gradient(540px 380px at 70% 18%, rgba(102,255,181,.12), transparent 60%),
-    linear-gradient(145deg, #041f23, #093c41, #0b3a53);
-}
+      font-family: var(--font);
+      margin: 0;
+      padding: 1em;
+      background: var(--page-bg);
+      color: #0f172a;
+    }
 
     .topbar{
   position: relative;
@@ -265,6 +258,14 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     }
 
     form{
+      background: var(--card-bg);
+      padding: 18px;
+      max-width: 960px;
+      margin: auto;
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      border: 1px solid #e6eef8;
+    }
 
     label{
       font-weight: 600;
@@ -3328,12 +3329,6 @@ window.enviarPDFaN8n = async function(){
 
 
 </div>
-
-
-
-
-
-
 
 
 
