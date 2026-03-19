@@ -218,15 +218,24 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   justify-content:space-between;
   gap: 12px;
 
-  background: linear-gradient(135deg, #1f3b73, #00b894);
-  backdrop-filter: blur(12px);
--webkit-backdrop-filter: blur(12px);
-border: 1px solid rgba(255,255,255,.08);
-box-shadow: 0 10px 30px rgba(0,0,0,.35);
+  /* ✅ COLOR VERDE GLASS */
+  background: rgba(0, 150, 136, 0.35);
+
+  /* ✅ EFECTO VIDRIO REAL */
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255,255,255,.12);
+
+  /* ✅ SOMBRA PROFUNDA (como login) */
+  box-shadow:
+    0 20px 50px rgba(0,0,0,.45),
+    inset 0 0 0 1px rgba(255,255,255,.04);
+
   border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(16,24,40,.08);
 }
     .topbar-title{
+  text-shadow: 0 4px 16px rgba(0,0,0,.5);
   font-weight: 900;
   color: #ffffff;
   white-space: nowrap;
