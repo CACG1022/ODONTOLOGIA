@@ -1698,22 +1698,6 @@ tr.querySelectorAll("input").forEach(inp => {
       }
       return raw;
     }
-    function obtenerNombreProfesional(valor){
-
-  const raw = String(valor ?? "").trim();
-
-  if (!raw) return null;
-
-  // 🔎 buscar por cédula
-  const pr = state.profesionales.find(p =>
-    String(p.cedula ?? "").trim() === raw
-  );
-
-  if (pr && pr.nombre) return pr.nombre;
-
-  // 🔎 si ya es nombre, devolverlo
-  return raw;
-}
 
     function obtenerProfesionalDeItem(it){
   // 1. Si el item ya trae profesional, usarlo
@@ -2257,7 +2241,7 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
   // 🔴 NUEVO
   costo: Number(it.costo || 0),
   costo_total: Number(it.costo || 0) * Number(it.cantidad || 0),
-  profesional: obtenerNombreProfesional(it.profesional || obtenerProfesionalRawDeItem(it))
+  profesional: it.profesional || obtenerProfesionalRawDeItem(it)
 }));
 
 
@@ -4333,6 +4317,19 @@ function enviarFacturacionElectronica(){
 </div>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
