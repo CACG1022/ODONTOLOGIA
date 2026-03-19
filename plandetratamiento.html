@@ -198,6 +198,18 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
   linear-gradient(145deg, #041f23, #093c41, #0b3a53);
       color: #0f172a;
     }
+    html, body{
+  min-height: 100vh;
+  background: linear-gradient(145deg, #041f23, #093c41, #0b3a53);
+}
+    body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(61,220,151,0.08), transparent 60%);
+  z-index:0;
+}
 
     .topbar{
   position: relative;
