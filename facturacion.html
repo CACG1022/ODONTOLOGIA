@@ -1269,9 +1269,10 @@ async function validarPermisoDesdeTabla(){
     }
     async function cargarProfesionales(){
       const { data, error } = await supabase
-        .from("profesionales")
-        .select("id, cedula, nombre, activo")
-        .order("nombre", { ascending: true });
+  .from("profesionales")
+  .select("id, cedula, nombre, activo, tenant_id")
+  .eq("tenant_id", state.tenant_id) // 🔥 FILTRO CLAVE
+  .order("nombre", { ascending: true });
       if (error){
         console.error(error);
         toast("Error profesionales:\n" + error.message, "err");
@@ -1514,7 +1515,20 @@ await cargarEvolucionesPaciente(cedula);
 
   toast(`Costos actualizados: Costo = V/Unit × ${pct}%`, "ok");
 }
+function generarSelectProfesionales(valorActual = "") {
+  let options = `<option value="">— Selecciona —</option>`;
 
+  for (const pr of state.profesionales) {
+    const ced = (pr.cedula ?? "").toString().trim();
+    const nom = (pr.nombre ?? "").toString().trim();
+
+    const selected = (valorActual === ced || valorActual === nom) ? "selected" : "";
+
+    options += `<option value="${ced}">${nom}</option>`;
+  }
+
+  return `<select class="select-profesional">${options}</select>`;
+}
     
     function renderItems(){
       const tbody = $("tbody-items");
@@ -1528,7 +1542,7 @@ await cargarEvolucionesPaciente(cedula);
         tr.dataset.idLocal = String(it.id_local);
         tr.innerHTML = `
           <td class="mono">${escapeHtml(it.procedimiento_id)}</td>
-          <td>${escapeHtml(obtenerProfesionalDeItem(it))}</td>
+          <td>${generarSelectProfesionales(obtenerProfesionalRawDeItem(it))}</td>
           <td><input type="number" min="0" step="100" value="${(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it))}" data-k="costo"></td>
           <td class="mono costo-total" data-k="costo_total">$ ${money((Number(it.costo !== undefined ? it.costo : obtenerCostoDeItem(it)) || 0) * (Number(it.cantidad||0) || 0))}</td>
           <td class="mono">${escapeHtml(it.codigo_cups || "—")}</td>
@@ -1539,6 +1553,19 @@ await cargarEvolucionesPaciente(cedula);
           <td class="actions"><button class="btn danger small" type="button">Quitar</button></td>
         `;
         tr.querySelectorAll("input").forEach(inp => {
+
+          // ✅ EVENTO PARA CAMBIO DE PROFESIONAL
+const selectProf = tr.querySelector(".select-profesional");
+if (selectProf) {
+  selectProf.addEventListener("change", () => {
+    it.profesional = selectProf.value;
+
+    // 🔄 Actualizar resumen automáticamente
+    renderResumenPorProfesional();
+    renderMargenGanancia();
+  });
+}
+          
            inp.addEventListener("input", () => {
              const k = inp.dataset.k;
              const v = num(inp.value);
@@ -2222,7 +2249,7 @@ if (facturaDuplicada && facturaDuplicada.length > 0){
   // 🔴 NUEVO
   costo: Number(it.costo || 0),
   costo_total: Number(it.costo || 0) * Number(it.cantidad || 0),
-  profesional: obtenerProfesionalRawDeItem(it)
+  profesional: it.profesional || obtenerProfesionalRawDeItem(it)
 }));
 
 
