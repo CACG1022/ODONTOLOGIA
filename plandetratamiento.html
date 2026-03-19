@@ -13,6 +13,53 @@
       'https://dmcfrmpqlkrqbpjhrfyo.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE'
     );
+    // ✅ Logo dinámico por tenant
+window.LOGO_TENANT_URL = "";
+
+// ✅ Obtener logo según tenant_id del usuario logueado
+async function cargarLogoTenant() {
+  try {
+    const { data: { session } } = await window.supabase.auth.getSession();
+    if (!session?.user?.id) return "";
+
+    // 1) obtener tenant_id desde profiles
+    const { data: profile, error: profileError } = await window.supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", session.user.id)
+      .single();
+
+    if (profileError) {
+      console.error("Error obteniendo tenant_id desde profiles:", profileError);
+      return "";
+    }
+
+    const tenantId = profile?.tenant_id;
+    if (!tenantId) {
+      console.warn("El usuario no tiene tenant_id en profiles");
+      return "";
+    }
+
+    // 2) obtener logo desde tenants
+    const { data: tenant, error: tenantError } = await window.supabase
+      .from("tenants")
+      .select("logo")
+      .eq("id", tenantId)
+      .single();
+
+    if (tenantError) {
+      console.error("Error obteniendo logo desde tenants:", tenantError);
+      return "";
+    }
+
+    window.LOGO_TENANT_URL = (tenant?.logo || "").trim();
+    return window.LOGO_TENANT_URL;
+  } catch (err) {
+    console.error("No se pudo cargar logo del tenant:", err);
+    return "";
+  }
+}
+    window.cargarLogoTenant = cargarLogoTenant;
 
     // ✅ URLs
 const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
@@ -105,7 +152,7 @@ async function verificarSesion() {
 }
 
 verificarSesion();
-
+cargarLogoTenant();
 async function mostrarUsuarioYRol() {
   try {
     const { data: { session } } = await window.supabase.auth.getSession();
@@ -2351,7 +2398,8 @@ function irHistoriaClinica(){
    - Incluir logo y encabezado azul #143F80 con texto blanco
    ========================== */
 (function(){
-  const LOGO_URL = "https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png";
+  const LOGO_FALLBACK = "https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png";
+const LOGO_URL = (window.LOGO_TENANT_URL || LOGO_FALLBACK).trim();
 
   function esc(s){
     return String(s ?? "")
@@ -2371,13 +2419,21 @@ function irHistoriaClinica(){
     return (el && "value" in el ? el.value : "").trim();
   }
 
-  function abrirModalImpresionPDF(){
-    const modal = document.getElementById("modal-impresion-pdf");
-    if(modal){
-      modal.classList.add("show");
-      modal.setAttribute("aria-hidden","false");
-    }
+  async function abrirModalImpresionPDF(){
+  try{
+    if (typeof window.cargarLogoTenant === "function") {
+  await window.cargarLogoTenant();
+}
+  }catch(e){
+    console.warn("No se pudo actualizar el logo del tenant antes de abrir el modal:", e);
   }
+
+  const modal = document.getElementById("modal-impresion-pdf");
+  if(modal){
+    modal.classList.add("show");
+    modal.setAttribute("aria-hidden","false");
+  }
+}
 
   function cerrarModalImpresionPDF(){
     const modal = document.getElementById("modal-impresion-pdf");
@@ -2394,6 +2450,9 @@ function irHistoriaClinica(){
   window.cerrarModalImpresionPDF = cerrarModalImpresionPDF;
 
   function construirDocumentoParaImprimir(){
+    const LOGO_FALLBACK = "https://static.wixstatic.com/media/63e6ec_9054e2ab657a462c96582969b5dbbf4d~mv2.png/v1/fill/w_480,h_303,al_c,q_85,usm_0.66_1.00_0.01,enc_auto/LOGO%204%20RECORTADO.png";
+    const LOGO_URL = (window.LOGO_TENANT_URL || LOGO_FALLBACK).trim();
+    
     const firmaBase64 = document.getElementById("firmaInput")?.value || "";
 
     // Mantener cálculos actuales (sin tocar lógica)
