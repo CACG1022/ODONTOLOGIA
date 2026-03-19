@@ -191,7 +191,7 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     body {
       font-family: var(--font);
       margin: 0;
-     
+      padding: 0; /* 🔥 QUITAR ESPACIO BLANCO */
       background:
   radial-gradient(900px 520px at 20% 20%, rgba(32,240,208,.18), transparent 60%),
   radial-gradient(780px 520px at 85% 70%, rgba(36,183,255,.14), transparent 62%),
@@ -261,16 +261,16 @@ window.supabase.auth.onAuthStateChange((_event, session) => {
     }
 
     form{
-      position: relative;
-      z-index: 1;
-      background: var(--card-bg);
-      padding: 18px;
-      max-width: 960px;
-      margin: auto;
-      border-radius: 18px;
-      box-shadow: var(--shadow);
-      border: 1px solid #e6eef8;
-    }
+  position: relative;
+  z-index: 1;
+  background: var(--card-bg);
+  padding: 24px; /* 👈 AQUÍ VA EL ESPACIO */
+  max-width: 960px;
+  margin: 20px auto; /* 👈 separación arriba/abajo */
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+  border: 1px solid #e6eef8;
+}
 
     label{
       font-weight: 600;
