@@ -523,19 +523,21 @@ input[type="number"] {
   <select id="evolucion_id">
     <option value="">Seleccione evolución...</option>
   </select>
-    <button type="button" id="btn-cargar-evolucion"
+   <button type="button" id="btn-cargar-evolucion"
   style="
-    background:#22c55e;
+    margin-top:14px;           /* 🔥 separa del campo de arriba */
+    width:100%;
+    background:#009688;        /* 🔥 nuevo color */
     color:#fff;
-    font-weight:800;
-    padding:10px 14px;
-    border-radius:10px;
+    font-weight:600;           /* 🔥 menos grueso */
+    padding:6px 10px;          /* 🔥 menos alto */
+    border-radius:6px;         /* 🔥 más compacto */
     border:none;
     cursor:pointer;
-    box-shadow:0 6px 14px rgba(0,0,0,.18);
-    margin-bottom:10px;
+    box-shadow:0 3px 8px rgba(0,0,0,.12);
+    font-size:13px;            /* 🔥 más fino */
   ">
-  📥 Cargar procedimientos de evolución
+  📥 Cargar procedimientos
 </button>
 </div>
       
@@ -3498,7 +3500,9 @@ if ($("pagada")) $("pagada").value = "si";
         $("iva_porcentaje").addEventListener("input", recalcularTotales);
         $("iva_aplica").addEventListener("change", syncIVAUI);
         $("btn-guardar").addEventListener("click", guardarFactura);
-        $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
+        if ($("btn-imprimir")) {
+  $("btn-imprimir").addEventListener("click", imprimirFacturaGuardada);
+}
         if ($("btn-abonos")) {
           $("btn-abonos").addEventListener("click", async () => {
             if (!state.facturaGuardada?.id){
