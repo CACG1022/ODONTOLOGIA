@@ -81,8 +81,16 @@ gap:20px;
 }
 
 .card img{
-width:100%;
-border-radius:8px;
+  width:100%;
+  height:160px;
+  object-fit:cover;
+  border-radius:10px;
+  margin-bottom:10px;
+  transition:all .3s ease;
+}
+
+.card:hover img{
+  transform:scale(1.05);
 }
 
 .file{
@@ -125,6 +133,14 @@ small{
   padding:4px 8px;
   border-radius:6px;
 }
+  #buscadorArchivos{
+  padding:12px;
+  font-size:14px;
+  border-radius:10px;
+  border:1px solid #ddd;
+  width:250px;
+  margin-bottom:20px;
+}
 
 </style>
 </head>
@@ -138,6 +154,7 @@ Visor de Archivos Clínicos
 <div class="container">
 
 <div class="search">
+<input id="buscadorArchivos" placeholder="Buscar archivos..." oninput="filtrarArchivos()">
 <input id="doc" placeholder="Documento del paciente">
 <button onclick="buscar()">Buscar</button>
 </div>
@@ -171,6 +188,12 @@ const supabase = createClient(
 
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
+
+let cacheArchivos = {
+  radiografias: [],
+  fotografias: [],
+  documentos: []
+};
 
 function obtenerDocumentoURL(){
 
@@ -241,9 +264,24 @@ if (text) {
   }
 }
 
+cacheArchivos = data;
+
 mostrar("radiografias",data.radiografias)
 mostrar("fotografias",data.fotografias)
 mostrar("documentos",data.documentos)
+
+function filtrarArchivos(){
+
+  const texto = document.getElementById("buscadorArchivos").value.toLowerCase();
+
+  const filtrar = (lista) => {
+    return lista.filter(f => f.nombre.toLowerCase().includes(texto));
+  };
+
+  mostrar("radiografias", filtrar(cacheArchivos.radiografias));
+  mostrar("fotografias", filtrar(cacheArchivos.fotografias));
+  mostrar("documentos", filtrar(cacheArchivos.documentos));
+}
 
 }catch(e){
 
@@ -343,6 +381,8 @@ return
 }
 
 cont.innerHTML=""
+  // ordenar por fecha descendente (más reciente primero)
+lista.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
 lista.forEach(file=>{
 
@@ -352,16 +392,20 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
 <div class="card">
-<div class="file">
-  <div class="nombre-archivo">🖼️ ${file.nombre}</div>
-  <div class="fecha-archivo">
-    Fecha de modificación: ${formatearFecha(file.fecha)}
+  <img src="${file.url}" loading="lazy">
+  
+  <div class="file">
+    <div class="nombre-archivo">🖼️ ${file.nombre}</div>
+
+    ${file.fecha ? `
+    <div class="fecha-archivo">
+      Fecha de modificación: ${formatearFecha(file.fecha)}
+    </div>` : ""}
   </div>
-</div>
-<a onclick="descargarArchivo('${file.url}')">Descargar</a>
+
+  <a onclick="descargarArchivo('${file.url}')">⬇ Descargar</a>
 </div>
 `
-
 }
 
 else if(file.nombre.match(/\.pdf$/i)){
