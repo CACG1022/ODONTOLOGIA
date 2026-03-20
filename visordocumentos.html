@@ -270,18 +270,6 @@ mostrar("radiografias",data.radiografias)
 mostrar("fotografias",data.fotografias)
 mostrar("documentos",data.documentos)
 
-function filtrarArchivos(){
-
-  const texto = document.getElementById("buscadorArchivos").value.toLowerCase();
-
-  const filtrar = (lista) => {
-    return lista.filter(f => f.nombre.toLowerCase().includes(texto));
-  };
-
-  mostrar("radiografias", filtrar(cacheArchivos.radiografias));
-  mostrar("fotografias", filtrar(cacheArchivos.fotografias));
-  mostrar("documentos", filtrar(cacheArchivos.documentos));
-}
 
 }catch(e){
 
@@ -297,7 +285,18 @@ document.getElementById("documentos").innerHTML="Sin archivos"
 }
 
 
+function filtrarArchivos(){
 
+  const texto = document.getElementById("buscadorArchivos").value.toLowerCase();
+
+  const filtrar = (lista) => {
+    return lista.filter(f => f.nombre.toLowerCase().includes(texto));
+  };
+
+  mostrar("radiografias", filtrar(cacheArchivos.radiografias));
+  mostrar("fotografias", filtrar(cacheArchivos.fotografias));
+  mostrar("documentos", filtrar(cacheArchivos.documentos));
+}
 function extraerKey(url){
 
   try{
@@ -392,7 +391,7 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
 <div class="card">
-  <img src="${file.url}" loading="lazy">
+  <img src="${webhookDescarga}?key=${encodeURIComponent(extraerKey(file.url))}" loading="lazy">
   
   <div class="file">
     <div class="nombre-archivo">🖼️ ${file.nombre}</div>
@@ -454,6 +453,7 @@ function formatearFecha(fechaISO){
 window.addEventListener("load",obtenerDocumentoURL);
 window.buscar = buscar;
 window.descargarArchivo = descargarArchivo;
+window.filtrarArchivos = filtrarArchivos;
 </script>
 
 </body>
