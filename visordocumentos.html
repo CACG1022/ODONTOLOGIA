@@ -87,6 +87,8 @@ gap:20px;
   border-radius:10px;
   margin-bottom:10px;
   transition:all .3s ease;
+  background:#e5e7eb;
+  display:block;
 }
 
 .card:hover img{
@@ -366,6 +368,45 @@ async function descargarArchivo(url){
 
 }
 
+async function cargarPreviewImagen(imgEl, url){
+
+  const key = extraerKey(url);
+
+  if(!key){
+    imgEl.alt = "No se pudo cargar";
+    return;
+  }
+
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+
+  if(!token){
+    imgEl.alt = "Sesión inválida";
+    return;
+  }
+
+  const link = webhookDescarga + "?key=" + encodeURIComponent(key);
+
+  try{
+    const res = await fetch(link, {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    if(!res.ok){
+      throw new Error("No se pudo cargar preview");
+    }
+
+    const blob = await res.blob();
+    const blobUrl = window.URL.createObjectURL(blob);
+    imgEl.src = blobUrl;
+  }catch(err){
+    console.error("Error cargando preview:", err);
+    imgEl.alt = "Preview no disponible";
+  }
+}
+
 
 
 function mostrar(tipo,lista){
@@ -383,7 +424,11 @@ cont.innerHTML=""
   // ordenar por fecha descendente (más reciente primero)
 lista.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-lista.forEach(file=>{
+lista.forEach((file, index)=>{
+if (file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)) {
+  const img = document.getElementById(`preview-${tipo}-${index}`);
+  if (img) cargarPreviewImagen(img, file.url);
+}
 
 let html=""
 
@@ -391,7 +436,7 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
 <div class="card">
-  <img src="${webhookDescarga}?key=${encodeURIComponent(extraerKey(file.url))}" loading="lazy">
+  <img id="preview-${tipo}-${index}" alt="${file.nombre}" loading="lazy">
   
   <div class="file">
     <div class="nombre-archivo">🖼️ ${file.nombre}</div>
