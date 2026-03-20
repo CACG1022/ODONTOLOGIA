@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
 <style>
+
 body{
 font-family:'Inter',sans-serif;
 background:#f3f6f9;
@@ -97,6 +98,7 @@ padding:20px;
 border-radius:10px;
 text-align:center;
 }
+
 </style>
 </head>
 
@@ -130,154 +132,154 @@ Visor de Archivos Clínicos
 
 </div>
 
-<script type="module">
 
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+<script>
 
-const supabase = createClient(
-  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
-);
+const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
+const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
 
-/* ================= AUTO BUSCAR ================= */
 function obtenerDocumentoURL(){
-  const params = new URLSearchParams(window.location.search);
-  const doc = params.get("doc");
 
-  if(doc){
-    document.getElementById("doc").value = doc;
-    buscar();
-  }
+const params=new URLSearchParams(window.location.search)
+const doc=params.get("doc")
+
+if(doc){
+
+document.getElementById("doc").value=doc
+buscar()
+
 }
 
-/* ================= BUSCAR ================= */
+}
+
+
 async function buscar(){
 
-  const doc = document.getElementById("doc").value;
+const doc=document.getElementById("doc").value
 
-  if(!doc){
-    alert("Ingrese documento");
-    return;
-  }
+if(!doc){
+alert("Ingrese documento")
+return
+}
 
-  document.getElementById("radiografias").innerHTML="Cargando...";
-  document.getElementById("fotografias").innerHTML="Cargando...";
-  document.getElementById("documentos").innerHTML="Cargando...";
+document.getElementById("radiografias").innerHTML="Cargando..."
+document.getElementById("fotografias").innerHTML="Cargando..."
+document.getElementById("documentos").innerHTML="Cargando..."
 
-  try{
+try{
 
-    const { data: userData } = await supabase.auth.getUser();
+const res=await fetch(`${webhookBusqueda}?documento=${doc}`)
+const data=await res.json()
 
-    if(!userData?.user){
-      alert("No hay sesión activa");
-      return;
-    }
+mostrar("radiografias",data.radiografias)
+mostrar("fotografias",data.fotografias)
+mostrar("documentos",data.documentos)
 
-    const userId = userData.user.id;
+}catch(e){
 
-    const { data: perfil, error: errorPerfil } = await supabase
-      .from("profiles")
-      .select("tenant_id")
-      .eq("id", userId)
-      .single();
+console.error(e)
+alert("El paciente no posee documentos adjuntos.")
 
-    if(errorPerfil){
-      console.error(errorPerfil);
-      throw errorPerfil;
-    }
-
-    const tenant_id = perfil.tenant_id;
-
-    const { data, error } = await supabase
-      .from("documentos_adjuntos")
-      .select("*")
-      .eq("tenant_id", tenant_id)
-      .eq("documento_paciente", doc);
-
-    if(error){
-      console.error(error);
-      throw error;
-    }
-
-    console.log("DATA:", data);
-
-    const radiografias = data.filter(d => d.tipo === "radiografias");
-    const fotografias = data.filter(d => d.tipo === "fotografias");
-    const documentos = data.filter(d => d.tipo === "documentos");
-
-    mostrar("radiografias", radiografias);
-    mostrar("fotografias", fotografias);
-    mostrar("documentos", documentos);
-
-  }catch(e){
-
-    console.error("ERROR:", e);
-
-    document.getElementById("radiografias").innerHTML="Sin archivos";
-    document.getElementById("fotografias").innerHTML="Sin archivos";
-    document.getElementById("documentos").innerHTML="Sin archivos";
-
-  }
+document.getElementById("radiografias").innerHTML="Sin archivos"
+document.getElementById("fotografias").innerHTML="Sin archivos"
+document.getElementById("documentos").innerHTML="Sin archivos"
 
 }
 
-/* ================= MOSTRAR ================= */
-function mostrar(tipo, lista){
+}
 
-  const cont = document.getElementById(tipo);
 
-  if(!lista || lista.length === 0){
-    cont.innerHTML = "El paciente no posee documentos adjuntos.";
-    return;
-  }
 
-  cont.innerHTML = "";
+function extraerKey(url){
 
-  lista.forEach(file => {
+const partes=url.split("/dentova/")
 
-    let html = "";
+if(partes.length<2) return null
 
-    if(file.nombre_archivo.match(/\.(jpg|png|jpeg|webp)$/i)){
-
-      html = `
-      <div class="card">
-        <img src="${file.storage_url}">
-        <div class="file">${file.nombre_archivo}</div>
-        <a href="${file.storage_url}" target="_blank">Descargar</a>
-      </div>
-      `;
-
-    } else if(file.nombre_archivo.match(/\.pdf$/i)){
-
-      html = `
-      <div class="card pdf">
-        📄 ${file.nombre_archivo}<br><br>
-        <a href="${file.storage_url}" target="_blank">Descargar PDF</a>
-      </div>
-      `;
-
-    } else {
-
-      html = `
-      <div class="card pdf">
-        📁 ${file.nombre_archivo}<br><br>
-        <a href="${file.storage_url}" target="_blank">Descargar archivo</a>
-      </div>
-      `;
-
-    }
-
-    cont.innerHTML += html;
-
-  });
+return partes[1]
 
 }
 
-/* ================= INIT ================= */
-window.addEventListener("load", obtenerDocumentoURL);
-window.buscar = buscar;
+
+
+function descargarArchivo(url){
+
+const key=extraerKey(url)
+
+if(!key){
+alert("No se pudo obtener la key")
+return
+}
+
+const link=webhookDescarga+"?key="+encodeURIComponent(key)
+
+window.open(link,"_blank")
+
+}
+
+
+
+function mostrar(tipo,lista){
+
+const cont=document.getElementById(tipo)
+
+if(!lista || lista.length==0){
+
+cont.innerHTML="El paciente no posee documentos adjuntos."
+return
+
+}
+
+cont.innerHTML=""
+
+lista.forEach(file=>{
+
+let html=""
+
+if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
+
+html=`
+<div class="card">
+<img src="${file.url}">
+<div class="file">${file.nombre}</div>
+<a onclick="descargarArchivo('${file.url}')">Descargar</a>
+</div>
+`
+
+}
+
+else if(file.nombre.match(/\.pdf$/i)){
+
+html=`
+<div class="card pdf">
+📄 ${file.nombre}<br><br>
+<a onclick="descargarArchivo('${file.url}')">Descargar PDF</a>
+</div>
+`
+
+}
+
+else{
+
+html=`
+<div class="card pdf">
+📁 ${file.nombre}<br><br>
+<a onclick="descargarArchivo('${file.url}')">Descargar archivo</a>
+</div>
+`
+
+}
+
+cont.innerHTML+=html
+
+})
+
+}
+  window.addEventListener("load",obtenerDocumentoURL)
 
 </script>
 
 </body>
 </html>
+
+
