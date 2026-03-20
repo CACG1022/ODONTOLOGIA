@@ -136,149 +136,146 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 
 const supabase = createClient(
   "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE
-"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
 );
 
-/* ================= AUTO BUSCAR POR URL ================= */
+/* ================= AUTO BUSCAR ================= */
 function obtenerDocumentoURL(){
-
-  const params = new URLSearchParams(window.location.search)
-  const doc = params.get("doc")
+  const params = new URLSearchParams(window.location.search);
+  const doc = params.get("doc");
 
   if(doc){
-    document.getElementById("doc").value = doc
-    buscar()
+    document.getElementById("doc").value = doc;
+    buscar();
   }
-
 }
 
-/* ================= BUSCAR DOCUMENTOS ================= */
+/* ================= BUSCAR ================= */
 async function buscar(){
 
-  const doc = document.getElementById("doc").value
+  const doc = document.getElementById("doc").value;
 
   if(!doc){
-    alert("Ingrese documento")
-    return
+    alert("Ingrese documento");
+    return;
   }
 
-  document.getElementById("radiografias").innerHTML="Cargando..."
-  document.getElementById("fotografias").innerHTML="Cargando..."
-  document.getElementById("documentos").innerHTML="Cargando..."
+  document.getElementById("radiografias").innerHTML="Cargando...";
+  document.getElementById("fotografias").innerHTML="Cargando...";
+  document.getElementById("documentos").innerHTML="Cargando...";
 
   try{
 
-    // 🔐 usuario actual
-    const { data: userData } = await supabase.auth.getUser()
+    const { data: userData } = await supabase.auth.getUser();
 
     if(!userData?.user){
-      alert("Sesión no válida")
-      return
+      alert("No hay sesión activa");
+      return;
     }
 
-    const userId = userData.user.id
+    const userId = userData.user.id;
 
-    // 🔐 tenant
     const { data: perfil, error: errorPerfil } = await supabase
       .from("profiles")
       .select("tenant_id")
       .eq("id", userId)
-      .single()
+      .single();
 
-    if(errorPerfil) throw errorPerfil
+    if(errorPerfil){
+      console.error(errorPerfil);
+      throw errorPerfil;
+    }
 
-    const tenant_id = perfil.tenant_id
+    const tenant_id = perfil.tenant_id;
 
-    // 🔎 consulta
     const { data, error } = await supabase
       .from("documentos_adjuntos")
       .select("*")
       .eq("tenant_id", tenant_id)
-      .eq("documento_paciente", doc)
+      .eq("documento_paciente", doc);
 
-    if(error) throw error
+    if(error){
+      console.error(error);
+      throw error;
+    }
 
-    const radiografias = data.filter(d => d.tipo === "radiografias")
-    const fotografias = data.filter(d => d.tipo === "fotografias")
-    const documentos = data.filter(d => d.tipo === "documentos")
+    console.log("DATA:", data);
 
-    mostrar("radiografias", radiografias)
-    mostrar("fotografias", fotografias)
-    mostrar("documentos", documentos)
+    const radiografias = data.filter(d => d.tipo === "radiografias");
+    const fotografias = data.filter(d => d.tipo === "fotografias");
+    const documentos = data.filter(d => d.tipo === "documentos");
+
+    mostrar("radiografias", radiografias);
+    mostrar("fotografias", fotografias);
+    mostrar("documentos", documentos);
 
   }catch(e){
 
-    console.error(e)
+    console.error("ERROR:", e);
 
-    document.getElementById("radiografias").innerHTML="Sin archivos"
-    document.getElementById("fotografias").innerHTML="Sin archivos"
-    document.getElementById("documentos").innerHTML="Sin archivos"
+    document.getElementById("radiografias").innerHTML="Sin archivos";
+    document.getElementById("fotografias").innerHTML="Sin archivos";
+    document.getElementById("documentos").innerHTML="Sin archivos";
 
   }
 
 }
 
 /* ================= MOSTRAR ================= */
-function mostrar(tipo,lista){
+function mostrar(tipo, lista){
 
-  const cont = document.getElementById(tipo)
+  const cont = document.getElementById(tipo);
 
-  if(!lista || lista.length==0){
-    cont.innerHTML="El paciente no posee documentos adjuntos."
-    return
+  if(!lista || lista.length === 0){
+    cont.innerHTML = "El paciente no posee documentos adjuntos.";
+    return;
   }
 
-  cont.innerHTML=""
+  cont.innerHTML = "";
 
-  lista.forEach(file=>{
+  lista.forEach(file => {
 
-    let html=""
+    let html = "";
 
     if(file.nombre_archivo.match(/\.(jpg|png|jpeg|webp)$/i)){
 
-      html=`
+      html = `
       <div class="card">
-      <img src="${file.storage_url}">
-      <div class="file">${file.nombre_archivo}</div>
-      <a href="${file.storage_url}" target="_blank">Descargar</a>
+        <img src="${file.storage_url}">
+        <div class="file">${file.nombre_archivo}</div>
+        <a href="${file.storage_url}" target="_blank">Descargar</a>
       </div>
-      `
+      `;
 
-    }
+    } else if(file.nombre_archivo.match(/\.pdf$/i)){
 
-    else if(file.nombre_archivo.match(/\.pdf$/i)){
-
-      html=`
+      html = `
       <div class="card pdf">
-      📄 ${file.nombre_archivo}<br><br>
-      <a href="${file.storage_url}" target="_blank">Descargar PDF</a>
+        📄 ${file.nombre_archivo}<br><br>
+        <a href="${file.storage_url}" target="_blank">Descargar PDF</a>
       </div>
-      `
+      `;
 
-    }
+    } else {
 
-    else{
-
-      html=`
+      html = `
       <div class="card pdf">
-      📁 ${file.nombre_archivo}<br><br>
-      <a href="${file.storage_url}" target="_blank">Descargar archivo</a>
+        📁 ${file.nombre_archivo}<br><br>
+        <a href="${file.storage_url}" target="_blank">Descargar archivo</a>
       </div>
-      `
+      `;
 
     }
 
-    cont.innerHTML+=html
+    cont.innerHTML += html;
 
-  })
+  });
 
 }
 
 /* ================= INIT ================= */
-window.addEventListener("load", obtenerDocumentoURL)
-
-window.buscar = buscar
+window.addEventListener("load", obtenerDocumentoURL);
+window.buscar = buscar;
 
 </script>
 
