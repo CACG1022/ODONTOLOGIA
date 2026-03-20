@@ -66,12 +66,13 @@ if (!TENANT_ID) {
 
 /* ================= PROVEEDORES ================= */
 async function cargarProveedores(selected=null){
-  const { data } = await supabase
+    const { data, error } = await supabase
     .from("proveedores")
     .select("nombre")
     .eq("activo", true)
+    .eq("tenant_id", TENANT_ID)
     .order("nombre");
-
+  
   proveedor.innerHTML = "<option value=''>Seleccione proveedor</option>";
   data.forEach(p=>{
     const opt = document.createElement("option");
@@ -87,11 +88,17 @@ async function guardarProveedor(){
   const nombre = provNombre.value.trim();
   if(!nombre) return alert("Nombre requerido");
 
-  const { error } = await supabase.from("proveedores").insert([{
+  if(!TENANT_ID){
+  alert("No se pudo identificar el tenant del usuario");
+  return;
+}
+
+    const { error } = await supabase.from("proveedores").insert([{
     nombre,
     telefono: provTelefono.value,
     contacto: provContacto.value,
-    activo: true
+    activo: true,
+    tenant_id: TENANT_ID
   }]);
 
   if(error){ alert(error.message); return; }
