@@ -67,10 +67,17 @@ gap:20px;
 }
 
 .card{
-background:white;
-border-radius:12px;
-box-shadow:0 5px 20px rgba(0,0,0,0.08);
-padding:15px;
+  background:white;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+  padding:16px;
+  transition:all .25s ease;
+  border:1px solid rgba(0,0,0,0.04);
+}
+
+.card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 15px 40px rgba(0,0,0,0.12);
 }
 
 .card img{
@@ -101,6 +108,22 @@ text-align:center;
 small{
   color:#64748b;
   font-size:12px;
+}
+.nombre-archivo{
+  font-weight:600;
+  font-size:14px;
+  color:#1f2a37;
+  margin-bottom:6px;
+  line-height:1.4;
+}
+
+.fecha-archivo{
+  font-size:12px;
+  color:#64748b;
+  background:#f1f5f9;
+  display:inline-block;
+  padding:4px 8px;
+  border-radius:6px;
 }
 
 </style>
@@ -330,8 +353,10 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 html=`
 <div class="card">
 <div class="file">
-  🖼️ ${file.nombre}<br>
-  <small>${formatearFecha(file.fecha)}</small>
+  <div class="nombre-archivo">🖼️ ${file.nombre}</div>
+  <div class="fecha-archivo">
+    Fecha de modificación: ${formatearFecha(file.fecha)}
+  </div>
 </div>
 <a onclick="descargarArchivo('${file.url}')">Descargar</a>
 </div>
