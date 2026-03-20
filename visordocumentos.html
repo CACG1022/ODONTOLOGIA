@@ -202,8 +202,17 @@ return
 // 🔥 3. enviar ambos al webhook
 const res = await fetch(`${webhookBusqueda}?documento=${doc}&tenant_id=${tenant_id}`)
 
-const text = await res.text()
-const data = text ? JSON.parse(text) : { radiografias: [], fotografias: [], documentos: [] }
+const text = await res.text();
+let data = { radiografias: [], fotografias: [], documentos: [] };
+
+if (text) {
+  try {
+    data = JSON.parse(text);
+  } catch (err) {
+    console.error("Respuesta no válida del webhook:", text);
+    throw err;
+  }
+}
 
 mostrar("radiografias",data.radiografias)
 mostrar("fotografias",data.fotografias)
@@ -319,8 +328,9 @@ cont.innerHTML+=html
 })
 
 }
-  window.addEventListener("load",obtenerDocumentoURL)
+window.addEventListener("load",obtenerDocumentoURL);
 window.buscar = buscar;
+window.descargarArchivo = descargarArchivo;
 </script>
 
 </body>
