@@ -133,39 +133,32 @@ Visor de Archivos Clínicos
 </div>
 
 
-<script>
+<script type="module">
+
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+const supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
 
 const webhookBusqueda="https://ftth-n8n2.pzveh5.easypanel.host/webhook/9f914119-dfaf-4eff-b865-949c197af162"
 const webhookDescarga="https://ftth-n8n2.pzveh5.easypanel.host/webhook/33fa344c-9ef2-4203-9562-36594c1233f3"
 
-function extraerKey(url){
+function obtenerDocumentoURL(){
 
-// 🔥 CORREGIDO (ANTES FALLABA)
-const base = "dentova/"
-const index = url.indexOf(base)
+const params=new URLSearchParams(window.location.search)
+const doc=params.get("doc")
 
-if(index === -1) return null
+if(doc){
 
-return url.substring(index + base.length)
+document.getElementById("doc").value=doc
+buscar()
+
+}
 
 }
 
-function descargarArchivo(url){
-
-const key = extraerKey(url)
-
-if(!key){
-alert("No se pudo obtener la key")
-return
-}
-
-console.log("KEY:", key) // 🔍 DEBUG
-
-const link = webhookDescarga + "?key=" + encodeURIComponent(key)
-
-window.open(link,"_blank")
-
-}
 
 async function buscar(){
 
@@ -182,10 +175,34 @@ document.getElementById("documentos").innerHTML="Cargando..."
 
 try{
 
-const res=await fetch(`${webhookBusqueda}?documento=${doc}`)
-const data=await res.json()
+// 🔐 1. obtener usuario
+const { data: userData } = await supabase.auth.getUser()
 
-console.log("DATA:", data) // 🔍 DEBUG
+if(!userData?.user){
+alert("No hay sesión activa")
+return
+}
+
+const userId = userData.user.id
+
+// 🔐 2. obtener tenant_id
+const { data: perfil } = await supabase
+.from("profiles")
+.select("tenant_id")
+.eq("id", userId)
+.single()
+
+const tenant_id = perfil?.tenant_id
+
+if(!tenant_id){
+alert("No se encontró tenant_id")
+return
+}
+
+// 🔥 3. enviar ambos al webhook
+const res = await fetch(`${webhookBusqueda}?documento=${doc}&tenant_id=${tenant_id}`)
+
+const data = await res.json()
 
 mostrar("radiografias",data.radiografias)
 mostrar("fotografias",data.fotografias)
@@ -194,6 +211,7 @@ mostrar("documentos",data.documentos)
 }catch(e){
 
 console.error(e)
+alert("El paciente no posee documentos adjuntos.")
 
 document.getElementById("radiografias").innerHTML="Sin archivos"
 document.getElementById("fotografias").innerHTML="Sin archivos"
@@ -203,13 +221,46 @@ document.getElementById("documentos").innerHTML="Sin archivos"
 
 }
 
+
+
+function extraerKey(url){
+
+const partes=url.split("/dentova/")
+
+if(partes.length<2) return null
+
+return partes[1]
+
+}
+
+
+
+function descargarArchivo(url){
+
+const key=extraerKey(url)
+
+if(!key){
+alert("No se pudo obtener la key")
+return
+}
+
+const link=webhookDescarga+"?key="+encodeURIComponent(key)
+
+window.open(link,"_blank")
+
+}
+
+
+
 function mostrar(tipo,lista){
 
 const cont=document.getElementById(tipo)
 
 if(!lista || lista.length==0){
+
 cont.innerHTML="El paciente no posee documentos adjuntos."
 return
+
 }
 
 cont.innerHTML=""
@@ -218,7 +269,6 @@ lista.forEach(file=>{
 
 let html=""
 
-// 🔥 IMPORTANTE: seguimos usando file.url del webhook
 if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
@@ -230,6 +280,7 @@ html=`
 `
 
 }
+
 else if(file.nombre.match(/\.pdf$/i)){
 
 html=`
@@ -240,6 +291,7 @@ html=`
 `
 
 }
+
 else{
 
 html=`
@@ -256,10 +308,13 @@ cont.innerHTML+=html
 })
 
 }
-
+  window.addEventListener("load",obtenerDocumentoURL)
+window.buscar = buscar;
 </script>
 
 </body>
 </html>
+
+
 
 
