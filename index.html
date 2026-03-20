@@ -1099,6 +1099,7 @@ z-index: 1;
     drop-shadow(0 0 35px rgba(32,240,208,.75))
     drop-shadow(0 0 70px rgba(32,240,208,.45));
 }
+    animation: floatTooth 4s ease-in-out infinite;
 
 /* =========================
    🚨 KPI ALERTAS CRÍTICAS
@@ -1143,7 +1144,10 @@ z-index: 1;
   z-index:-1; /* 🔥 esto manda el canvas al fondo */
   pointer-events:none;
 }
-    
+  @keyframes floatTooth{
+  0%,100%{ transform: translateY(0px); }
+  50%{ transform: translateY(-8px); }
+}
 
 </style>
 </head>
