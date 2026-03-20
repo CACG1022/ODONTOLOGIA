@@ -399,10 +399,12 @@ class Particle{
   reset(initial = false){
     this.x = Math.random() * canvas.width;
     this.y = initial ? Math.random() * canvas.height : canvas.height + Math.random() * 30;
-    this.size = Math.random() * 1.5 + 0.3;
+    //this.size = Math.random() * 1.5 + 0.3;
+    this.size = Math.random() * 3 + 1;
     this.speedY = Math.random() * 0.6 + 0.2;
     this.speedX = (Math.random() - 0.5) * 0.22;
-    this.opacity = Math.random() * 0.45 + 0.18;
+  //  this.opacity = Math.random() * 0.45 + 0.18;
+    this.opacity = Math.random() * 0.7 + 0.4;
   }
 
   update(){
