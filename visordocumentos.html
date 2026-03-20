@@ -256,18 +256,49 @@ function extraerKey(url){
 
 
 
-function descargarArchivo(url){
+async function descargarArchivo(url){
 
-const key=extraerKey(url)
+  const key = extraerKey(url)
 
-if(!key){
-alert("No se pudo obtener la key")
-return
-}
+  if(!key){
+    alert("No se pudo obtener la key")
+    return
+  }
 
-const link=webhookDescarga+"?key="+encodeURIComponent(key)
+  // 🔐 obtener sesión
+  const { data } = await supabase.auth.getSession()
 
-window.open(link,"_blank")
+  const token = data.session?.access_token
+
+  if(!token){
+    alert("Sesión inválida")
+    return
+  }
+
+  // 🔥 abrir con token
+  const link = webhookDescarga + "?key=" + encodeURIComponent(key)
+
+  fetch(link, {
+    headers: {
+      Authorization: "Bearer " + token
+    }
+  })
+  .then(res => res.blob())
+  .then(blob => {
+
+    const urlBlob = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = urlBlob
+    a.download = key.split("/").pop()
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+
+  })
+  .catch(err=>{
+    console.error(err)
+    alert("No autorizado o error descargando archivo")
+  })
 
 }
 
