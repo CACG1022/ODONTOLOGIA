@@ -8,17 +8,12 @@
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <style>
     :root{
-      --bg: #f3f5f7;
-      --card: #ffffff;
-      --text: #1f2a37;
-      --muted: #6b7280;
-      --line: #e5e7eb;
-      --brand: #1f6aa5;
-      --brand2: #114a75;
-      --danger: #b42318;
-      --shadow: 0 10px 30px rgba(16,24,40,.08);
-      --radius: 14px;
-    }
+  --bg: transparent;
+  --card: rgba(255,255,255,0.06);
+  --text: #e5e7eb;
+  --muted: rgba(255,255,255,0.6);
+  --line: rgba(255,255,255,0.15);
+}
     *{ box-sizing:border-box; }
     body{
   margin:0;
@@ -105,8 +100,9 @@ color: #fff;
       margin-bottom:6px;
       font-weight:700;
     }
-    input, select {
-  background: rgba(255,255,255,0.15);
+   input, select {
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(6px);
   border: 1px solid rgba(255,255,255,0.2);
   color: #fff;
 }
@@ -234,22 +230,12 @@ backdrop-filter: blur(10px);
 backdrop-filter: blur(10px);
     }
     #toast{
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      padding: 10px 12px;
-      border-radius: 12px;
-      border: 1px solid var(--line);
-      background: #fff;
-      box-shadow: var(--shadow);
-      font-weight: 800;
-      opacity: 0;
-      transform: translateY(8px);
-      transition: opacity .15s ease, transform .15s ease;
-      pointer-events: none;
-      max-width: 340px;
-      white-space: pre-wrap;
-    }
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: #fff;
+}
+    
     #toast.show{ opacity: 1; transform: translateY(0); }
     #toast[data-type="ok"]{ border-color: #b7e4c7; }
     #toast[data-type="err"]{ border-color: #f2c6c6; }
@@ -267,13 +253,10 @@ backdrop-filter: blur(10px);
     }
     .modal.show{ display:flex; }
     .modal-card{
-      width: min(1100px, 100%);
-      background:#fff;
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
+  background: rgba(255,255,255,0.06);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,0.15);
+}
 
     /* ✅ MAXIMIZAR MODAL (Facturas generadas) */
     .modal-card.maximized{
@@ -293,20 +276,14 @@ backdrop-filter: blur(10px);
       max-height: none;
       min-height: 0;
     }
-    .modal-head{
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      background:#fff;
-    }
+    .modal-head,
+.modal-body{
+  background: transparent;
+}
     .modal-head .title{ font-weight: 900; }
     .modal-body{
-      padding: 12px 14px;
-      background:#fff;
-    }
+  background: transparent;
+}
     .modal-tools{
       display:flex;
       gap:10px;
@@ -1333,8 +1310,8 @@ async function validarPermisoDesdeTabla(){
         div.textContent = label;
         div.style.padding = "10px 12px";
         div.style.cursor = "pointer";
-        div.addEventListener("mouseenter", () => div.style.background = "#f3f5f7");
-        div.addEventListener("mouseleave", () => div.style.background = "#fff");
+        div.addEventListener("mouseenter", () => div.style.background = "rgba(255,255,255,0.15)");
+div.addEventListener("mouseleave", () => div.style.background = "transparent");
         div.addEventListener("click", () => {
           $("sel-proc-input").value = label;
           sel.value = opt.value;
