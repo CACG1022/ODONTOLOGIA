@@ -202,7 +202,8 @@ return
 // 🔥 3. enviar ambos al webhook
 const res = await fetch(`${webhookBusqueda}?documento=${doc}&tenant_id=${tenant_id}`)
 
-const data = await res.json()
+const text = await res.text()
+const data = text ? JSON.parse(text) : { radiografias: [], fotografias: [], documentos: [] }
 
 mostrar("radiografias",data.radiografias)
 mostrar("fotografias",data.fotografias)
@@ -225,11 +226,22 @@ document.getElementById("documentos").innerHTML="Sin archivos"
 
 function extraerKey(url){
 
-const partes=url.split("/dentova/")
+  try{
 
-if(partes.length<2) return null
+    const u = new URL(url);
 
-return partes[1]
+    // quita el primer slash
+    const path = u.pathname.replace(/^\/+/, '');
+
+    // quitar bucket "dentova/"
+    if(!path.startsWith("dentova/")) return null;
+
+    return path.replace("dentova/", "");
+
+  }catch(e){
+    console.error("Error extrayendo key", e);
+    return null;
+  }
 
 }
 
@@ -273,8 +285,7 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
 <div class="card">
-<img src="${file.url}">
-<div class="file">${file.nombre}</div>
+<div class="file">🖼️ ${file.nombre}</div>
 <a onclick="descargarArchivo('${file.url}')">Descargar</a>
 </div>
 `
