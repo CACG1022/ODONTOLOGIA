@@ -4,6 +4,14 @@
 <head>
 <meta charset="UTF-8">
 <title>DENTOVA · Documentos Clínicos</title>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+window.supabase = createClient(
+  "https://dmcfrmpqlkrqbpjhrfyo.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRtY2ZybXBxbGtycWJwamhyZnlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI5MzU0MDIsImV4cCI6MjA3ODUxMTQwMn0.YY_6t_lCTs5mK-a_eEdBFa6l9_NBM3B4YDtWOXayCBE"
+);
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
@@ -173,7 +181,33 @@ DENTOVA · Documentos Clínicos
 </div>
 
 <script>
+  
+let TENANT_ID = null;
 
+async function obtenerTenantId(){
+
+  const { data:{ session } } = await window.supabase.auth.getSession();
+
+  if(!session){
+    alert("Sesión expirada");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const { data: perfil, error } = await window.supabase
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", session.user.id)
+    .single();
+
+  if(error || !perfil?.tenant_id){
+    alert("No se pudo obtener el tenant_id");
+    return;
+  }
+
+  TENANT_ID = perfil.tenant_id;
+}
+  
 async function subir(){
 
 const archivo = document.getElementById("archivo").files[0]
@@ -202,12 +236,18 @@ alert("Debe diligenciar la Fecha")
 return
 }
 
+if(!TENANT_ID){
+alert("No se pudo identificar el tenant del usuario")
+return
+}
+
 const formData = new FormData()
 
 formData.append("file", archivo)
 formData.append("documento", documento)
 formData.append("tipo", tipo)
 formData.append("fecha", fecha)
+formData.append("tenant_id", TENANT_ID)  
 
 const barra = document.getElementById("barra")
 const mensaje = document.getElementById("mensaje")
@@ -279,6 +319,10 @@ inputFecha.value = `${yyyy}-${mm}-${dd}`
 }
 
 document.addEventListener("DOMContentLoaded", cargarDatosIniciales) 
+document.addEventListener("DOMContentLoaded", async ()=>{
+  await obtenerTenantId();
+});
+  
 document.addEventListener("DOMContentLoaded", function(){
 
 const inputDocumento = document.getElementById("documento")
