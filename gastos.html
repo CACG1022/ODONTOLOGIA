@@ -18,18 +18,33 @@ const HOME_URL  = "index.html";
 const MODULO = "gastos";
 let EDIT_ID = null;
 
+let TENANT_ID = null;
+
 /* ================= SESIÓN Y PERMISOS ================= */
 async function validarAcceso(){
   const { data:{ session } } = await supabase.auth.getSession();
   if(!session){ location.href = LOGIN_URL; return; }
 
-  const { data: perfil } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", session.user.id)
-    .single();
+  const { data: perfil, error: perfilError } = await supabase
+  .from("profiles")
+  .select("role, tenant_id")
+  .eq("id", session.user.id)
+  .single();
 
-  const rol = perfil?.role || "paciente";
+if (perfilError || !perfil) {
+  alert("No se pudo cargar el perfil del usuario");
+  location.href = HOME_URL;
+  return;
+}
+
+const rol = perfil?.role || "paciente";
+TENANT_ID = perfil?.tenant_id || null;
+
+if (!TENANT_ID) {
+  alert("Tu usuario no tiene tenant_id configurado en profiles");
+  location.href = HOME_URL;
+  return;
+}
 
   const { data: permiso } = await supabase
     .from("modulos_permisos")
@@ -88,7 +103,7 @@ async function guardarProveedor(){
 
 /* ================= GUARDAR / EDITAR GASTO ================= */
 async function guardarGasto(){
-  const payload = {
+    const payload = {
     fecha: fecha.value,
     tipo: tipo.value,
     categoria: categoria.value,
@@ -96,20 +111,42 @@ async function guardarGasto(){
     monto: monto.value,
     forma_pago: forma_pago.value,
     descripcion: descripcion.value,
-    usuario_id: USER.id
+    usuario_id: USER.id,
+    tenant_id: TENANT_ID
   };
 
   if(!payload.fecha || !payload.monto){
     alert("Fecha y monto son obligatorios");
     return;
   }
+    if(!TENANT_ID){
+    alert("No se pudo identificar el tenant del usuario");
+    return;
+  }
 
-  if(EDIT_ID){
-    await supabase.from("gastos").update(payload).eq("id", EDIT_ID);
+   if(EDIT_ID){
+    const { error } = await supabase
+      .from("gastos")
+      .update(payload)
+      .eq("id", EDIT_ID)
+      .eq("tenant_id", TENANT_ID);
+
+    if(error){
+      alert(error.message);
+      return;
+    }
+
     EDIT_ID = null;
     btnGuardar.textContent = "Guardar gasto";
   }else{
-    await supabase.from("gastos").insert([payload]);
+    const { error } = await supabase
+      .from("gastos")
+      .insert([payload]);
+
+    if(error){
+      alert(error.message);
+      return;
+    }
   }
 
   limpiarFormulario();
@@ -119,7 +156,18 @@ async function guardarGasto(){
 /* ================= ELIMINAR ================= */
 async function eliminarGasto(id){
   if(!confirm("¿Eliminar este gasto?")) return;
-  await supabase.from("gastos").delete().eq("id", id);
+
+  const { error } = await supabase
+    .from("gastos")
+    .delete()
+    .eq("id", id)
+    .eq("tenant_id", TENANT_ID);
+
+  if(error){
+    alert(error.message);
+    return;
+  }
+
   await cargarGastos();
 }
 
@@ -177,9 +225,10 @@ async function calcularKPIsPrincipales(gastos){
   kpiPromedio.textContent = "$" + Math.round(promedio).toLocaleString();
 
   // Ingresos (abonos)
-  const { data: abonos } = await supabase
+    const { data: abonos } = await supabase
     .from("abonos")
-    .select("monto");
+    .select("monto")
+    .eq("tenant_id", TENANT_ID);
 
   let ingresos = 0;
   (abonos||[]).forEach(a=> ingresos += Number(a.monto||0));
@@ -200,6 +249,7 @@ async function cargarGastos(){
   const { data, error } = await supabase
     .from("gastos")
     .select("*")
+    .eq("tenant_id", TENANT_ID)
     .order("fecha",{ascending:false});
 
   if(error){ console.error(error); return; }
@@ -242,7 +292,13 @@ async function cargarGastos(){
 
 /* ================= UTIL ================= */
 function limpiarFormulario(){
-  fecha.value=""; monto.value=""; forma_pago.value=""; descripcion.value="";
+  fecha.value = "";
+  tipo.value = "fijo";
+  categoria.selectedIndex = 0;
+  proveedor.value = "";
+  monto.value = "";
+  forma_pago.value = "";
+  descripcion.value = "";
 }
 
 document.addEventListener("DOMContentLoaded", async ()=>{
