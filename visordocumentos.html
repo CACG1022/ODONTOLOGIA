@@ -391,7 +391,7 @@ if(file.nombre.match(/\.(jpg|png|jpeg|webp)$/i)){
 
 html=`
 <div class="card">
-  <img src="${file.url}" loading="lazy">
+  <img src="${webhookDescarga}?key=${encodeURIComponent(extraerKey(file.url))}" loading="lazy">
   
   <div class="file">
     <div class="nombre-archivo">🖼️ ${file.nombre}</div>
