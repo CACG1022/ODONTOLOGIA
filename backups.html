@@ -328,11 +328,9 @@ if (userEmail !== "camilo-1000@hotmail.com") {
       .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
       .limit(200);
 
-    // 🔒 filtro automático por tenant (excepto super admin)
-const { data: { session } } = await supabase.auth.getSession();
-const userEmail = session?.user?.email?.toLowerCase();
 
-const isSuperAdmin = userEmail === "camilo-1000@hotmail.com";
+
+
 
 if (!isSuperAdmin && TENANT_ID) {
   query = query.eq("tenant_id", TENANT_ID);
