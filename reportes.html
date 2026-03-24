@@ -1783,60 +1783,82 @@ const totalCalc = Number(f.valor_total ?? 0)
       }
     }
 
-    async function cargarAbonosPorDia(){
-      const fecha = $("fecha_abonos_dia").value;
-      const tbody = $("tbody_abonos_dia");
-      tbody.innerHTML = "";
+    
+async function cargarAbonosPorDia(){
+  const fecha = $("fecha_abonos_dia").value;
+  const tbody = $("tbody_abonos_dia");
+  tbody.innerHTML = "";
 
-      if (!fecha){
-        tbody.innerHTML = `<tr><td colspan="4" class="empty">Selecciona una fecha</td></tr>`;
-        return;
-      }
+  if (!fecha){
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">Selecciona una fecha</td></tr>`;
+    return;
+  }
 
-      try{
-        const { data, error } = await supabase
-          .from("abonos")
-          .select(`
-            fecha,
-            monto,
-            factura_id,
-            facturas:factura_id (
-              numero_factura,
-              paciente_nombre
-            )
-          `)
-          .eq("fecha", fecha)
-          .order("created_at", { ascending:true });
+  try{
+    // 1. Traer abonos
+    const { data: abonos, error: errAbonos } = await supabase
+      .from("abonos")
+      .select(`
+        fecha,
+        monto,
+        factura_id
+      `)
+      .eq("fecha", fecha)
+      .order("created_at", { ascending:true });
 
-        if (error) throw error;
+    if (errAbonos) throw errAbonos;
 
-        const rows = data || [];
-        const totalDia = rows.reduce((a,b)=> a + (Number(b.monto)||0), 0);
-
-        $("abonos_dia_resumen").textContent =
-          `Total del día ${formatFechaHuman(fecha)}: $ ${money(totalDia)} • Abonos: ${rows.length}`;
-
-        if (!rows.length){
-          tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay abonos este día.</td></tr>`;
-          return;
-        }
-
-        for (const a of rows){
-          const tr = document.createElement("tr");
-          tr.innerHTML = `
-            <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
-            <td>${escapeHtml(a.facturas?.paciente_nombre || "—")}</td>
-            <td class="mono">${escapeHtml(a.facturas?.numero_factura || "—")}</td>
-            <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
-          `;
-          tbody.appendChild(tr);
-        }
-      }catch(err){
-        console.error("cargarAbonosPorDia:", err);
-        tbody.innerHTML = `<tr><td colspan="4" class="empty">Error cargando abonos.</td></tr>`;
-      }
+    if (!abonos || abonos.length === 0){
+      tbody.innerHTML = `<tr><td colspan="4" class="empty">No hay abonos este día.</td></tr>`;
+      $("abonos_dia_resumen").textContent = "Sin datos";
+      return;
     }
 
+    // 2. Traer facturas relacionadas
+    const facturaIds = [...new Set(
+      abonos.map(a => a.factura_id).filter(Boolean)
+    )];
+
+    let facturasMap = new Map();
+
+    if (facturaIds.length){
+      const { data: facturas, error: errFacturas } = await supabase
+        .from("facturas")
+        .select("id, numero_factura, paciente_nombre")
+        .in("id", facturaIds);
+
+      if (errFacturas) throw errFacturas;
+
+      facturasMap = new Map(facturas.map(f => [f.id, f]));
+    }
+
+    // 3. Render
+    const totalDia = abonos.reduce(
+      (a,b)=> a + (Number(b.monto)||0),
+      0
+    );
+
+    $("abonos_dia_resumen").textContent =
+      `Total del día ${formatFechaHuman(fecha)}: $ ${money(totalDia)} • Abonos: ${abonos.length}`;
+
+    for (const a of abonos){
+      const factura = facturasMap.get(a.factura_id) || {};
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="mono">${escapeHtml(formatFechaHuman(a.fecha))}</td>
+        <td>${escapeHtml(factura.paciente_nombre || "-")}</td>
+        <td class="mono">${escapeHtml(factura.numero_factura || "-")}</td>
+        <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+
+  }catch(err){
+    console.error("cargarAbonosPorDia:", err);
+    tbody.innerHTML = `<tr><td colspan="4" class="empty">Error cargando abonos.</td></tr>`;
+  }
+}
 
 
     // =========================
