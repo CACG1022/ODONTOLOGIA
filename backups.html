@@ -313,6 +313,7 @@ button.cyan:active {
     const status = el("status").value;
     const sort = el("sort").value;
 let tenantFilter = el("tenantFilter").value.trim().toLowerCase();
+    const clinicFilter = el("clinicFilter").value.trim().toLowerCase();
 
 // 🔐 obtener sesión UNA sola vez
 const { data: { session } } = await supabase.auth.getSession();
@@ -323,7 +324,7 @@ const isSuperAdmin = userEmail === "camilo-1000@hotmail.com";
 if (!isSuperAdmin) {
   tenantFilter = String(TENANT_ID || "").toLowerCase();
 }
-  let query = supabase
+ let query = supabase
   .from("backups")
   .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
   .limit(200);
