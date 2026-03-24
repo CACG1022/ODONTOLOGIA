@@ -312,18 +312,22 @@ button.cyan:active {
     const q = el("q").value.trim().toLowerCase();
     const status = el("status").value;
     const sort = el("sort").value;
-   let tenantFilter = el("tenantFilter").value.trim().toLowerCase();
+let tenantFilter = el("tenantFilter").value.trim().toLowerCase();
 
-// si NO es admin, forzar tenant
+// 🔐 obtener sesión UNA sola vez
 const { data: { session } } = await supabase.auth.getSession();
 const userEmail = session?.user?.email?.toLowerCase();
+const isSuperAdmin = userEmail === "camilo-1000@hotmail.com";
 
-if (userEmail !== "camilo-1000@hotmail.com") {
+// si NO es admin → forzar tenant
+if (!isSuperAdmin) {
   tenantFilter = String(TENANT_ID || "").toLowerCase();
 }
-    const clinicFilter = el("clinicFilter").value.trim().toLowerCase();
-
-    let query = supabase
+  let query = supabase
+  .from("backups")
+  .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
+  .limit(200);
+    
       .from("backups")
       .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
       .limit(200);
