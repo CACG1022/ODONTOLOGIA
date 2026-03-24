@@ -796,7 +796,6 @@
         <tr>
           <th>Fecha</th>
           <th>Paciente</th>
-          <th>Factura</th>
           <th>Método</th>
           <th>Monto</th>
           <th>Observación</th>
@@ -804,7 +803,7 @@
       </thead>
       <tbody id="tabla_abonos">
         <tr>
-         <td colspan="6" class="empty">Sin datos</td>
+         <td colspan="5" class="empty">Sin datos</td>
         </tr>
       </tbody>
     </table>
@@ -2071,30 +2070,7 @@ if (planIds.length){
       return;
     }
 
-    const facturaIds = [...new Set(
-      abonos
-        .map(a => a.factura_id)
-        .filter(Boolean)
-    )];
-
-    let facturasMap = new Map();
-
-    if (facturaIds.length){
-      const { data: facturas, error: errFacturas } = await supabase
-        .from("facturas")
-        .select("id, numero_factura, paciente_nombre")
-        .in("id", facturaIds);
-
-      if (errFacturas){
-        console.error("Facturas reporte abonos message:", errFacturas?.message);
-        console.error("Facturas reporte abonos details:", errFacturas?.details);
-        console.error("Facturas reporte abonos hint:", errFacturas?.hint);
-        console.error("Facturas reporte abonos full:", errFacturas);
-        throw errFacturas;
-      }
-
-      facturasMap = new Map((facturas || []).map(f => [f.id, f]));
-    }
+    
 
     const totalMonto = abonos.reduce(
       (acc, a) => acc + (Number(a.monto) || 0),
@@ -2102,21 +2078,21 @@ if (planIds.length){
     );
 
     $("tabla_abonos").innerHTML = `
-      ${abonos.map(a => {
+     ${abonos.map(a => {
   const nombre = planesMap.get(a.plan_id) || "-";
-        return `
-          <tr>
-            <td>${escapeHtml(formatFechaHuman(a.fecha))}</td>
-            <td>${escapeHtml(nombre)}</td>
-            <td>${escapeHtml(factura.numero_factura || "-")}</td>
-            <td>${escapeHtml(a.metodo_pago || "-")}</td>
-            <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
-            <td>${escapeHtml(a.observacion || "-")}</td>
-          </tr>
-        `;
-      }).join("")}
+
+  return `
+    <tr>
+      <td>${escapeHtml(formatFechaHuman(a.fecha))}</td>
+      <td>${escapeHtml(nombre)}</td>
+      <td>${escapeHtml(a.metodo_pago || "-")}</td>
+      <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
+      <td>${escapeHtml(a.observacion || "-")}</td>
+    </tr>
+  `;
+}).join("")}
       <tr style="border-top:2px solid #e5e7eb; font-weight:900;">
-        <td colspan="4" style="text-align:right;">TOTAL</td>
+        <td colspan="3" style="text-align:right;">TOTAL</td>
         <td class="mono">$ ${escapeHtml(money(totalMonto))}</td>
         <td></td>
       </tr>
