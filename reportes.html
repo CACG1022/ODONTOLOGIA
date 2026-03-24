@@ -2007,68 +2007,99 @@ const totalCalc = Number(f.valor_total ?? 0)
     // =========================
     // ✅ REPORTE DE ABONOS (RANGO)
     // =========================
-   async function cargarReporteAbonos(){
+  async function cargarReporteAbonos(){
   const desde = ($("fecha_desde").value || "").trim();
   const hasta = ($("fecha_hasta").value || "").trim();
 
   if(!desde || !hasta){
     $("tabla_abonos").innerHTML =
-      "<tr><td colspan='6' class='muted'>Seleccione un rango de fechas</td></tr>";
+      "<tr><td colspan='6' class='empty'>Seleccione un rango de fechas</td></tr>";
     return;
   }
 
-  const { data, error } = await supabase
-    .from("abonos")
-    .select(`
-      fecha,
-      monto,
-      metodo_pago,
-      observacion,
-      factura_id,
-      facturas:factura_id (
-        numero_factura,
-        paciente_nombre
-      )
-    `)
-    .gte("fecha", desde)
-    .lte("fecha", hasta)
-    .order("fecha", { ascending:false });
+  try{
+    const { data: abonos, error: errAbonos } = await supabase
+      .from("abonos")
+      .select(`
+        fecha,
+        monto,
+        metodo_pago,
+        observacion,
+        factura_id
+      `)
+      .gte("fecha", desde)
+      .lte("fecha", hasta)
+      .order("fecha", { ascending:false });
 
-  if(error){
-    console.error("Reporte abonos:", error);
-    $("tabla_abonos").innerHTML =
-      "<tr><td colspan='6' class='muted'>Error cargando abonos</td></tr>";
-    return;
-  }
+    if (errAbonos) {
+      console.error("Reporte abonos message:", errAbonos?.message);
+      console.error("Reporte abonos details:", errAbonos?.details);
+      console.error("Reporte abonos hint:", errAbonos?.hint);
+      console.error("Reporte abonos full:", errAbonos);
+      throw errAbonos;
+    }
 
-  if(!data || data.length === 0){
-    $("tabla_abonos").innerHTML =
-      "<tr><td colspan='6' class='muted'>Sin abonos en el rango</td></tr>";
-    return;
-  }
+    if (!abonos || abonos.length === 0){
+      $("tabla_abonos").innerHTML =
+        "<tr><td colspan='6' class='empty'>Sin abonos en el rango</td></tr>";
+      return;
+    }
 
-  const totalMonto = data.reduce(
-    (acc, a) => acc + (Number(a.monto) || 0),
-    0
-  );
+    const facturaIds = [...new Set(
+      abonos
+        .map(a => a.factura_id)
+        .filter(Boolean)
+    )];
 
-  $("tabla_abonos").innerHTML = `
-    ${data.map(a => `
-      <tr>
-        <td>${formatFechaHuman(a.fecha)}</td>
-        <td>${a.facturas?.paciente_nombre || "-"}</td>
-        <td>${a.facturas?.numero_factura || "-"}</td>
-        <td>${a.metodo_pago || "-"}</td>
-        <td class="mono">$ ${money(a.monto)}</td>
-        <td>${a.observacion || "-"}</td>
+    let facturasMap = new Map();
+
+    if (facturaIds.length){
+      const { data: facturas, error: errFacturas } = await supabase
+        .from("facturas")
+        .select("id, numero_factura, paciente_nombre")
+        .in("id", facturaIds);
+
+      if (errFacturas){
+        console.error("Facturas reporte abonos message:", errFacturas?.message);
+        console.error("Facturas reporte abonos details:", errFacturas?.details);
+        console.error("Facturas reporte abonos hint:", errFacturas?.hint);
+        console.error("Facturas reporte abonos full:", errFacturas);
+        throw errFacturas;
+      }
+
+      facturasMap = new Map((facturas || []).map(f => [f.id, f]));
+    }
+
+    const totalMonto = abonos.reduce(
+      (acc, a) => acc + (Number(a.monto) || 0),
+      0
+    );
+
+    $("tabla_abonos").innerHTML = `
+      ${abonos.map(a => {
+        const factura = facturasMap.get(a.factura_id) || {};
+        return `
+          <tr>
+            <td>${escapeHtml(formatFechaHuman(a.fecha))}</td>
+            <td>${escapeHtml(factura.paciente_nombre || "-")}</td>
+            <td>${escapeHtml(factura.numero_factura || "-")}</td>
+            <td>${escapeHtml(a.metodo_pago || "-")}</td>
+            <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
+            <td>${escapeHtml(a.observacion || "-")}</td>
+          </tr>
+        `;
+      }).join("")}
+      <tr style="border-top:2px solid #e5e7eb; font-weight:900;">
+        <td colspan="4" style="text-align:right;">TOTAL</td>
+        <td class="mono">$ ${escapeHtml(money(totalMonto))}</td>
+        <td></td>
       </tr>
-    `).join("")}
-    <tr style="border-top:2px solid #e5e7eb; font-weight:900;">
-      <td colspan="4" style="text-align:right;">TOTAL</td>
-      <td class="mono">$ ${money(totalMonto)}</td>
-      <td></td>
-    </tr>
-  `;
+    `;
+  }catch(err){
+    console.error("cargarReporteAbonos FAILED:", err);
+    $("tabla_abonos").innerHTML =
+      "<tr><td colspan='6' class='empty'>Error cargando abonos</td></tr>";
+  }
 }
 
     // 🔗 Hook seguro al refrescarDashboard
