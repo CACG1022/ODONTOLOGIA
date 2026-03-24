@@ -1797,7 +1797,7 @@ async function cargarAbonosPorDia(){
     // 1. Traer abonos
     const { data: abonos, error } = await supabase
       .from("abonos")
-      .select("fecha, monto, paciente_cedula")
+      .select("fecha, monto, plan_id")
       .eq("fecha", fecha);
 
     if (error) throw error;
@@ -1807,39 +1807,35 @@ async function cargarAbonosPorDia(){
       return;
     }
 
-    // 2. Sacar cédulas únicas
-    const cedulas = [...new Set(
-      abonos.map(a => a.paciente_cedula).filter(Boolean)
+    // 2. Obtener plan_id únicos
+    const planIds = [...new Set(
+      abonos.map(a => a.plan_id).filter(Boolean)
     )];
 
-    // 3. Buscar nombres en HISTORIAS CLINICAS
-    let pacientesMap = new Map();
+    let planesMap = new Map();
 
-    if (cedulas.length){
-      const { data: pacientes, error: err2 } = await supabase
-        .from("HISTORIAS CLINICAS")
-        .select(`"Numero de Identificacion", "Nombre y apellido"`)
-        .in("Numero de Identificacion", cedulas);
+    if (planIds.length){
+      const { data: planes, error: err2 } = await supabase
+        .from("plandetratamientos")
+        .select("id, nombre")
+        .in("id", planIds);
 
       if (err2) throw err2;
 
-      pacientesMap = new Map(
-        (pacientes || []).map(p => [
-          p["Numero de Identificacion"],
-          p["Nombre y apellido"]
-        ])
+      planesMap = new Map(
+        planes.map(p => [p.id, p.nombre])
       );
     }
 
-    // 4. Total
+    // 3. Total
     const total = abonos.reduce((a,b)=> a + (Number(b.monto)||0), 0);
 
     $("abonos_dia_resumen").textContent =
       `Total: $ ${money(total)} • ${abonos.length} abonos`;
 
-    // 5. Render (SIN FACTURA)
+    // 4. Render
     for (const a of abonos){
-      const nombre = pacientesMap.get(a.paciente_cedula) || "-";
+      const nombre = planesMap.get(a.plan_id) || "-";
 
       const tr = document.createElement("tr");
       tr.innerHTML = `
@@ -1851,7 +1847,7 @@ async function cargarAbonosPorDia(){
     }
 
   }catch(err){
-    console.error(err);
+    console.error("cargarAbonosPorDia:", err);
     tbody.innerHTML = `<tr><td colspan="3" class="empty">Error cargando abonos</td></tr>`;
   }
 }
@@ -2038,7 +2034,7 @@ async function cargarAbonosPorDia(){
         monto,
         metodo_pago,
         observacion,
-        factura_id
+        plan_id
       `)
       .gte("fecha", desde)
       .lte("fecha", hasta)
@@ -2051,6 +2047,23 @@ async function cargarAbonosPorDia(){
       console.error("Reporte abonos full:", errAbonos);
       throw errAbonos;
     }
+    // 🔽 PEGAR AQUÍ
+const planIds = [...new Set(
+  abonos.map(a => a.plan_id).filter(Boolean)
+)];
+
+let planesMap = new Map();
+
+if (planIds.length){
+  const { data: planes } = await supabase
+    .from("plandetratamientos")
+    .select("id, nombre")
+    .in("id", planIds);
+
+  planesMap = new Map(
+    planes.map(p => [p.id, p.nombre])
+  );
+}
 
     if (!abonos || abonos.length === 0){
       $("tabla_abonos").innerHTML =
@@ -2090,11 +2103,11 @@ async function cargarAbonosPorDia(){
 
     $("tabla_abonos").innerHTML = `
       ${abonos.map(a => {
-        const factura = facturasMap.get(a.factura_id) || {};
+  const nombre = planesMap.get(a.plan_id) || "-";
         return `
           <tr>
             <td>${escapeHtml(formatFechaHuman(a.fecha))}</td>
-            <td>${escapeHtml(factura.paciente_nombre || "-")}</td>
+            <td>${escapeHtml(nombre)}</td>
             <td>${escapeHtml(factura.numero_factura || "-")}</td>
             <td>${escapeHtml(a.metodo_pago || "-")}</td>
             <td class="mono">$ ${escapeHtml(money(a.monto || 0))}</td>
