@@ -23,7 +23,7 @@
       border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.03);color:var(--text);
       padding:10px 12px;font-size:14px;outline:none;
     }
-    input{min-width:260px}
+    input{min-width:190px}
     button{cursor:pointer;font-weight:700}
     button.primary{background:rgba(62,166,255,.16);border-color:rgba(62,166,255,.35)}
     button.good{background:rgba(46,204,113,.14);border-color:rgba(46,204,113,.35)}
@@ -178,6 +178,8 @@ button.cyan:active {
 
 <input type="text" name="fakeusernameremembered" style="display:none">
 <input type="password" name="fakepasswordremembered" style="display:none">
+<input id="filterTenant" placeholder="Filtrar por tenant_id">
+<input id="filterClinica" placeholder="Filtrar por clínica">
 
   
 <div class="wrap">
@@ -205,6 +207,26 @@ button.cyan:active {
   autocapitalize="off"
   spellcheck="false"
 />
+
+<input
+  id="tenantFilter"
+  type="search"
+  placeholder="Filtrar por tenant_id..."
+  autocomplete="off"
+  autocorrect="off"
+  autocapitalize="off"
+  spellcheck="false"
+/>
+
+<input
+  id="clinicFilter"
+  type="search"
+  placeholder="Filtrar por clínica..."
+  autocomplete="off"
+  autocorrect="off"
+  autocapitalize="off"
+  spellcheck="false"
+/>
       
       <select id="status">
         <option value="">Status: Todos</option>
@@ -227,7 +249,9 @@ button.cyan:active {
 
     <table class="table" id="tbl">
       <thead>
-        <tr>
+        <tr> 
+          <th>Clínica</th>
+          <th>Tenant ID</th>
           <th>Fecha</th>
           <th>Archivo</th>
           <th>Status</th>
@@ -289,10 +313,12 @@ button.cyan:active {
     const q = el("q").value.trim().toLowerCase();
     const status = el("status").value;
     const sort = el("sort").value;
+    const tenantFilter = el("tenantFilter").value.trim().toLowerCase();
+    const clinicFilter = el("clinicFilter").value.trim().toLowerCase();
 
     let query = supabase
       .from("backups")
-      .select("id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
+      .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
       .limit(200);
 
     if(status) query = query.eq("status", status);
@@ -306,14 +332,41 @@ button.cyan:active {
       return;
     }
 
+    const { data: tenantsData, error: tenantsError } = await supabase
+  .from("tenants")
+  .select("id,nombre_clinica");
+
+if (tenantsError) {
+  infoMsg.textContent = "Error consultando tenants: " + tenantsError.message;
+  return;
+}
+
+const tenantsMap = new Map();
+(tenantsData || []).forEach(t => {
+  tenantsMap.set(String(t.id), t.nombre_clinica || "");
+});
+
     // búsqueda simple client-side (para no complicar el query)
     const filtered = (data || []).filter(r => {
-      if(!q) return true;
-      const hay = [
-        r.id, r.file_name, r.status, r.drive_file_id, r.backup_date, r.created_at
-      ].filter(Boolean).join(" ").toLowerCase();
-      return hay.includes(q);
-    });
+  const clinicName = (tenantsMap.get(String(r.tenant_id || "")) || "").toLowerCase();
+
+  const hay = [
+    r.id,
+    r.tenant_id,
+    clinicName,
+    r.file_name,
+    r.status,
+    r.drive_file_id,
+    r.backup_date,
+    r.created_at
+  ].filter(Boolean).join(" ").toLowerCase();
+
+  const matchesQ = !q || hay.includes(q);
+  const matchesTenant = !tenantFilter || String(r.tenant_id || "").toLowerCase().includes(tenantFilter);
+  const matchesClinic = !clinicFilter || clinicName.includes(clinicFilter);
+
+  return matchesQ && matchesTenant && matchesClinic;
+});
 
     el("count").textContent = String(filtered.length);
     infoMsg.textContent = filtered.length ? "" : "No hay registros con ese filtro.";
@@ -326,26 +379,28 @@ button.cyan:active {
         : `<span class="pill fail">❌ ${r.status || "UNKNOWN"}</span>`;
 
       tr.innerHTML = `
-        <td>${fmtDate(r.backup_date || r.created_at)}<div class="muted small mono">${short(r.id, 12)}</div></td>
-        <td>
-          <div><b>${r.file_name || "(sin nombre)"}</b></div>
-          <div class="muted small mono">Drive ID: ${short(r.drive_file_id, 14)}</div>
-        </td>
-        <td>${statusPill}${r.error_message ? `<div class="muted small">⚠ ${r.error_message}</div>` : ""}</td>
-        <td>
-          <div><b>${r.total_rows ?? ""}</b> filas</div>
-          <div class="muted small">${r.total_tables ?? ""} tablas</div>
-        </td>
-        <td>${kb(r.file_size_kb)}</td>
-        <td class="mono small">${r.file_sha256 ? short(r.file_sha256, 18) : ""}</td>
-        <td>
-          <div class="actions">
-            <button class="good" data-act="download" data-id="${r.id}">Descargar</button>
-            <button class="primary" data-act="decrypt" data-id="${r.id}">Desencriptar</button>
-          </div>
-          <div class="muted small">IV: <span class="mono">${short(r.iv, 16)}</span></div>
-        </td>
-      `;
+  <td>${fmtDate(r.backup_date || r.created_at)}<div class="muted small mono">${short(r.id, 12)}</div></td>
+  <td class="mono">${r.tenant_id || ""}</td>
+  <td>${tenantsMap.get(String(r.tenant_id || "")) || ""}</td>
+  <td>
+    <div><b>${r.file_name || "(sin nombre)"}</b></div>
+    <div class="muted small mono">Drive ID: ${short(r.drive_file_id, 14)}</div>
+  </td>
+  <td>${statusPill}${r.error_message ? `<div class="muted small">⚠ ${r.error_message}</div>` : ""}</td>
+  <td>
+    <div><b>${r.total_rows ?? ""}</b> filas</div>
+    <div class="muted small">${r.total_tables ?? ""} tablas</div>
+  </td>
+  <td>${kb(r.file_size_kb)}</td>
+  <td class="mono small">${r.file_sha256 ? short(r.file_sha256, 18) : ""}</td>
+  <td>
+    <div class="actions">
+      <button class="good" data-act="download" data-id="${r.id}">Descargar</button>
+      <button class="primary" data-act="decrypt" data-id="${r.id}">Desencriptar</button>
+    </div>
+    <div class="muted small">IV: <span class="mono">${short(r.iv, 16)}</span></div>
+  </td>
+`;
       tbody.appendChild(tr);
     }
   }
@@ -490,6 +545,8 @@ if (session?.user?.id) {
 
   el("btnRefresh").onclick = refresh;
   el("q").addEventListener("keydown", (e)=>{ if(e.key==="Enter") refresh(); });
+  el("tenantFilter").addEventListener("keydown", (e)=>{ if(e.key==="Enter") refresh(); });
+el("clinicFilter").addEventListener("keydown", (e)=>{ if(e.key==="Enter") refresh(); });
 
 el("btnRestoreLogs").onclick = () => {
   window.location.href = "https://cacg1022.github.io/ODONTOLOGIA/restore_logs.html";
@@ -497,6 +554,8 @@ el("btnRestoreLogs").onclick = () => {
   
   el("status").onchange = refresh;
   el("sort").onchange = refresh;
+  el("tenantFilter").oninput = refresh;
+el("clinicFilter").oninput = refresh;
 
   tbody.addEventListener("click", async (e) => {
     const btn = e.target.closest("button");
