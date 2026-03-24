@@ -329,9 +329,7 @@ if (!isSuperAdmin) {
   .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
   .limit(200);
     
-      .from("backups")
-      .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
-      .limit(200);
+      
 
 
 
