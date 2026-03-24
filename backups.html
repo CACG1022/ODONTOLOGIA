@@ -312,13 +312,31 @@ button.cyan:active {
     const q = el("q").value.trim().toLowerCase();
     const status = el("status").value;
     const sort = el("sort").value;
-    const tenantFilter = el("tenantFilter").value.trim().toLowerCase();
+   let tenantFilter = el("tenantFilter").value.trim().toLowerCase();
+
+// si NO es admin, forzar tenant
+const { data: { session } } = await supabase.auth.getSession();
+const userEmail = session?.user?.email?.toLowerCase();
+
+if (userEmail !== "camilo-1000@hotmail.com") {
+  tenantFilter = String(TENANT_ID || "").toLowerCase();
+}
     const clinicFilter = el("clinicFilter").value.trim().toLowerCase();
 
     let query = supabase
       .from("backups")
       .select("id,tenant_id,backup_date,file_name,drive_file_id,drive_link,iv,total_tables,total_rows,file_size_kb,status,error_message,created_at,file_sha256")
       .limit(200);
+
+    // 🔒 filtro automático por tenant (excepto super admin)
+const { data: { session } } = await supabase.auth.getSession();
+const userEmail = session?.user?.email?.toLowerCase();
+
+const isSuperAdmin = userEmail === "camilo-1000@hotmail.com";
+
+if (!isSuperAdmin && TENANT_ID) {
+  query = query.eq("tenant_id", TENANT_ID);
+}
 
     if(status) query = query.eq("status", status);
 
@@ -503,6 +521,11 @@ const tenantsMap = new Map();
 
   async function ensureAuthUI(){
     const { data: { session } } = await supabase.auth.getSession();
+    let USER_EMAIL = null;
+
+if (session?.user?.email) {
+  USER_EMAIL = session.user.email.toLowerCase();
+}
 if (session?.user?.id) {
   const { data: perfil } = await supabase
     .from("profiles")
@@ -511,6 +534,21 @@ if (session?.user?.id) {
     .single();
 
   TENANT_ID = perfil?.tenant_id || null;
+}
+    // 🔒 Control de acceso por tenant
+const isSuperAdmin = USER_EMAIL === "camilo-1000@hotmail.com";
+
+// bloquear o permitir edición del filtro
+const tenantInput = document.getElementById("tenantFilter");
+
+if (tenantInput) {
+  if (isSuperAdmin) {
+    tenantInput.disabled = false;
+    tenantInput.placeholder = "Filtrar por tenant_id...";
+  } else {
+    tenantInput.disabled = true;
+    tenantInput.value = TENANT_ID || "";
+  }
 }
     
     if(session?.user){
