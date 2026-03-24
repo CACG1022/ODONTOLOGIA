@@ -260,6 +260,7 @@ button.cyan:active {
   const N8N_SHARED_SECRET = ""; // "pon_aqui_un_secret" (idealmente vacío y se maneja distinto)
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let TENANT_ID = null;
 
   const el = (id) => document.getElementById(id);
   const tbody = el("tbody");
@@ -369,18 +370,22 @@ button.cyan:active {
   }
 
   async function triggerDecrypt(row, decrypt_password){
+    if (!TENANT_ID) {
+  alert("❌ No se pudo obtener tenant_id.");
+  return;
+}
     // Aquí disparamos n8n con la info mínima necesaria.
     // Ideal: enviar solo el backup_id y que n8n consulte Supabase internamente.
     const payload = {
-      backup_id: row.id,
-      drive_file_id: row.drive_file_id,
-      file_name: row.file_name,
-      iv: row.iv,
-      file_sha256: row.file_sha256,
-      decrypt_password: decrypt_password || "",
-      // modo: "analyze" | "preview" | "restore"
-      mode: "analyze"
-    };
+  backup_id: row.id,
+  drive_file_id: row.drive_file_id,
+  file_name: row.file_name,
+  iv: row.iv,
+  file_sha256: row.file_sha256,
+  decrypt_password: decrypt_password || "",
+  mode: "analyze",
+  tenant_id: TENANT_ID
+};
 
     const headers = { "Content-Type": "application/json" };
     if(N8N_SHARED_SECRET) headers["X-Backup-Secret"] = N8N_SHARED_SECRET;
@@ -444,6 +449,16 @@ button.cyan:active {
 
   async function ensureAuthUI(){
     const { data: { session } } = await supabase.auth.getSession();
+if (session?.user?.id) {
+  const { data: perfil } = await supabase
+    .from("profiles")
+    .select("tenant_id")
+    .eq("id", session.user.id)
+    .single();
+
+  TENANT_ID = perfil?.tenant_id || null;
+}
+    
     if(session?.user){
       el("authPill").textContent = "✅ Sesión activa";
       el("btnLogin").classList.add("hidden");
@@ -499,6 +514,11 @@ el("btnRestoreLogs").onclick = () => {
 async function ejecutarBackup() {
   if (!confirm("¿Deseas ejecutar el backup ahora?")) return;
 
+  if (!TENANT_ID) {
+  alert("❌ No se pudo obtener tenant_id. Inicia sesión nuevamente.");
+  return;
+}
+
   try {
     const response = await fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/57b20154-7732-4d65-95b6-a285f66cdd77", {
       method: "POST",
@@ -506,9 +526,10 @@ async function ejecutarBackup() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        origen: "manual_html",
-        usuario: "admin"
-      })
+  origen: "manual_html",
+  usuario: "admin",
+  tenant_id: TENANT_ID
+})
     });
 
     if (!response.ok) {
@@ -672,10 +693,18 @@ async function ejecutarBackup() {
     const headers = { "Content-Type": "application/json" };
     if(N8N_SHARED_SECRET) headers["X-Backup-Secret"] = N8N_SHARED_SECRET;
 
+
+    if (!TENANT_ID) {
+  throw new Error("tenant_id no disponible");
+}
+
     const resp = await fetch(N8N_WEBHOOK_DECRYPT_URL, {
       method: "POST",
       headers,
-      body: JSON.stringify(payload)
+      body: JSON.stringify({
+  ...payload,
+  tenant_id: TENANT_ID
+})
     });
 
     const ct = resp.headers.get("content-type") || "";
