@@ -1764,12 +1764,14 @@ setTimeout(() => {
 
   select.innerHTML = '<option value="">Seleccionar plan...</option>';
 
-  const { data, error } = await window.supabase
-    .from("plandetratamientos")
-    .select("id_iiu, created_at, total_a_pagar")
-    .eq("cedula", cedula)
-    .order("created_at", { ascending: false });
+  await window.esperarTenant(); // 🔥 asegurar tenant cargado
 
+const { data, error } = await window.supabase
+  .from("plandetratamientos")
+  .select("id_iiu, created_at, total_a_pagar")
+  .eq("cedula", cedula)
+  .eq("tenant_id", window.TENANT_ID_ACTUAL || "") // 🔥 FILTRO CLAVE
+  .order("created_at", { ascending: false });
   if(error){
     console.error("Error cargando planes:", error);
     return;
