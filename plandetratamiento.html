@@ -1834,7 +1834,7 @@ async function cargarPlanAnterior() {
     
 
     let lastQuery = "";
-    document.getElementById('cedula').addEventListener('blur', ()=>{
+    document.getElementById('cedula').addEventListener('blur', async ()=>{
       const ced = cedulaInput.value.trim();
       if(!ced || ced===lastQuery) return; lastQuery=ced;
       setHintHTML("Buscando historial del paciente...");
@@ -2147,7 +2147,7 @@ async function ejecutarFacturacion() {
     `facturacion.html?paciente_cedula=${encodeURIComponent(cedula)}`;
 }
 
-function irHistoriaClinica(){
+async function irHistoriaClinica(){
 
   const cedulaInput = document.querySelector('input[name="cedula"]') 
                       || document.getElementById("cedula");
