@@ -65,6 +65,21 @@ async function cargarLogoTenant() {
 }
     window.cargarLogoTenant = cargarLogoTenant;
 
+    async function esperarTenant() {
+  let intentos = 0;
+
+  while (!window.TENANT_ID_ACTUAL && intentos < 20) {
+    await new Promise(r => setTimeout(r, 150));
+    intentos++;
+  }
+
+  if (!window.TENANT_ID_ACTUAL) {
+    console.error("❌ tenant_id nunca se cargó");
+  } else {
+    console.log("✅ tenant_id listo:", window.TENANT_ID_ACTUAL);
+  }
+}
+
     // ✅ URLs
 const LOGIN_URL = "https://cacg1022.github.io/ODONTOLOGIA/login.html";
 const INDEX_URL = "https://cacg1022.github.io/ODONTOLOGIA/index.html";
@@ -1532,6 +1547,8 @@ function setPlanIIU(iiu){
     
 
     btnGuardar.addEventListener("click", async () => {
+     await esperarTenant();
+      
       try {
         calcularTotal();
         document.getElementById('firmaInput').value = canvas.toDataURL();
@@ -1778,6 +1795,7 @@ option.textContent = `${plan.id_iiu} | ${fecha} | $${valor}`;
 const WEBHOOK_CARGAR_PLAN_ANTERIOR = "https://ftth-n8n2.pzveh5.easypanel.host/webhook/f04247bf-0715-4f12-bb31-aa3a1c74eb4a";
                               
 async function cargarPlanAnterior() {
+  await esperarTenant();
   try {
     const cedula = document.getElementById("cedula")?.value?.trim();
     if (!cedula) {
@@ -1820,6 +1838,7 @@ async function cargarPlanAnterior() {
       const ced = cedulaInput.value.trim();
       if(!ced || ced===lastQuery) return; lastQuery=ced;
       setHintHTML("Buscando historial del paciente...");
+      await esperarTenant();
       fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/db28876e-aa9c-4015-a0b0-8f6411989681?cedula="+encodeURIComponent(ced)+"&tenant_id="+encodeURIComponent(window.TENANT_ID_ACTUAL || ""))
         .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
         .then(data=>{
@@ -1854,7 +1873,7 @@ async function cargarPlanAnterior() {
   if(!id_iiu || !cedula) return;
 
   try{
-
+   await esperarTenant();
     const url =
   "https://ftth-n8n2.pzveh5.easypanel.host/webhook/da692a8d-3bf5-4bb6-b4e9-ac797b822331"
   + "?cedula=" + encodeURIComponent(cedula)
@@ -1885,7 +1904,7 @@ async function cargarPlanAnterior() {
   if(!id_iiu || !cedula) return;
 
   try{
-
+    await esperarTenant();
     await fetch(WEBHOOK_SELECCION_PLAN,{
       method:"POST",
       headers:{
@@ -2144,7 +2163,7 @@ function irHistoriaClinica(){
     alert("La cédula está vacía.");
     return;
   }
-
+   await esperarTenant();
   const url = "https://cacg1022.github.io/ODONTOLOGIA/historia-clinica.html?buscar_cedula=" + cedula;
 
   window.location.href = url;
@@ -3361,6 +3380,7 @@ window.imprimirDesdeModal = function(){
 (function(){
   const __origEnviar = window.enviarPDFaN8n;
   window.enviarPDFaN8n = async function(){
+ 
     alert("Enviando PDF a n8n...");
     console.log("📤 Click Enviar a n8n");
     if(typeof __origEnviar === "function"){
@@ -3380,6 +3400,7 @@ window.imprimirDesdeModal = function(){
      ========================= -->
 <script>
 window.enviarPDFaN8n = async function(){
+  await esperarTenant();
   try{
     const iframe = document.getElementById("frame-impresion-pdf");
     if(!iframe || !iframe.contentWindow){
