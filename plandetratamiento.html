@@ -37,6 +37,7 @@ async function cargarLogoTenant() {
 
     const tenantId = profile?.tenant_id;
     window.TENANT_ID_ACTUAL = tenantId || "";
+    console.log("✅ TENANT ACTUAL:", window.TENANT_ID_ACTUAL);
     
     if (!tenantId) {
       console.warn("El usuario no tiene tenant_id en profiles");
@@ -1541,7 +1542,13 @@ function setPlanIIU(iiu){
     }
 
         const fd = new FormData(form);
-        const resp = await fetch(WEBHOOK_GUARDAR, { method: "POST", body: fd });
+        // 🔥 AGREGAR tenant_id al FormData
+fd.append("tenant_id", window.TENANT_ID_ACTUAL || "");
+
+const resp = await fetch(WEBHOOK_GUARDAR, { 
+  method: "POST", 
+  body: fd 
+});
 
         // ==============================
 // 🔥 OBTENER EL PLAN GUARDADO
@@ -1781,7 +1788,10 @@ async function cargarPlanAnterior() {
     // Enviar cédula al webhook (POST con JSON)
     const resp = await fetch(WEBHOOK_CARGAR_PLAN_ANTERIOR, {
   method: "POST",
-  body: new URLSearchParams({ cedula })
+  body: new URLSearchParams({ 
+  cedula,
+  tenant_id: window.TENANT_ID_ACTUAL || ""
+})
 });
 
     if (!resp.ok) throw new Error("HTTP " + resp.status);
@@ -1810,7 +1820,7 @@ async function cargarPlanAnterior() {
       const ced = cedulaInput.value.trim();
       if(!ced || ced===lastQuery) return; lastQuery=ced;
       setHintHTML("Buscando historial del paciente...");
-      fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/db28876e-aa9c-4015-a0b0-8f6411989681?cedula="+encodeURIComponent(ced))
+      fetch("https://ftth-n8n2.pzveh5.easypanel.host/webhook/db28876e-aa9c-4015-a0b0-8f6411989681?cedula="+encodeURIComponent(ced)+"&tenant_id="+encodeURIComponent(window.TENANT_ID_ACTUAL || ""))
         .then(r=>{ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
         .then(data=>{
   loadFromWebhook(data);
@@ -1846,9 +1856,10 @@ async function cargarPlanAnterior() {
   try{
 
     const url =
-      "https://ftth-n8n2.pzveh5.easypanel.host/webhook/da692a8d-3bf5-4bb6-b4e9-ac797b822331"
-      + "?cedula=" + encodeURIComponent(cedula)
-      + "&id_iiu=" + encodeURIComponent(id_iiu);
+  "https://ftth-n8n2.pzveh5.easypanel.host/webhook/da692a8d-3bf5-4bb6-b4e9-ac797b822331"
+  + "?cedula=" + encodeURIComponent(cedula)
+  + "&id_iiu=" + encodeURIComponent(id_iiu)
+  + "&tenant_id=" + encodeURIComponent(window.TENANT_ID_ACTUAL || "");
 
     const resp = await fetch(url);
 
@@ -1881,9 +1892,10 @@ async function cargarPlanAnterior() {
         "Content-Type":"application/json"
       },
       body: JSON.stringify({
-        cedula: cedula,
-        id_iiu: id_iiu
-      })
+  cedula: cedula,
+  id_iiu: id_iiu,
+  tenant_id: window.TENANT_ID_ACTUAL || ""
+})
     });
 
     console.log("Plan enviado al webhook:", id_iiu);
